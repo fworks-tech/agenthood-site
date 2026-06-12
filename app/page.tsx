@@ -23,7 +23,7 @@ export default function Home() {
       {/* Nav */}
       <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <span className="font-semibold text-white tracking-tight">agenthood</span>
-        <div className="flex items-center gap-6 text-sm text-zinc-400">
+        <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
           <Link href="#agents" className="hover:text-white transition-colors">Agents</Link>
           <Link href="#how" className="hover:text-white transition-colors">How it works</Link>
           <a
@@ -71,7 +71,7 @@ export default function Home() {
 
       {/* Stats bar */}
       <section className="border-y border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-3 divide-x divide-zinc-800 text-center">
+        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
           <div className="px-6">
             <div className="text-3xl font-semibold text-white">14</div>
             <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
