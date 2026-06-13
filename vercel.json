@@ -3,6 +3,10 @@
     {
       "source": "/academy/:path*",
       "destination": "https://fworks-tech.github.io/agenthood/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "https://fworks-tech.github.io/agenthood/assets/:path*"
     }
   ]
 }
