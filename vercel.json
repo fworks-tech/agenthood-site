@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/academy/:path*",
+      "destination": "https://fworks-tech.github.io/agenthood/:path*"
+    }
+  ]
+}
