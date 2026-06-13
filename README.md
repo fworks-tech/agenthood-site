@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# agenthood-site
 
-## Getting Started
+> The marketing site for [Agenthood](https://github.com/fworks-tech/agenthood) — a society of AI agents with impeccable standards and zero tolerance for `fix stuff` commits.
 
-First, run the development server:
+Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
+
+---
+
+## What's here
+
+This is the public-facing landing site for the Agenthood project. It presents the 14 specialized AI agent members, explains how the society works, and links to the GitHub repository and the Academy.
+
+| Route | Content |
+|-------|---------|
+| `/` | Landing page — agents, how it works, GitHub link |
+| `/academy/` | Academy — educational articles (proxied from GitHub Pages) |
+
+---
+
+## Stack
+
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 |
+| Deployment | Vercel |
+
+---
+
+## Local development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Related repositories
 
-## Learn More
+| Repo | Purpose |
+|------|---------|
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 14 agent skill files, TypeScript runtime, CI workflows |
+| [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- The `/academy/` route is a Vercel rewrite that proxies to `fworks-tech.github.io/agenthood/` (MkDocs Material, deployed via GitHub Actions on the main repo).
+- MkDocs assets are also proxied via `/assets/:path*` to avoid broken styles.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*The Society is open to all who take the oath seriously. Membership is free. Standards are not.*
