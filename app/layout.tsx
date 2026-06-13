@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Fabio Ritzel Borges", url: "https://flabs.tech" }],
   alternates: { canonical: "/" },
   openGraph: {
-    title: TITLE,
-    description: "14 specialized AI agents any agent runtime can load into any software project.",
+    title: "Agenthood — AI engineering team as Markdown files",
+    description: "14 specialized AI agents any runtime can load into any project. No lock-in. No config.",
     url: SITE_URL,
     siteName: "Agenthood",
     type: "website",
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
-    description: "14 specialized AI agents any agent runtime can load into any software project.",
+    title: "Agenthood — AI engineering team as Markdown files",
+    description: "14 specialized AI agents any runtime can load into any project. No lock-in. No config.",
     images: ["/opengraph-image"],
   },
 };
@@ -68,6 +68,7 @@ export default function RootLayout({
       className={`${geistSans.variable} h-full antialiased`}
     >
       <head>
+        <meta property="og:author" content="Fabio Ritzel Borges" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
