@@ -7,22 +7,54 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://agenthood.flabs.tech";
+const TITLE = "Agenthood — A full AI engineering team as plain Markdown files";
+const DESCRIPTION =
+  "14 specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more — each a single Markdown skill file any agent runtime can load into any project. No lock-in. No configuration.";
 
 export const metadata: Metadata = {
-  title: "Agenthood — A full AI engineering team as plain Markdown files",
-  description: "14 specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more — each a single Markdown skill file any agent runtime can load into any project. No lock-in. No configuration.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  keywords: [
+    "AI agents",
+    "developer tools",
+    "Claude Code",
+    "Cursor",
+    "Markdown skill files",
+    "AI engineering team",
+    "open source",
+  ],
+  authors: [{ name: "Fabio Ritzel Borges", url: "https://flabs.tech" }],
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Agenthood — A full AI engineering team as plain Markdown files",
+    title: TITLE,
     description: "14 specialized AI agents any agent runtime can load into any software project.",
-    url: "https://agenthood.flabs.tech",
+    url: SITE_URL,
     siteName: "Agenthood",
     type: "website",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Agenthood" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Agenthood — A full AI engineering team as plain Markdown files",
+    title: TITLE,
     description: "14 specialized AI agents any agent runtime can load into any software project.",
+    images: ["/opengraph-image"],
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Agenthood",
+  description: DESCRIPTION,
+  url: SITE_URL,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  author: { "@type": "Person", name: "Fabio Ritzel Borges", url: "https://flabs.tech" },
+  codeRepository: "https://github.com/fworks-tech/agenthood",
+  license: "https://github.com/fworks-tech/agenthood/blob/main/LICENSE",
 };
 
 export default function RootLayout({
@@ -35,6 +67,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

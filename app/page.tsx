@@ -148,7 +148,12 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600">
-        <span>agenthood · by <a href="https://github.com/fworks-tech" className="hover:text-zinc-400 transition-colors">fworks-tech</a></span>
+        <span>
+          agenthood · by{" "}
+          <a href="https://flabs.tech" className="hover:text-zinc-400 transition-colors">
+            Fabio Ritzel Borges
+          </a>
+        </span>
         <a
           href="https://github.com/fworks-tech/agenthood"
           target="_blank"
