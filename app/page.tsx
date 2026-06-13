@@ -24,6 +24,7 @@ export default function Home() {
       <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <span className="font-semibold text-white tracking-tight">agenthood</span>
         <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
+          <Link href="/academy/" className="hover:text-white transition-colors">Academy</Link>
           <Link href="#agents" className="hover:text-white transition-colors">Agents</Link>
           <Link href="#how" className="hover:text-white transition-colors">How it works</Link>
           <a
