@@ -68,6 +68,18 @@ export default function Home() {
             How it works
           </Link>
         </div>
+        <div className="mt-8 inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+          <span className="text-zinc-500">$</span>
+          <code className="text-zinc-300">npx skills add fworks-tech/agenthood</code>
+          <a
+            href="https://skills.sh/fworks-tech/agenthood"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-600 hover:text-zinc-400 transition-colors text-xs"
+          >
+            skills.sh ↗
+          </a>
+        </div>
       </section>
 
       {/* Stats bar */}
@@ -98,7 +110,7 @@ export default function Home() {
         </p>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { step: "01", title: "Clone the repo", body: "Get all 14 agent skill files in one command." },
+            { step: "01", title: "Install the Society", body: "One command: npx skills add fworks-tech/agenthood — or clone the repo directly." },
             { step: "02", title: "Load into your runtime", body: "Point Claude Code, Cursor, or your agent framework at the skills directory." },
             { step: "03", title: "Invoke any agent", body: "Ask the Reviewer to check your PR. Ask Security to audit your auth flow. They know their role." },
           ].map((s) => (
