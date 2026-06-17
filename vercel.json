@@ -1,4 +1,26 @@
 {
+  "redirects": [
+    {
+      "source": "/level-1-genai-rag-basics/:path*",
+      "destination": "/academy/level-1-genai-rag-basics/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/level-2-agent-essentials/:path*",
+      "destination": "/academy/level-2-agent-essentials/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/level-3-advanced-skills/:path*",
+      "destination": "/academy/level-3-advanced-skills/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/academy",
+      "destination": "/academy/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/academy/:path*",
