@@ -14,11 +14,6 @@
       "source": "/level-3-advanced-skills/:path*",
       "destination": "/academy/level-3-advanced-skills/:path*",
       "permanent": true
-    },
-    {
-      "source": "/academy",
-      "destination": "/academy/",
-      "permanent": true
     }
   ],
   "rewrites": [
