@@ -22,6 +22,10 @@
       "destination": "https://fworks-tech.github.io/agenthood/:path*"
     },
     {
+      "source": "/adr/:path*",
+      "destination": "https://fworks-tech.github.io/agenthood/adr/:path*"
+    },
+    {
       "source": "/assets/:path*",
       "destination": "https://fworks-tech.github.io/agenthood/assets/:path*"
     }
