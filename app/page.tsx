@@ -1,20 +1,20 @@
 import Link from "next/link";
 
 const agents = [
-  { name: "Architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
-  { name: "Engineer", icon: "⚙️", desc: "Implementation, refactoring, code quality" },
-  { name: "Reviewer", icon: "🔍", desc: "PR reviews, standards enforcement" },
-  { name: "Tester", icon: "🧪", desc: "Test strategy, coverage, edge cases" },
-  { name: "Security", icon: "🔒", desc: "Vulnerability scanning, threat modeling" },
-  { name: "DevOps", icon: "🚀", desc: "CI/CD, infra, deployment pipelines" },
-  { name: "Docs Writer", icon: "📝", desc: "READMEs, changelogs, API docs" },
-  { name: "Data Engineer", icon: "📊", desc: "Schemas, migrations, query optimization" },
-  { name: "UX Auditor", icon: "🎨", desc: "Accessibility, usability, design consistency" },
-  { name: "PM", icon: "📋", desc: "Tickets, priorities, sprint planning" },
-  { name: "On-call", icon: "🚨", desc: "Incident triage, root cause analysis" },
-  { name: "Mentor", icon: "🎓", desc: "Code explanations, onboarding, learning paths" },
-  { name: "Debt Tracker", icon: "💳", desc: "Tech debt inventory and payoff plans" },
-  { name: "Release Manager", icon: "📦", desc: "Versioning, release notes, changelog" },
+  { name: "The Scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
+  { name: "The Architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
+  { name: "The Reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
+  { name: "The Tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
+  { name: "The Debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
+  { name: "The Auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
+  { name: "The Herald", icon: "📦", desc: "Releases, versioning, changelogs" },
+  { name: "The Librarian", icon: "📝", desc: "Documentation, API references" },
+  { name: "The Doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
+  { name: "The Oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
+  { name: "The Envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
+  { name: "The Sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
+  { name: "The Warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
+  { name: "The Steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
 ];
 
 export default function Home() {
@@ -24,9 +24,11 @@ export default function Home() {
       <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
         <span className="font-semibold text-white tracking-tight">agenthood</span>
         <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
-          <Link href="/academy" className="hover:text-white transition-colors">Academy</Link>
           <Link href="#agents" className="hover:text-white transition-colors">Agents</Link>
           <Link href="#how" className="hover:text-white transition-colors">How it works</Link>
+          <Link href="/getting-started" className="hover:text-white transition-colors">Getting started</Link>
+          <Link href="/academy" className="hover:text-white transition-colors">Academy</Link>
+          <Link href="/releases" className="hover:text-white transition-colors">Releases</Link>
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
@@ -68,17 +70,15 @@ export default function Home() {
             How it works
           </Link>
         </div>
-        <div className="mt-8 inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
-          <span className="text-zinc-500">$</span>
-          <code className="text-zinc-300">npx skills add fworks-tech/agenthood</code>
-          <a
-            href="https://skills.sh/fworks-tech/agenthood"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-zinc-600 hover:text-zinc-400 transition-colors text-xs"
-          >
-            skills.sh ↗
-          </a>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+            <span className="text-zinc-500">$</span>
+            <code className="text-zinc-300">npm install --save-dev agenthood</code>
+          </div>
+          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+            <span className="text-zinc-500">$</span>
+            <code className="text-zinc-300">npx agenthood init</code>
+          </div>
         </div>
       </section>
 
@@ -106,13 +106,14 @@ export default function Home() {
         <p className="text-zinc-400 mb-12 max-w-2xl">
           Each agent is a single <code className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded text-sm">.md</code> file
           that describes a role, its responsibilities, standards, and how it communicates.
-          Load one or all of them into Claude Code, Cursor, or any runtime that supports skill files.
+          Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
+          Or run them autonomously via the TypeScript CLI.
         </p>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { step: "01", title: "Install the Society", body: "One command: npx skills add fworks-tech/agenthood — or clone the repo directly." },
-            { step: "02", title: "Load into your runtime", body: "Point Claude Code, Cursor, or your agent framework at the skills directory." },
-            { step: "03", title: "Invoke any agent", body: "Ask the Reviewer to check your PR. Ask Security to audit your auth flow. They know their role." },
+            { step: "01", title: "Install the Society", body: "npm install agenthood && npx agenthood init — interactive setup, hooks, and conventions in ~2 minutes." },
+            { step: "02", title: "Load into your runtime", body: "Skill files install automatically. Or run members autonomously: agenthood run the-scribe \"write a commit message\"." },
+            { step: "03", title: "Invoke any agent", body: "Ask the Reviewer to check your PR. Ask the Auditor to scan your auth flow. They know their role." },
           ].map((s) => (
             <div key={s.step} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <div className="text-zinc-600 text-sm font-mono mb-3">{s.step}</div>
@@ -161,11 +162,16 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600">
-        <span>
-          agenthood · by{" "}
-          <a href="https://flabs.tech" className="hover:text-zinc-400 transition-colors">
-            Fabio Ritzel Borges
-          </a>
+        <span className="flex items-center gap-3">
+          <span>
+            agenthood · by{" "}
+            <a href="https://flabs.tech" className="hover:text-zinc-400 transition-colors">
+              Fabio Ritzel Borges
+            </a>
+          </span>
+          <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
+            v2.0.0
+          </span>
         </span>
         <a
           href="https://github.com/fworks-tech/agenthood"
