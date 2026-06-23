@@ -16,19 +16,5 @@
       "destination": "/academy/level-3-advanced-skills/:path*",
       "permanent": true
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/academy/:path*",
-      "destination": "https://fworks-tech.github.io/agenthood/academy/:path*"
-    },
-    {
-      "source": "/adr/:path*",
-      "destination": "https://fworks-tech.github.io/agenthood/adr/:path*"
-    },
-    {
-      "source": "/assets/:path*",
-      "destination": "https://fworks-tech.github.io/agenthood/assets/:path*"
-    }
   ]
 }
