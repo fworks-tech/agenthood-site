@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# synced docs
+/content
+
 # production
 /build
 
