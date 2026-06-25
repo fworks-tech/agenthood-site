@@ -1,25 +1,10 @@
 import Link from "next/link";
+import Navbar from "../components/Navbar";
 
 export default function GettingStarted() {
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      {/* Nav */}
-      <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-        <Link href="/" className="font-semibold text-white tracking-tight">agenthood</Link>
-        <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <Link href="/academy" className="hover:text-white transition-colors">Academy</Link>
-          <Link href="/releases" className="hover:text-white transition-colors">Releases</Link>
-          <a
-            href="https://github.com/fworks-tech/agenthood"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white border border-zinc-700 px-3 py-1.5 rounded-md hover:border-zinc-500 transition-colors"
-          >
-            GitHub →
-          </a>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4">
@@ -120,7 +105,7 @@ export default function GettingStarted() {
               <strong className="text-white">Push</strong> — pre-push hooks run tests before the branch leaves your machine.
             </li>
             <li>
-              <strong className="text-white">Open a PR</strong> — the PR body is pre-filled with the Society's template
+              <strong className="text-white">Open a PR</strong> — the PR body is pre-filled with the Society&apos;s template
               (<code className="bg-zinc-800 text-zinc-300 px-1 py-0.5 rounded text-xs">## What changed</code>,
               <code className="bg-zinc-800 text-zinc-300 px-1 py-0.5 rounded text-xs">## Why</code>,
               <code className="bg-zinc-800 text-zinc-300 px-1 py-0.5 rounded text-xs">## How to test</code>).
@@ -273,7 +258,7 @@ export default function GettingStarted() {
             <code className="text-zinc-300">npx agenthood init</code>
           </div>
           <p className="text-zinc-400 text-sm leading-relaxed">
-            The assistant loads the member's SKILL.md as context. Ask the Reviewer to check your PR,
+            The assistant loads the member&apos;s SKILL.md as context. Ask the Reviewer to check your PR,
             ask the Auditor to scan your auth flow. They know their role.
           </p>
         </section>
