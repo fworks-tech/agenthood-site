@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Navbar from "./components/Navbar";
 
 const agents = [
   { name: "The Scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
@@ -20,25 +21,7 @@ const agents = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      {/* Nav */}
-      <nav className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
-        <span className="font-semibold text-white tracking-tight">agenthood</span>
-        <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
-          <Link href="#agents" className="hover:text-white transition-colors">Agents</Link>
-          <Link href="#how" className="hover:text-white transition-colors">How it works</Link>
-          <Link href="/getting-started" className="hover:text-white transition-colors">Getting started</Link>
-          <Link href="/academy" className="hover:text-white transition-colors">Academy</Link>
-          <Link href="/releases" className="hover:text-white transition-colors">Releases</Link>
-          <a
-            href="https://github.com/fworks-tech/agenthood"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white border border-zinc-700 px-3 py-1.5 rounded-md hover:border-zinc-500 transition-colors"
-          >
-            GitHub →
-          </a>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
