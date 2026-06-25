@@ -6,14 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync": "node scripts/sync-docs.mjs",
+    "prebuild": "npm run sync",
+    "predev": "npm run sync"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "next": "^9.3.3",
+    "next": "^16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-markdown": "^10.1.0"
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,7 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.7",
+    "eslint-config-next": "^16.2.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
