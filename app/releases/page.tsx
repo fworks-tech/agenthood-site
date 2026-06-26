@@ -48,7 +48,7 @@ export default function Releases() {
               </a>
             </span>
             <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
-              v2.0.0
+              v3.0.0
             </span>
           </span>
           <Link

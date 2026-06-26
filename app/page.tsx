@@ -35,6 +35,7 @@ export default function Home() {
         <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
           14 specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more —
           each a single Markdown skill file any agent runtime can load into any project.
+          Features autonomous agents with memory, RAG, CI enforcement, and multi-member orchestration.
           No lock-in. No configuration. Just drop them in.
         </p>
         <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -153,7 +154,7 @@ export default function Home() {
             </a>
           </span>
           <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
-            v2.0.0
+            v3.0.0
           </span>
         </span>
         <a

@@ -125,7 +125,7 @@ export default function GettingStarted() {
         <section className="mb-16">
           <h2 className="text-2xl font-semibold text-white mb-4">CI pipeline</h2>
           <p className="text-zinc-300 mb-4">
-            The Society ships 12 workflows that enforce standards on every push and PR:
+            The Society ships 13 workflows that enforce standards on every push and PR:
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -142,13 +142,15 @@ export default function GettingStarted() {
                   ["auto-assign.yml", "The Scribe", "Assigns an owner to new issues and PRs"],
                   ["labeler.yml", "The Scribe", "Labels PRs by changed file paths"],
                   ["scribe-pr-body.yml", "The Reviewer", "Reviews every pushed diff via LLM, posts findings as PR comment"],
+                  ["gh-pages.yml", "The Librarian", "Deploys Academy documentation to GitHub Pages"],
+                  ["gh-pages.yml", "The Librarian", "Deploys Academy docs to GitHub Pages"],
                   ["herald.yml", "The Herald", "Posts a CI summary comment on every PR"],
                   ["semantic-release.yml", "The Herald", "Automated release and npm publish"],
-                  ["auditor.yml", "The Auditor", "Scans for secrets and credentials"],
+                  ["auditor.yml", "The Auditor", "Scans for secrets and credentials; agent-based security analysis"],
                   ["librarian.yml", "The Librarian", "Checks documentation stays in sync with code"],
-                  ["sentinel.yml", "The Sentinel", "Validates member file structure and integrity"],
+                  ["sentinel.yml", "The Sentinel", "Validates member file structure and integrity; agent-based drift detection"],
                   ["tester.yml", "The Tester", "Runs the full test suite"],
-                  ["warden.yml", "The Warden", "Enforces file size and code health limits"],
+                  ["warden.yml", "The Warden", "Enforces file size limits; agent-based code health analysis"],
                   ["vscode-extension.yml", "The Envoy", "Builds and tests the VS Code extension"],
                 ].map(([wf, member, desc]) => (
                   <tr key={wf}>
@@ -227,7 +229,7 @@ export default function GettingStarted() {
               </thead>
               <tbody className="divide-y divide-zinc-800/50">
                 {[
-                  ["GROQ_API_KEY", "Runtime mode (free at console.groq.com)", "—"],
+                  ["OPENCODE_API_KEY", "Runtime mode (free at opencode.ai)", "—"],
                   ["ANTHROPIC_API_KEY", "Runtime mode, high-complexity tasks", "—"],
                   ["OPENAI_API_KEY", "Runtime mode (fallback provider)", "—"],
                   ["GITHUB_TOKEN", "PR sync (auto-set in CI)", "—"],
@@ -282,7 +284,7 @@ export default function GettingStarted() {
                 Fabio Ritzel Borges
               </a>
             </span>
-            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">v2.0.0</span>
+            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">v3.0.0</span>
           </span>
           <a href="https://github.com/fworks-tech/agenthood" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">
             GitHub
