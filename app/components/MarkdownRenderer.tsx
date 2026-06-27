@@ -1,10 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="absolute top-2 right-2 p-1.5 rounded-md bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/80 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 text-xs"
+      aria-label="Copy code"
+    >
+      {copied ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      )}
+    </button>
+  );
+}
 
 interface MarkdownRendererProps {
   children: string;
@@ -178,20 +202,24 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
       const isInline = !className;
       if (isInline) {
         return (
-          <code className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded text-sm font-mono">
+          <code className="bg-zinc-800 text-emerald-400 px-1.5 py-0.5 rounded text-sm font-mono">
             {children}
           </code>
         );
       }
+      const codeText = childrenToString(children);
       return (
-        <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto mb-4">
-          <code className="text-sm font-mono text-zinc-300">{children}</code>
-        </pre>
+        <div className="group relative mb-4">
+          <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto">
+            <code className="text-sm font-mono text-zinc-300">{children}</code>
+          </pre>
+          <CopyButton text={codeText} />
+        </div>
       );
     },
     hr: () => <hr className="border-zinc-800 my-8" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l border-zinc-700 pl-4 text-zinc-400 mb-6 last:mb-0">
+      <blockquote className="border-l border-zinc-600 bg-zinc-800/50 pl-4 pr-4 py-3 text-zinc-400 mb-6 last:mb-0 rounded-r-lg">
         {children}
       </blockquote>
     ),
