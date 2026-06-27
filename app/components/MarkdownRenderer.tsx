@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -142,11 +143,33 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
       </h2>
     ),
     h3: ({ children }) => (
-      <h3 id={slugify(childrenToString(children))} className="text-lg font-semibold text-white mt-6 mb-2">
+      <h3 id={slugify(childrenToString(children))} className="text-lg font-semibold text-white mt-8 mb-3">
         {children}
       </h3>
     ),
-    p: ({ children }) => <p className="text-zinc-300 leading-relaxed mb-4">{children}</p>,
+    p: ({ children }) => {
+      const insertBreaks = (nodes: React.ReactNode): React.ReactNode[] =>
+        React.Children.toArray(nodes).reduce<React.ReactNode[]>((acc, child, i) => {
+          if (typeof child === 'string' && child.includes('\n')) {
+            child.split(/(\n)/).forEach((part, j) => {
+              if (part === '\n') {
+                acc.push(<br key={`${i}-${j}`} />);
+              } else {
+                acc.push(part);
+              }
+            });
+          } else if (typeof child === 'object' && child !== null && 'props' in child) {
+            const el = child as React.ReactElement<{ children?: React.ReactNode }>;
+            acc.push(React.cloneElement(el, {
+              children: insertBreaks(el.props.children),
+            }));
+          } else {
+            acc.push(child);
+          }
+          return acc;
+        }, []);
+      return <p className="text-zinc-300 leading-relaxed mb-4">{insertBreaks(children)}</p>;
+    },
     ul: ({ children }) => <ul className="list-disc space-y-1.5 text-zinc-300 ml-6 mb-4">{children}</ul>,
     ol: ({ children }) => <ol className="list-decimal space-y-1.5 text-zinc-300 ml-6 mb-4">{children}</ol>,
     li: ({ children }) => <li>{children}</li>,
@@ -168,7 +191,7 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
     },
     hr: () => <hr className="border-zinc-800 my-8" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-zinc-700 pl-4 italic text-zinc-400 mb-4">
+      <blockquote className="border-l border-zinc-700 pl-4 text-zinc-400 mb-6 last:mb-0">
         {children}
       </blockquote>
     ),
