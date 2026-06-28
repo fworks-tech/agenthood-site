@@ -33,7 +33,7 @@ export default function Home() {
           <span className="text-zinc-500">as plain Markdown files.</span>
         </h1>
         <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          14 specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more —
+          16 specialized AI agents — architect, reviewer, security expert, DevOps engineer, strategist, operator, and more —
           each a single Markdown skill file any agent runtime can load into any project.
           Features autonomous agents with memory, RAG, CI enforcement, and multi-member orchestration.
           No lock-in. No configuration. Just drop them in.
@@ -70,7 +70,7 @@ export default function Home() {
       <section className="border-y border-zinc-800 bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
           <div className="px-6">
-            <div className="text-3xl font-semibold text-white">14</div>
+            <div className="text-3xl font-semibold text-white">16</div>
             <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
           </div>
           <div className="px-6">

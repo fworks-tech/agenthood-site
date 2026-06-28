@@ -8,7 +8,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 
 ## What's here
 
-This is the public-facing landing site for the Agenthood project. It presents the 14 specialized AI agent members, explains how the society works, and links to the GitHub repository and the Academy.
+This is the public-facing landing site for the Agenthood project. It presents the 16 specialized AI agent members, explains how the society works, and links to the GitHub repository and the Academy.
 
 | Route | Content |
 |-------|---------|
@@ -43,7 +43,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 | Repo | Purpose |
 |------|---------|
-| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 14 agent skill files, TypeScript runtime, CI workflows |
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 16 agent skill files, TypeScript runtime, CI workflows |
 | [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
 ---
