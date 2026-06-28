@@ -157,12 +157,12 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
 
   const components: Components = {
     h1: ({ children }) => (
-      <h1 id={slugify(childrenToString(children))} className="text-3xl font-semibold text-white mt-10 mb-4">
+      <h1 id={slugify(childrenToString(children))} className="text-3xl font-semibold text-white mb-4">
         {children}
       </h1>
     ),
     h2: ({ children }) => (
-      <h2 id={slugify(childrenToString(children))} className="text-2xl font-semibold text-white mt-10 mb-3">
+      <h2 id={slugify(childrenToString(children))} className="text-2xl font-semibold text-white mb-3">
         {children}
       </h2>
     ),
