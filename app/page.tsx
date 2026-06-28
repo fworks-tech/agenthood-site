@@ -86,6 +86,26 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Agents grid */}
+      <section id="agents" className="mx-auto px-6 pb-24">
+        <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
+        <p className="text-zinc-400 mb-12 max-w-2xl">
+          Every role a real software team needs — available as a skill file with impeccable standards.
+        </p>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {agents.map((a) => (
+            <div
+              key={a.name}
+              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+            >
+              <div className="text-2xl mb-3">{a.icon}</div>
+              <div className="text-white font-medium text-sm mb-1">{a.name}</div>
+              <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="how" className="max-w-6xl mx-auto px-6 py-24">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
@@ -105,26 +125,6 @@ export default function Home() {
               <div className="text-zinc-600 text-sm font-mono mb-3">{s.step}</div>
               <div className="text-white font-medium mb-2">{s.title}</div>
               <div className="text-zinc-400 text-sm leading-relaxed">{s.body}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Agents grid */}
-      <section id="agents" className="max-w-6xl mx-auto px-6 pb-24">
-        <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
-        <p className="text-zinc-400 mb-12 max-w-2xl">
-          Every role a real software team needs — available as a skill file with impeccable standards.
-        </p>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {agents.map((a) => (
-            <div
-              key={a.name}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
-            >
-              <div className="text-2xl mb-3">{a.icon}</div>
-              <div className="text-white font-medium text-sm mb-1">{a.name}</div>
-              <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
             </div>
           ))}
         </div>
