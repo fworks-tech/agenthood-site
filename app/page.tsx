@@ -16,6 +16,8 @@ const agents = [
   { name: "The Sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
   { name: "The Warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
   { name: "The Steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
+  { name: "The Strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
+  { name: "The Operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
 ];
 
 export default function Home() {
@@ -154,7 +156,7 @@ export default function Home() {
             </a>
           </span>
           <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
-            v3.0.0
+            v3.1.0
           </span>
         </span>
         <a
