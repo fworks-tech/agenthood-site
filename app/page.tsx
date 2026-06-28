@@ -87,7 +87,7 @@ export default function Home() {
       </section>
 
       {/* Agents grid */}
-      <section id="agents" className="mx-auto px-6 pb-24">
+      <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
         <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
         <p className="text-zinc-400 mb-12 max-w-2xl">
           Every role a real software team needs — available as a skill file with impeccable standards.
@@ -107,7 +107,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="max-w-6xl mx-auto px-6 py-24">
+      <section id="how" className="max-w-6xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
         <p className="text-zinc-400 mb-12 max-w-2xl">
           Each agent is a single <code className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded text-sm">.md</code> file
@@ -147,7 +147,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600">
+      <footer className="border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600  mt-8">
         <span className="flex items-center gap-3">
           <span>
             agenthood · by{" "}
