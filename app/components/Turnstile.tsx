@@ -65,5 +65,5 @@ export default function Turnstile({ onToken }: TurnstileProps) {
     };
   }, [onToken]);
 
-  return <div ref={containerRef} className="turnstile-widget" />;
+  return <div ref={containerRef} className="turnstile-widget" style={{ position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }} />;
 }

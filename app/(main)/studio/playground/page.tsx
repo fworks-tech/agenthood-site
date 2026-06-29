@@ -64,8 +64,18 @@ export default function PlaygroundPage() {
     }
   }, [isLoading, error, agents.length, addLog]);
 
+  useEffect(() => {
+    if (turnstileToken) {
+      addLog("info", "CAPTCHA ready");
+    }
+  }, [turnstileToken, addLog]);
+
   const handleSendMessage = useCallback(async (content: string) => {
     if (!selectedAgent) return;
+    if (!turnstileToken) {
+      addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.");
+      return;
+    }
     const ts = Date.now();
     addLog("info", `→ ${selectedAgent.icon ?? ""} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
     try {
@@ -76,7 +86,7 @@ export default function PlaygroundPage() {
       const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
       addLog("error", `✗ ${selectedAgent.icon ?? ""} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
     }
-  }, [chat, selectedAgent, config.provider, config.model, addLog]);
+  }, [chat, selectedAgent, config.provider, config.model, addLog, turnstileToken]);
 
   const handleSaveConfig = useCallback((cfg: ChatConfig) => {
     try {
@@ -215,10 +225,7 @@ export default function PlaygroundPage() {
           />
         )}
 
-        {/* Turnstile CAPTCHA */}
-        <div className="flex justify-center py-1">
-          <Turnstile onToken={setTurnstileToken} />
-        </div>
+        <Turnstile onToken={setTurnstileToken} />
 
         {/* Mobile agent selector */}
         {!selectedAgent && (

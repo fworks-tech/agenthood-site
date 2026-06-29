@@ -272,45 +272,7 @@ export default function AgentConfigPanel({
           </div>
         </section>
 
-        {/* API Keys / Security Notice */}
-        <section className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-3">
-          <div className="flex items-start gap-2">
-            <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              {meta.requiresKey ? (
-                <>
-                  <p className="text-xs font-medium text-amber-400">API keys are server-side</p>
-                  <p className="mt-0.5 text-xs text-amber-500/70">
-                    By default the server uses its own keys. You can provide your own key in the field above.
-                  </p>
-                </>
-              ) : config.provider === "ollama" ? (
-                <>
-                  <p className="text-xs font-medium text-amber-400">Ollama runs locally</p>
-                  <p className="mt-0.5 text-xs text-amber-500/70">
-                    No API key required. Requests are proxied server-side to localhost.
-                  </p>
-                </>
-              ) : config.provider === "opencode" || config.provider === "opencode-go" ? (
-                <>
-                  <p className="text-xs font-medium text-amber-400">OpenCode cloud</p>
-                  <p className="mt-0.5 text-xs text-amber-500/70">
-                    No API key required for free models. Sign up at opencode.ai for paid models.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs font-medium text-amber-400">Self-hosted provider</p>
-                  <p className="mt-0.5 text-xs text-amber-500/70">
-                    API key is optional if your instance runs without authentication.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
+
 
         {/* Save */}
         {onSave && (
