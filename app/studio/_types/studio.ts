@@ -80,6 +80,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresBaseUrl: true,
     defaultBaseUrl: "http://localhost:4000",
     models: [
+      { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
       { id: "opencode-1", label: "OpenCode 1" },
     ],
   },
