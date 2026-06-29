@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
 import type { ChatMessage } from "../_lib/studio-api";
+import type { ChatConfig } from "../_types/chat-config";
 
 const STORAGE_KEY = "agenthood-studio-conversations";
 
@@ -11,7 +12,12 @@ interface Conversation {
   id: string;
   agentId: string;
   messages: ChatMessage[];
+  config: Partial<ChatConfig>;
   createdAt: number;
+}
+
+interface UseStudioChatOptions {
+  config: Partial<ChatConfig>;
 }
 
 interface UseStudioChatReturn {
@@ -62,7 +68,7 @@ function setActiveId(id: string | null) {
   } catch {}
 }
 
-export function useStudioChat(): UseStudioChatReturn {
+export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatReturn {
   const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(getActiveId);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -85,11 +91,12 @@ export function useStudioChat(): UseStudioChatReturn {
       id: generateId(),
       agentId,
       messages: [],
+      config: options?.config ?? {},
       createdAt: Date.now(),
     };
     const updated = [...conversations, conv];
     persist(updated, conv.id);
-  }, [conversations, persist]);
+  }, [conversations, persist, options?.config]);
 
   const switchConversation = useCallback((id: string) => {
     setActiveConversationId(id);
@@ -124,6 +131,7 @@ export function useStudioChat(): UseStudioChatReturn {
       const res = await sendChat(
         activeConv.agentId,
         updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        activeConv.config ?? {},
         abortController.signal,
       );
 

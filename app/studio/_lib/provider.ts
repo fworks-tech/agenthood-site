@@ -9,6 +9,12 @@ interface ProviderConfig {
   baseUrl?: string;
 }
 
+export interface ChatConfigParams {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
 const PROVIDER_MODELS: Record<ProviderName, string> = {
   anthropic: "claude-sonnet-4-20250514",
   openai: "gpt-4o",
@@ -16,12 +22,12 @@ const PROVIDER_MODELS: Record<ProviderName, string> = {
 };
 
 export type StreamingProvider = {
-  stream: (systemPrompt: string, messages: { role: string; content: string }[], signal?: AbortSignal) => Promise<ReadableStream>;
+  stream: (systemPrompt: string, messages: { role: string; content: string }[], signal?: AbortSignal, config?: ChatConfigParams) => Promise<ReadableStream>;
 };
 
 function createAnthropicProvider(config: ProviderConfig): StreamingProvider {
   return {
-    async stream(systemPrompt, messages, signal) {
+    async stream(systemPrompt, messages, signal, chatConfig) {
       const { Anthropic } = await import("@anthropic-ai/sdk");
       const client = new Anthropic({ apiKey: config.apiKey });
 
@@ -32,10 +38,11 @@ function createAnthropicProvider(config: ProviderConfig): StreamingProvider {
 
       const stream = await client.messages.stream(
         {
-          model: config.model ?? PROVIDER_MODELS.anthropic,
+          model: chatConfig?.model ?? config.model ?? PROVIDER_MODELS.anthropic,
           system: systemPrompt,
-          max_tokens: 4096,
-          messages: apiMessages as any,
+          max_tokens: chatConfig?.maxTokens ?? 4096,
+          temperature: chatConfig?.temperature,
+          messages: apiMessages as { role: "user" | "assistant"; content: string }[],
         },
         { signal },
       );
@@ -67,7 +74,7 @@ function createAnthropicProvider(config: ProviderConfig): StreamingProvider {
 
 function createOpenAIProvider(config: ProviderConfig): StreamingProvider {
   return {
-    async stream(systemPrompt, messages, signal) {
+    async stream(systemPrompt, messages, signal, chatConfig) {
       const OpenAI = (await import("openai")).default;
       const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseUrl });
 
@@ -81,10 +88,11 @@ function createOpenAIProvider(config: ProviderConfig): StreamingProvider {
 
       const stream = await client.chat.completions.create(
         {
-          model: config.model ?? PROVIDER_MODELS.openai,
+          model: chatConfig?.model ?? config.model ?? PROVIDER_MODELS.openai,
           messages: apiMessages,
           stream: true,
-          max_tokens: 4096,
+          max_tokens: chatConfig?.maxTokens ?? 4096,
+          temperature: chatConfig?.temperature,
         },
         { signal },
       );

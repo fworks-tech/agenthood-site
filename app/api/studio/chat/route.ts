@@ -2,6 +2,7 @@ import { LightweightAdapter } from "@/app/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/studio/_data/agents";
 import { ValidationError, StudioError } from "@/app/studio/_lib/errors";
 import { logger } from "@/app/studio/_lib/logger";
+import type { ChatConfigParams } from "@/app/studio/_lib/provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,10 +12,10 @@ const MAX_MESSAGES = 50;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
 
-function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[] } {
+function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[]; config?: ChatConfigParams } {
   if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
 
-  const { agentId, messages } = body as Record<string, unknown>;
+  const { agentId, messages, config } = body as Record<string, unknown>;
 
   if (!agentId || typeof agentId !== "string") throw new ValidationError("agentId must be a string");
   if (!getAgentById(agentId)) throw new ValidationError(`Unknown agent: "${agentId}"`);
@@ -33,16 +34,28 @@ function validateRequest(body: unknown): { agentId: string; messages: { role: st
 
   if (totalChars > MAX_TOTAL_CHARS) throw new ValidationError(`Total message content exceeds ${MAX_TOTAL_CHARS} characters`);
 
-  return { agentId, messages: messages.map((m: any) => ({ role: m.role, content: m.content })) };
+  const validatedConfig: ChatConfigParams = {};
+  if (config && typeof config === "object") {
+    const c = config as Record<string, unknown>;
+    if (typeof c.model === "string") validatedConfig.model = c.model;
+    if (typeof c.temperature === "number" && c.temperature >= 0 && c.temperature <= 2) {
+      validatedConfig.temperature = c.temperature;
+    }
+    if (typeof c.maxTokens === "number" && c.maxTokens > 0) {
+      validatedConfig.maxTokens = c.maxTokens;
+    }
+  }
+
+  return { agentId, messages: messages.map((m: Record<string, unknown>) => ({ role: m.role as string, content: m.content as string })), config: validatedConfig };
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { agentId, messages } = validateRequest(body);
+    const { agentId, messages, config } = validateRequest(body);
 
     const adapter = new LightweightAdapter();
-    const stream = await adapter.chat({ agentId, messages }, request.signal);
+    const stream = await adapter.chat({ agentId, messages, config }, request.signal);
 
     return new Response(stream, {
       headers: {
