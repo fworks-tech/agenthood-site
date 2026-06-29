@@ -76,7 +76,15 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white focus:outline-none"
+        >
+          Skip to main content
+        </a>
+        <div id="main-content" className="flex flex-col flex-1">
+          {children}
+        </div>
         <Analytics />
       </body>
     </html>

@@ -43,6 +43,7 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
     <div className="border border-zinc-800 bg-zinc-950">
       <button
         onClick={onToggle}
+        aria-expanded={open}
         className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-900 transition-colors"
       >
         <div className="flex items-center gap-2">
