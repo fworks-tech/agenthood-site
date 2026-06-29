@@ -1,14 +1,20 @@
 import { agentSkills } from "../_data/agents.generated";
 import { getAgentById } from "../_data/agents";
-import { resolveProvider } from "./provider";
 import { AgentNotFoundError, ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { ChatConfigParams } from "./provider";
+import type { LLMConfig, LLMRequest } from "agenthood/dist/llm/types";
 
 export interface ChatRequest {
   agentId: string;
   messages: { role: string; content: string }[];
-  config?: ChatConfigParams & { baseUrl?: string; apiKey?: string };
+  config?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    provider?: string;
+    baseUrl?: string;
+    apiKey?: string;
+  };
 }
 
 export interface AgenthoodAdapter {
@@ -25,45 +31,64 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const configProvider = req.config?.provider;
-    const provider = configProvider === "opencode" ? "opencode" : agent.preferredProvider;
-    const { name, instance } = resolveProvider(provider, req.config?.baseUrl, req.config?.apiKey);
+    const { LLMRouter } = await import("agenthood/dist/llm");
+    const providerName = req.config?.provider || agent.preferredProvider;
 
-    logger.info("chat.request", { agentId: req.agentId, provider: name, messageCount: req.messages.length, config: req.config });
+    const llmConfig: LLMConfig = {
+      provider: providerName,
+      model: req.config?.model,
+      baseUrl: req.config?.baseUrl,
+      apiKey: req.config?.apiKey,
+    };
 
+    logger.info("chat.request", { agentId: req.agentId, provider: providerName, messageCount: req.messages.length });
     const startTime = performance.now();
 
-    const stream = await instance.stream(systemPrompt, req.messages, signal, req.config);
+    const provider = await LLMRouter.createForMember(providerName as never, llmConfig);
 
-    const wrapped = new ReadableStream({
+    if (req.config?.model) provider.setModel(req.config.model);
+
+    const request: LLMRequest = {
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...req.messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+      ],
+      temperature: req.config?.temperature,
+      maxTokens: req.config?.maxTokens,
+    };
+
+    const asyncGen = await provider.stream(request);
+
+    return new ReadableStream({
       async start(controller) {
-        const reader = stream.getReader();
         let tokenCount = 0;
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            tokenCount++;
-            controller.enqueue(value);
+          for await (const chunk of asyncGen) {
+            if (signal?.aborted) break;
+            if (chunk.delta) {
+              tokenCount++;
+              controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: chunk.delta }) + "\n"));
+            }
+            if (chunk.done) {
+              controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "done" }) + "\n"));
+              break;
+            }
           }
           const duration = Math.round(performance.now() - startTime);
-          logger.info("chat.complete", { agentId: req.agentId, provider: name, durationMs: duration, chunks: tokenCount });
+          logger.info("chat.complete", { agentId: req.agentId, provider: providerName, durationMs: duration, chunks: tokenCount });
         } catch (err) {
           if (signal?.aborted) {
-            logger.info("chat.aborted", { agentId: req.agentId, provider: name });
+            logger.info("chat.aborted", { agentId: req.agentId, provider: providerName });
             controller.close();
             return;
           }
           const msg = err instanceof Error ? err.message : String(err);
-          logger.error("chat.error", { agentId: req.agentId, provider: name, error: msg });
+          logger.error("chat.error", { agentId: req.agentId, provider: providerName, error: msg });
           controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: "An error occurred while processing your request." }) + "\n"));
         } finally {
           controller.close();
-          reader.releaseLock();
         }
       },
     });
-
-    return wrapped;
   }
 }

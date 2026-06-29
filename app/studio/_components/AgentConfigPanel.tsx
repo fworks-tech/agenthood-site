@@ -85,7 +85,7 @@ export default function AgentConfigPanel({
           </select>
           {selectedAgent && (
             <p className="mt-1 text-xs text-zinc-500">
-              {selectedAgent.name} &amp;middot; {selectedAgent.role}
+              {selectedAgent.name} · {selectedAgent.role}
             </p>
           )}
         </section>
@@ -127,7 +127,7 @@ export default function AgentConfigPanel({
             className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 focus:border-emerald-500 focus:outline-none"
             placeholder="System prompt loaded from agent skill file..."
           />
-          <p className="mt-1 text-xs text-zinc-600">Read-only. Synced from the agent&amp;apos;s SKILL.md</p>
+          <p className="mt-1 text-xs text-zinc-600">Read-only. Synced from the agent&apos;s SKILL.md</p>
         </section>
 
         {/* Model & Behavior */}

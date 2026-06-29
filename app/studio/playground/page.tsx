@@ -10,6 +10,7 @@ import LiveLogs from "../_components/LiveLogs";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
+import { agentSkills } from "../_data/agents.generated";
 import type { LogEntry } from "../_components/LiveLogs";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
@@ -46,10 +47,12 @@ export default function PlaygroundPage() {
   const handleSelectAgent = useCallback((agent: AgentEntry) => {
     setSelectedAgent(agent);
     const defaultModel = getDefaultModel(agent.preferredProvider as ChatConfig["provider"]);
+    const systemPrompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
     setConfig((prev) => ({
       ...prev,
       provider: agent.preferredProvider as ChatConfig["provider"],
       model: defaultModel,
+      systemPrompt,
     }));
     chat.newConversation(agent.id);
     addLog("info", `agent selected: ${agent.id}`);
@@ -80,7 +83,7 @@ export default function PlaygroundPage() {
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="text-sm font-medium text-zinc-300">{selectedAgent.name}</span>
-              <span className="text-xs text-zinc-600">&amp;middot; {selectedAgent.role}</span>
+              <span className="text-xs text-zinc-600">· {selectedAgent.role}</span>
             </div>
           )}
         </div>
