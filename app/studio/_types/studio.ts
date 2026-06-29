@@ -26,9 +26,12 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresKey: true,
     requiresBaseUrl: false,
     models: [
-      { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
-      { id: "claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet" },
-      { id: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+      { id: "claude-fable-5", label: "Claude Fable 5" },
+      { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
+      { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
+      { id: "claude-opus-4-7", label: "Claude Opus 4.7" },
+      { id: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
     ],
   },
   openai: {
@@ -36,9 +39,9 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresKey: true,
     requiresBaseUrl: false,
     models: [
-      { id: "gpt-4o", label: "GPT-4o" },
-      { id: "gpt-4o-mini", label: "GPT-4o Mini" },
-      { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
+      { id: "gpt-5.5", label: "GPT-5.5" },
+      { id: "gpt-5.4", label: "GPT-5.4" },
+      { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
     ],
   },
   groq: {
@@ -47,8 +50,12 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresBaseUrl: false,
     models: [
       { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+      { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B" },
       { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
-      { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
+      { id: "openai/gpt-oss-20b", label: "GPT-OSS 20B" },
+      { id: "qwen/qwen3-32b", label: "Qwen3 32B" },
+      { id: "qwen/qwen3.6-27b", label: "Qwen3.6 27B" },
+      { id: "meta-llama/llama-4-scout-17b-16e-instruct", label: "Llama 4 Scout 17B" },
     ],
   },
   ollama: {
@@ -64,6 +71,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
       { id: "phi3", label: "Phi-3" },
       { id: "gemma2", label: "Gemma 2" },
       { id: "qwen2.5-coder", label: "Qwen 2.5 Coder" },
+      { id: "deepseek-r1", label: "DeepSeek R1" },
     ],
   },
   opencode: {
