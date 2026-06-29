@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useAgentDirectory } from "../_hooks/useAgentDirectory";
 import { useStudioChat } from "../_hooks/useStudioChat";
 import AgentConfigPanel from "../_components/AgentConfigPanel";
@@ -28,6 +28,10 @@ export default function PlaygroundPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
+
+  useEffect(() => {
+    setConfigOpen(window.innerWidth >= 768);
+  }, []);
 
   const addLog = useCallback((level: LogEntry["level"], message: string) => {
     const time = new Date().toLocaleTimeString("en-US", { hour12: false });
@@ -70,12 +74,19 @@ export default function PlaygroundPage() {
 
   return (
     <div className="h-screen bg-zinc-950 py-12">
-    <div className="flex h-full max-w-7xl mx-auto">
+    {configOpen && (
+      <div
+        className="fixed inset-0 bg-black/50 z-10 md:hidden"
+        onClick={() => setConfigOpen(false)}
+      />
+    )}
+    <div className="relative flex h-full max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
       <div
         className={`${
           configOpen ? "w-72" : "w-0"
-        } shrink-0 transition-all duration-200 overflow-hidden`}
+        } shrink-0 transition-all duration-200 overflow-hidden
+        absolute inset-y-0 left-0 z-20 md:relative md:inset-auto`}
       >
         {configOpen && (
         <AgentConfigPanel
@@ -96,7 +107,7 @@ export default function PlaygroundPage() {
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); setConfigOpen((prev) => !prev); }}
-          className="relative z-10 flex items-center justify-center w-8 shrink-0 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
+          className="relative z-10 flex items-center justify-center w-10 md:w-8 shrink-0 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
           aria-label={configOpen ? "Close config panel" : "Open config panel"}
         >
           <svg className={`h-4 w-4 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

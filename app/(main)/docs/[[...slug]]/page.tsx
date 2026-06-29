@@ -3,6 +3,10 @@ import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
+
+function stripFrontmatter(markdown: string): string {
+  return markdown.replace(/^---[\s\S]*?---\n?/, "");
+}
 import Breadcrumbs from "../../../components/Breadcrumbs";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "docs", "manifest.json");
@@ -175,9 +179,9 @@ function SectionIndex({ slug, entries, title }: { slug: string[]; entries: Manif
             <li key={entry.slug.join("/")}>
               <Link
                 href={href}
-                className="block bg-zinc-900 border border-zinc-800/80 rounded-xl px-5 py-4 hover:border-zinc-600 transition-colors"
+                className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
               >
-                <span className="text-white font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
+                {entry.title || displayName(entry.slug[entry.slug.length - 1])}
               </Link>
             </li>
           );
@@ -202,7 +206,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const entry = findEntry(manifest, slug);
   if (entry) {
     const filePath = path.join(process.cwd(), "content", entry.path);
-    let markdown = fs.readFileSync(filePath, "utf8");
+    let markdown = stripFrontmatter(fs.readFileSync(filePath, "utf8"));
     const isMemberPage = slug.length === 2 && slug[0] === "members";
     if (isMemberPage) {
       const icon = MEMBER_ICONS[slug[1]];
