@@ -17,6 +17,7 @@ const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN;
 
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
   provider?: string;
+  apiKey?: string;
 };
 
 function generateId(): string {
@@ -70,6 +71,9 @@ function validateConfig(config: unknown): ChatRequestConfig {
     }
     validateBaseUrl(c.baseUrl);
     validated.baseUrl = c.baseUrl;
+  }
+  if (typeof c.apiKey === "string") {
+    validated.apiKey = c.apiKey;
   }
 
   return validated;
