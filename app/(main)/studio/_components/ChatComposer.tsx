@@ -75,7 +75,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
   };
 
   return (
-    <div className="border border-zinc-800 bg-zinc-950 px-4 py-3">
+    <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
       {imageWarning && (
         <div className="mx-auto mb-2 max-w-3xl rounded-md border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-400">
           {imageWarning}

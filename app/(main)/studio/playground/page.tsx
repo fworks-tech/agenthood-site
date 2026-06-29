@@ -74,7 +74,7 @@ export default function PlaygroundPage() {
       <div
         className={`${
           configOpen ? "w-72" : "w-0"
-        } shrink-0 transition-all duration-200 overflow-hidden border border-zinc-800`}
+        } shrink-0 transition-all duration-200 overflow-hidden`}
       >
         {configOpen && (
           <AgentConfigPanel
@@ -88,10 +88,10 @@ export default function PlaygroundPage() {
       </div>
 
       {/* Toggle button — sits between the two columns */}
-      <div className="flex items-center border border-zinc-800">
+      <div className="flex items-center border-l border-r border-zinc-800">
         <button
           onClick={() => setConfigOpen(!configOpen)}
-          className="flex h-10 w-5 items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors rounded-r-sm"
+          className="flex h-10 w-5 items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
           aria-label={configOpen ? "Close config panel" : "Open config panel"}
         >
           <svg className={`h-3.5 w-3.5 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -103,7 +103,7 @@ export default function PlaygroundPage() {
       {/* Right Column — Chat + Logs */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between border border-zinc-800 px-4 py-2.5">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
           <div>
             <h1 className="text-sm font-semibold text-zinc-200">Playground</h1>
             <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
@@ -155,7 +155,7 @@ export default function PlaygroundPage() {
 
         {/* Mobile agent selector */}
         {!selectedAgent && (
-          <div className="block border border-zinc-800 p-4 md:hidden">
+          <div className="block border-t border-zinc-800 p-4 md:hidden">
             <select
               value=""
               onChange={(e) => {
