@@ -81,9 +81,12 @@ function rewriteHref(href: string, basePath: string): string {
   const relativePath = normalized.replace(/^\/+/, "");
 
   if (isDocsPath(relativePath)) {
-    let sitePath = relativePath.startsWith("docs/")
-      ? relativePath.slice(5)
-      : relativePath;
+    let sitePath = relativePath;
+    if (sitePath.startsWith("docs/academy/") || sitePath === "docs/academy") {
+      sitePath = sitePath.slice(5);
+    } else if (sitePath.startsWith("docs/adr/") || sitePath === "docs/adr") {
+      sitePath = sitePath.slice(5);
+    }
     sitePath = sitePath.replace(/\.md$/i, "").replace(/\/+$/, "");
 
     if (sitePath.endsWith("/README")) {

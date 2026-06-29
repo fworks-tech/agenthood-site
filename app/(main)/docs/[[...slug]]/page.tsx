@@ -123,18 +123,25 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
 
       <div className="space-y-12">
         {sortedSections.map((section) => {
-          const entries = grouped.get(section)!;
+          const all = grouped.get(section)!;
+          const entries = all.filter((a) =>
+            !all.some((b) =>
+              b.slug.length < a.slug.length &&
+              b.slug.length > 0 &&
+              b.slug.every((s, i) => s === a.slug[i])
+            )
+          );
           const sectionHref = `/docs/${section}/`;
           const sectionLabel = SECTION_LABELS[section] || displayName(section);
 
           return (
             <section key={section}>
               <h2 className="text-2xl font-semibold text-white mb-4">
-                <Link href={sectionHref} className="hover:text-emerald-400 transition-colors">
+                <Link href={sectionHref} className="text-emerald-400 hover:text-emerald-300 transition-colors">
                   {sectionLabel}
                 </Link>
               </h2>
-              <ul className="space-y-2">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {entries.map((entry) => {
                   const isReadme = entry.slug.length === 1;
                   if (isReadme) return null;
@@ -145,7 +152,7 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
                         href={href}
                         className="text-emerald-400 hover:text-emerald-300 transition-colors"
                       >
-                        <span className="text-zinc-200 font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
+                        <span className="font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
                       </Link>
                     </li>
                   );
@@ -166,7 +173,7 @@ function SectionIndex({ slug, entries, title }: { slug: string[]; entries: Manif
       <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-8">
         {title}
       </h1>
-      <ul className="space-y-3">
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {entries.map((entry) => {
           const href = `/docs/${entry.slug.join("/")}/`;
           return (
@@ -204,13 +211,14 @@ export default async function DocsPage({ params }: DocsPageProps) {
     const isMemberPage = slug.length === 2 && slug[0] === "members";
     if (isMemberPage) {
       const icon = MEMBER_ICONS[slug[1]];
-      if (icon) markdown = `${icon} ${markdown}`;
+      if (icon) markdown = markdown.replace(/^(#\s+)/, `$1${icon} `);
     }
+    const basePath = path.posix.dirname(entry.path);
     return (
       <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
         <div className="max-w-3xl mx-auto px-6 py-16">
           <Breadcrumbs segments={["docs", ...slug]} />
-          <MarkdownRenderer basePath="docs">{markdown}</MarkdownRenderer>
+          <MarkdownRenderer basePath={basePath}>{markdown}</MarkdownRenderer>
         </div>
       </main>
     );
