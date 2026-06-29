@@ -1,5 +1,5 @@
 import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig } from "../_types/chat-config";
+import type { ChatConfig } from "../_types/studio";
 
 export interface ChatMessage {
   role: "user" | "assistant";

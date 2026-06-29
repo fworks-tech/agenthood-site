@@ -2,8 +2,9 @@
 
 import { useId } from "react";
 import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig } from "../_types/chat-config";
-import { PROVIDER_MODELS, getDefaultModel } from "../_types/chat-config";
+import type { ChatConfig, Provider } from "../_types/studio";
+import { PROVIDER_MODELS, getDefaultModel, getProviderMeta, CODE_AGENTS } from "../_types/studio";
+import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
@@ -21,6 +22,7 @@ export default function AgentConfigPanel({
   onChangeAgent,
 }: AgentConfigPanelProps) {
   const panelId = useId();
+  const meta = getProviderMeta(config.provider);
 
   const categories = [
     { key: "engineering", label: "Engineering" },
@@ -28,6 +30,20 @@ export default function AgentConfigPanel({
     { key: "lifecycle", label: "Lifecycle" },
     { key: "knowledge", label: "Knowledge" },
   ];
+
+  const handleProviderChange = (provider: string) => {
+    const p = provider as Provider;
+    const m = getProviderMeta(p);
+    onChangeConfig({
+      ...config,
+      provider: p,
+      model: getDefaultModel(p),
+      baseUrl: m.defaultBaseUrl ?? config.baseUrl,
+    });
+  };
+
+  const isCodeAgent = selectedAgent && CODE_AGENTS.has(selectedAgent.id);
+  const isOpenCodeSuggestion = isCodeAgent && config.provider !== "opencode";
 
   return (
     <div className="flex h-full flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950">
@@ -49,12 +65,7 @@ export default function AgentConfigPanel({
               const agent = agents.find((a) => a.id === e.target.value);
               if (agent) {
                 onChangeAgent(agent);
-                const defaultModel = getDefaultModel(agent.preferredProvider);
-                onChangeConfig({
-                  ...config,
-                  provider: agent.preferredProvider as ChatConfig["provider"],
-                  model: defaultModel,
-                });
+                handleProviderChange(agent.preferredProvider);
               }
             }}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
@@ -78,6 +89,29 @@ export default function AgentConfigPanel({
             </p>
           )}
         </section>
+
+        {/* OpenCode affinity hint */}
+        {isOpenCodeSuggestion && (
+          <section className="rounded-lg border border-emerald-900/40 bg-emerald-950/20 p-3">
+            <div className="flex items-start gap-2">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <div>
+                <p className="text-xs font-medium text-emerald-300">Code-optimized provider available</p>
+                <p className="mt-0.5 text-xs text-emerald-500/70">
+                  {selectedAgent!.name} works best with a code-optimized provider.
+                </p>
+                <button
+                  onClick={() => handleProviderChange("opencode")}
+                  className="mt-1.5 rounded border border-emerald-700 px-2 py-0.5 text-xs text-emerald-400 hover:bg-emerald-900/30 transition-colors"
+                >
+                  Switch to OpenCode
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* System Prompt */}
         <section>
@@ -108,16 +142,12 @@ export default function AgentConfigPanel({
               <select
                 id={`${panelId}-provider`}
                 value={config.provider}
-                onChange={(e) => {
-                  const provider = e.target.value;
-                  const defaultModel = getDefaultModel(provider);
-                  onChangeConfig({ ...config, provider: provider as ChatConfig["provider"], model: defaultModel });
-                }}
+                onChange={(e) => handleProviderChange(e.target.value)}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
               >
-                <option value="anthropic">Anthropic</option>
-                <option value="openai">OpenAI</option>
-                <option value="groq">Groq</option>
+                {(Object.entries(PROVIDER_MODELS) as [Provider, typeof meta][]).map(([key, m]) => (
+                  <option key={key} value={key}>{m.label}</option>
+                ))}
               </select>
             </div>
 
@@ -131,11 +161,28 @@ export default function AgentConfigPanel({
                 onChange={(e) => onChangeConfig({ ...config, model: e.target.value })}
                 className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
               >
-                {PROVIDER_MODELS[config.provider]?.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                {meta.models.map((m) => (
+                  <option key={m.id} value={m.id}>{m.label}</option>
                 ))}
               </select>
             </div>
+
+            {/* Base URL (for Ollama / OpenCode) */}
+            {meta.requiresBaseUrl && (
+              <div>
+                <label htmlFor={`${panelId}-baseurl`} className="mb-1 block text-xs text-zinc-500">
+                  Base URL
+                </label>
+                <input
+                  id={`${panelId}-baseurl`}
+                  type="text"
+                  value={config.baseUrl ?? meta.defaultBaseUrl ?? ""}
+                  onChange={(e) => onChangeConfig({ ...config, baseUrl: e.target.value })}
+                  placeholder={meta.defaultBaseUrl}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+            )}
 
             <div>
               <label htmlFor={`${panelId}-temp`} className="mb-1 block text-xs text-zinc-500">
@@ -179,6 +226,11 @@ export default function AgentConfigPanel({
           </div>
         </section>
 
+        {/* Ollama connectivity check */}
+        {config.provider === "ollama" && (
+          <OllamaConnectivityCheck baseUrl={config.baseUrl ?? "http://localhost:11434"} />
+        )}
+
         {/* Safety */}
         <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
           <h3 className="mb-2 text-xs font-semibold text-zinc-400">Safety &amp; Limits</h3>
@@ -202,17 +254,35 @@ export default function AgentConfigPanel({
           </div>
         </section>
 
-        {/* API Keys Notice */}
+        {/* API Keys / Security Notice */}
         <section className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-3">
           <div className="flex items-start gap-2">
             <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-xs font-medium text-amber-400">API keys are server-side</p>
-              <p className="mt-0.5 text-xs text-amber-500/70">
-                Provider keys are stored in server environment variables. The browser never sees your keys.
-              </p>
+              {meta.requiresKey ? (
+                <>
+                  <p className="text-xs font-medium text-amber-400">API keys are server-side</p>
+                  <p className="mt-0.5 text-xs text-amber-500/70">
+                    Provider keys are stored in server environment variables. The browser never sees your keys.
+                  </p>
+                </>
+              ) : config.provider === "ollama" ? (
+                <>
+                  <p className="text-xs font-medium text-amber-400">Ollama runs locally</p>
+                  <p className="mt-0.5 text-xs text-amber-500/70">
+                    No API key required. Requests go directly from your browser to localhost.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs font-medium text-amber-400">Self-hosted provider</p>
+                  <p className="mt-0.5 text-xs text-amber-500/70">
+                    API key is optional if your instance runs without authentication.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </section>

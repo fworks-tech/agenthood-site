@@ -8,7 +8,7 @@ import type { ChatConfigParams } from "./provider";
 export interface ChatRequest {
   agentId: string;
   messages: { role: string; content: string }[];
-  config?: ChatConfigParams;
+  config?: ChatConfigParams & { baseUrl?: string; apiKey?: string };
 }
 
 export interface AgenthoodAdapter {
@@ -25,7 +25,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const { name, instance } = resolveProvider(agent.preferredProvider);
+    const configProvider = req.config?.provider;
+    const provider = configProvider === "opencode" ? "opencode" : agent.preferredProvider;
+    const { name, instance } = resolveProvider(provider, req.config?.baseUrl, req.config?.apiKey);
 
     logger.info("chat.request", { agentId: req.agentId, provider: name, messageCount: req.messages.length, config: req.config });
 

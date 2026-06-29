@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
+import { streamOllamaClientSide } from "../_lib/ollama-client";
 import type { ChatMessage } from "../_lib/studio-api";
-import type { ChatConfig } from "../_types/chat-config";
+import type { ChatConfig } from "../_types/studio";
 
 const STORAGE_KEY = "agenthood-studio-conversations";
 
@@ -126,17 +127,34 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
 
     const abortController = new AbortController();
     abortRef.current = abortController;
+    const config = activeConv.config;
+    const isOllama = config?.provider === "ollama";
 
     try {
-      const res = await sendChat(
-        activeConv.agentId,
-        updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-        activeConv.config ?? {},
-        abortController.signal,
-      );
+      let res: Response;
+
+      if (isOllama) {
+        res = await streamOllamaClientSide(
+          {
+            baseUrl: config?.baseUrl ?? "http://localhost:11434",
+            model: config?.model ?? "llama3.2",
+            messages: updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+            temperature: config?.temperature,
+            maxTokens: config?.maxTokens,
+          },
+          abortController.signal,
+        );
+      } else {
+        res = await sendChat(
+          activeConv.agentId,
+          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+          config ?? {},
+          abortController.signal,
+        );
+      }
 
       if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
+        throw new Error(isOllama ? `Ollama error: ${res.status}` : `Server error: ${res.status}`);
       }
 
       let streamedContent = "";
