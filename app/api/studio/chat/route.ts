@@ -98,7 +98,8 @@ export async function POST(request: Request) {
     const { agentId, messages: rawMessages, config: rawConfig } = body as Record<string, unknown>;
 
     if (!agentId || typeof agentId !== "string") throw new ValidationError("agentId must be a string");
-    if (!getAgentById(agentId)) throw new ValidationError(`Unknown agent: "${agentId}"`);
+    const agent = getAgentById(agentId);
+    if (!agent) throw new ValidationError(`Unknown agent: "${agentId}"`);
 
     const messages = validateMessages(rawMessages);
     const config = validateConfig(rawConfig);
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
       },
     });
 
-    logger.info("chat.request", { agentId, provider: config.provider, messageCount: messages.length, requestId });
+    logger.info("chat.request", { agentId, agentName: agent.name, provider: config.provider, model: config.model, messageCount: messages.length, requestId });
     return response;
   } catch (err) {
     if (err instanceof StudioError) {
