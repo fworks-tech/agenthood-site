@@ -1,8 +1,8 @@
-import { LightweightAdapter } from "@/app/studio/_lib/agenthood-adapter";
-import { getAgentById } from "@/app/studio/_data/agents";
-import { ValidationError, StudioError } from "@/app/studio/_lib/errors";
-import { logger } from "@/app/studio/_lib/logger";
-import type { ChatConfig } from "@/app/studio/_types/studio";
+import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
+import { getAgentById } from "@/app/(main)/studio/_data/agents";
+import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
+import { logger } from "@/app/(main)/studio/_lib/logger";
+import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

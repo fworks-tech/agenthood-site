@@ -11,13 +11,21 @@ interface ChatComposerProps {
 
 export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: ChatComposerProps) {
   const [input, setInput] = useState("");
+  const [imageWarning, setImageWarning] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const warningTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isStreaming && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [isStreaming]);
+
+  const showWarning = (msg: string) => {
+    setImageWarning(msg);
+    if (warningTimeout.current) clearTimeout(warningTimeout.current);
+    warningTimeout.current = setTimeout(() => setImageWarning(null), 5000);
+  };
 
   const handleSend = () => {
     const trimmed = input.trim();
@@ -44,8 +52,24 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        e.preventDefault();
+        showWarning("This model does not support image input. Text only.");
+        return;
+      }
+    }
+  };
+
   return (
     <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
+      {imageWarning && (
+        <div className="mx-auto mb-2 max-w-3xl rounded-md border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-400">
+          {imageWarning}
+        </div>
+      )}
       <div className="mx-auto flex max-w-3xl items-end gap-2">
         <textarea
           ref={textareaRef}
@@ -55,6 +79,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
             adjustHeight();
           }}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           placeholder="Type a message..."
           rows={1}
           disabled={isStreaming || disabled}
