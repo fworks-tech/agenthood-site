@@ -10,15 +10,20 @@ interface LogEvent {
   [key: string]: unknown;
 }
 
+const SENSITIVE_KEYS = new Set(["content", "message", "prompt", "api_key", "secret", "token"]);
+
+function isKeySensitive(key: string): boolean {
+  const lower = key.toLowerCase();
+  if (SENSITIVE_KEYS.has(lower)) return true;
+  if (lower.includes("apikey") || lower.includes("api_key")) return true;
+  if (lower.endsWith("secret") || lower.endsWith("token")) return true;
+  return false;
+}
+
 function sanitize(meta: Record<string, unknown>): Record<string, unknown> {
-  const blocked = ["content", "message", "prompt", "apiKey", "key", "secret", "token"];
   const safe: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(meta)) {
-    if (blocked.some((b) => key.toLowerCase().includes(b.toLowerCase()))) {
-      safe[key] = "[REDACTED]";
-    } else {
-      safe[key] = value;
-    }
+    safe[key] = isKeySensitive(key) ? "[REDACTED]" : value;
   }
   return safe;
 }
