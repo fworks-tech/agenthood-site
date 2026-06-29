@@ -69,7 +69,7 @@ export default function PlaygroundPage() {
   }, [config.provider, config.model, addLog]);
 
   return (
-    <div className="flex h-screen bg-zinc-950 max-w-7xl mx-auto">
+    <div className="flex flex-1 min-h-0 bg-zinc-950 max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
       <div
         className={`${

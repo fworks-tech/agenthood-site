@@ -1,11 +1,10 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
-const FEATURES = [
-  { label: "16 agents", desc: "architect, reviewer, tester, debugger, auditor, and more" },
-  { label: "5 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode" },
-  { label: "Skill files", desc: "prompts synced from the agenthood repo" },
-  { label: "Rate limited", desc: "server-side guardrails on every request" },
-];
+export const metadata: Metadata = {
+  title: "Agenthood Studio — Try AI agents in your browser",
+  description: "Chat with 16 specialized AI agents live. Select your provider and start a conversation.",
+};
 
 export default function StudioHubPage() {
   return (
@@ -81,7 +80,7 @@ export default function StudioHubPage() {
             <h3 className="text-sm font-semibold text-zinc-200">Server-side routing</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
               Every request goes through the agenthood LLMRouter with automatic failover.
-              Rate limited, validated, and logged server-side. Your keys stay on the server.
+              Rate limited, validated, and logged server-side. Your keys are never stored on the server.
             </p>
           </div>
 
@@ -96,20 +95,6 @@ export default function StudioHubPage() {
               Chat history persists in your browser between sessions.
               Switch between conversations, clear history, or start fresh.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats row */}
-      <section className="mx-auto max-w-4xl px-6 pb-20">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {FEATURES.map((f) => (
-              <div key={f.label} className="text-center">
-                <div className="text-2xl font-bold text-zinc-100">{f.label.split(" ")[0]}</div>
-                <div className="mt-0.5 text-xs text-zinc-500">{f.desc}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
