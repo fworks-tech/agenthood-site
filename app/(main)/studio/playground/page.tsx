@@ -15,16 +15,27 @@ import type { LogEntry } from "../_components/LiveLogs";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
 
+function loadSavedConfig(): Partial<ChatConfig> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem("agenthood-studio-config");
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
-  const [config, setConfig] = useState<ChatConfig>({
+  const [config, setConfig] = useState<ChatConfig>(() => ({
     provider: "anthropic",
     model: "claude-sonnet-4-20250514",
     temperature: 0.7,
     maxTokens: 4096,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
-  });
+    ...loadSavedConfig(),
+  }));
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
@@ -39,6 +50,17 @@ export default function PlaygroundPage() {
   }, []);
 
   const chat = useStudioChat({ config });
+  const { conversations, activeConversationId } = chat;
+
+  useEffect(() => {
+    if (!isLoading && !error) {
+      addLog("info", `Agents loaded: ${agents.length} available`);
+      const saved = loadSavedConfig();
+      if (saved.provider) {
+        addLog("info", `Loaded saved config: ${saved.provider} · ${saved.model ?? "default"}`);
+      }
+    }
+  }, [isLoading, error, agents.length, addLog]);
 
   const handleSendMessage = useCallback(async (content: string) => {
     if (!selectedAgent) return;
@@ -53,6 +75,15 @@ export default function PlaygroundPage() {
       addLog("error", `✗ ${selectedAgent.icon ?? ""} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [chat, selectedAgent, config.provider, config.model, addLog]);
+
+  const handleSaveConfig = useCallback((cfg: ChatConfig) => {
+    try {
+      localStorage.setItem("agenthood-studio-config", JSON.stringify(cfg));
+      addLog("info", "Configuration saved locally");
+    } catch {
+      addLog("error", "Failed to save configuration");
+    }
+  }, [addLog]);
 
   const handleSelectAgent = useCallback((agent: AgentEntry) => {
     const provider = agent.preferredProvider as Provider;
@@ -71,6 +102,19 @@ export default function PlaygroundPage() {
     }
     setConfig(newConfig);
   }, [config.provider, config.model, addLog]);
+
+  const handleAbortStream = useCallback(() => {
+    if (chat.isStreaming && selectedAgent) {
+      addLog("warn", "⏹ Streaming cancelled by user");
+    }
+    chat.abortStream();
+  }, [chat, selectedAgent, addLog]);
+
+  useEffect(() => {
+    if (chat.isStreaming && selectedAgent) {
+      addLog("info", `↻ Streaming response from ${selectedAgent.name}...`);
+    }
+  }, [chat.isStreaming, selectedAgent?.name, addLog]);
 
   return (
     <div className="h-screen bg-zinc-950 py-12">
@@ -97,6 +141,7 @@ export default function PlaygroundPage() {
           config={config}
           onChangeConfig={handleConfigChange}
           onChangeAgent={handleSelectAgent}
+          onSave={handleSaveConfig}
         />
         )}
       </div>
@@ -163,7 +208,7 @@ export default function PlaygroundPage() {
         {selectedAgent && (
           <ChatComposer
             onSend={handleSendMessage}
-            onStop={chat.abortStream}
+            onStop={handleAbortStream}
             isStreaming={chat.isStreaming}
           />
         )}

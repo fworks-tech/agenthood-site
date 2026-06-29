@@ -14,6 +14,7 @@ interface AgentConfigPanelProps {
   config: ChatConfig;
   onChangeConfig: (config: ChatConfig) => void;
   onChangeAgent: (agent: AgentEntry) => void;
+  onSave?: (config: ChatConfig) => void;
 }
 
 export default function AgentConfigPanel({
@@ -24,6 +25,7 @@ export default function AgentConfigPanel({
   config,
   onChangeConfig,
   onChangeAgent,
+  onSave,
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -309,6 +311,17 @@ export default function AgentConfigPanel({
             </div>
           </div>
         </section>
+
+        {/* Save */}
+        {onSave && (
+          <button
+            type="button"
+            onClick={() => onSave(config)}
+            className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
+          >
+            Save configuration
+          </button>
+        )}
       </div>
     </div>
   );

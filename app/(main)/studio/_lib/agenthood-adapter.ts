@@ -1,5 +1,5 @@
 import { agentSkills } from "../_data/agents.generated";
-import { AgentNotFoundError, ValidationError } from "./errors";
+import { ValidationError } from "./errors";
 import { logger } from "./logger";
 import type { LLMRequest, LLMConfig } from "agenthood/dist/llm/types";
 
@@ -35,9 +35,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const { LLMRouter } = await import("agenthood/dist/llm");
     const providerName = req.config?.provider || "anthropic";
-
     if (!isKnownProvider(providerName)) {
       throw new ValidationError(`Unknown provider: "${providerName}"`);
     }
@@ -53,15 +51,6 @@ export class LightweightAdapter implements AgenthoodAdapter {
       cooldownMs: 30000,
     };
 
-    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER });
-    const startTime = performance.now();
-
-    const provider = await LLMRouter.fromConfig(llmConfig);
-
-    if (req.config?.model) {
-      try { provider.setModel(req.config.model); } catch { /* use provider default */ }
-    }
-
     const llmRequest: LLMRequest = {
       messages: [
         { role: "system", content: systemPrompt },
@@ -71,12 +60,20 @@ export class LightweightAdapter implements AgenthoodAdapter {
       maxTokens: req.config?.maxTokens,
     };
 
-    const asyncGen = await provider.stream(llmRequest);
+    const startTime = performance.now();
+    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER });
 
     return new ReadableStream({
       async start(controller) {
         let tokenCount = 0;
         try {
+          const { LLMRouter } = await import("agenthood/dist/llm");
+          const provider = await LLMRouter.fromConfig(llmConfig);
+          if (req.config?.model) {
+            try { provider.setModel(req.config.model); } catch { }
+          }
+          const asyncGen = await provider.stream(llmRequest);
+
           for await (const chunk of asyncGen) {
             if (signal?.aborted) break;
             if (chunk.delta) {
@@ -98,7 +95,13 @@ export class LightweightAdapter implements AgenthoodAdapter {
           }
           const msg = err instanceof Error ? err.message : String(err);
           logger.error("chat.error", { agentId: req.agentId, error: msg });
-          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: msg }) + "\n"));
+
+          const isMissingKey = /(?:api[_-]?key|not set|auth)/i.test(msg) || msg.includes("MissingApiKeyError");
+          const errorMessage = isMissingKey
+            ? "No API key configured for the selected provider. Provide a key in the config panel, or ensure the server has the provider's API key set."
+            : msg;
+
+          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: errorMessage }) + "\n"));
         } finally {
           controller.close();
         }
