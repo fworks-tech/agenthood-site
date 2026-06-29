@@ -1,17 +1,9 @@
-import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig } from "../_types/studio";
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   id: string;
-}
-
-export async function fetchAgents(): Promise<AgentEntry[]> {
-  const res = await fetch("/api/studio/agents");
-  if (!res.ok) throw new Error("Failed to fetch agents");
-  const data = await res.json();
-  return data.agents;
 }
 
 export async function sendChat(

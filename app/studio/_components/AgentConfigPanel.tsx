@@ -272,7 +272,7 @@ export default function AgentConfigPanel({
                 <>
                   <p className="text-xs font-medium text-amber-400">Ollama runs locally</p>
                   <p className="mt-0.5 text-xs text-amber-500/70">
-                    No API key required. Requests go directly from your browser to localhost.
+                    No API key required. Requests are proxied server-side to localhost.
                   </p>
                 </>
               ) : (
