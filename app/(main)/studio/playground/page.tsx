@@ -69,12 +69,12 @@ export default function PlaygroundPage() {
   }, [config.provider, config.model, addLog]);
 
   return (
-    <div className="relative flex h-screen bg-zinc-950 max-w-7xl mx-auto">
+    <div className="relative flex h-full bg-zinc-950 max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
       <div
         className={`${
           configOpen ? "w-72" : "w-0"
-        } shrink-0 transition-all duration-200 overflow-hidden border-r border-zinc-800`}
+        } shrink-0 transition-all duration-200 overflow-hidden border border-zinc-800`}
       >
         <AgentConfigPanel
           agents={agents}
@@ -88,7 +88,7 @@ export default function PlaygroundPage() {
       {/* Toggle config panel button */}
       <button
         onClick={() => setConfigOpen(!configOpen)}
-        className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-900 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors ${
+        className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-md border border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors ${
           configOpen ? "left-72" : "left-0"
         }`}
         style={{ transition: "left 200ms" }}
@@ -102,7 +102,7 @@ export default function PlaygroundPage() {
       {/* Right Column — Chat + Logs */}
       <div className="flex flex-1 flex-col min-w-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
+        <div className="flex items-center justify-between border border-zinc-800 px-4 py-2.5">
           <div>
             <h1 className="text-sm font-semibold text-zinc-200">Playground</h1>
             <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
@@ -154,7 +154,7 @@ export default function PlaygroundPage() {
 
         {/* Mobile agent selector */}
         {!selectedAgent && (
-          <div className="block border-t border-zinc-800 p-4 md:hidden">
+          <div className="block border border-zinc-800 p-4 md:hidden">
             <select
               value=""
               onChange={(e) => {

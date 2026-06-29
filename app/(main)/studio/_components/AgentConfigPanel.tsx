@@ -46,7 +46,7 @@ export default function AgentConfigPanel({
   const isOpenCodeSuggestion = isCodeAgent && config.provider !== "opencode" && config.provider !== "opencode-go";
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950">
+    <div className="flex h-full flex-col overflow-y-auto border border-zinc-800 bg-zinc-950">
       <div className="border-b border-zinc-800 px-4 py-3">
         <h2 className="text-sm font-semibold text-zinc-200">Agent Configuration</h2>
         <p className="mt-0.5 text-xs text-zinc-500">Select a Society member and tune behavior</p>

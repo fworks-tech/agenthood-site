@@ -26,7 +26,7 @@ export default function StudioShell({
       <div
         className={`${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-40 w-64 border-r border-zinc-800 bg-zinc-900 transition-transform md:relative md:translate-x-0`}
+        } fixed inset-y-0 left-0 z-40 w-64 border border-zinc-800 bg-zinc-900 transition-transform md:relative md:translate-x-0`}
       >
         <AgentSidebar
           agents={agents}

@@ -21,7 +21,7 @@ const agents = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
+    <main className="min-h-full bg-zinc-950 text-zinc-100 font-sans">
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">

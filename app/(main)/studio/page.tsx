@@ -9,8 +9,8 @@ const FEATURES = [
 
 export default function StudioHubPage() {
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <section className="border-b border-zinc-800">
+    <div className="h-full bg-zinc-950">
+      <section className="border border-zinc-800">
         <div className="mx-auto max-w-4xl px-6 py-20 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
