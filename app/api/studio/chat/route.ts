@@ -2,7 +2,6 @@ import { LightweightAdapter } from "@/app/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/studio/_data/agents";
 import { ValidationError, StudioError } from "@/app/studio/_lib/errors";
 import { logger } from "@/app/studio/_lib/logger";
-import type { ChatConfigParams } from "@/app/studio/_lib/provider";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,13 +11,16 @@ const MAX_MESSAGES = 50;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
 
-interface ExtendedConfig extends ChatConfigParams {
+interface ChatConfig {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
   provider?: string;
   baseUrl?: string;
   apiKey?: string;
 }
 
-function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[]; config: ExtendedConfig } {
+function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[]; config: ChatConfig } {
   if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
 
   const { agentId, messages, config } = body as Record<string, unknown>;
@@ -40,7 +42,7 @@ function validateRequest(body: unknown): { agentId: string; messages: { role: st
 
   if (totalChars > MAX_TOTAL_CHARS) throw new ValidationError(`Total message content exceeds ${MAX_TOTAL_CHARS} characters`);
 
-  const validatedConfig: ExtendedConfig = {};
+  const validatedConfig: ChatConfig = {};
   if (config && typeof config === "object") {
     const c = config as Record<string, unknown>;
     if (typeof c.model === "string") validatedConfig.model = c.model;
