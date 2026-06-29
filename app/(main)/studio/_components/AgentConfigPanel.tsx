@@ -258,6 +258,13 @@ export default function AgentConfigPanel({
                     No API key required. Requests are proxied server-side to localhost.
                   </p>
                 </>
+              ) : config.provider === "opencode" || config.provider === "opencode-go" ? (
+                <>
+                  <p className="text-xs font-medium text-amber-400">OpenCode cloud</p>
+                  <p className="mt-0.5 text-xs text-amber-500/70">
+                    No API key required for free models. Sign up at opencode.ai for paid models.
+                  </p>
+                </>
               ) : (
                 <>
                   <p className="text-xs font-medium text-amber-400">Self-hosted provider</p>

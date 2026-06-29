@@ -8,7 +8,7 @@ import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
 import LiveLogs from "../_components/LiveLogs";
 import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig } from "../_types/studio";
+import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
 import type { LogEntry } from "../_components/LiveLogs";
@@ -35,28 +35,35 @@ export default function PlaygroundPage() {
   const chat = useStudioChat({ config });
 
   const handleSendMessage = useCallback(async (content: string) => {
-    addLog("info", `agent=${selectedAgent?.id} sending message`);
+    if (!selectedAgent) return;
+    const ts = Date.now();
+    addLog("info", `→ ${selectedAgent.name} · ${config.provider} · ${config.model}`);
     try {
       await chat.sendMessage(content);
-      addLog("info", `agent=${selectedAgent?.id} response complete`);
+      const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+      addLog("info", `✓ ${selectedAgent.name} completed in ${elapsed}s`);
     } catch (err) {
-      addLog("error", `agent=${selectedAgent?.id} ${err instanceof Error ? err.message : String(err)}`);
+      const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+      addLog("error", `✗ ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
     }
-  }, [chat, selectedAgent, addLog]);
+  }, [chat, selectedAgent, config.provider, config.model, addLog]);
 
   const handleSelectAgent = useCallback((agent: AgentEntry) => {
+    const provider = agent.preferredProvider as Provider;
+    const model = getDefaultModel(provider);
+    const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
     setSelectedAgent(agent);
-    const defaultModel = getDefaultModel(agent.preferredProvider as ChatConfig["provider"]);
-    const systemPrompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
-    setConfig((prev) => ({
-      ...prev,
-      provider: agent.preferredProvider as ChatConfig["provider"],
-      model: defaultModel,
-      systemPrompt,
-    }));
+    setConfig((prev) => ({ ...prev, provider, model, systemPrompt: prompt }));
     chat.newConversation(agent.id);
-    addLog("info", `agent selected: ${agent.id}`);
+    addLog("info", `Selected: ${agent.name} · ${agent.role} · ${provider}/${model}`);
   }, [chat, addLog]);
+
+  const handleConfigChange = useCallback((newConfig: ChatConfig) => {
+    if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
+      addLog("info", `Config: ${newConfig.provider} · ${newConfig.model}`);
+    }
+    setConfig(newConfig);
+  }, [config.provider, config.model, addLog]);
 
   return (
     <div className="flex h-screen bg-zinc-950 max-w-7xl mx-auto px-4">
@@ -66,7 +73,7 @@ export default function PlaygroundPage() {
           agents={agents}
           selectedAgent={selectedAgent}
           config={config}
-          onChangeConfig={setConfig}
+          onChangeConfig={handleConfigChange}
           onChangeAgent={handleSelectAgent}
         />
       </div>
@@ -83,7 +90,7 @@ export default function PlaygroundPage() {
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="text-sm font-medium text-zinc-300">{selectedAgent.name}</span>
-              <span className="text-xs text-zinc-600">· {selectedAgent.role}</span>
+              <span className="text-xs text-zinc-600">· {config.provider} · {config.model}</span>
             </div>
           )}
         </div>
