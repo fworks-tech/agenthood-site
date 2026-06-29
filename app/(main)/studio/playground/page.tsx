@@ -88,7 +88,7 @@ export default function PlaygroundPage() {
       </div>
 
       {/* Toggle button — sits between the two columns */}
-      <div className="flex items-center border-r border-zinc-800">
+      <div className="flex items-center border border-zinc-800">
         <button
           onClick={() => setConfigOpen(!configOpen)}
           className="flex h-10 w-5 items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors rounded-r-sm"
