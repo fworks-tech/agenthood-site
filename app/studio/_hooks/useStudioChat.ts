@@ -89,6 +89,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const abortRef = useRef<AbortController | null>(null);
   const conversationsRef = useRef(conversations);
   conversationsRef.current = conversations;
+  const configRef = useRef(options?.config);
+  configRef.current = options?.config;
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConv?.messages ?? [];
@@ -108,12 +110,12 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       id: generateId(),
       agentId,
       messages: [],
-      config: options?.config ?? {},
+      config: configRef.current ?? {},
       createdAt: Date.now(),
     };
     const updated = [...conversationsRef.current, conv];
     persist(updated, conv.id);
-  }, [persist, options?.config]);
+  }, [persist]);
 
   const switchConversation = useCallback((id: string) => {
     setActiveConversationId(id);
@@ -150,7 +152,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       const res = await sendChat(
         conv.agentId,
         updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-        conv.config ?? {},
+        configRef.current ?? {},
         abortController.signal,
       );
 
