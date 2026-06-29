@@ -49,6 +49,12 @@ body {
   scrollbar-color: rgba(113, 113, 122, 0.4) transparent;
 }
 
+*:focus-visible {
+  outline: 2px solid rgba(52, 211, 153, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
     background: rgba(113, 113, 122, 0.5);

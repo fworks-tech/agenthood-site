@@ -8,6 +8,8 @@ import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
+  isLoading?: boolean;
+  error?: string | null;
   selectedAgent: AgentEntry | null;
   config: ChatConfig;
   onChangeConfig: (config: ChatConfig) => void;
@@ -16,6 +18,8 @@ interface AgentConfigPanelProps {
 
 export default function AgentConfigPanel({
   agents,
+  isLoading,
+  error,
   selectedAgent,
   config,
   onChangeConfig,
@@ -61,6 +65,7 @@ export default function AgentConfigPanel({
           <select
             id={`${panelId}-agent`}
             value={selectedAgent?.id ?? ""}
+            disabled={isLoading || !!error}
             onChange={(e) => {
               const agent = agents.find((a) => a.id === e.target.value);
               if (agent) {
@@ -68,20 +73,28 @@ export default function AgentConfigPanel({
                 handleProviderChange(agent.preferredProvider);
               }
             }}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
           >
-            <option value="" disabled>Select an agent...</option>
-            {categories.map((cat) => (
-              <optgroup key={cat.key} label={cat.label}>
-                {agents
-                  .filter((a) => a.category === cat.key)
-                  .map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
+            {isLoading ? (
+              <option value="" disabled>Loading agents...</option>
+            ) : error ? (
+              <option value="" disabled>Failed to load agents</option>
+            ) : (
+              <>
+                <option value="" disabled>Select an agent...</option>
+                {categories.map((cat) => (
+                  <optgroup key={cat.key} label={cat.label}>
+                    {agents
+                      .filter((a) => a.category === cat.key)
+                      .map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </>
+            )}
           </select>
           {selectedAgent && (
             <p className="mt-1 text-xs text-zinc-500">

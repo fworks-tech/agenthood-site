@@ -68,7 +68,7 @@ export default function Navbar() {
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((open) => !open)}
-          className="md:hidden text-zinc-400 hover:text-white transition-colors"
+          className="md:hidden p-2 text-zinc-400 hover:text-white transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -96,7 +96,7 @@ export default function Navbar() {
       </div>
 
       {menuOpen && (
-        <div className="md:hidden border-t border-zinc-800 px-6 py-4 space-y-3 bg-zinc-950">
+        <div className="md:hidden absolute left-0 right-0 z-50 border-t border-zinc-800 px-6 py-4 space-y-3 bg-zinc-950 shadow-xl">
           {navLinks.map((link) =>
             link.highlight ? (
               <Link

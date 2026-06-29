@@ -75,7 +75,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
   };
 
   return (
-    <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
+    <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
       {imageWarning && (
         <div className="mx-auto mb-2 max-w-3xl rounded-md border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-400">
           {imageWarning}
@@ -96,7 +96,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
           placeholder="Type a message..."
           rows={1}
           disabled={isStreaming || disabled}
-          className="max-h-[200px] min-h-[40px] flex-1 resize-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+          className="max-h-[120px] md:max-h-[200px] min-h-[40px] flex-1 resize-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
         />
 
         {isStreaming ? (

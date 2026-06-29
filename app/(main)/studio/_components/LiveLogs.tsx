@@ -43,6 +43,7 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
     <div className="border border-zinc-800 bg-zinc-950">
       <button
         onClick={onToggle}
+        aria-expanded={open}
         className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-900 transition-colors"
       >
         <div className="flex items-center gap-2">
@@ -62,7 +63,7 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
       {open && (
         <div
           ref={scrollRef}
-          className="h-28 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed border border-zinc-800/50"
+          className="h-20 md:h-28 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed border-t border-zinc-800/50"
         >
           {logs.length === 0 ? (
             <p className="text-zinc-600 italic">Waiting for events...</p>

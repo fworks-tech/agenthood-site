@@ -5,7 +5,7 @@ interface FooterProps {
 
 export default function Footer({ version = "v3.5.2", className = "" }: FooterProps) {
   return (
-    <footer className={`border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600 ${className}`}>
+    <footer className={`border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-zinc-600 ${className}`}>
       <span className="flex items-center gap-3">
         <span>
           agenthood &middot; by{" "}
