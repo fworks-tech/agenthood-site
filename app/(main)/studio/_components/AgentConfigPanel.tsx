@@ -167,6 +167,26 @@ export default function AgentConfigPanel({
               </div>
             )}
 
+            {/* API Key (optional — for BYOK) */}
+            <div>
+              <label htmlFor={`${panelId}-apikey`} className="mb-1 block text-xs text-zinc-500">
+                API Key <span className="text-zinc-600">(optional)</span>
+              </label>
+              <div className="relative">
+                <input
+                  id={`${panelId}-apikey`}
+                  type="password"
+                  value={config.apiKey ?? ""}
+                  onChange={(e) => onChangeConfig({ ...config, apiKey: e.target.value || undefined })}
+                  placeholder={meta.requiresKey ? `Uses server ${config.provider} key` : "Not required"}
+                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 pr-8 text-sm text-zinc-200 placeholder-zinc-600 focus:border-emerald-500 focus:outline-none"
+                />
+              </div>
+              <p className="mt-1 text-xs text-zinc-600">
+                Sent server-side for this request only. Never logged or stored.
+              </p>
+            </div>
+
             <div>
               <label htmlFor={`${panelId}-temp`} className="mb-1 block text-xs text-zinc-500">
                 Temperature: {config.temperature.toFixed(1)}
@@ -248,7 +268,7 @@ export default function AgentConfigPanel({
                 <>
                   <p className="text-xs font-medium text-amber-400">API keys are server-side</p>
                   <p className="mt-0.5 text-xs text-amber-500/70">
-                    Provider keys are stored in server environment variables. The browser never sees your keys.
+                    By default the server uses its own keys. You can provide your own key in the field above.
                   </p>
                 </>
               ) : config.provider === "ollama" ? (
