@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 describe("logger sanitization", () => {
   it("redacts apiKey fields", async () => {
-    const { logger } = await import("../app/studio/_lib/logger");
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("test.event", { agentId: "the-architect", apiKey: "sk-abc123" });
@@ -18,7 +18,7 @@ describe("logger sanitization", () => {
   });
 
   it("redacts content fields", async () => {
-    const { logger } = await import("../app/studio/_lib/logger");
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", { content: "some user message", chunks: 5 });
@@ -30,7 +30,7 @@ describe("logger sanitization", () => {
   });
 
   it("redacts nested blocked key names", async () => {
-    const { logger } = await import("../app/studio/_lib/logger");
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.request", { agentId: "x", token: "abc" });
@@ -42,7 +42,7 @@ describe("logger sanitization", () => {
   });
 
   it("passes through non-sensitive fields", async () => {
-    const { logger } = await import("../app/studio/_lib/logger");
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", { agentId: "the-architect", chunks: 42, durationMs: 1500 });

@@ -10,14 +10,14 @@ interface LogEvent {
   [key: string]: unknown;
 }
 
-const SENSITIVE_KEYS = new Set(["content", "message", "prompt", "api_key", "secret", "token"]);
+const SENSITIVE_KEYS = new Set([
+  "content", "message", "prompt",
+  "api_key", "apikey", "api-key",
+  "secret", "token",
+]);
 
 function isKeySensitive(key: string): boolean {
-  const lower = key.toLowerCase();
-  if (SENSITIVE_KEYS.has(lower)) return true;
-  if (lower.includes("apikey") || lower.includes("api_key")) return true;
-  if (lower.endsWith("secret") || lower.endsWith("token")) return true;
-  return false;
+  return SENSITIVE_KEYS.has(key.toLowerCase());
 }
 
 function sanitize(meta: Record<string, unknown>): Record<string, unknown> {

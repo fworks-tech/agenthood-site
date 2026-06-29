@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { StudioError, ProviderUnavailableError, AgentNotFoundError, ValidationError } from "../app/studio/_lib/errors";
+import { StudioError, AgentNotFoundError, ValidationError } from "../app/(main)/studio/_lib/errors";
 
 describe("StudioError", () => {
   it("sets message, code, and statusCode", () => {
@@ -13,19 +13,6 @@ describe("StudioError", () => {
   it("defaults statusCode to 500", () => {
     const err = new StudioError("test", "TEST");
     expect(err.statusCode).toBe(500);
-  });
-});
-
-describe("ProviderUnavailableError", () => {
-  it("has status 503 and PROVIDER_UNAVAILABLE code", () => {
-    const err = new ProviderUnavailableError("anthropic");
-    expect(err.statusCode).toBe(503);
-    expect(err.code).toBe("PROVIDER_UNAVAILABLE");
-    expect(err.message).toContain("anthropic");
-  });
-
-  it("is instance of StudioError", () => {
-    expect(new ProviderUnavailableError("openai")).toBeInstanceOf(StudioError);
   });
 });
 
