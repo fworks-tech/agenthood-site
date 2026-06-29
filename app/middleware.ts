@@ -7,6 +7,7 @@ const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
   "/api/studio/status": { max: 30, windowMs: 60_000 },
 };
 
+const MAX_STORE_SIZE = 10_000;
 const store = new Map<string, { count: number; resetAt: number }>();
 let lastCleanup = Date.now();
 
@@ -17,6 +18,17 @@ function cleanup() {
   for (const [key, entry] of store) {
     if (now > entry.resetAt) store.delete(key);
   }
+  if (store.size > MAX_STORE_SIZE) {
+    const sorted = [...store.entries()].sort((a, b) => a[1].resetAt - b[1].resetAt);
+    const toDelete = sorted.slice(0, sorted.length - MAX_STORE_SIZE);
+    for (const [key] of toDelete) store.delete(key);
+  }
+}
+
+function getClientIp(request: NextRequest): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-real-ip")
+    || "unknown";
 }
 
 export function middleware(request: NextRequest) {
@@ -26,10 +38,7 @@ export function middleware(request: NextRequest) {
 
   cleanup();
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || request.headers.get("x-real-ip")
-    || "unknown";
-
+  const ip = getClientIp(request);
   const key = `${pathname}:${ip}`;
   const now = Date.now();
   const entry = store.get(key);

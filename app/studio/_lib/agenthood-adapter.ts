@@ -1,5 +1,4 @@
 import { agentSkills } from "../_data/agents.generated";
-import { getAgentById } from "../_data/agents";
 import { AgentNotFoundError, ValidationError } from "./errors";
 import { logger } from "./logger";
 import type { LLMConfig, LLMRequest } from "agenthood/dist/llm/types";
@@ -23,16 +22,13 @@ export interface AgenthoodAdapter {
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
-    const agent = getAgentById(req.agentId);
-    if (!agent) throw new AgentNotFoundError(req.agentId);
-
     const systemPrompt = agentSkills[req.agentId];
     if (!systemPrompt) {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
     const { LLMRouter } = await import("agenthood/dist/llm");
-    const providerName = req.config?.provider || agent.preferredProvider;
+    const providerName = req.config?.provider || "anthropic";
 
     const llmConfig: LLMConfig = {
       provider: providerName,

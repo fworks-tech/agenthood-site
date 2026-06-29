@@ -3,11 +3,12 @@
 import { useState, useRef, useCallback } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
-import { streamOllamaClientSide } from "../_lib/ollama-client";
 import type { ChatMessage } from "../_lib/studio-api";
 import type { ChatConfig } from "../_types/studio";
 
 const STORAGE_KEY = "agenthood-studio-conversations";
+const MAX_CONVERSATIONS = 50;
+const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface Conversation {
   id: string;
@@ -41,7 +42,9 @@ function loadConversations(): Conversation[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const convs: Conversation[] = JSON.parse(raw);
+    return convs.filter((c) => Date.now() - c.createdAt < MAX_CONVERSATION_AGE_MS);
   } catch {
     return [];
   }
@@ -49,8 +52,10 @@ function loadConversations(): Conversation[] {
 
 function saveConversations(convs: Conversation[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
-  } catch {}
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(convs.slice(0, MAX_CONVERSATIONS)));
+  } catch {
+    /* localStorage full or unavailable */
+  }
 }
 
 function getActiveId(): string | null {
@@ -69,17 +74,28 @@ function setActiveId(id: string | null) {
   } catch {}
 }
 
+function updateMessage(convs: Conversation[], convId: string, msgId: string, content: string): Conversation[] {
+  return convs.map((c) =>
+    c.id === convId
+      ? { ...c, messages: c.messages.map((m) => (m.id === msgId ? { ...m, content } : m)) }
+      : c,
+  );
+}
+
 export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatReturn {
   const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(getActiveId);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const conversationsRef = useRef(conversations);
+  conversationsRef.current = conversations;
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConv?.messages ?? [];
 
   const persist = useCallback((convs: Conversation[], activeId: string | null) => {
     setConversations(convs);
+    conversationsRef.current = convs;
     saveConversations(convs);
     if (activeId !== undefined) {
       setActiveConversationId(activeId);
@@ -95,9 +111,9 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       config: options?.config ?? {},
       createdAt: Date.now(),
     };
-    const updated = [...conversations, conv];
+    const updated = [...conversationsRef.current, conv];
     persist(updated, conv.id);
-  }, [conversations, persist, options?.config]);
+  }, [persist, options?.config]);
 
   const switchConversation = useCallback((id: string) => {
     setActiveConversationId(id);
@@ -105,56 +121,41 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   }, []);
 
   const clearMessages = useCallback(() => {
-    if (!activeConversationId) return;
-    const updated = conversations.map((c) =>
-      c.id === activeConversationId ? { ...c, messages: [] } : c,
+    const cid = activeConversationId;
+    if (!cid) return;
+    const updated = conversationsRef.current.map((c) =>
+      c.id === cid ? { ...c, messages: [] } : c,
     );
-    persist(updated, activeConversationId);
-  }, [conversations, activeConversationId, persist]);
+    persist(updated, cid);
+  }, [activeConversationId, persist]);
 
   const sendMessage = useCallback(async (content: string) => {
-    if (!activeConv || isStreaming || !content.trim()) return;
+    const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
+    if (!conv || isStreaming || !content.trim()) return;
 
     const userMsg: ChatMessage = { role: "user", content: content.trim(), id: generateId() };
     const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId() };
 
-    const updatedMessages = [...activeConv.messages, userMsg, assistantMsg];
-    const updated = conversations.map((c) =>
+    const updatedMessages = [...conv.messages, userMsg, assistantMsg];
+    const withMessages = conversationsRef.current.map((c) =>
       c.id === activeConversationId ? { ...c, messages: updatedMessages } : c,
     );
-    persist(updated, activeConversationId);
+    persist(withMessages, activeConversationId);
     setIsStreaming(true);
 
     const abortController = new AbortController();
     abortRef.current = abortController;
-    const config = activeConv.config;
-    const isOllama = config?.provider === "ollama";
 
     try {
-      let res: Response;
-
-      if (isOllama) {
-        res = await streamOllamaClientSide(
-          {
-            baseUrl: config?.baseUrl ?? "http://localhost:11434",
-            model: config?.model ?? "llama3.2",
-            messages: updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-            temperature: config?.temperature,
-            maxTokens: config?.maxTokens,
-          },
-          abortController.signal,
-        );
-      } else {
-        res = await sendChat(
-          activeConv.agentId,
-          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-          config ?? {},
-          abortController.signal,
-        );
-      }
+      const res = await sendChat(
+        conv.agentId,
+        updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        conv.config ?? {},
+        abortController.signal,
+      );
 
       if (!res.ok) {
-        throw new Error(isOllama ? `Ollama error: ${res.status}` : `Server error: ${res.status}`);
+        throw new Error(`Server error: ${res.status}`);
       }
 
       let streamedContent = "";
@@ -164,45 +165,23 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         {
           onToken: (token) => {
             streamedContent += token;
-            const withStream = conversations.map((c) =>
-              c.id === activeConversationId
-                ? {
-                    ...c,
-                    messages: c.messages.map((m) =>
-                      m.id === assistantMsg.id ? { ...m, content: streamedContent } : m,
-                    ),
-                  }
-                : c,
-            );
-            setConversations(withStream);
+            setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
           },
           onDone: () => {
-            const final = conversations.map((c) =>
-              c.id === activeConversationId
-                ? {
-                    ...c,
-                    messages: c.messages.map((m) =>
-                      m.id === assistantMsg.id ? { ...m, content: streamedContent } : m,
-                    ),
-                  }
-                : c,
-            );
-            persist(final, activeConversationId);
+            setConversations((prev) => {
+              const final = updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
+              saveConversations(final);
+              return final;
+            });
             setIsStreaming(false);
           },
           onError: (err) => {
             const errorMsg = `Error: ${err.message}`;
-            const withError = conversations.map((c) =>
-              c.id === activeConversationId
-                ? {
-                    ...c,
-                    messages: c.messages.map((m) =>
-                      m.id === assistantMsg.id ? { ...m, content: errorMsg } : m,
-                    ),
-                  }
-                : c,
-            );
-            persist(withError, activeConversationId);
+            setConversations((prev) => {
+              const withError = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
+              saveConversations(withError);
+              return withError;
+            });
             setIsStreaming(false);
           },
         },
@@ -214,20 +193,14 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         return;
       }
       const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`;
-      const withError = conversations.map((c) =>
-        c.id === activeConversationId
-          ? {
-              ...c,
-              messages: c.messages.map((m) =>
-                m.id === assistantMsg.id ? { ...m, content: errorMsg } : m,
-              ),
-            }
-          : c,
-      );
-      persist(withError, activeConversationId);
+      setConversations((prev) => {
+        const withError = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
+        saveConversations(withError);
+        return withError;
+      });
       setIsStreaming(false);
     }
-  }, [activeConv, activeConversationId, conversations, isStreaming, persist]);
+  }, [activeConversationId, isStreaming, persist]);
 
   const abortStream = useCallback(() => {
     abortRef.current?.abort();

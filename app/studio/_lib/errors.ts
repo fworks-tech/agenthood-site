@@ -27,15 +27,6 @@ export class AgentNotFoundError extends StudioError {
   }
 }
 
-export class RateLimitError extends StudioError {
-  constructor(retryAfter: number) {
-    super("Too many requests. Please slow down.", "RATE_LIMITED", 429);
-    this.name = "RateLimitError";
-    this.headers = { "Retry-After": String(retryAfter) };
-  }
-  headers: Record<string, string>;
-}
-
 export class ValidationError extends StudioError {
   constructor(detail: string) {
     super(`Validation error: ${detail}`, "VALIDATION_ERROR", 400);

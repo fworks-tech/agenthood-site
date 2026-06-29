@@ -18,6 +18,14 @@ export async function readSSEStream(
   const decoder = new TextDecoder();
   let buffer = "";
 
+  let doneCalled = false;
+  const safeOnDone = () => {
+    if (!doneCalled) {
+      doneCalled = true;
+      callbacks.onDone();
+    }
+  };
+
   try {
     while (true) {
       if (signal?.aborted) break;
@@ -40,7 +48,7 @@ export async function readSSEStream(
               callbacks.onToken(event.data);
               break;
             case "done":
-              callbacks.onDone();
+              safeOnDone();
               return;
             case "error":
               callbacks.onError(new Error(event.data));
@@ -51,12 +59,11 @@ export async function readSSEStream(
         }
       }
     }
+    safeOnDone();
   } catch (err) {
     if (signal?.aborted) return;
     callbacks.onError(err instanceof Error ? err : new Error(String(err)));
   } finally {
     reader.releaseLock();
   }
-
-  callbacks.onDone();
 }
