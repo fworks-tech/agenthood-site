@@ -81,7 +81,6 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     defaultBaseUrl: "http://localhost:4000",
     models: [
       { id: "opencode-1", label: "OpenCode 1" },
-      { id: "opencode-1-mini", label: "OpenCode 1 Mini" },
     ],
   },
 };
