@@ -7,6 +7,7 @@ import AgentConfigPanel from "../_components/AgentConfigPanel";
 import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
 import LiveLogs from "../_components/LiveLogs";
+import Turnstile from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
@@ -36,6 +37,7 @@ export default function PlaygroundPage() {
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     ...loadSavedConfig(),
   }));
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
@@ -49,7 +51,7 @@ export default function PlaygroundPage() {
     setLogs((prev) => [...prev.slice(-99), { time, level, message }]);
   }, []);
 
-  const chat = useStudioChat({ config });
+  const chat = useStudioChat({ config, turnstileToken: turnstileToken ?? undefined });
   const { conversations, activeConversationId } = chat;
 
   useEffect(() => {
@@ -212,6 +214,11 @@ export default function PlaygroundPage() {
             isStreaming={chat.isStreaming}
           />
         )}
+
+        {/* Turnstile CAPTCHA */}
+        <div className="flex justify-center py-1">
+          <Turnstile onToken={setTurnstileToken} />
+        </div>
 
         {/* Mobile agent selector */}
         {!selectedAgent && (

@@ -20,6 +20,7 @@ interface Conversation {
 
 interface UseStudioChatOptions {
   config: Partial<ChatConfig>;
+  turnstileToken?: string;
 }
 
 interface UseStudioChatReturn {
@@ -91,6 +92,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   conversationsRef.current = conversations;
   const configRef = useRef(options?.config);
   configRef.current = options?.config;
+  const turnstileRef = useRef(options?.turnstileToken);
+  turnstileRef.current = options?.turnstileToken;
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConv?.messages ?? [];
@@ -153,6 +156,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         conv.agentId,
         updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
         configRef.current ?? {},
+        turnstileRef.current,
         abortController.signal,
       );
 

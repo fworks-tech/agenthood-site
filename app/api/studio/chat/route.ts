@@ -14,6 +14,8 @@ const MAX_TOTAL_CHARS = 100_000;
 const MAX_TOKENS = 100_000;
 
 const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN;
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
   provider?: string;
@@ -93,6 +95,21 @@ function validateBaseUrl(baseUrl: string): void {
   }
 }
 
+async function validateTurnstile(token: unknown): Promise<void> {
+  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) return;
+  if (typeof token !== "string" || !token) {
+    throw new ValidationError("Missing CAPTCHA token. Please refresh and try again.");
+  }
+  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
+  });
+  const data = await res.json() as { success?: boolean };
+  if (!data.success) {
+    throw new ValidationError("CAPTCHA verification failed. Please refresh and try again.");
+  }
+}
+
 export async function POST(request: Request) {
   const requestId = generateId();
   try {
@@ -101,7 +118,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
 
-    const { agentId, messages: rawMessages, config: rawConfig } = body as Record<string, unknown>;
+    const { agentId, messages: rawMessages, config: rawConfig, turnstileToken } = body as Record<string, unknown>;
+    await validateTurnstile(turnstileToken);
 
     if (!agentId || typeof agentId !== "string") throw new ValidationError("agentId must be a string");
     const agent = getAgentById(agentId);

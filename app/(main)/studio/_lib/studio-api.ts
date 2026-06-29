@@ -10,12 +10,13 @@ export async function sendChat(
   agentId: string,
   messages: { role: string; content: string }[],
   config: Partial<ChatConfig>,
+  turnstileToken?: string,
   signal?: AbortSignal,
 ): Promise<Response> {
   return fetch("/api/studio/chat/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agentId, messages, config }),
+    body: JSON.stringify({ agentId, messages, config, turnstileToken }),
     signal,
   });
 }
