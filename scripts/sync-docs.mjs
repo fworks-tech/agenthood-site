@@ -116,11 +116,55 @@ async function syncFile(sourcePath, destPath) {
   console.log(`Synced ${sourcePath} to ${destPath}`);
 }
 
+async function syncFullDocs(tree) {
+  const excludePrefixes = ["docs/academy/", "docs/adr/"];
+  const excludeExact = ["docs/release-notes.md"];
+
+  const sourcePrefix = "docs/";
+  const files = tree.tree.filter(
+    (item) =>
+      item.type === "blob" &&
+      item.path.startsWith(sourcePrefix) &&
+      item.path.endsWith(".md") &&
+      !excludePrefixes.some((p) => item.path.startsWith(p)) &&
+      !excludeExact.includes(item.path)
+  );
+
+  const entries = [];
+
+  for (const file of files) {
+    const relative = file.path.slice(sourcePrefix.length);
+    const content = await fetchRaw(file.path);
+    const destPath = path.join(CONTENT_DIR, "docs", relative);
+
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.writeFileSync(destPath, content, "utf8");
+
+    entries.push({
+      slug: buildSlug(relative),
+      path: path.posix.join("docs", relative),
+      title: titleFromMarkdown(content),
+    });
+  }
+
+  entries.sort((a, b) => a.path.localeCompare(b.path));
+
+  const manifestPath = path.join(CONTENT_DIR, "docs", "manifest.json");
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fs.writeFileSync(manifestPath, JSON.stringify(entries, null, 2), "utf8");
+
+  console.log(`Synced ${entries.length} files to content/docs`);
+}
+
 async function main() {
   fs.mkdirSync(CONTENT_DIR, { recursive: true });
   await syncDirectory("docs/academy", "academy");
   await syncDirectory("docs/adr", "adr");
   await syncFile("docs/release-notes.md", "release-notes.md");
+
+  const tree = await api(`${API_BASE}/git/trees/${BRANCH}?recursive=1`);
+  await syncFullDocs(tree);
+
   console.log("Docs sync complete.");
 }
 

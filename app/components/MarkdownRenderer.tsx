@@ -66,8 +66,7 @@ function isDocsPath(relativePath: string): boolean {
     relativePath.startsWith("academy/") ||
     relativePath === "adr" ||
     relativePath.startsWith("adr/") ||
-    relativePath.startsWith("docs/academy/") ||
-    relativePath.startsWith("docs/adr/")
+    relativePath.startsWith("docs/")
   );
 }
 
@@ -217,6 +216,7 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
         </div>
       );
     },
+    br: () => <br />,
     hr: () => <hr className="border-zinc-800 my-8" />,
     blockquote: ({ children }) => (
       <blockquote className="border-l border-zinc-600 bg-zinc-800/50 pl-4 pr-4 py-3 text-zinc-400 mb-6 last:mb-0 rounded-r-lg">
