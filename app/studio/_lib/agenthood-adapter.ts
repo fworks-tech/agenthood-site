@@ -1,14 +1,14 @@
 import { agentSkills } from "../_data/agents.generated";
 import { getAgentById } from "../_data/agents";
 import { resolveProvider } from "./provider";
-import { getMaxTokens } from "./env";
 import { AgentNotFoundError, ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { StreamingProvider } from "./provider";
+import type { ChatConfigParams } from "./provider";
 
 export interface ChatRequest {
   agentId: string;
   messages: { role: string; content: string }[];
+  config?: ChatConfigParams;
 }
 
 export interface AgenthoodAdapter {
@@ -27,11 +27,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const { name, instance } = resolveProvider(agent.preferredProvider);
 
-    logger.info("chat.request", { agentId: req.agentId, provider: name, messageCount: req.messages.length });
+    logger.info("chat.request", { agentId: req.agentId, provider: name, messageCount: req.messages.length, config: req.config });
 
     const startTime = performance.now();
 
-    const stream = await instance.stream(systemPrompt, req.messages, signal);
+    const stream = await instance.stream(systemPrompt, req.messages, signal, req.config);
 
     const wrapped = new ReadableStream({
       async start(controller) {

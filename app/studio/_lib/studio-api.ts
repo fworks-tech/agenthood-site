@@ -1,4 +1,5 @@
 import type { AgentEntry } from "../_data/agents";
+import type { ChatConfig } from "../_types/chat-config";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -16,12 +17,13 @@ export async function fetchAgents(): Promise<AgentEntry[]> {
 export async function sendChat(
   agentId: string,
   messages: { role: string; content: string }[],
+  config: Partial<ChatConfig>,
   signal?: AbortSignal,
 ): Promise<Response> {
   return fetch("/api/studio/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agentId, messages }),
+    body: JSON.stringify({ agentId, messages, config }),
     signal,
   });
 }
