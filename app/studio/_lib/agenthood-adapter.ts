@@ -1,7 +1,9 @@
 import { agentSkills } from "../_data/agents.generated";
 import { AgentNotFoundError, ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { LLMConfig, LLMRequest } from "agenthood/dist/llm/types";
+import type { LLMRequest, LLMConfig } from "agenthood/dist/llm/types";
+
+type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go";
 
 export interface ChatRequest {
   agentId: string;
@@ -20,6 +22,12 @@ export interface AgenthoodAdapter {
   chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream>;
 }
 
+const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"];
+
+function isKnownProvider(name: string): name is ProviderName {
+  return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go"].includes(name);
+}
+
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
     const systemPrompt = agentSkills[req.agentId];
@@ -30,20 +38,31 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const { LLMRouter } = await import("agenthood/dist/llm");
     const providerName = req.config?.provider || "anthropic";
 
+    if (!isKnownProvider(providerName)) {
+      throw new ValidationError(`Unknown provider: "${providerName}"`);
+    }
+
+    const providers = [
+      { name: providerName as ProviderName, apiKey: req.config?.apiKey, baseUrl: req.config?.baseUrl },
+      ...FALLBACK_ORDER.filter((p) => p !== providerName).map((name) => ({ name })),
+    ];
+
     const llmConfig: LLMConfig = {
-      provider: providerName,
-      baseUrl: req.config?.baseUrl,
-      apiKey: req.config?.apiKey,
+      providers,
+      failureThreshold: 3,
+      cooldownMs: 30000,
     };
 
-    const provider = await LLMRouter.createForMember(providerName as never, llmConfig);
+    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER });
     const startTime = performance.now();
+
+    const provider = await LLMRouter.fromConfig(llmConfig);
 
     if (req.config?.model) {
       try { provider.setModel(req.config.model); } catch { /* use provider default */ }
     }
 
-    const request: LLMRequest = {
+    const llmRequest: LLMRequest = {
       messages: [
         { role: "system", content: systemPrompt },
         ...req.messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
@@ -52,7 +71,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
       maxTokens: req.config?.maxTokens,
     };
 
-    const asyncGen = await provider.stream(request);
+    const asyncGen = await provider.stream(llmRequest);
 
     return new ReadableStream({
       async start(controller) {
@@ -70,15 +89,15 @@ export class LightweightAdapter implements AgenthoodAdapter {
             }
           }
           const duration = Math.round(performance.now() - startTime);
-          logger.info("chat.complete", { agentId: req.agentId, provider: providerName, durationMs: duration, chunks: tokenCount });
+          logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, chunks: tokenCount });
         } catch (err) {
           if (signal?.aborted) {
-            logger.info("chat.aborted", { agentId: req.agentId, provider: providerName });
+            logger.info("chat.aborted", { agentId: req.agentId });
             controller.close();
             return;
           }
           const msg = err instanceof Error ? err.message : String(err);
-          logger.error("chat.error", { agentId: req.agentId, provider: providerName, error: msg });
+          logger.error("chat.error", { agentId: req.agentId, error: msg });
           controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: "An error occurred while processing your request." }) + "\n"));
         } finally {
           controller.close();
