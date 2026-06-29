@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import MarkdownRenderer from "../components/MarkdownRenderer";
+import MarkdownRenderer from "../../components/MarkdownRenderer";
 
 const MARKDOWN_PATH = path.join(process.cwd(), "content", "academy", "getting-started.md");
 

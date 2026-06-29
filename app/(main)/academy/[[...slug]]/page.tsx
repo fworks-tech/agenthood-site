@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { notFound } from "next/navigation";
-import MarkdownRenderer from "../../components/MarkdownRenderer";
+import MarkdownRenderer from "../../../components/MarkdownRenderer";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "academy", "manifest.json");
 

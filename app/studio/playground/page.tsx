@@ -59,7 +59,7 @@ export default function PlaygroundPage() {
   }, [chat, addLog]);
 
   return (
-    <div className="flex h-screen bg-zinc-950">
+    <div className="flex h-screen bg-zinc-950 max-w-7xl mx-auto px-4">
       {/* Left Column — Agent Configuration */}
       <div className="hidden w-72 shrink-0 md:block">
         <AgentConfigPanel

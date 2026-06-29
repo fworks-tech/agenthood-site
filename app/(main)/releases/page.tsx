@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import MarkdownRenderer from "../components/MarkdownRenderer";
+import MarkdownRenderer from "../../components/MarkdownRenderer";
 
 const RELEASE_NOTES_PATH = path.join(process.cwd(), "content", "release-notes.md");
 
