@@ -69,35 +69,36 @@ export default function PlaygroundPage() {
   }, [config.provider, config.model, addLog]);
 
   return (
-    <div className="relative flex h-full bg-zinc-950 max-w-7xl mx-auto">
+    <div className="flex h-screen bg-zinc-950 max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
       <div
         className={`${
           configOpen ? "w-72" : "w-0"
         } shrink-0 transition-all duration-200 overflow-hidden border border-zinc-800`}
       >
-        <AgentConfigPanel
-          agents={agents}
-          selectedAgent={selectedAgent}
-          config={config}
-          onChangeConfig={handleConfigChange}
-          onChangeAgent={handleSelectAgent}
-        />
+        {configOpen && (
+          <AgentConfigPanel
+            agents={agents}
+            selectedAgent={selectedAgent}
+            config={config}
+            onChangeConfig={handleConfigChange}
+            onChangeAgent={handleSelectAgent}
+          />
+        )}
       </div>
 
-      {/* Toggle config panel button */}
-      <button
-        onClick={() => setConfigOpen(!configOpen)}
-        className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-md border border border-zinc-700 bg-zinc-900 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors ${
-          configOpen ? "left-72" : "left-0"
-        }`}
-        style={{ transition: "left 200ms" }}
-        aria-label={configOpen ? "Close config panel" : "Open config panel"}
-      >
-        <svg className={`h-4 w-4 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+      {/* Toggle button — sits between the two columns */}
+      <div className="flex items-center border-r border-zinc-800">
+        <button
+          onClick={() => setConfigOpen(!configOpen)}
+          className="flex h-10 w-5 items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors rounded-r-sm"
+          aria-label={configOpen ? "Close config panel" : "Open config panel"}
+        >
+          <svg className={`h-3.5 w-3.5 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
 
       {/* Right Column — Chat + Logs */}
       <div className="flex flex-1 flex-col min-w-0">
