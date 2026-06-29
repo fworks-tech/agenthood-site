@@ -1,4 +1,4 @@
-import { agents } from "@/app/studio/_data/agents";
+import { agents } from "@/app/(main)/studio/_data/agents";
 
 export const dynamic = "force-static";
 

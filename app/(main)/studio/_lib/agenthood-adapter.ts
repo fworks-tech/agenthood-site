@@ -98,7 +98,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           }
           const msg = err instanceof Error ? err.message : String(err);
           logger.error("chat.error", { agentId: req.agentId, error: msg });
-          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: "An error occurred while processing your request." }) + "\n"));
+          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: msg }) + "\n"));
         } finally {
           controller.close();
         }
