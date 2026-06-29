@@ -26,6 +26,8 @@ export default function PlaygroundPage() {
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
   });
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [configOpen, setConfigOpen] = useState(true);
+  const [logsOpen, setLogsOpen] = useState(true);
 
   const addLog = useCallback((level: LogEntry["level"], message: string) => {
     const time = new Date().toLocaleTimeString("en-US", { hour12: false });
@@ -56,7 +58,8 @@ export default function PlaygroundPage() {
     setConfig((prev) => ({ ...prev, provider, model, systemPrompt: prompt }));
     chat.newConversation(agent.id);
     addLog("info", `Selected: ${agent.name} · ${agent.role} · ${provider}/${model}`);
-  }, [chat, addLog]);
+    if (!configOpen) setConfigOpen(true);
+  }, [chat, addLog, configOpen]);
 
   const handleConfigChange = useCallback((newConfig: ChatConfig) => {
     if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
@@ -66,9 +69,13 @@ export default function PlaygroundPage() {
   }, [config.provider, config.model, addLog]);
 
   return (
-    <div className="flex h-screen bg-zinc-950 max-w-7xl mx-auto px-4">
+    <div className="relative flex h-screen bg-zinc-950 max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
-      <div className="hidden w-72 shrink-0 md:block">
+      <div
+        className={`${
+          configOpen ? "w-72" : "w-0"
+        } shrink-0 transition-all duration-200 overflow-hidden border-r border-zinc-800`}
+      >
         <AgentConfigPanel
           agents={agents}
           selectedAgent={selectedAgent}
@@ -77,6 +84,20 @@ export default function PlaygroundPage() {
           onChangeAgent={handleSelectAgent}
         />
       </div>
+
+      {/* Toggle config panel button */}
+      <button
+        onClick={() => setConfigOpen(!configOpen)}
+        className={`absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-md border border-l-0 border-zinc-700 bg-zinc-900 p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors ${
+          configOpen ? "left-72" : "left-0"
+        }`}
+        style={{ transition: "left 200ms" }}
+        aria-label={configOpen ? "Close config panel" : "Open config panel"}
+      >
+        <svg className={`h-4 w-4 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
 
       {/* Right Column — Chat + Logs */}
       <div className="flex flex-1 flex-col min-w-0">
@@ -131,7 +152,7 @@ export default function PlaygroundPage() {
           />
         )}
 
-        {/* Mobile agent selector (visible when no agent selected on small screens) */}
+        {/* Mobile agent selector */}
         {!selectedAgent && (
           <div className="block border-t border-zinc-800 p-4 md:hidden">
             <select
@@ -153,7 +174,7 @@ export default function PlaygroundPage() {
         )}
 
         {/* Logs */}
-        <LiveLogs logs={logs} />
+        <LiveLogs logs={logs} open={logsOpen} onToggle={() => setLogsOpen(!logsOpen)} />
       </div>
     </div>
   );
