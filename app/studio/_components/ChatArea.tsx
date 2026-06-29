@@ -32,7 +32,7 @@ export default function ChatArea({ agent }: ChatAreaProps) {
       const existing = conversations.find((c) => c.agentId === agent.id);
       if (existing) switchConversation(existing.id);
     }
-  }, [agent.id]);
+  }, [agent.id, hasConvForAgent, newConversation, activeConversationId, conversations, switchConversation]);
 
   const agentConversations = conversations.filter((c) => c.agentId === agent.id);
 

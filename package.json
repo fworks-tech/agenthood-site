@@ -13,12 +13,10 @@
     "predev": "npm run sync && npm run sync-skills"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.106.0",
     "@tailwindcss/typography": "^0.5.20",
     "@vercel/analytics": "^2.0.1",
     "agenthood": "^3.5.1",
     "next": "^16.2.7",
-    "openai": "^6.45.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
