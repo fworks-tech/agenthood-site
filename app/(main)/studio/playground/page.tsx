@@ -39,14 +39,14 @@ export default function PlaygroundPage() {
   const handleSendMessage = useCallback(async (content: string) => {
     if (!selectedAgent) return;
     const ts = Date.now();
-    addLog("info", `→ ${selectedAgent.name} · ${config.provider} · ${config.model}`);
+    addLog("info", `→ ${selectedAgent.icon ?? ""} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
     try {
       await chat.sendMessage(content);
       const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-      addLog("info", `✓ ${selectedAgent.name} completed in ${elapsed}s`);
+      addLog("info", `✓ ${selectedAgent.icon ?? ""} ${selectedAgent.name} completed in ${elapsed}s`);
     } catch (err) {
       const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-      addLog("error", `✗ ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
+      addLog("error", `✗ ${selectedAgent.icon ?? ""} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
     }
   }, [chat, selectedAgent, config.provider, config.model, addLog]);
 
@@ -57,7 +57,7 @@ export default function PlaygroundPage() {
     setSelectedAgent(agent);
     setConfig((prev) => ({ ...prev, provider, model, systemPrompt: prompt }));
     chat.newConversation(agent.id);
-    addLog("info", `Selected: ${agent.name} · ${agent.role} · ${provider}/${model}`);
+    addLog("info", `Selected: ${agent.icon ?? ""} ${agent.name} · ${agent.role} · ${provider}/${model}`);
     if (!configOpen) setConfigOpen(true);
   }, [chat, addLog, configOpen]);
 
@@ -69,7 +69,8 @@ export default function PlaygroundPage() {
   }, [config.provider, config.model, addLog]);
 
   return (
-    <div className="flex flex-1 min-h-0 bg-zinc-950 max-w-7xl mx-auto">
+    <div className="h-screen bg-zinc-950 py-12">
+    <div className="flex h-full max-w-7xl mx-auto">
       {/* Left Column — Agent Configuration */}
       <div
         className={`${
@@ -89,21 +90,22 @@ export default function PlaygroundPage() {
         )}
       </div>
 
-      {/* Toggle button — sits between the two columns */}
-      <div className="flex items-center">
+      {/* Toggle + Right Column */}
+      <div className="flex flex-1 min-w-0">
+        {/* Toggle button */}
         <button
-          onClick={() => setConfigOpen(!configOpen)}
-          className="flex h-10 max-md:w-8 md:w-5 items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+          type="button"
+          onClick={(e) => { e.preventDefault(); setConfigOpen((prev) => !prev); }}
+          className="relative z-10 flex items-center justify-center w-8 shrink-0 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
           aria-label={configOpen ? "Close config panel" : "Open config panel"}
         >
-          <svg className={`h-3.5 w-3.5 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className={`h-4 w-4 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-      </div>
 
-      {/* Right Column — Chat + Logs */}
-      <div className="flex flex-1 flex-col min-w-0">
+        {/* Right Column — Chat + Logs */}
+        <div className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2 mr-2">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
           <div>
@@ -112,7 +114,7 @@ export default function PlaygroundPage() {
           </div>
           {selectedAgent && (
             <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              {selectedAgent.icon && <span className="text-base">{selectedAgent.icon}</span>}
               <span className="text-sm font-medium text-zinc-300">{selectedAgent.name}</span>
               <span className="text-xs text-zinc-600">· {config.provider} · {config.model}</span>
             </div>
@@ -128,7 +130,7 @@ export default function PlaygroundPage() {
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-md text-center px-6">
                   <p className="text-sm text-zinc-500">
-                    Start a conversation with <span className="text-zinc-300 font-medium">{selectedAgent.name}</span>.
+                    Start a conversation with {selectedAgent.icon && <span className="text-base">{selectedAgent.icon}</span>}<span className="text-zinc-300 font-medium">{selectedAgent.name}</span>.
                     Your prompt is validated and rate-limited server-side.
                   </p>
                 </div>
@@ -183,7 +185,7 @@ export default function PlaygroundPage() {
                 <option value="" disabled>Select an agent...</option>
                 {agents.map((agent) => (
                   <option key={agent.id} value={agent.id}>
-                    {agent.name} — {agent.role}
+                    {agent.icon ?? ""} {agent.name} — {agent.role}
                   </option>
                 ))}
               </select>
@@ -194,6 +196,8 @@ export default function PlaygroundPage() {
         {/* Logs */}
         <LiveLogs logs={logs} open={logsOpen} onToggle={() => setLogsOpen(!logsOpen)} />
       </div>
+      </div>
+    </div>
     </div>
   );
 }

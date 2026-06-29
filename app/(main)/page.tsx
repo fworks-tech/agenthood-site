@@ -1,22 +1,22 @@
 import Link from "next/link";
 
 const agents = [
-  { name: "The Scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
-  { name: "The Architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
-  { name: "The Reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
-  { name: "The Tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
-  { name: "The Debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
-  { name: "The Auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
-  { name: "The Herald", icon: "📦", desc: "Releases, versioning, changelogs" },
-  { name: "The Librarian", icon: "📝", desc: "Documentation, API references" },
-  { name: "The Doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
-  { name: "The Oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
-  { name: "The Envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
-  { name: "The Sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
-  { name: "The Warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
-  { name: "The Steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
-  { name: "The Strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
-  { name: "The Operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
+  { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
+  { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
+  { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
+  { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
+  { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
+  { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
+  { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs" },
+  { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references" },
+  { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
+  { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
+  { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
+  { name: "The Sentinel", slug: "the-sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
+  { name: "The Warden", slug: "the-warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
+  { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
+  { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
+  { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
 ];
 
 export default function Home() {
@@ -55,13 +55,13 @@ export default function Home() {
           </Link>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3">
-          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
             <span className="text-zinc-500">$</span>
-            <code className="text-zinc-300">npm install --save-dev agenthood</code>
+            <code className="text-zinc-200">npm install --save-dev agenthood</code>
           </div>
-          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
             <span className="text-zinc-500">$</span>
-            <code className="text-zinc-300">npx agenthood init</code>
+            <code className="text-zinc-200">npx agenthood init</code>
           </div>
         </div>
       </section>
@@ -104,7 +104,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Open Playground
             </Link>
@@ -139,14 +139,15 @@ export default function Home() {
         </p>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {agents.map((a) => (
-            <div
+            <Link
               key={a.name}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+              href={`/docs/members/${a.slug}/`}
+              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors block"
             >
               <div className="text-2xl mb-3">{a.icon}</div>
               <div className="text-white font-medium text-sm mb-1">{a.name}</div>
               <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
@@ -155,7 +156,7 @@ export default function Home() {
       <section id="how" className="max-w-6xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
         <p className="text-zinc-400 mb-12 max-w-2xl">
-          Each agent is a single <code className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded text-sm">.md</code> file
+          Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
           that describes a role, its responsibilities, standards, and how it communicates.
           Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
           Or run them autonomously via the TypeScript CLI.
