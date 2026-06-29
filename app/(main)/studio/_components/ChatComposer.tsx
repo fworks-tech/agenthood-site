@@ -63,6 +63,17 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    const files = e.dataTransfer.files;
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].type.startsWith("image/")) {
+        e.preventDefault();
+        showWarning("This model does not support image input. Text only.");
+        return;
+      }
+    }
+  };
+
   return (
     <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3">
       {imageWarning && (
@@ -80,6 +91,8 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
           }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
           placeholder="Type a message..."
           rows={1}
           disabled={isStreaming || disabled}
