@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
-const OUTPUT_DIR = join(PROJECT_ROOT, "app", "studio", "_data");
+const OUTPUT_DIR = join(PROJECT_ROOT, "app", "(main)", "studio", "_data");
 const OUTPUT_FILE = join(OUTPUT_DIR, "agents.generated.ts");
 
 const MEMBERS = [

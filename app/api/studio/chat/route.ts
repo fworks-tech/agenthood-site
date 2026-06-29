@@ -49,6 +49,8 @@ function validateMessages(messages: unknown): { role: string; content: string }[
   return (messages as { role: string; content: string }[]);
 }
 
+const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq"]);
+
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
   if (!config || typeof config !== "object") return validated;
@@ -63,21 +65,21 @@ function validateConfig(config: unknown): ChatRequestConfig {
   }
   if (typeof c.provider === "string") validated.provider = c.provider;
   if (typeof c.baseUrl === "string") {
-    validateBaseUrl(c.baseUrl, c.provider as string | undefined);
+    if (c.provider && CLOUD_PROVIDERS.has(c.provider as string)) {
+      throw new ValidationError(`baseUrl is not supported for ${c.provider}. Use the default API endpoint.`);
+    }
+    validateBaseUrl(c.baseUrl);
     validated.baseUrl = c.baseUrl;
   }
 
   return validated;
 }
 
-const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq", "opencode", "opencode-go"]);
-
-function validateBaseUrl(baseUrl: string, provider?: string): void {
-  if (provider && CLOUD_PROVIDERS.has(provider)) return;
+function validateBaseUrl(baseUrl: string): void {
   try {
     const url = new URL(baseUrl);
     const hostname = url.hostname.replace(/^\[(.+)\]$/, "$1");
-    const allowed = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+    const allowed = new Set(["localhost", "127.0.0.1", "::1"]);
     if (!allowed.has(hostname)) {
       throw new ValidationError("Only localhost endpoints are allowed for self-hosted providers");
     }

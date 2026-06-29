@@ -9,17 +9,6 @@ export class StudioError extends Error {
   }
 }
 
-export class ProviderUnavailableError extends StudioError {
-  constructor(provider: string) {
-    super(
-      `Provider "${provider}" is not configured. Set the corresponding API key in environment variables.`,
-      "PROVIDER_UNAVAILABLE",
-      503,
-    );
-    this.name = "ProviderUnavailableError";
-  }
-}
-
 export class AgentNotFoundError extends StudioError {
   constructor(agentId: string) {
     super(`Agent "${agentId}" not found.`, "AGENT_NOT_FOUND", 404);

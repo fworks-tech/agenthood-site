@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { readSSEStream } from "../app/studio/_lib/stream";
+import { readSSEStream } from "../app/(main)/studio/_lib/stream";
 
 function createStreamResponse(lines: string[]): Response {
   const encoder = new TextEncoder();
