@@ -63,14 +63,17 @@ function validateConfig(config: unknown): ChatRequestConfig {
   }
   if (typeof c.provider === "string") validated.provider = c.provider;
   if (typeof c.baseUrl === "string") {
-    validateBaseUrl(c.baseUrl);
+    validateBaseUrl(c.baseUrl, c.provider as string | undefined);
     validated.baseUrl = c.baseUrl;
   }
 
   return validated;
 }
 
-function validateBaseUrl(baseUrl: string): void {
+const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq", "opencode", "opencode-go"]);
+
+function validateBaseUrl(baseUrl: string, provider?: string): void {
+  if (provider && CLOUD_PROVIDERS.has(provider)) return;
   try {
     const url = new URL(baseUrl);
     const hostname = url.hostname.replace(/^\[(.+)\]$/, "$1");
