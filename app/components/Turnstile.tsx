@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA"; // invisible mode key
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 interface TurnstileProps {
   onToken: (token: string | null) => void;
@@ -29,7 +29,7 @@ export default function Turnstile({ onToken }: TurnstileProps) {
   const widgetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current || typeof window === "undefined") return;
+    if (!SITE_KEY || !containerRef.current || typeof window === "undefined") return;
 
     const id = "turnstile-" + Math.random().toString(36).slice(2, 9);
 
@@ -64,6 +64,8 @@ export default function Turnstile({ onToken }: TurnstileProps) {
       }
     };
   }, [onToken]);
+
+  if (!SITE_KEY) return null;
 
   return <div ref={containerRef} className="turnstile-widget" style={{ position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }} />;
 }

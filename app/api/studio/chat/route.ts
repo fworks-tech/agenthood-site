@@ -83,14 +83,8 @@ function validateConfig(config: unknown): ChatRequestConfig {
 
 function validateBaseUrl(baseUrl: string): void {
   try {
-    const url = new URL(baseUrl);
-    const hostname = url.hostname.replace(/^\[(.+)\]$/, "$1");
-    const allowed = new Set(["localhost", "127.0.0.1", "::1"]);
-    if (!allowed.has(hostname)) {
-      throw new ValidationError("Only localhost endpoints are allowed for self-hosted providers");
-    }
-  } catch (err) {
-    if (err instanceof ValidationError) throw err;
+    new URL(baseUrl);
+  } catch {
     throw new ValidationError("Invalid baseUrl format");
   }
 }
