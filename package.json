@@ -8,12 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "sync": "node scripts/sync-docs.mjs",
-    "prebuild": "npm run sync",
-    "predev": "npm run sync"
+    "sync-skills": "node scripts/sync-skills.mjs",
+    "prebuild": "npm run sync && npm run sync-skills",
+    "predev": "npm run sync && npm run sync-skills"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
     "@vercel/analytics": "^2.0.1",
+    "agenthood": "^3.5.1",
     "next": "^16.2.7",
+    "openai": "^6.45.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
