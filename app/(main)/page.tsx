@@ -84,6 +84,53 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Studio preview */}
+      <section className="border-y border-zinc-800 bg-gradient-to-b from-zinc-900/30 to-zinc-950">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/30 px-3 py-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="text-xs text-emerald-400">Agenthood Studio</span>
+          </div>
+          <h2 className="text-3xl font-semibold text-white mb-4">
+            Try the Society in your browser
+          </h2>
+          <p className="text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+            Pick any agent, choose your provider, and start a live conversation.
+            No install, no setup — just you and the agents.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              href="/studio/playground"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Open Playground
+            </Link>
+            <Link
+              href="/studio"
+              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
+            >
+              About Studio
+            </Link>
+          </div>
+          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
+            {[
+              { label: "16 agents", desc: "architect, reviewer, tester, and more" },
+              { label: "6 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode" },
+              { label: "SSE streaming", desc: "real-time token-by-token responses" },
+              { label: "BYOK", desc: "use your own API keys" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <div className="text-sm font-semibold text-zinc-200">{s.label}</div>
+                <div className="text-xs text-zinc-500 mt-0.5">{s.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Agents grid */}
       <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
         <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>

@@ -3,10 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 
-const navLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  highlight?: boolean;
+}
+
+const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/getting-started", label: "Getting started" },
-  { href: "/studio", label: "Studio" },
+  { href: "/studio", label: "Studio", highlight: true },
   { href: "/academy", label: "Academy" },
   { href: "/releases", label: "Releases" },
 ];
@@ -25,15 +31,28 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="hover:text-white transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.highlight ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              >
+                {link.label}
+                <span className="rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                  New
+                </span>
+              </Link>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="hover:text-white transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
@@ -78,16 +97,30 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className="md:hidden border-t border-zinc-800 px-6 py-4 space-y-3 bg-zinc-950">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className="block text-zinc-400 hover:text-white transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.highlight ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              >
+                {link.label}
+                <span className="rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                  New
+                </span>
+              </Link>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="block text-zinc-400 hover:text-white transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
