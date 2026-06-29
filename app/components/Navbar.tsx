@@ -12,9 +12,9 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/getting-started", label: "Getting started" },
-  { href: "/studio", label: "Studio", highlight: true },
   { href: "/academy", label: "Academy" },
   { href: "/releases", label: "Releases" },
+  { href: "/studio", label: "Studio", highlight: true },
 ];
 
 export default function Navbar() {
