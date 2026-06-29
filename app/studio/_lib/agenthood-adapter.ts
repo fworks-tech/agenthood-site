@@ -36,10 +36,8 @@ export class LightweightAdapter implements AgenthoodAdapter {
       apiKey: req.config?.apiKey,
     };
 
-    logger.info("chat.request", { agentId: req.agentId, provider: providerName, messageCount: req.messages.length });
-    const startTime = performance.now();
-
     const provider = await LLMRouter.createForMember(providerName as never, llmConfig);
+    const startTime = performance.now();
 
     if (req.config?.model) {
       try { provider.setModel(req.config.model); } catch { /* use provider default */ }
