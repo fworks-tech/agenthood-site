@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Navbar from "../../components/Navbar";
 import MarkdownRenderer from "../../components/MarkdownRenderer";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "adr", "manifest.json");
@@ -76,7 +75,6 @@ export default async function AdrPage({ params }: AdrPageProps) {
   if (slug.length === 0) {
     return (
       <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-        <Navbar />
         <AdrIndex manifest={manifest} />
       </main>
     );
@@ -92,7 +90,6 @@ export default async function AdrPage({ params }: AdrPageProps) {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      <Navbar />
 
       <div className="max-w-3xl mx-auto px-6 py-16">
         <MarkdownRenderer basePath="adr">{markdown}</MarkdownRenderer>

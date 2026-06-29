@@ -1,7 +1,5 @@
-import Link from "next/link";
 import fs from "node:fs";
 import path from "node:path";
-import Navbar from "../components/Navbar";
 import MarkdownRenderer from "../components/MarkdownRenderer";
 
 const RELEASE_NOTES_PATH = path.join(process.cwd(), "content", "release-notes.md");
@@ -19,7 +17,6 @@ export default function Releases() {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      <Navbar />
 
       <div className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
@@ -38,28 +35,6 @@ export default function Releases() {
         </p>
 
         <MarkdownRenderer>{markdown}</MarkdownRenderer>
-
-        <footer className="border-t border-zinc-800 pt-8 mt-16 flex items-center justify-between text-sm text-zinc-600">
-          <span className="flex items-center gap-3">
-            <span>
-              agenthood · by{" "}
-              <a href="https://flabs.tech" className="hover:text-zinc-400 transition-colors">
-                Fabio Ritzel Borges
-              </a>
-            </span>
-            <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
-              v3.0.0
-            </span>
-          </span>
-          <Link
-            href="https://github.com/fworks-tech/agenthood"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-zinc-400 transition-colors"
-          >
-            GitHub
-          </Link>
-        </footer>
       </div>
     </main>
   );
