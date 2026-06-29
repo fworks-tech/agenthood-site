@@ -55,13 +55,13 @@ export default function Home() {
           </Link>
         </div>
         <div className="mt-8 flex flex-col items-center gap-3">
-          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
             <span className="text-zinc-500">$</span>
-            <code className="text-zinc-300">npm install --save-dev agenthood</code>
+            <code className="text-zinc-200">npm install --save-dev agenthood</code>
           </div>
-          <div className="inline-flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 font-mono text-sm">
+          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
             <span className="text-zinc-500">$</span>
-            <code className="text-zinc-300">npx agenthood init</code>
+            <code className="text-zinc-200">npx agenthood init</code>
           </div>
         </div>
       </section>
@@ -104,7 +104,7 @@ export default function Home() {
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               Open Playground
             </Link>
@@ -156,7 +156,7 @@ export default function Home() {
       <section id="how" className="max-w-6xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
         <p className="text-zinc-400 mb-12 max-w-2xl">
-          Each agent is a single <code className="bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded text-sm">.md</code> file
+          Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
           that describes a role, its responsibilities, standards, and how it communicates.
           Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
           Or run them autonomously via the TypeScript CLI.

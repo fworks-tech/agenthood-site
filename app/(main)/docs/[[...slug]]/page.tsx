@@ -112,7 +112,7 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
   const sortedSections = SECTION_ORDER.filter((s) => grouped.has(s));
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-16">
+    <div className="max-w-5xl mx-auto px-6 py-16">
       <Breadcrumbs segments={["docs"]} />
       <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
         Docs
@@ -121,44 +121,39 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
         Everything you need to know about Agenthood.
       </p>
 
-      <div className="space-y-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedSections.map((section) => {
           const all = grouped.get(section)!;
-          const entries = all.filter((a) =>
-            !all.some((b) =>
-              b.slug.length < a.slug.length &&
-              b.slug.length > 0 &&
-              b.slug.every((s, i) => s === a.slug[i])
-            )
+          const contentEntries = all.filter(
+            (e) => e.slug.length > 1 && !e.slug[e.slug.length - 1].toUpperCase().includes("SKILL")
           );
           const sectionHref = `/docs/${section}/`;
           const sectionLabel = SECTION_LABELS[section] || displayName(section);
 
           return (
-            <section key={section}>
-              <h2 className="text-2xl font-semibold text-white mb-4">
-                <Link href={sectionHref} className="text-emerald-400 hover:text-emerald-300 transition-colors">
-                  {sectionLabel}
-                </Link>
+            <Link
+              key={section}
+              href={sectionHref}
+              className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+            >
+              <h2 className="text-lg font-semibold text-emerald-400 mb-3">
+                {sectionLabel}
               </h2>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {entries.map((entry) => {
-                  const isReadme = entry.slug.length === 1;
-                  if (isReadme) return null;
-                  const href = `/docs/${entry.slug.join("/")}/`;
-                  return (
-                    <li key={entry.slug.join("/")}>
-                      <Link
-                        href={href}
-                        className="text-emerald-400 hover:text-emerald-300 transition-colors"
-                      >
-                        <span className="font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
-                      </Link>
+              {contentEntries.length > 0 ? (
+                <ul className="space-y-1">
+                  {contentEntries.slice(0, 6).map((entry) => (
+                    <li key={entry.slug.join("/")} className="text-sm text-zinc-400 truncate">
+                      {entry.title || displayName(entry.slug[entry.slug.length - 1])}
                     </li>
-                  );
-                })}
-              </ul>
-            </section>
+                  ))}
+                  {contentEntries.length > 6 && (
+                    <li className="text-xs text-zinc-600">+{contentEntries.length - 6} more</li>
+                  )}
+                </ul>
+              ) : (
+                <p className="text-sm text-zinc-600">Overview</p>
+              )}
+            </Link>
           );
         })}
       </div>
@@ -180,7 +175,7 @@ function SectionIndex({ slug, entries, title }: { slug: string[]; entries: Manif
             <li key={entry.slug.join("/")}>
               <Link
                 href={href}
-                className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-4 hover:border-zinc-600 transition-colors"
+                className="block bg-zinc-900 border border-zinc-800/80 rounded-xl px-5 py-4 hover:border-zinc-600 transition-colors"
               >
                 <span className="text-white font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
               </Link>

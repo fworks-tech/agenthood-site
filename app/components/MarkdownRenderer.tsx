@@ -18,7 +18,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-1.5 rounded-md bg-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/80 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 text-xs"
+      className="absolute top-3 right-3 p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 text-xs border border-zinc-700/50"
       aria-label="Copy code"
     >
       {copied ? (
@@ -89,7 +89,9 @@ function rewriteHref(href: string, basePath: string): string {
     }
     sitePath = sitePath.replace(/\.md$/i, "").replace(/\/+$/, "");
 
-    if (sitePath.endsWith("/README")) {
+    if (sitePath.endsWith("/SKILL")) {
+      sitePath = sitePath.slice(0, -"/SKILL".length);
+    } else if (sitePath.endsWith("/README")) {
       sitePath = sitePath.slice(0, -"/README".length);
     } else if (sitePath === "README") {
       sitePath = "";
@@ -204,7 +206,7 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
       const isInline = !className;
       if (isInline) {
         return (
-          <code className="bg-zinc-800 text-emerald-400 px-1.5 py-0.5 rounded text-sm font-mono">
+          <code className="bg-zinc-800/70 text-emerald-400 px-1.5 py-0.5 rounded-md text-sm font-mono border border-zinc-700/50">
             {children}
           </code>
         );
@@ -212,28 +214,32 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
       const codeText = childrenToString(children);
       return (
         <div className="group relative mb-4">
-          <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto">
-            <code className="text-sm font-mono text-zinc-300">{children}</code>
+          <pre className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl p-5 overflow-x-auto shadow-inner">
+            <code className="text-sm font-mono text-zinc-200 leading-relaxed">{children}</code>
           </pre>
           <CopyButton text={codeText} />
         </div>
       );
     },
     br: () => <br />,
-    hr: () => <hr className="border-zinc-800 my-8" />,
+    hr: () => <hr className="border-zinc-800/60 my-10" />,
     blockquote: ({ children }) => (
-      <blockquote className="border-l border-zinc-600 bg-zinc-800/50 pl-4 pr-4 py-3 text-zinc-400 mb-6 last:mb-0 rounded-r-lg">
+      <blockquote className="border-l-2 border-emerald-500/50 bg-zinc-800/30 pl-5 pr-4 py-3.5 text-zinc-400 mb-6 last:mb-0 rounded-r-lg">
         {children}
       </blockquote>
     ),
     strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-    table: ({ children }) => <table className="w-full text-sm mb-4 border-collapse">{children}</table>,
-    thead: ({ children }) => <thead className="border-b border-zinc-800">{children}</thead>,
-    th: ({ children }) => (
-      <th className="text-left text-zinc-400 font-medium py-2 pr-4">{children}</th>
+    table: ({ children }) => (
+      <div className="mb-6 overflow-x-auto rounded-lg border border-zinc-800/80">
+        <table className="w-full text-sm">{children}</table>
+      </div>
     ),
-    td: ({ children }) => <td className="py-2 pr-4 text-zinc-300">{children}</td>,
-    tr: ({ children }) => <tr className="border-b border-zinc-800/50 last:border-b-0">{children}</tr>,
+    thead: ({ children }) => <thead className="bg-zinc-900/80">{children}</thead>,
+    th: ({ children }) => (
+      <th className="text-left text-zinc-400 font-medium px-4 py-2.5 border-b border-zinc-800/80">{children}</th>
+    ),
+    td: ({ children }) => <td className="px-4 py-2.5 text-zinc-300 border-b border-zinc-800/40">{children}</td>,
+    tr: ({ children }) => <tr className="hover:bg-zinc-800/20 transition-colors">{children}</tr>,
   };
 
   return (
