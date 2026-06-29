@@ -8,8 +8,8 @@ import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
 import LiveLogs from "../_components/LiveLogs";
 import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig } from "../_types/chat-config";
-import { getDefaultModel } from "../_types/chat-config";
+import type { ChatConfig } from "../_types/studio";
+import { getDefaultModel } from "../_types/studio";
 import type { LogEntry } from "../_components/LiveLogs";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
@@ -45,7 +45,7 @@ export default function PlaygroundPage() {
 
   const handleSelectAgent = useCallback((agent: AgentEntry) => {
     setSelectedAgent(agent);
-    const defaultModel = getDefaultModel(agent.preferredProvider);
+    const defaultModel = getDefaultModel(agent.preferredProvider as ChatConfig["provider"]);
     setConfig((prev) => ({
       ...prev,
       provider: agent.preferredProvider as ChatConfig["provider"],

@@ -12,7 +12,13 @@ const MAX_MESSAGES = 50;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
 
-function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[]; config?: ChatConfigParams } {
+interface ExtendedConfig extends ChatConfigParams {
+  provider?: string;
+  baseUrl?: string;
+  apiKey?: string;
+}
+
+function validateRequest(body: unknown): { agentId: string; messages: { role: string; content: string }[]; config: ExtendedConfig } {
   if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
 
   const { agentId, messages, config } = body as Record<string, unknown>;
@@ -34,7 +40,7 @@ function validateRequest(body: unknown): { agentId: string; messages: { role: st
 
   if (totalChars > MAX_TOTAL_CHARS) throw new ValidationError(`Total message content exceeds ${MAX_TOTAL_CHARS} characters`);
 
-  const validatedConfig: ChatConfigParams = {};
+  const validatedConfig: ExtendedConfig = {};
   if (config && typeof config === "object") {
     const c = config as Record<string, unknown>;
     if (typeof c.model === "string") validatedConfig.model = c.model;
@@ -43,6 +49,21 @@ function validateRequest(body: unknown): { agentId: string; messages: { role: st
     }
     if (typeof c.maxTokens === "number" && c.maxTokens > 0) {
       validatedConfig.maxTokens = c.maxTokens;
+    }
+    if (typeof c.provider === "string") validatedConfig.provider = c.provider;
+    if (typeof c.baseUrl === "string") validatedConfig.baseUrl = c.baseUrl;
+    if (typeof c.apiKey === "string") validatedConfig.apiKey = c.apiKey;
+  }
+
+  if (validatedConfig.baseUrl) {
+    try {
+      const url = new URL(validatedConfig.baseUrl);
+      if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+        throw new ValidationError("Only localhost endpoints are allowed for self-hosted providers");
+      }
+    } catch (err) {
+      if (err instanceof ValidationError) throw err;
+      throw new ValidationError("Invalid baseUrl format");
     }
   }
 
