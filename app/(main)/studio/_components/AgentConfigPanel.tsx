@@ -88,7 +88,7 @@ export default function AgentConfigPanel({
                       .filter((a) => a.category === cat.key)
                       .map((agent) => (
                         <option key={agent.id} value={agent.id}>
-                          {agent.name}
+                          {agent.icon ?? ""} {agent.name}
                         </option>
                       ))}
                   </optgroup>

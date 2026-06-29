@@ -27,6 +27,25 @@ const SECTION_LABELS: Record<string, string> = {
   "runtime-guide": "Runtime Guide",
 };
 
+const MEMBER_ICONS: Record<string, string> = {
+  "the-scribe": "✍️",
+  "the-architect": "🏗️",
+  "the-reviewer": "🔍",
+  "the-tester": "🧪",
+  "the-debugger": "🐛",
+  "the-auditor": "🔒",
+  "the-herald": "📦",
+  "the-librarian": "📝",
+  "the-doorman": "🚪",
+  "the-oracle": "🔮",
+  "the-envoy": "🌐",
+  "the-sentinel": "👁️",
+  "the-warden": "⚖️",
+  "the-steward": "🧭",
+  "the-strategist": "🎯",
+  "the-operator": "🩺",
+};
+
 const SECTION_ORDER = [
   "architecture",
   "members",
@@ -124,7 +143,7 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
                     <li key={entry.slug.join("/")}>
                       <Link
                         href={href}
-                        className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-3 hover:border-zinc-600 transition-colors"
+                        className="text-emerald-400 hover:text-emerald-300 transition-colors"
                       >
                         <span className="text-zinc-200 font-medium">{entry.title || displayName(entry.slug[entry.slug.length - 1])}</span>
                       </Link>
@@ -181,7 +200,12 @@ export default async function DocsPage({ params }: DocsPageProps) {
   const entry = findEntry(manifest, slug);
   if (entry) {
     const filePath = path.join(process.cwd(), "content", entry.path);
-    const markdown = fs.readFileSync(filePath, "utf8");
+    let markdown = fs.readFileSync(filePath, "utf8");
+    const isMemberPage = slug.length === 2 && slug[0] === "members";
+    if (isMemberPage) {
+      const icon = MEMBER_ICONS[slug[1]];
+      if (icon) markdown = `${icon} ${markdown}`;
+    }
     return (
       <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
         <div className="max-w-3xl mx-auto px-6 py-16">
@@ -200,9 +224,15 @@ export default async function DocsPage({ params }: DocsPageProps) {
 
   if (sectionEntries.length > 0) {
     const sectionLabel = SECTION_LABELS[prefix] || displayName(prefix);
+    const topLevel = sectionEntries.filter((a) =>
+      !sectionEntries.some((b) =>
+        b.slug.length < a.slug.length &&
+        b.slug.every((s, i) => s === a.slug[i])
+      )
+    );
     return (
       <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-        <SectionIndex slug={slug} entries={sectionEntries} title={sectionLabel} />
+        <SectionIndex slug={slug} entries={topLevel} title={sectionLabel} />
       </main>
     );
   }

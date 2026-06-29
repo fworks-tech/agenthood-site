@@ -1,22 +1,22 @@
 import Link from "next/link";
 
 const agents = [
-  { name: "The Scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
-  { name: "The Architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
-  { name: "The Reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
-  { name: "The Tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
-  { name: "The Debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
-  { name: "The Auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
-  { name: "The Herald", icon: "📦", desc: "Releases, versioning, changelogs" },
-  { name: "The Librarian", icon: "📝", desc: "Documentation, API references" },
-  { name: "The Doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
-  { name: "The Oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
-  { name: "The Envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
-  { name: "The Sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
-  { name: "The Warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
-  { name: "The Steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
-  { name: "The Strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
-  { name: "The Operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
+  { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
+  { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
+  { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
+  { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
+  { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
+  { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
+  { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs" },
+  { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references" },
+  { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
+  { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
+  { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
+  { name: "The Sentinel", slug: "the-sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
+  { name: "The Warden", slug: "the-warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
+  { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
+  { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
+  { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
 ];
 
 export default function Home() {
@@ -139,14 +139,15 @@ export default function Home() {
         </p>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {agents.map((a) => (
-            <div
+            <Link
               key={a.name}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+              href={`/docs/members/${a.slug}/`}
+              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors block"
             >
               <div className="text-2xl mb-3">{a.icon}</div>
               <div className="text-white font-medium text-sm mb-1">{a.name}</div>
               <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>

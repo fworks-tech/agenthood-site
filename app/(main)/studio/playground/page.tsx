@@ -183,7 +183,7 @@ export default function PlaygroundPage() {
                 <option value="" disabled>Select an agent...</option>
                 {agents.map((agent) => (
                   <option key={agent.id} value={agent.id}>
-                    {agent.name} — {agent.role}
+                    {agent.icon ?? ""} {agent.name} — {agent.role}
                   </option>
                 ))}
               </select>

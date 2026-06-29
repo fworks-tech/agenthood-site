@@ -26,11 +26,15 @@ export default function AgentListItem({ agent, isSelected, onSelect }: AgentList
       }`}
     >
       <div className="flex items-center gap-2.5">
-        <span
-          className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-            agent.enabled ? CATEGORY_COLORS[agent.category] || "bg-zinc-500" : "bg-zinc-600"
-          }`}
-        />
+        {agent.icon ? (
+          <span className="shrink-0 text-base">{agent.icon}</span>
+        ) : (
+          <span
+            className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+              agent.enabled ? CATEGORY_COLORS[agent.category] || "bg-zinc-500" : "bg-zinc-600"
+            }`}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <p className={`truncate text-sm font-medium ${
             isSelected ? "text-white" : "text-zinc-300"
