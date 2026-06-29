@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { notFound } from "next/navigation";
-import Navbar from "../../components/Navbar";
 import MarkdownRenderer from "../../components/MarkdownRenderer";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "academy", "manifest.json");
@@ -58,7 +57,6 @@ export default async function AcademyPage({ params }: AcademyPageProps) {
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      <Navbar />
 
       <div className="max-w-3xl mx-auto px-6 py-16">
         <MarkdownRenderer basePath={basePath}>{markdown}</MarkdownRenderer>
