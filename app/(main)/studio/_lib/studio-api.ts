@@ -12,7 +12,7 @@ export async function sendChat(
   config: Partial<ChatConfig>,
   signal?: AbortSignal,
 ): Promise<Response> {
-  return fetch("/api/studio/chat", {
+  return fetch("/api/studio/chat/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ agentId, messages, config }),
