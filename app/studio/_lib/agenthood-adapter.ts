@@ -36,7 +36,6 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const llmConfig: LLMConfig = {
       provider: providerName,
-      model: req.config?.model,
       baseUrl: req.config?.baseUrl,
       apiKey: req.config?.apiKey,
     };
@@ -46,7 +45,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const provider = await LLMRouter.createForMember(providerName as never, llmConfig);
 
-    if (req.config?.model) provider.setModel(req.config.model);
+    if (req.config?.model) {
+      try { provider.setModel(req.config.model); } catch { /* use provider default */ }
+    }
 
     const request: LLMRequest = {
       messages: [
