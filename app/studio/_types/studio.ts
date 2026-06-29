@@ -78,7 +78,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     label: "OpenCode",
     requiresKey: false,
     requiresBaseUrl: true,
-    defaultBaseUrl: "http://localhost:4000",
+    defaultBaseUrl: "https://opencode.ai/zen/v1",
     models: [
       { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
       { id: "opencode-1", label: "OpenCode 1" },
