@@ -43,7 +43,7 @@ export default function AgentConfigPanel({
   };
 
   const isCodeAgent = selectedAgent && CODE_AGENTS.has(selectedAgent.id);
-  const isOpenCodeSuggestion = isCodeAgent && config.provider !== "opencode";
+  const isOpenCodeSuggestion = isCodeAgent && config.provider !== "opencode" && config.provider !== "opencode-go";
 
   return (
     <div className="flex h-full flex-col overflow-y-auto border-r border-zinc-800 bg-zinc-950">
@@ -112,23 +112,6 @@ export default function AgentConfigPanel({
             </div>
           </section>
         )}
-
-        {/* System Prompt */}
-        <section>
-          <label htmlFor={`${panelId}-prompt`} className="mb-1.5 block text-xs font-medium text-zinc-400">
-            System Prompt
-          </label>
-          <textarea
-            id={`${panelId}-prompt`}
-            value={config.systemPrompt}
-            onChange={(e) => onChangeConfig({ ...config, systemPrompt: e.target.value })}
-            readOnly
-            rows={6}
-            className="w-full resize-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400 focus:border-emerald-500 focus:outline-none"
-            placeholder="System prompt loaded from agent skill file..."
-          />
-          <p className="mt-1 text-xs text-zinc-600">Read-only. Synced from the agent&apos;s SKILL.md</p>
-        </section>
 
         {/* Model & Behavior */}
         <section>
