@@ -7,6 +7,7 @@ import AgentConfigPanel from "../_components/AgentConfigPanel";
 import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
 import LiveLogs from "../_components/LiveLogs";
+import ConversationList from "../_components/ConversationList";
 import Turnstile from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
@@ -108,6 +109,13 @@ export default function PlaygroundPage() {
     if (!configOpen) setConfigOpen(true);
   }, [chat, addLog, configOpen]);
 
+  const handleNewConversation = useCallback(() => {
+    if (selectedAgent) {
+      chat.newConversation(selectedAgent.id);
+      addLog("info", `New conversation with ${selectedAgent.name}`);
+    }
+  }, [chat, selectedAgent, addLog]);
+
   const handleConfigChange = useCallback((newConfig: ChatConfig) => {
     if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
       addLog("info", `Config: ${newConfig.provider} · ${newConfig.model}`);
@@ -137,24 +145,35 @@ export default function PlaygroundPage() {
       />
     )}
     <div className="relative flex h-full max-w-7xl mx-auto">
-      {/* Left Column — Agent Configuration */}
+      {/* Left Column — Conversations + Agent Configuration */}
       <div
         className={`${
           configOpen ? "w-72" : "w-0"
         } shrink-0 transition-all duration-200 overflow-hidden
-        absolute inset-y-0 left-0 z-20 md:relative md:inset-auto`}
+        absolute inset-y-0 left-0 z-20 md:relative md:inset-auto flex flex-col`}
       >
         {configOpen && (
-        <AgentConfigPanel
-          agents={agents}
-          isLoading={isLoading}
-          error={error}
-          selectedAgent={selectedAgent}
-          config={config}
-          onChangeConfig={handleConfigChange}
-          onChangeAgent={handleSelectAgent}
-          onSave={handleSaveConfig}
-        />
+          <>
+            <ConversationList
+              conversations={conversations}
+              activeConversationId={activeConversationId}
+              onSelect={chat.switchConversation}
+              onNewConversation={handleNewConversation}
+              onDelete={chat.deleteConversation}
+            />
+            <div className="flex-1 overflow-hidden">
+              <AgentConfigPanel
+                agents={agents}
+                isLoading={isLoading}
+                error={error}
+                selectedAgent={selectedAgent}
+                config={config}
+                onChangeConfig={handleConfigChange}
+                onChangeAgent={handleSelectAgent}
+                onSave={handleSaveConfig}
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -181,10 +200,25 @@ export default function PlaygroundPage() {
             <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
           </div>
           {selectedAgent && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {selectedAgent.icon && <span className="text-base">{selectedAgent.icon}</span>}
               <span className="text-sm font-medium text-zinc-300">{selectedAgent.name}</span>
               <span className="text-xs text-zinc-600">· {config.provider} · {config.model}</span>
+              {chat.totalTokens > 0 && (
+                <span className="rounded bg-zinc-800 px-2 py-0.5 text-[11px] font-mono text-zinc-400">
+                  ~{chat.totalTokens} tok
+                </span>
+              )}
+              {chat.messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={chat.clearMessages}
+                  className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors"
+                  title="Clear conversation"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           )}
         </div>

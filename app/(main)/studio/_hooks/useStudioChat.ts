@@ -10,9 +10,10 @@ const STORAGE_KEY = "agenthood-studio-conversations";
 const MAX_CONVERSATIONS = 50;
 const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
-interface Conversation {
+export interface Conversation {
   id: string;
   agentId: string;
+  title: string;
   messages: ChatMessage[];
   config: Partial<ChatConfig>;
   createdAt: number;
@@ -28,15 +29,28 @@ interface UseStudioChatReturn {
   activeConversationId: string | null;
   isStreaming: boolean;
   messages: ChatMessage[];
+  totalTokens: number;
   sendMessage: (content: string) => Promise<void>;
   abortStream: () => void;
   clearMessages: () => void;
   newConversation: (agentId: string) => void;
   switchConversation: (id: string) => void;
+  deleteConversation: (id: string) => void;
 }
 
 function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function migrateConversation(c: Record<string, unknown>): Conversation {
+  return {
+    id: c.id as string,
+    agentId: c.agentId as string,
+    title: (c.title as string) ?? "New conversation",
+    messages: (c.messages as Conversation["messages"]) ?? [],
+    config: (c.config as Conversation["config"]) ?? {},
+    createdAt: (c.createdAt as number) ?? Date.now(),
+  };
 }
 
 function loadConversations(): Conversation[] {
@@ -44,8 +58,11 @@ function loadConversations(): Conversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    const convs: Conversation[] = JSON.parse(raw);
-    return convs.filter((c) => Date.now() - c.createdAt < MAX_CONVERSATION_AGE_MS);
+    const rawConvs = JSON.parse(raw);
+    if (!Array.isArray(rawConvs)) return [];
+    return rawConvs
+      .map(migrateConversation)
+      .filter((c) => Date.now() - c.createdAt < MAX_CONVERSATION_AGE_MS);
   } catch {
     return [];
   }
@@ -87,6 +104,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(getActiveId);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [totalTokens, setTotalTokens] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const conversationsRef = useRef(conversations);
   conversationsRef.current = conversations;
@@ -108,17 +126,37 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     }
   }, []);
 
+  const generateTitle = useCallback((messages: ChatMessage[]): string => {
+    const firstUser = messages.find((m) => m.role === "user");
+    if (firstUser) {
+      const text = firstUser.content.replace(/\n/g, " ").trim();
+      return text.length > 60 ? text.slice(0, 60) + "…" : text;
+    }
+    return "New conversation";
+  }, []);
+
   const newConversation = useCallback((agentId: string) => {
     const conv: Conversation = {
       id: generateId(),
       agentId,
+      title: "New conversation",
       messages: [],
       config: configRef.current ?? {},
       createdAt: Date.now(),
     };
     const updated = [...conversationsRef.current, conv];
     persist(updated, conv.id);
+    setTotalTokens(0);
   }, [persist]);
+
+  const deleteConversation = useCallback((id: string) => {
+    const updated = conversationsRef.current.filter((c) => c.id !== id);
+    const nextId = id === activeConversationId
+      ? (updated[updated.length - 1]?.id ?? null)
+      : activeConversationId;
+    persist(updated, nextId);
+    if (nextId === null) setTotalTokens(0);
+  }, [activeConversationId, persist]);
 
   const switchConversation = useCallback((id: string) => {
     setActiveConversationId(id);
@@ -132,6 +170,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       c.id === cid ? { ...c, messages: [] } : c,
     );
     persist(updated, cid);
+    setTotalTokens(0);
   }, [activeConversationId, persist]);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -142,8 +181,11 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId() };
 
     const updatedMessages = [...conv.messages, userMsg, assistantMsg];
+    const autoTitle = conv.title === "New conversation"
+      ? generateTitle(updatedMessages)
+      : conv.title;
     const withMessages = conversationsRef.current.map((c) =>
-      c.id === activeConversationId ? { ...c, messages: updatedMessages } : c,
+      c.id === activeConversationId ? { ...c, messages: updatedMessages, title: autoTitle } : c,
     );
     persist(withMessages, activeConversationId);
     setIsStreaming(true);
@@ -171,6 +213,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         {
           onToken: (token) => {
             streamedContent += token;
+            setTotalTokens((prev) => prev + 1);
             setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
           },
           onDone: () => {
@@ -218,10 +261,12 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     activeConversationId,
     isStreaming,
     messages,
+    totalTokens,
     sendMessage,
     abortStream,
     clearMessages,
     newConversation,
     switchConversation,
+    deleteConversation,
   };
 }

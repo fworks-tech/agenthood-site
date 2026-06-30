@@ -26,6 +26,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresKey: true,
     requiresBaseUrl: false,
     models: [
+      { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (default)" },
       { id: "claude-fable-5", label: "Claude Fable 5" },
       { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
       { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
@@ -40,6 +41,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     requiresKey: true,
     requiresBaseUrl: false,
     models: [
+      { id: "gpt-4o", label: "GPT-4o (default)" },
       { id: "gpt-5.5", label: "GPT-5.5" },
       { id: "gpt-5.4", label: "GPT-5.4" },
       { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
