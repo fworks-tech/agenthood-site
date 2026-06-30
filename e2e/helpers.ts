@@ -34,7 +34,7 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
     }
     if (mobileVisible) {
       await page.waitForFunction((id) => {
-        const ms = document.querySelector("select[aria-label='Select an agent']");
+        const ms = document.querySelector("select[aria-label='Select an agent']") as HTMLSelectElement | null;
         if (!ms) return false;
         for (let i = 0; i < ms.options.length; i++) {
           if (ms.options[i].value === id && !ms.disabled) return true;
