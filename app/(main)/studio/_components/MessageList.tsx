@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 import type { ChatMessage } from "../_lib/studio-api";
+import HelpTip from "./HelpTip";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -19,7 +20,10 @@ export default function MessageList({ messages, isStreaming }: MessageListProps)
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-zinc-500">Send a message to start the conversation.</p>
+        <p className="flex items-center gap-1 text-sm text-zinc-500">
+          Send a message to start the conversation.
+          <HelpTip text="This area displays the chat conversation. Select an agent and type a message to begin." />
+        </p>
       </div>
     );
   }

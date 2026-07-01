@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import HelpTip from "./HelpTip";
 
 interface OllamaConnectivityCheckProps {
   baseUrl: string;
@@ -34,6 +35,7 @@ export default function OllamaConnectivityCheck({ baseUrl }: OllamaConnectivityC
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
           Checking Ollama connection...
+          <HelpTip text="Verifies that your local Ollama instance is reachable before sending requests." />
         </div>
       </section>
     );
@@ -47,6 +49,7 @@ export default function OllamaConnectivityCheck({ baseUrl }: OllamaConnectivityC
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           Ollama connected at {baseUrl}
+          <HelpTip text="Ollama is reachable and ready. Requests will be sent to your local instance." />
         </div>
       </section>
     );
@@ -58,8 +61,11 @@ export default function OllamaConnectivityCheck({ baseUrl }: OllamaConnectivityC
         <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <div>
-          <p className="text-xs font-medium text-amber-300">Ollama not detected</p>
+        <div className="flex-1">
+          <p className="flex items-center gap-1 text-xs font-medium text-amber-300">
+            Ollama not detected
+            <HelpTip text="If disconnected, ensure Ollama is running and the Base URL above is correct." />
+          </p>
           <p className="mt-0.5 text-xs text-amber-500/70">
             Make sure Ollama is running at {baseUrl}.&nbsp;
             <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-400">

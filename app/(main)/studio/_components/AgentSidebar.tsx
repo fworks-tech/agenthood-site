@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AgentListItem from "./AgentListItem";
 import type { AgentEntry } from "../_data/agents";
+import HelpTip from "./HelpTip";
 
 interface AgentSidebarProps {
   agents: AgentEntry[];
@@ -38,11 +39,18 @@ export default function AgentSidebar({ agents, selectedAgent, onSelect, isLoadin
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-zinc-800 px-4 py-4">
-        <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">Society Members</h2>
+        <h2 className="flex items-center gap-1 text-sm font-semibold text-zinc-100 tracking-tight">
+          Society Members
+          <HelpTip text="The 16 AI agent members of the Agenthood Society, each with a specialized role." />
+        </h2>
         <p className="text-xs text-zinc-500 mt-0.5">Select an agent to start chatting</p>
       </div>
 
       <div className="px-4 py-3">
+        <label className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+          Search agents
+          <HelpTip text="Filter the agent list by name, role, or description to quickly find the right member." />
+        </label>
         <input
           type="text"
           placeholder="Search agents..."

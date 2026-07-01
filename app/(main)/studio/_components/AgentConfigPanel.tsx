@@ -5,6 +5,7 @@ import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { PROVIDER_MODELS, getDefaultModel, getProviderMeta, CODE_AGENTS } from "../_types/studio";
 import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
+import HelpTip from "./HelpTip";
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
@@ -83,8 +84,9 @@ export default function AgentConfigPanel({
       <div className="flex-1 space-y-5 p-4">
         {/* Agent Selection */}
         <section>
-          <label htmlFor={`${panelId}-agent`} className="mb-1.5 block text-xs font-medium text-zinc-400">
+          <label htmlFor={`${panelId}-agent`} className="mb-1.5 flex items-center gap-1 text-xs font-medium text-zinc-400">
             Agent
+            <HelpTip text="Choose a specialized AI agent member. Each has a unique role and system prompt optimized for specific tasks." />
           </label>
           <select
             id={`${panelId}-agent`}
@@ -135,7 +137,10 @@ export default function AgentConfigPanel({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <div>
-                <p className="text-xs font-medium text-emerald-300">Code-optimized provider available</p>
+                <p className="text-xs font-medium text-emerald-300 flex items-center gap-1">
+                  Code-optimized provider available
+                  <HelpTip text="This code-focused agent is optimized for OpenCode providers offering lower latency and better coding performance." />
+                </p>
                 <p className="mt-0.5 text-xs text-emerald-500/70">
                   {selectedAgent!.name} works best with a code-optimized provider.
                 </p>
@@ -156,8 +161,9 @@ export default function AgentConfigPanel({
 
           <div className="space-y-3">
             <div>
-              <label htmlFor={`${panelId}-provider`} className="mb-1 block text-xs text-zinc-500">
+              <label htmlFor={`${panelId}-provider`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                 Provider
+                <HelpTip text="Choose which LLM service (Anthropic, OpenAI, Groq, Ollama, OpenCode) powers the agent. Each offers different models and pricing." />
               </label>
               <select
                 id={`${panelId}-provider`}
@@ -172,8 +178,9 @@ export default function AgentConfigPanel({
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-model`} className="mb-1 block text-xs text-zinc-500">
+              <label htmlFor={`${panelId}-model`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                 Model
+                <HelpTip text="Select the specific AI model version. Models vary in capability, speed, and cost. The default model is recommended." />
               </label>
               <select
                 id={`${panelId}-model`}
@@ -190,8 +197,9 @@ export default function AgentConfigPanel({
             {/* Base URL (for Ollama / OpenCode) */}
             {meta.requiresBaseUrl && (
               <div>
-                <label htmlFor={`${panelId}-baseurl`} className="mb-1 block text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-baseurl`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                   Base URL
+                  <HelpTip text="The server endpoint for self-hosted providers (Ollama, OpenCode). Leave as default unless running on a custom address." />
                 </label>
                 <input
                   id={`${panelId}-baseurl`}
@@ -206,8 +214,9 @@ export default function AgentConfigPanel({
 
             {/* API Key (optional — for BYOK) */}
             <div>
-              <label htmlFor={`${panelId}-apikey`} className="mb-1 block text-xs text-zinc-500">
+              <label htmlFor={`${panelId}-apikey`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                 API Key <span className="text-zinc-600">(optional)</span>
+                <HelpTip text="Provide your own API key. If left blank, the servers default key is used. Sent server-side only; never stored." />
               </label>
               <div className="relative">
                 <input
@@ -225,8 +234,9 @@ export default function AgentConfigPanel({
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-temp`} className="mb-1 block text-xs text-zinc-500">
+              <label htmlFor={`${panelId}-temp`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                 Temperature: {config.temperature.toFixed(1)}
+                <HelpTip text="Controls randomness in responses. Lower values (0) produce more focused answers; higher values (2) generate more creative output." />
               </label>
               <input
                 id={`${panelId}-temp`}
@@ -239,14 +249,21 @@ export default function AgentConfigPanel({
                 className="w-full accent-emerald-500"
               />
               <div className="flex justify-between text-xs text-zinc-600">
-                <span>Precise (0)</span>
-                <span>Creative (2)</span>
+                <span className="flex items-center gap-1">
+                  Precise (0)
+                  <HelpTip text="At 0, the model picks the most likely tokens for deterministic, focused responses." side="left" />
+                </span>
+                <span className="flex items-center gap-1">
+                  Creative (2)
+                  <HelpTip text="At 2, the model explores more surprising alternatives for creative, varied output." side="right" />
+                </span>
               </div>
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-tokens`} className="mb-1 block text-xs text-zinc-500">
+              <label htmlFor={`${panelId}-tokens`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
                 Max Tokens: {config.maxTokens.toLocaleString()}
+                <HelpTip text="Limits the length of each response. A token is roughly one word. Larger values allow longer responses but consume more context." />
               </label>
               <input
                 id={`${panelId}-tokens`}
@@ -259,8 +276,14 @@ export default function AgentConfigPanel({
                 className="w-full accent-emerald-500"
               />
               <div className="flex justify-between text-xs text-zinc-600">
-                <span>256</span>
-                <span>16,384</span>
+                <span className="flex items-center gap-1">
+                  256
+                  <HelpTip text="Minimum response length. The model will always produce at least 256 tokens per response." side="left" />
+                </span>
+                <span className="flex items-center gap-1">
+                  16,384
+                  <HelpTip text="Maximum response length. Higher values allow very long responses but consume more context window space." side="right" />
+                </span>
               </div>
             </div>
           </div>
@@ -273,7 +296,10 @@ export default function AgentConfigPanel({
 
         {/* Safety */}
         <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-          <h3 className="mb-2 text-xs font-semibold text-zinc-400">Safety &amp; Limits</h3>
+          <h3 className="mb-2 flex items-center gap-1 text-xs font-semibold text-zinc-400">
+            Safety &amp; Limits
+            <HelpTip text="Built-in guardrails that protect against abuse. These limits apply to all conversations." />
+          </h3>
           <div className="space-y-1.5 text-xs text-zinc-500">
             <div className="flex justify-between">
               <span>Rate limit (chat)</span>
@@ -298,13 +324,16 @@ export default function AgentConfigPanel({
 
         {/* Save */}
         {onSave && (
-          <button
-            type="button"
-            onClick={() => onSave(config)}
-            className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
-          >
-            Save configuration
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onSave(config)}
+              className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
+            >
+              Save configuration
+            </button>
+            <HelpTip text="Persists the current provider, model, and settings to your browsers local storage." side="right" />
+          </div>
         )}
       </div>
       )}

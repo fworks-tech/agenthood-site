@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Conversation } from "../_hooks/useStudioChat";
 import { agents } from "../_data/agents";
 import type { AgentEntry } from "../_data/agents";
+import HelpTip from "./HelpTip";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -51,17 +52,23 @@ export default function ConversationList({
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="text-xs font-medium text-zinc-400">Conversations</span>
+          <span className="flex items-center gap-1 text-xs font-medium text-zinc-400">
+            Conversations
+            <HelpTip text="Your saved chat sessions, stored locally in your browser." />
+          </span>
           <span className="text-[10px] text-zinc-600">{conversations.length}</span>
         </div>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onNewConversation(); }}
-          className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
-          title="New conversation"
-        >
-          + New
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onNewConversation(); }}
+            className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
+            title="New conversation"
+          >
+            + New
+          </button>
+          <HelpTip text="Starts a fresh conversation. Previous conversations are preserved." side="right" />
+        </div>
       </button>
 
       {open && (
@@ -89,16 +96,19 @@ export default function ConversationList({
                       {formatDate(conv.createdAt)}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }}
-                    className="shrink-0 rounded p-0.5 text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
-                    title="Delete conversation"
-                  >
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }}
+                      className="shrink-0 rounded p-0.5 text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+                      title="Delete conversation"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                    <HelpTip text="Permanently removes this conversation and its messages from local storage." side="right" />
+                  </div>
                 </div>
               );
             })

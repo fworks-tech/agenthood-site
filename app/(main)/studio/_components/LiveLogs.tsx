@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import HelpTip from "./HelpTip";
 
 export interface LogEntry {
   time: string;
@@ -56,7 +57,10 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <h3 className="text-xs font-medium text-zinc-500">Live Logs</h3>
+          <h3 className="flex items-center gap-1 text-xs font-medium text-zinc-500">
+            Live Logs
+            <HelpTip text="Real-time event log showing request routing, provider calls, errors, and system messages." />
+          </h3>
         </div>
         <span className="text-xs text-zinc-600">{logs.length} events</span>
       </button>

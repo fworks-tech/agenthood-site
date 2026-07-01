@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import HelpTip from "./HelpTip";
 
 interface ChatComposerProps {
   onSend: (content: string) => void;
@@ -100,26 +101,32 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
         />
 
         {isStreaming ? (
-          <button
-            onClick={onStop}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-600 text-white hover:bg-red-500 transition-colors"
-            aria-label="Stop streaming"
-          >
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-              <rect x="3" y="3" width="10" height="10" rx="1" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onStop}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-600 text-white hover:bg-red-500 transition-colors"
+              aria-label="Stop streaming"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
+                <rect x="3" y="3" width="10" height="10" rx="1" />
+              </svg>
+            </button>
+            <HelpTip text="Halts the currently streaming response. The partial response remains visible." side="right" />
+          </div>
         ) : (
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || disabled}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            aria-label="Send message"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || disabled}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Send message"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+            <HelpTip text="Sends your message. Press Enter to send, Shift+Enter for a new line." side="right" />
+          </div>
         )}
       </div>
     </div>
