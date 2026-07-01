@@ -39,7 +39,7 @@ export default function ConversationList({
   const sorted = [...conversations].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
-    <div className="border-b border-zinc-800">
+    <div className="border border-zinc-800">
       <div className="flex w-full items-center justify-between px-4 py-2">
         <button
           type="button"
@@ -52,9 +52,9 @@ export default function ConversationList({
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
-          <span className="flex items-center gap-1 text-xs font-medium text-zinc-400">
+          <span className="flex items-center gap-1 text-xs font-medium text-zinc-400 my-2 border-b border-zinc-800/80 rounded-xl">
             Conversations
-            <HelpTip text="Your saved chat sessions, stored locally in your browser." />
+            <HelpTip text="Your saved chat sessions, stored locally in your browser." side="bottom" />
           </span>
           <span className="text-[10px] text-zinc-600">{conversations.length}</span>
         </button>
@@ -67,12 +67,12 @@ export default function ConversationList({
           >
             + New
           </button>
-          <HelpTip text="Starts a fresh conversation. Previous conversations are preserved." side="right" />
+          <HelpTip text="Starts a fresh conversation. Previous conversations are preserved." side="left" />
         </div>
       </div>
 
       {open && (
-        <div className="max-h-48 overflow-y-auto border-t border-zinc-800/50">
+        <div className="max-h-48 overflow-y-auto border-t border-zinc-800/50 gap-2 py-2">
           {sorted.length === 0 ? (
             <p className="flex items-center gap-1 px-4 py-3 text-[11px] text-zinc-600 italic">
               No conversations yet
@@ -110,7 +110,7 @@ export default function ConversationList({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
-                    <HelpTip text="Permanently removes this conversation and its messages from local storage." side="right" />
+                    <HelpTip text="Permanently removes this conversation and its messages from local storage." side="left" />
                   </div>
                 </div>
               );
