@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HelpTip from "./studio/_components/HelpTip";
 
 const agents = [
   { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
@@ -69,17 +70,26 @@ export default function Home() {
       {/* Stats bar */}
       <section className="border-y border-zinc-800 bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
-          <div className="px-6">
-            <div className="text-3xl font-semibold text-white">16</div>
-            <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
+          <div className="flex items-center justify-center gap-1 px-6">
+            <div>
+              <div className="text-3xl font-semibold text-white">16</div>
+              <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
+            </div>
+            <HelpTip text="Each agent has a unique role: architect, reviewer, tester, auditor, and more." side="right" />
           </div>
-          <div className="px-6">
-            <div className="text-3xl font-semibold text-white">Any</div>
-            <div className="text-sm text-zinc-500 mt-1">Agent runtime</div>
+          <div className="flex items-center justify-center gap-1 px-6">
+            <div>
+              <div className="text-3xl font-semibold text-white">Any</div>
+              <div className="text-sm text-zinc-500 mt-1">Agent runtime</div>
+            </div>
+            <HelpTip text="Works with Claude Code, Copilot, Gemini CLI, OpenCode, or any skill-file runtime." side="right" />
           </div>
-          <div className="px-6">
-            <div className="text-3xl font-semibold text-white">Zero</div>
-            <div className="text-sm text-zinc-500 mt-1">Tolerance for &ldquo;fix stuff&rdquo; commits</div>
+          <div className="flex items-center justify-center gap-1 px-6">
+            <div>
+              <div className="text-3xl font-semibold text-white">Zero</div>
+              <div className="text-sm text-zinc-500 mt-1">Tolerance for &ldquo;fix stuff&rdquo; commits</div>
+            </div>
+            <HelpTip text="Enforces conventional commits — vague messages are rejected." side="right" />
           </div>
         </div>
       </section>
@@ -117,13 +127,16 @@ export default function Home() {
           </div>
           <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
             {[
-              { label: "16 agents", desc: "architect, reviewer, tester, and more" },
-              { label: "6 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode" },
-              { label: "SSE streaming", desc: "real-time token-by-token responses" },
-              { label: "BYOK", desc: "use your own API keys" },
+              { label: "16 agents", desc: "architect, reviewer, tester, and more", tip: "All 16 Society members available with their full system prompts from SKILL.md." },
+              { label: "6 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode", tip: "Switch providers per conversation. Each offers different models and pricing." },
+              { label: "SSE streaming", desc: "real-time token-by-token responses", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
+              { label: "BYOK", desc: "use your own API keys", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
             ].map((s) => (
               <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="text-sm font-semibold text-zinc-200">{s.label}</div>
+                <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+                  {s.label}
+                  <HelpTip text={s.tip} side="top" />
+                </div>
                 <div className="text-xs text-zinc-500 mt-0.5">{s.desc}</div>
               </div>
             ))}

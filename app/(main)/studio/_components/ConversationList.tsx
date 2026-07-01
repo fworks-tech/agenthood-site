@@ -74,7 +74,10 @@ export default function ConversationList({
       {open && (
         <div className="max-h-48 overflow-y-auto border-t border-zinc-800/50">
           {sorted.length === 0 ? (
-            <p className="px-4 py-3 text-[11px] text-zinc-600 italic">No conversations yet</p>
+            <p className="flex items-center gap-1 px-4 py-3 text-[11px] text-zinc-600 italic">
+              No conversations yet
+              <HelpTip text="Conversations appear here once you send a message to an agent." />
+            </p>
           ) : (
             sorted.map((conv) => {
               const isActive = conv.id === activeConversationId;

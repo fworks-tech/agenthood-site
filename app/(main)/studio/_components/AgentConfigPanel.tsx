@@ -60,23 +60,32 @@ export default function AgentConfigPanel({
     <div className="flex flex-col overflow-y-auto border border-zinc-800 bg-zinc-950">
       <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-200">Agent Configuration</h2>
+          <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+            <h2>Agent Configuration</h2>
+            <HelpTip text="Configuration panel for agent selection, provider, model, and safety limits." side="right" />
+          </div>
           <p className="mt-0.5 text-xs text-zinc-500">Select a Society member and tune behavior</p>
         </div>
         {onToggleCollapse && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="shrink-0 rounded p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
-            aria-label={collapsed ? "Expand configuration" : "Collapse configuration"}
-          >
-            <svg
-              className={`h-4 w-4 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          <div className="flex items-center gap-1">
+            <HelpTip
+              text="Collapses the config panel to give more space to the chat area."
+              side="left"
+            />
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="shrink-0 rounded p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+              aria-label={collapsed ? "Expand configuration" : "Collapse configuration"}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              <svg
+                className={`h-4 w-4 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
 
@@ -157,7 +166,10 @@ export default function AgentConfigPanel({
 
         {/* Model & Behavior */}
         <section>
-          <h3 className="mb-2 text-xs font-medium text-zinc-400">Model &amp; Behavior</h3>
+          <div className="mb-2 flex items-center gap-1 text-xs font-medium text-zinc-400">
+            <h3>Model &amp; Behavior</h3>
+            <HelpTip text="Controls which AI model powers the agent and how it generates responses." />
+          </div>
 
           <div className="space-y-3">
             <div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import HelpTip from "../(main)/studio/_components/HelpTip";
 
 interface NavLink {
   href: string;
@@ -40,8 +41,9 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
-                <span className="rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                <span className="flex items-center gap-1 rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
                   New
+                  <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
                 </span>
               </Link>
             ) : (
@@ -107,8 +109,9 @@ export default function Navbar() {
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
-                <span className="rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                <span className="flex items-center gap-1 rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
                   New
+                  <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
                 </span>
               </Link>
             ) : (
