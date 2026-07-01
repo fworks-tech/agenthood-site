@@ -36,12 +36,12 @@ export default function HelpTip({ text, side = "top", className = "" }: HelpTipP
       role="button"
       aria-label={`Help: ${text}`}
     >
-      <span className="cursor-help rounded-full border border-zinc-700 px-1.5 text-[10px] leading-4 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors select-none">
+      <span className="cursor-help z-50 rounded-full border border-zinc-700 px-1.5 text-[10px] leading-4 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors select-none">
         ?
       </span>
       {show && (
         <span
-          className={`absolute z-50 w-64 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm leading-relaxed text-zinc-200 shadow-xl ${
+          className={`absolute z-50 w-64 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs  text-zinc-200 shadow-xl ${
             sideStyles[side]
           }`}
           style={{ pointerEvents: "none" }}
