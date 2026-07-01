@@ -70,7 +70,10 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
           className="h-20 md:h-28 overflow-y-auto px-3 py-2 font-mono text-[11px] leading-relaxed border-t border-zinc-800/50"
         >
           {logs.length === 0 ? (
-            <p className="text-zinc-600 italic">Waiting for events...</p>
+            <p className="flex items-center gap-1 text-zinc-600 italic">
+              Waiting for events...
+              <HelpTip text="Log entries appear here once you send a message or interact with an agent." />
+            </p>
           ) : (
             logs.map((log, i) => (
               <div key={i} className="flex items-start gap-2">

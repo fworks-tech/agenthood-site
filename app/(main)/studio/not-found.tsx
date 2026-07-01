@@ -1,11 +1,15 @@
 import Link from "next/link";
+import HelpTip from "./_components/HelpTip";
 
 export default function StudioNotFound() {
   return (
     <div className="flex h-[calc(100vh-57px)] items-center justify-center bg-zinc-950">
       <div className="text-center max-w-md px-6">
         <div className="text-4xl mb-4">404</div>
-        <h2 className="text-lg font-semibold text-zinc-300">Page not found</h2>
+        <h2 className="flex items-center justify-center gap-1 text-lg font-semibold text-zinc-300">
+          Page not found
+          <HelpTip text="This URL does not exist in the Studio." />
+        </h2>
         <p className="mt-2 text-sm text-zinc-500">
           This page does not exist in the Studio.
         </p>

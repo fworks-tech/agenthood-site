@@ -293,9 +293,9 @@ export default function PlaygroundPage() {
             ) : (
               <div className="flex h-full items-center justify-center">
                 <div className="max-w-md text-center px-6">
-                  <p className="text-sm text-zinc-500">
-                    Start a conversation with {selectedAgent.icon && <span className="text-base">{selectedAgent.icon}</span>}<span className="text-zinc-300 font-medium">{selectedAgent.name}</span>.
-                    Your prompt is validated and rate-limited server-side.
+                  <p className="flex items-center justify-center gap-1 text-sm text-zinc-500">
+                    <span>Start a conversation with {selectedAgent.icon && <span className="text-base">{selectedAgent.icon}</span>}<span className="text-zinc-300 font-medium">{selectedAgent.name}</span>.</span>
+                    <HelpTip text="Type a message below to begin. Prompts are validated and rate-limited server-side." side="right" />
                   </p>
                 </div>
               </div>
@@ -304,8 +304,9 @@ export default function PlaygroundPage() {
             <div className="flex h-full items-center justify-center">
               <div className="max-w-md text-center px-6">
                 <h2 className="text-lg font-semibold text-zinc-300">Welcome to Agenthood Studio</h2>
-                <p className="mt-2 text-sm text-zinc-500">
-                  Select a Society member from the left panel to start testing. Configure provider, model, temperature, and more.
+                <p className="mt-2 flex items-center justify-center gap-1 text-sm text-zinc-500">
+                  Select a Society member from the left panel to start testing.
+                  <HelpTip text="Choose an agent from the sidebar or pick one from the dropdown below." side="right" />
                 </p>
               </div>
             </div>
@@ -334,10 +335,12 @@ export default function PlaygroundPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
                 Loading agents...
+                <HelpTip text="Fetching the agent directory from the server. This should take a moment." />
               </div>
             ) : error ? (
-              <div className="rounded-lg border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs text-red-400">
+              <div className="flex items-center gap-1 rounded-lg border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs text-red-400">
                 Failed to load agents
+                <HelpTip text="Could not load the agent list. Try again or check your connection." />
               </div>
             ) : (
               <select

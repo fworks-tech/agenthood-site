@@ -1,3 +1,5 @@
+import HelpTip from "../(main)/studio/_components/HelpTip";
+
 interface FooterProps {
   version?: string;
   className?: string;
@@ -13,8 +15,9 @@ export default function Footer({ version = "v3.5.2", className = "" }: FooterPro
             Fabio Ritzel Borges
           </a>
         </span>
-        <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
+        <span className="flex items-center gap-1 text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">
           {version}
+          <HelpTip text="The currently installed version of Agenthood. See the Releases page for history." side="top" />
         </span>
       </span>
       <a
