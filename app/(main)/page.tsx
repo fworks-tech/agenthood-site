@@ -168,7 +168,7 @@ export default function Home() {
       {/* How it works */}
       <section id="how" className="max-w-6xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
-        <p className="text-zinc-400 mb-12 max-w-2xl">
+        <p className="text-zinc-400 mb-12 w-full">
           Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
           that describes a role, its responsibilities, standards, and how it communicates.
           Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
