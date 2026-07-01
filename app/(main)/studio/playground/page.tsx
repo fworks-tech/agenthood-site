@@ -8,6 +8,9 @@ import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
 import LiveLogs from "../_components/LiveLogs";
 import ConversationList from "../_components/ConversationList";
+import DragHandle from "../_components/DragHandle";
+import MobileDrawer from "../_components/MobileDrawer";
+import MobileBottomSheet from "../_components/MobileBottomSheet";
 import Turnstile from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
@@ -42,9 +45,20 @@ export default function PlaygroundPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
+  const [configPanelOpen, setConfigPanelOpen] = useState(true);
+  const [leftColWidth, setLeftColWidth] = useState(288);
+  const [configPanelHeight, setConfigPanelHeight] = useState(50);
+  const [liveLogsHeight, setLiveLogsHeight] = useState(120);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
     setConfigOpen(window.innerWidth >= 768);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const addLog = useCallback((level: LogEntry["level"], message: string) => {
@@ -147,21 +161,33 @@ export default function PlaygroundPage() {
     <div className="relative flex h-full max-w-7xl mx-auto">
       {/* Left Column — Conversations + Agent Configuration */}
       <div
-        className={`${
-          configOpen ? "w-72" : "w-0"
-        } shrink-0 transition-all duration-200 overflow-hidden
+        style={{ width: configOpen ? leftColWidth : 0 }}
+        className={`shrink-0 transition-all duration-200 overflow-hidden
         absolute inset-y-0 left-0 z-20 md:relative md:inset-auto flex flex-col`}
       >
         {configOpen && (
           <>
-            <ConversationList
-              conversations={conversations}
-              activeConversationId={activeConversationId}
-              onSelect={chat.switchConversation}
-              onNewConversation={handleNewConversation}
-              onDelete={chat.deleteConversation}
+            <div style={{ flex: configPanelOpen ? "0 0 auto" : "1 1 0%" }} className="overflow-hidden flex flex-col">
+              <ConversationList
+                conversations={conversations}
+                activeConversationId={activeConversationId}
+                onSelect={chat.switchConversation}
+                onNewConversation={handleNewConversation}
+                onDelete={chat.deleteConversation}
+              />
+            </div>
+            <DragHandle
+              direction="vertical"
+              onDrag={(delta) => {
+                const panel = document.querySelector('[data-config-panel]');
+                if (!panel) return;
+                const parentH = panel.parentElement?.clientHeight ?? 400;
+                const newRatio = Math.min(80, Math.max(15, configPanelHeight + (delta / parentH) * 100));
+                setConfigPanelHeight(newRatio);
+                if (!configPanelOpen) setConfigPanelOpen(true);
+              }}
             />
-            <div className="flex-1 overflow-hidden">
+            <div data-config-panel style={{ flex: configPanelOpen ? `0 0 ${configPanelHeight}%` : "0 0 0px" }} className="overflow-hidden">
               <AgentConfigPanel
                 agents={agents}
                 isLoading={isLoading}
@@ -171,33 +197,39 @@ export default function PlaygroundPage() {
                 onChangeConfig={handleConfigChange}
                 onChangeAgent={handleSelectAgent}
                 onSave={handleSaveConfig}
+                collapsed={!configPanelOpen}
+                onToggleCollapse={() => setConfigPanelOpen((p) => !p)}
               />
             </div>
           </>
         )}
       </div>
 
-      {/* Toggle + Right Column */}
-      <div className="flex flex-1 min-w-0">
-        {/* Toggle button */}
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); setConfigOpen((prev) => !prev); }}
-          className="relative z-10 flex items-center justify-center w-10 md:w-8 shrink-0 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors cursor-pointer"
-          aria-label={configOpen ? "Close config panel" : "Open config panel"}
-        >
-          <svg className={`h-4 w-4 transition-transform duration-200 ${configOpen ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+      {/* DragHandle for left column width */}
+      {configOpen && (
+        <DragHandle
+          direction="horizontal"
+          onDrag={(delta) => setLeftColWidth((w) => Math.min(500, Math.max(200, w + delta)))}
+        />
+      )}
 
-        {/* Right Column — Chat + Logs */}
-        <div className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2 mr-2">
+      {/* Right Column — Chat + Logs */}
+      <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2 mr-2">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
-          <div>
-            <h1 className="text-sm font-semibold text-zinc-200">Playground</h1>
-            <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-sm font-semibold text-zinc-200">Playground</h1>
+              <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfigOpen((prev) => !prev)}
+              className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors border border-zinc-800"
+              title={configOpen ? "Hide config panel" : "Show config panel"}
+            >
+              {configOpen ? "← Hide Panel" : "→ Show Panel"}
+            </button>
           </div>
           {selectedAgent && (
             <div className="flex items-center gap-3">
@@ -298,10 +330,92 @@ export default function PlaygroundPage() {
         )}
 
         {/* Logs */}
-        <LiveLogs logs={logs} open={logsOpen} onToggle={() => setLogsOpen(!logsOpen)} />
-      </div>
+        <DragHandle
+          direction="vertical"
+          onDrag={(delta) => {
+            const parentH = document.querySelector('[data-right-col]')?.clientHeight ?? 400;
+            const newH = Math.min(300, Math.max(40, liveLogsHeight - delta));
+            setLiveLogsHeight(newH);
+            if (!logsOpen) setLogsOpen(true);
+          }}
+        />
+        <div style={{ height: logsOpen ? liveLogsHeight : undefined }} className="shrink-0">
+          <LiveLogs logs={logs} open={logsOpen} onToggle={() => setLogsOpen(!logsOpen)} />
+        </div>
       </div>
     </div>
+
+    {/* Mobile Bottom Bar */}
+    <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden border-t border-zinc-800 bg-zinc-950">
+      <div className="flex items-center justify-around py-2">
+        <button
+          type="button"
+          onClick={() => setMobileDrawerOpen((p) => !p)}
+          className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+          <span className="text-[10px]">Conversations</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileSheetOpen((p) => !p)}
+          className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-[10px]">Config</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setLogsOpen((p) => !p)}
+          className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span className="text-[10px]">Logs</span>
+        </button>
+      </div>
+    </div>
+
+    {/* Mobile Drawer for Conversations */}
+    <MobileDrawer
+      open={mobileDrawerOpen}
+      onClose={() => setMobileDrawerOpen(false)}
+      onOpen={() => setMobileDrawerOpen(true)}
+    >
+      <ConversationList
+        conversations={conversations}
+        activeConversationId={activeConversationId}
+        onSelect={(id) => {
+          chat.switchConversation(id);
+          setMobileDrawerOpen(false);
+        }}
+        onNewConversation={handleNewConversation}
+        onDelete={chat.deleteConversation}
+      />
+    </MobileDrawer>
+
+    {/* Mobile Bottom Sheet for Config */}
+    <MobileBottomSheet
+      open={mobileSheetOpen}
+      onClose={() => setMobileSheetOpen(false)}
+    >
+      <AgentConfigPanel
+        agents={agents}
+        isLoading={isLoading}
+        error={error}
+        selectedAgent={selectedAgent}
+        config={config}
+        onChangeConfig={handleConfigChange}
+        onChangeAgent={handleSelectAgent}
+        onSave={handleSaveConfig}
+      />
+    </MobileBottomSheet>
     </div>
   );
 }

@@ -15,6 +15,8 @@ interface AgentConfigPanelProps {
   onChangeConfig: (config: ChatConfig) => void;
   onChangeAgent: (agent: AgentEntry) => void;
   onSave?: (config: ChatConfig) => void;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export default function AgentConfigPanel({
@@ -26,6 +28,8 @@ export default function AgentConfigPanel({
   onChangeConfig,
   onChangeAgent,
   onSave,
+  collapsed = false,
+  onToggleCollapse,
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -53,11 +57,29 @@ export default function AgentConfigPanel({
 
   return (
     <div className="flex flex-col overflow-y-auto border border-zinc-800 bg-zinc-950">
-      <div className="border-b border-zinc-800 px-4 py-3">
-        <h2 className="text-sm font-semibold text-zinc-200">Agent Configuration</h2>
-        <p className="mt-0.5 text-xs text-zinc-500">Select a Society member and tune behavior</p>
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-200">Agent Configuration</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Select a Society member and tune behavior</p>
+        </div>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="shrink-0 rounded p-1 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+            aria-label={collapsed ? "Expand configuration" : "Collapse configuration"}
+          >
+            <svg
+              className={`h-4 w-4 transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        )}
       </div>
 
+      {!collapsed && (
       <div className="flex-1 space-y-5 p-4">
         {/* Agent Selection */}
         <section>
@@ -285,6 +307,7 @@ export default function AgentConfigPanel({
           </button>
         )}
       </div>
+      )}
     </div>
   );
 }
