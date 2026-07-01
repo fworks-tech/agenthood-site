@@ -3,7 +3,7 @@ import { test } from "./fixtures";
 import { mockTurnstile } from "./helpers";
 
 test.describe("Playground — Responsive Layout", () => {
-  async function setup(page: any, width: number, height: number, clearStorage: any) {
+  async function setup(page: import("@playwright/test").Page, width: number, height: number, clearStorage: () => Promise<void>) {
     await page.setViewportSize({ width, height });
     await page.goto("/studio/playground");
     await mockTurnstile(page);

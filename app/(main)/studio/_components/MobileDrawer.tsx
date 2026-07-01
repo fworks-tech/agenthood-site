@@ -13,9 +13,9 @@ export default function MobileDrawer({ open, onClose, onOpen, children }: Mobile
   const [translateX, setTranslateX] = useState(open ? 0 : -320);
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
-  const startTranslate = useRef(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTranslateX(open ? 0 : -320);
   }, [open]);
 

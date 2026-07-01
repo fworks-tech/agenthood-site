@@ -1,4 +1,4 @@
-import { test as base, type Page } from "@playwright/test";
+import { test as base } from "@playwright/test";
 
 export function buildChatSSEBody(tokens: string[]): string {
   return (
@@ -17,6 +17,7 @@ export const test = base.extend<{
   clearStorage: () => Promise<void>;
 }>({
   mockChat: async ({ page }, use) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(async (tokens = ["Hello", " world"]) => {
       const body = buildChatSSEBody(tokens);
       await page.route("**/api/studio/chat/**", async (route) => {
@@ -34,6 +35,7 @@ export const test = base.extend<{
     });
   },
   mockChatError: async ({ page }, use) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(async (msg = "Provider unavailable") => {
       const body = buildChatErrorBody(msg);
       await page.route("**/api/studio/chat/**", async (route) => {
@@ -46,6 +48,7 @@ export const test = base.extend<{
     });
   },
   clearStorage: async ({ page }, use) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(async () => {
       await page.evaluate(() => localStorage.clear());
     });

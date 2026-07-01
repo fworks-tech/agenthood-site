@@ -1,7 +1,24 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "../_lib/studio-api";
+import { STORAGE_KEYS } from "../_lib/constants";
+
+function loadFeedback(): Record<string, "up" | "down"> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.FEEDBACK) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveFeedback(id: string, value: "up" | "down") {
+  const fb = loadFeedback();
+  fb[id] = value;
+  localStorage.setItem(STORAGE_KEYS.FEEDBACK, JSON.stringify(fb));
+}
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -10,6 +27,12 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
   const isUser = message.role === "user";
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFeedback(loadFeedback()[message.id] ?? null);
+  }, [message.id]);
 
   if (isUser) {
     return (
@@ -44,6 +67,42 @@ export default function MessageBubble({ message, isStreaming }: MessageBubblePro
             <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-text-bottom" />
           )}
         </div>
+        {!isStreaming && (
+          <div className="mt-2 flex items-center gap-1.5 border-t border-zinc-800 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                const val = feedback === "up" ? null : "up";
+                setFeedback(val);
+                if (val) saveFeedback(message.id, val);
+              }}
+              className={`rounded p-0.5 transition-colors ${
+                feedback === "up" ? "text-emerald-400" : "text-zinc-600 hover:text-zinc-400"
+              }`}
+              title="Helpful"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const val = feedback === "down" ? null : "down";
+                setFeedback(val);
+                if (val) saveFeedback(message.id, val);
+              }}
+              className={`rounded p-0.5 transition-colors ${
+                feedback === "down" ? "text-red-400" : "text-zinc-600 hover:text-zinc-400"
+              }`}
+              title="Not helpful"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

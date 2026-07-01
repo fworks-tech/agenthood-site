@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
 import type { ChatMessage } from "../_lib/studio-api";
 import type { ChatConfig } from "../_types/studio";
-
-const STORAGE_KEY = "agenthood-studio-conversations";
+import { STORAGE_KEYS } from "../_lib/constants";
 const MAX_CONVERSATIONS = 50;
 const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -30,6 +29,7 @@ interface UseStudioChatReturn {
   isStreaming: boolean;
   messages: ChatMessage[];
   totalTokens: number;
+  hydrated: boolean;
   sendMessage: (content: string) => Promise<void>;
   abortStream: () => void;
   clearMessages: () => void;
@@ -56,7 +56,7 @@ function migrateConversation(c: Record<string, unknown>): Conversation {
 function loadConversations(): Conversation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEYS.CONVERSATIONS);
     if (!raw) return [];
     const rawConvs = JSON.parse(raw);
     if (!Array.isArray(rawConvs)) return [];
@@ -70,7 +70,7 @@ function loadConversations(): Conversation[] {
 
 function saveConversations(convs: Conversation[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(convs.slice(0, MAX_CONVERSATIONS)));
+    localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(convs.slice(0, MAX_CONVERSATIONS)));
   } catch {
     /* localStorage full or unavailable */
   }
@@ -79,7 +79,7 @@ function saveConversations(convs: Conversation[]) {
 function getActiveId(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem("agenthood-studio-active-conversation");
+    return localStorage.getItem(STORAGE_KEYS.ACTIVE_CONVERSATION);
   } catch {
     return null;
   }
@@ -87,8 +87,8 @@ function getActiveId(): string | null {
 
 function setActiveId(id: string | null) {
   try {
-    if (id) localStorage.setItem("agenthood-studio-active-conversation", id);
-    else localStorage.removeItem("agenthood-studio-active-conversation");
+    if (id) localStorage.setItem(STORAGE_KEYS.ACTIVE_CONVERSATION, id);
+    else localStorage.removeItem(STORAGE_KEYS.ACTIVE_CONVERSATION);
   } catch {}
 }
 
@@ -101,17 +101,38 @@ function updateMessage(convs: Conversation[], convId: string, msgId: string, con
 }
 
 export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatReturn {
-  const [conversations, setConversations] = useState<Conversation[]>(loadConversations);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(getActiveId);
+  const [hydrated, setHydrated] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [totalTokens, setTotalTokens] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
-  const conversationsRef = useRef(conversations);
-  conversationsRef.current = conversations;
-  const configRef = useRef(options?.config);
-  configRef.current = options?.config;
-  const turnstileRef = useRef(options?.turnstileToken);
-  turnstileRef.current = options?.turnstileToken;
+  const conversationsRef = useRef<Conversation[]>([]);
+  const configRef = useRef<Partial<ChatConfig>>(options?.config);
+  const turnstileRef = useRef<string | undefined>(options?.turnstileToken);
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const saved = loadConversations();
+    const activeId = getActiveId();
+    setConversations(saved);
+    conversationsRef.current = saved;
+    setActiveConversationId(activeId);
+    setHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  useEffect(() => {
+    configRef.current = options?.config;
+  }, [options?.config]);
+
+  useEffect(() => {
+    turnstileRef.current = options?.turnstileToken;
+  }, [options?.turnstileToken]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   const activeConv = conversations.find((c) => c.id === activeConversationId);
   const messages = activeConv?.messages ?? [];
@@ -249,7 +270,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       });
       setIsStreaming(false);
     }
-  }, [activeConversationId, isStreaming, persist]);
+  }, [activeConversationId, isStreaming, persist, generateTitle]);
 
   const abortStream = useCallback(() => {
     abortRef.current?.abort();
@@ -262,6 +283,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     isStreaming,
     messages,
     totalTokens,
+    hydrated,
     sendMessage,
     abortStream,
     clearMessages,

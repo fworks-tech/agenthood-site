@@ -13,11 +13,9 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
   const [translateY, setTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
-  const startTranslate = useRef(0);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
-    startTranslate.current = 0;
     setIsDragging(true);
   }, []);
 
@@ -40,6 +38,7 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
 
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTranslateY(0);
     }
   }, [open]);

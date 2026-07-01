@@ -18,8 +18,12 @@
     "predev": "npm run sync && npm run sync-skills"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.62.0",
     "@tailwindcss/typography": "^0.5.20",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/kv": "^3.0.0",
     "agenthood": "3.5.2",
     "next": "^16.2.7",
     "react": "19.2.4",

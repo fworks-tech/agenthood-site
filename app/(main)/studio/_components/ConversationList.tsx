@@ -40,12 +40,12 @@ export default function ConversationList({
 
   return (
     <div className="border-b border-zinc-800">
-      <button
-        type="button"
-        onClick={() => setOpen((p) => !p)}
-        className="flex w-full items-center justify-between px-4 py-2 hover:bg-zinc-900 transition-colors"
-      >
-        <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-between px-4 py-2">
+        <button
+          type="button"
+          onClick={() => setOpen((p) => !p)}
+          className="flex items-center gap-2 hover:bg-zinc-900 transition-colors"
+        >
           <svg
             className={`h-3.5 w-3.5 text-zinc-500 transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
@@ -57,11 +57,11 @@ export default function ConversationList({
             <HelpTip text="Your saved chat sessions, stored locally in your browser." />
           </span>
           <span className="text-[10px] text-zinc-600">{conversations.length}</span>
-        </div>
+        </button>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onNewConversation(); }}
+            onClick={onNewConversation}
             className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
             title="New conversation"
           >
@@ -69,7 +69,7 @@ export default function ConversationList({
           </button>
           <HelpTip text="Starts a fresh conversation. Previous conversations are preserved." side="right" />
         </div>
-      </button>
+      </div>
 
       {open && (
         <div className="max-h-48 overflow-y-auto border-t border-zinc-800/50">
