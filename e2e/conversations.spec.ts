@@ -80,7 +80,7 @@ test.describe("Playground — Conversation Management", () => {
     let entries = await getConversationEntries(page);
     expect(entries.length).toBe(1);
 
-    const newBtn = page.getByTitle("New conversation");
+    const newBtn = page.locator("[data-conversation-list='sidebar'] [title='New conversation']");
     await newBtn.click();
     await page.waitForTimeout(500);
 

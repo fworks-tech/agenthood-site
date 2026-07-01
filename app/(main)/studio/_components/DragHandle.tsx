@@ -11,6 +11,11 @@ interface DragHandleProps {
 export default function DragHandle({ direction, onDrag, className = "" }: DragHandleProps) {
   const dragging = useRef(false);
   const startPos = useRef(0);
+  const onDragRef = useRef(onDrag);
+
+  useEffect(() => {
+    onDragRef.current = onDrag;
+  }, [onDrag]);
 
   const isHorizontal = direction === "horizontal";
 
@@ -39,7 +44,7 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
       const current = isHorizontal ? clientX : clientY;
       const delta = current - startPos.current;
       startPos.current = current;
-      onDrag(delta);
+      onDragRef.current(delta);
     };
 
     const handleEnd = () => {
@@ -66,7 +71,7 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleEnd);
     };
-  }, [direction, onDrag, isHorizontal]);
+  }, [direction, isHorizontal]);
 
   return (
     <div

@@ -18,13 +18,15 @@ import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
 import type { LogEntry } from "../_components/LiveLogs";
+import { track } from "@vercel/analytics";
+import { STORAGE_KEYS } from "../_lib/constants";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
 
 function loadSavedConfig(): Partial<ChatConfig> {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem("agenthood-studio-config");
+    const raw = sessionStorage.getItem(STORAGE_KEYS.CONFIG);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
@@ -34,14 +36,13 @@ function loadSavedConfig(): Partial<ChatConfig> {
 export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
-  const [config, setConfig] = useState<ChatConfig>(() => ({
+  const [config, setConfig] = useState<ChatConfig>({
     provider: "anthropic",
     model: "claude-sonnet-4-20250514",
     temperature: 0.7,
     maxTokens: 4096,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
-    ...loadSavedConfig(),
-  }));
+  });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
@@ -52,14 +53,10 @@ export default function PlaygroundPage() {
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfigOpen(window.innerWidth >= 768);
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const addLog = useCallback((level: LogEntry["level"], message: string) => {
@@ -68,21 +65,33 @@ export default function PlaygroundPage() {
   }, []);
 
   const chat = useStudioChat({ config, turnstileToken: turnstileToken ?? undefined });
-  const { conversations, activeConversationId } = chat;
+  const { conversations, activeConversationId, hydrated: chatHydrated } = chat;
+
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    const saved = loadSavedConfig();
+    if (saved.provider) {
+      setConfig((prev) => ({ ...prev, ...saved }));
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !error) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       addLog("info", `Agents loaded: ${agents.length} available`);
-      const saved = loadSavedConfig();
-      if (saved.provider) {
-        addLog("info", `Loaded saved config: ${saved.provider} · ${saved.model ?? "default"}`);
+      if (config.provider) {
+        addLog("info", `Config: ${config.provider} · ${config.model}`);
       }
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [isLoading, error, agents.length, addLog]);
+  }, [isLoading, error, agents.length, addLog, config.model, config.provider]);
 
   useEffect(() => {
     if (turnstileToken) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       addLog("info", "CAPTCHA ready");
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [turnstileToken, addLog]);
 
@@ -94,19 +103,22 @@ export default function PlaygroundPage() {
     }
     const ts = Date.now();
     addLog("info", `→ ${selectedAgent.icon ?? ""} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
+    track("message_sent", { agentId: selectedAgent.id, provider: config.provider, model: config.model });
     try {
       await chat.sendMessage(content);
       const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
       addLog("info", `✓ ${selectedAgent.icon ?? ""} ${selectedAgent.name} completed in ${elapsed}s`);
+      track("message_completed", { agentId: selectedAgent.id, provider: config.provider, model: config.model, durationMs: Date.now() - ts });
     } catch (err) {
       const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
       addLog("error", `✗ ${selectedAgent.icon ?? ""} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`);
+      track("message_error", { agentId: selectedAgent.id, provider: config.provider, error: err instanceof Error ? err.message : String(err) });
     }
   }, [chat, selectedAgent, config.provider, config.model, addLog, turnstileToken]);
 
   const handleSaveConfig = useCallback((cfg: ChatConfig) => {
     try {
-      localStorage.setItem("agenthood-studio-config", JSON.stringify(cfg));
+      sessionStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify({ ...cfg, apiKey: undefined }));
       addLog("info", "Configuration saved locally");
     } catch {
       addLog("error", "Failed to save configuration");
@@ -121,6 +133,7 @@ export default function PlaygroundPage() {
     setConfig((prev) => ({ ...prev, provider, model, systemPrompt: prompt }));
     chat.newConversation(agent.id);
     addLog("info", `Selected: ${agent.icon ?? ""} ${agent.name} · ${agent.role} · ${provider}/${model}`);
+    track("agent_selected", { agentId: agent.id, provider, model });
     if (!configOpen) setConfigOpen(true);
   }, [chat, addLog, configOpen]);
 
@@ -128,12 +141,14 @@ export default function PlaygroundPage() {
     if (selectedAgent) {
       chat.newConversation(selectedAgent.id);
       addLog("info", `New conversation with ${selectedAgent.name}`);
+      track("conversation_created", { agentId: selectedAgent.id });
     }
   }, [chat, selectedAgent, addLog]);
 
   const handleConfigChange = useCallback((newConfig: ChatConfig) => {
     if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
       addLog("info", `Config: ${newConfig.provider} · ${newConfig.model}`);
+      track("config_changed", { provider: newConfig.provider, model: newConfig.model });
     }
     setConfig(newConfig);
   }, [config.provider, config.model, addLog]);
@@ -147,9 +162,11 @@ export default function PlaygroundPage() {
 
   useEffect(() => {
     if (chat.isStreaming && selectedAgent) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       addLog("info", `↻ Streaming response from ${selectedAgent.name}...`);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [chat.isStreaming, selectedAgent?.name, addLog]);
+  }, [chat.isStreaming, selectedAgent, addLog]);
 
   return (
     <div className="h-screen bg-zinc-950 py-12">
@@ -169,13 +186,17 @@ export default function PlaygroundPage() {
         {configOpen && (
           <>
             <div style={{ flex: configPanelOpen ? "0 0 auto" : "1 1 0%" }} className="overflow-hidden flex flex-col">
-              <ConversationList
-                conversations={conversations}
-                activeConversationId={activeConversationId}
-                onSelect={chat.switchConversation}
-                onNewConversation={handleNewConversation}
-                onDelete={chat.deleteConversation}
-              />
+              {chatHydrated && (
+              <div data-conversation-list="sidebar">
+                <ConversationList
+                  conversations={conversations}
+                  activeConversationId={activeConversationId}
+                  onSelect={chat.switchConversation}
+                  onNewConversation={handleNewConversation}
+                  onDelete={chat.deleteConversation}
+                />
+              </div>
+              )}
             </div>
             <DragHandle
               direction="vertical"
@@ -229,6 +250,7 @@ export default function PlaygroundPage() {
                 onClick={() => setConfigOpen((prev) => !prev)}
                 className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors border border-zinc-800"
                 title={configOpen ? "Hide config panel" : "Show config panel"}
+                aria-label={configOpen ? "Close config panel" : "Open config panel"}
               >
                 {configOpen ? "← Hide Panel" : "→ Show Panel"}
               </button>
@@ -296,6 +318,7 @@ export default function PlaygroundPage() {
             onSend={handleSendMessage}
             onStop={handleAbortStream}
             isStreaming={chat.isStreaming}
+            disabled={isLoading || !!error}
           />
         )}
 
@@ -341,7 +364,6 @@ export default function PlaygroundPage() {
         <DragHandle
           direction="vertical"
           onDrag={(delta) => {
-            const parentH = document.querySelector('[data-right-col]')?.clientHeight ?? 400;
             const newH = Math.min(300, Math.max(40, liveLogsHeight - delta));
             setLiveLogsHeight(newH);
             if (!logsOpen) setLogsOpen(true);

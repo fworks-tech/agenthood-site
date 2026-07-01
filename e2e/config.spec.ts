@@ -14,8 +14,8 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("changing provider updates model dropdown", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider");
-    const modelSelect = page.getByLabel("Model");
+    const providerSelect = page.getByLabel("Provider", { exact: true });
+    const modelSelect = page.getByLabel("Model", { exact: true });
     const initialModel = await modelSelect.inputValue();
 
     await providerSelect.selectOption("openai");
@@ -25,7 +25,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("base url input shown for ollama, hidden for anthropic", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider");
+    const providerSelect = page.getByLabel("Provider", { exact: true });
 
     await providerSelect.selectOption("anthropic");
     await page.waitForTimeout(200);
@@ -53,22 +53,22 @@ test.describe("Playground — Configuration", () => {
     await expect(page.locator("text=Max Tokens: 8,192")).toBeVisible();
   });
 
-  test("save persists config to localStorage", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider");
+  test("save persists config to sessionStorage", async ({ page }) => {
+    const providerSelect = page.getByLabel("Provider", { exact: true });
     await providerSelect.selectOption("openai");
     await page.waitForTimeout(200);
 
     await page.locator("button:has-text('Save configuration')").click();
     await page.waitForTimeout(300);
 
-    const saved = await page.evaluate(() => localStorage.getItem("agenthood-studio-config"));
+    const saved = await page.evaluate(() => sessionStorage.getItem("agenthood-studio-config"));
     expect(saved).not.toBeNull();
     const parsed = JSON.parse(saved || "{}");
     expect(parsed.provider).toBe("openai");
   });
 
   test("config restored on page reload", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider");
+    const providerSelect = page.getByLabel("Provider", { exact: true });
     await providerSelect.selectOption("groq");
     await page.waitForTimeout(200);
     await page.locator("button:has-text('Save configuration')").click();
@@ -83,10 +83,10 @@ test.describe("Playground — Configuration", () => {
     const openBtn = page.getByRole("button", { name: "Open config panel" });
     if (await openBtn.isVisible().catch(() => false)) {
       await openBtn.click();
-      await page.waitForTimeout(300);
+      await page.locator('[data-config-panel]').waitFor({ state: 'visible', timeout: 5000 });
     }
 
-    const restoredProvider = await page.getByLabel("Provider").inputValue();
+    const restoredProvider = await page.getByLabel("Provider", { exact: true }).inputValue();
     expect(restoredProvider).toBe("groq");
   });
 
@@ -94,7 +94,7 @@ test.describe("Playground — Configuration", () => {
     const openBtn = page.getByRole("button", { name: "Open config panel" });
     if (await openBtn.isVisible().catch(() => false)) {
       await openBtn.click();
-      await page.waitForTimeout(300);
+      await page.locator('[data-config-panel]').waitFor({ state: 'visible', timeout: 5000 });
     }
     const keyInput = page.locator("input[type=password]");
     await expect(keyInput).toBeVisible();

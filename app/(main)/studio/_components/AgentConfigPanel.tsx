@@ -84,10 +84,10 @@ export default function AgentConfigPanel({
       <div className="flex-1 space-y-5 p-4">
         {/* Agent Selection */}
         <section>
-          <label htmlFor={`${panelId}-agent`} className="mb-1.5 flex items-center gap-1 text-xs font-medium text-zinc-400">
-            Agent
+          <div className="mb-1.5 flex items-center gap-1 text-xs font-medium text-zinc-400">
+            <label htmlFor={`${panelId}-agent`}>Agent</label>
             <HelpTip text="Choose a specialized AI agent member. Each has a unique role and system prompt optimized for specific tasks." />
-          </label>
+          </div>
           <select
             id={`${panelId}-agent`}
             value={selectedAgent?.id ?? ""}
@@ -161,10 +161,10 @@ export default function AgentConfigPanel({
 
           <div className="space-y-3">
             <div>
-              <label htmlFor={`${panelId}-provider`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                Provider
+              <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-provider`}>Provider</label>
                 <HelpTip text="Choose which LLM service (Anthropic, OpenAI, Groq, Ollama, OpenCode) powers the agent. Each offers different models and pricing." />
-              </label>
+              </div>
               <select
                 id={`${panelId}-provider`}
                 value={config.provider}
@@ -178,10 +178,10 @@ export default function AgentConfigPanel({
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-model`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                Model
+              <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-model`}>Model</label>
                 <HelpTip text="Select the specific AI model version. Models vary in capability, speed, and cost. The default model is recommended." />
-              </label>
+              </div>
               <select
                 id={`${panelId}-model`}
                 value={config.model}
@@ -197,10 +197,10 @@ export default function AgentConfigPanel({
             {/* Base URL (for Ollama / OpenCode) */}
             {meta.requiresBaseUrl && (
               <div>
-                <label htmlFor={`${panelId}-baseurl`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                  Base URL
+                <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                  <label htmlFor={`${panelId}-baseurl`}>Base URL</label>
                   <HelpTip text="The server endpoint for self-hosted providers (Ollama, OpenCode). Leave as default unless running on a custom address." />
-                </label>
+                </div>
                 <input
                   id={`${panelId}-baseurl`}
                   type="text"
@@ -214,10 +214,10 @@ export default function AgentConfigPanel({
 
             {/* API Key (optional — for BYOK) */}
             <div>
-              <label htmlFor={`${panelId}-apikey`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                API Key <span className="text-zinc-600">(optional)</span>
+              <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-apikey`}>API Key <span className="text-zinc-600">(optional)</span></label>
                 <HelpTip text="Provide your own API key. If left blank, the servers default key is used. Sent server-side only; never stored." />
-              </label>
+              </div>
               <div className="relative">
                 <input
                   id={`${panelId}-apikey`}
@@ -234,10 +234,10 @@ export default function AgentConfigPanel({
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-temp`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                Temperature: {config.temperature.toFixed(1)}
+              <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-temp`}>Temperature: {config.temperature.toFixed(1)}</label>
                 <HelpTip text="Controls randomness in responses. Lower values (0) produce more focused answers; higher values (2) generate more creative output." />
-              </label>
+              </div>
               <input
                 id={`${panelId}-temp`}
                 type="range"
@@ -261,10 +261,10 @@ export default function AgentConfigPanel({
             </div>
 
             <div>
-              <label htmlFor={`${panelId}-tokens`} className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
-                Max Tokens: {config.maxTokens.toLocaleString()}
-                <HelpTip text="Limits the length of each response. A token is roughly one word. Larger values allow longer responses but consume more context." />
-              </label>
+              <div className="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                <label htmlFor={`${panelId}-tokens`}>Max Tokens: {config.maxTokens.toLocaleString()}</label>
+                <HelpTip text="Limits the length of each response. A token is roughly one word. Larger values allow longer responses but consume more context window." />
+              </div>
               <input
                 id={`${panelId}-tokens`}
                 type="range"

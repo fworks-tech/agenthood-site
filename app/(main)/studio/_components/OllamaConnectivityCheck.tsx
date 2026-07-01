@@ -1,16 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import HelpTip from "./HelpTip";
 
 interface OllamaConnectivityCheckProps {
   baseUrl: string;
 }
 
+function isValidOllamaUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (parsed.protocol === "https:") return true;
+    return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1" || parsed.hostname === "host.docker.internal";
+  } catch {
+    return false;
+  }
+}
+
 export default function OllamaConnectivityCheck({ baseUrl }: OllamaConnectivityCheckProps) {
-  const [status, setStatus] = useState<"checking" | "connected" | "disconnected">("checking");
+  const [status, setStatus] = useState<"checking" | "connected" | "disconnected" | "invalid">("checking");
+  const validUrl = useMemo(() => isValidOllamaUrl(baseUrl), [baseUrl]);
 
   useEffect(() => {
+    if (!validUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStatus("invalid");
+      return;
+    }
+
     let cancelled = false;
 
     async function check() {
@@ -24,7 +42,22 @@ export default function OllamaConnectivityCheck({ baseUrl }: OllamaConnectivityC
 
     check();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, [baseUrl, validUrl]);
+
+  if (status === "invalid") {
+    return (
+      <section className="rounded-lg border border-amber-900/40 bg-amber-950/20 p-3">
+        <div className="flex items-start gap-2">
+          <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="flex items-center gap-1 text-xs font-medium text-amber-300">
+            Invalid Ollama URL — only http://localhost, http://127.0.0.1, and https:// URLs are allowed.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   if (status === "checking") {
     return (

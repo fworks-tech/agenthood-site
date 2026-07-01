@@ -130,8 +130,16 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
   }
 
   const entries: { title: string; active: boolean }[] = [];
-  const items = page.locator("[class*='group']").filter({ has: page.locator(".truncate") });
-
+  const sidebar = page.locator("[data-conversation-list='sidebar']");
+  if (await sidebar.count() === 0) {
+    const openBtn = page.getByRole("button", { name: "Open config panel" });
+    if (await openBtn.isVisible().catch(() => false)) {
+      await openBtn.click();
+      await page.waitForTimeout(300);
+    }
+  }
+  if (await sidebar.count() === 0) return entries;
+  const items = sidebar.locator("[class*='group']").filter({ has: page.locator(".truncate") });
   const count = await items.count();
   for (let i = 0; i < count; i++) {
     const item = items.nth(i);
