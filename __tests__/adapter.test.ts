@@ -149,7 +149,7 @@ describe("LightweightAdapter", () => {
       adapter.chat({
         agentId: "the-scribe",
         messages: [{ role: "user", content: "test" }],
-        config: { provider: "nonexistent-provider" as any },
+        config: { provider: "nonexistent-provider" } as Record<string, unknown>,
       }),
     ).rejects.toThrow(/Unknown provider/);
   });

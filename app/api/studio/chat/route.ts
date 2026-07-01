@@ -1,8 +1,10 @@
+import * as Sentry from "@sentry/nextjs";
 import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/(main)/studio/_data/agents";
 import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
+import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +55,10 @@ function validateMessages(messages: unknown): { role: string; content: string }[
 }
 
 const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq"]);
+const VALID_PROVIDERS = new Set(Object.keys(PROVIDER_MODELS));
+const KNOWN_MODELS = new Set(
+  Object.values(PROVIDER_MODELS).flatMap((meta) => meta.models.map((m) => m.id)),
+);
 
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
@@ -66,7 +72,12 @@ function validateConfig(config: unknown): ChatRequestConfig {
   if (typeof c.maxTokens === "number" && c.maxTokens > 0 && c.maxTokens <= MAX_TOKENS) {
     validated.maxTokens = c.maxTokens;
   }
-  if (typeof c.provider === "string") validated.provider = c.provider;
+  if (typeof c.provider === "string") {
+    if (!VALID_PROVIDERS.has(c.provider)) {
+      throw new ValidationError(`Unknown provider: "${c.provider}"`);
+    }
+    validated.provider = c.provider;
+  }
   if (typeof c.baseUrl === "string") {
     if (c.provider && CLOUD_PROVIDERS.has(c.provider as string)) {
       throw new ValidationError(`baseUrl is not supported for ${c.provider}. Use the default API endpoint.`);
@@ -78,14 +89,28 @@ function validateConfig(config: unknown): ChatRequestConfig {
     validated.apiKey = c.apiKey;
   }
 
+  if (validated.provider && validated.model && !KNOWN_MODELS.has(validated.model)) {
+    throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
+  }
+
   return validated;
 }
 
 function validateBaseUrl(baseUrl: string): void {
+  let parsed: URL;
   try {
-    new URL(baseUrl);
+    parsed = new URL(baseUrl);
   } catch {
     throw new ValidationError("Invalid baseUrl format");
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new ValidationError("baseUrl must use http or https protocol");
+  }
+  if (parsed.protocol === "http:") {
+    const hostname = parsed.hostname.toLowerCase();
+    if (!["localhost", "127.0.0.1", "host.docker.internal"].includes(hostname)) {
+      throw new ValidationError("http baseUrl is only allowed for localhost");
+    }
   }
 }
 
@@ -144,6 +169,7 @@ export async function POST(request: Request) {
 
     const msg = err instanceof Error ? err.message : String(err);
     logger.error("chat.error", { error: msg, requestId });
+    if (err instanceof Error) Sentry.captureException(err, { extra: { requestId } });
     return Response.json({ error: "Internal server error", code: "INTERNAL_ERROR", requestId }, { status: 500 });
   }
 }
