@@ -68,7 +68,7 @@ export default function PlaygroundPage() {
     config,
     turnstileToken: turnstileToken ?? undefined,
   });
-  const { conversations, activeConversationId, hydrated: chatHydrated } = chat;
+  const { conversations, activeConversationId, totalTokens, hydrated: chatHydrated } = chat;
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect */
@@ -114,6 +114,7 @@ export default function PlaygroundPage() {
         agentId: selectedAgent.id,
         provider: config.provider,
         model: config.model,
+        conversationId: activeConversationId ?? undefined,
       });
       try {
         await chat.sendMessage(content);
@@ -127,6 +128,7 @@ export default function PlaygroundPage() {
           provider: config.provider,
           model: config.model,
           durationMs: Date.now() - ts,
+          tokenCount: totalTokens,
         });
       } catch (err) {
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
@@ -146,6 +148,8 @@ export default function PlaygroundPage() {
       selectedAgent,
       config.provider,
       config.model,
+      activeConversationId,
+      totalTokens,
       addLog,
       turnstileToken,
     ],
@@ -192,6 +196,14 @@ export default function PlaygroundPage() {
     }
   }, [chat, selectedAgent, addLog]);
 
+  const handleDeleteConversation = useCallback((id: string) => {
+    track("conversation_deleted", {
+      agentId: selectedAgent?.id ?? "unknown",
+      conversationId: id,
+    });
+    chat.deleteConversation(id);
+  }, [chat, selectedAgent?.id]);
+
   const handleConfigChange = useCallback(
     (newConfig: ChatConfig) => {
       if (
@@ -202,6 +214,8 @@ export default function PlaygroundPage() {
         track("config_changed", {
           provider: newConfig.provider,
           model: newConfig.model,
+          temperature: newConfig.temperature,
+          maxTokens: newConfig.maxTokens,
         });
       }
       setConfig(newConfig);
@@ -252,7 +266,7 @@ export default function PlaygroundPage() {
                       activeConversationId={activeConversationId}
                       onSelect={chat.switchConversation}
                       onNewConversation={handleNewConversation}
-                      onDelete={chat.deleteConversation}
+                      onDelete={handleDeleteConversation}
                     />
                   </div>
                 )}
@@ -377,6 +391,7 @@ export default function PlaygroundPage() {
                 <MessageList
                   messages={chat.messages}
                   isStreaming={chat.isStreaming}
+                  conversationId={chat.activeConversationId ?? undefined}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
@@ -613,7 +628,7 @@ export default function PlaygroundPage() {
             setMobileDrawerOpen(false);
           }}
           onNewConversation={handleNewConversation}
-          onDelete={chat.deleteConversation}
+          onDelete={handleDeleteConversation}
         />
       </MobileDrawer>
 

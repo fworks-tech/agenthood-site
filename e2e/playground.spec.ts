@@ -90,4 +90,43 @@ test.describe("Playground — Core UI", () => {
     await page.waitForTimeout(200);
     await expect(page.locator("select").nth(1)).toHaveValue("opencode");
   });
+
+  test("thumbs up sends feedback to server", async ({ page }) => {
+    await selectAgent(page, "the-scribe");
+    await sendMessage(page, "Great response");
+    await waitForStreamComplete(page);
+
+    const feedbackPromise = page.waitForResponse((res) =>
+      res.url().includes("/api/studio/feedback") && res.request().method() === "POST",
+    );
+
+    const thumbsUp = page.locator("button[title='Helpful']").first();
+    await expect(thumbsUp).toBeVisible();
+    await thumbsUp.click();
+
+    const feedbackRes = await feedbackPromise;
+    expect(feedbackRes.status()).toBe(200);
+
+    await expect(thumbsUp).toHaveClass(/text-emerald-400/);
+  });
+
+  test("toggling thumbs up off sends null feedback", async ({ page }) => {
+    await selectAgent(page, "the-scribe");
+    await sendMessage(page, "Test message");
+    await waitForStreamComplete(page);
+
+    const thumbsUp = page.locator("button[title='Helpful']").first();
+    await thumbsUp.click();
+    await page.waitForTimeout(200);
+
+    const nullPromise = page.waitForResponse((res) =>
+      res.url().includes("/api/studio/feedback") && res.request().method() === "POST",
+    );
+
+    await thumbsUp.click();
+    const nullRes = await nullPromise;
+    expect(nullRes.status()).toBe(200);
+
+    await expect(thumbsUp).not.toHaveClass(/text-emerald-400/);
+  });
 });

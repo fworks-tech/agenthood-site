@@ -14,6 +14,7 @@ const SECTION_LABELS: Record<string, string> = {
   "runtime-guide": "Runtime Guide",
   docs: "Docs",
   academy: "Academy",
+  news: "News",
   adr: "ADR",
 };
 

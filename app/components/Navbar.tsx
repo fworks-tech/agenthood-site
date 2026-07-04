@@ -15,6 +15,7 @@ const navLinks: NavLink[] = [
   { href: "/getting-started", label: "Getting started" },
   { href: "/docs", label: "Docs" },
   { href: "/academy", label: "Academy" },
+  { href: "/news", label: "News" },
   { href: "/releases", label: "Releases" },
   { href: "/studio", label: "Studio", highlight: true },
 ];
