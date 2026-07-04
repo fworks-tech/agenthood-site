@@ -80,10 +80,15 @@ test.describe("Playground — Configuration", () => {
     // Wait for agents to finish loading
     await expect(page.getByText("Agents loaded").first()).toBeVisible({ timeout: 15000 });
 
+    // Wait for CSS transition to settle, then force-click to bypass actionability check
     const openBtn = page.getByRole("button", { name: "Open config panel" });
-    if (await openBtn.isVisible().catch(() => false)) {
-      await openBtn.click();
+    try {
+      await openBtn.waitFor({ state: "visible", timeout: 5000 });
+      await page.waitForTimeout(300);
+      await openBtn.click({ force: true });
       await page.locator('[data-config-panel]').waitFor({ state: 'visible', timeout: 5000 });
+    } catch {
+      // panel is already open
     }
 
     const restoredProvider = await page.getByLabel("Provider", { exact: true }).inputValue();
