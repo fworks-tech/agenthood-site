@@ -43,7 +43,7 @@ The Studio is a browser-based proof-of-work for the agenthood runtime. It allows
 |--------|-------|-------------|
 | POST | `/api/studio/chat` | SSE-streamed chat with an agent |
 | GET | `/api/studio/agents` | List all Society members |
-| GET | `/api/studio/status` | Runtime health (agents online, errors, activity) |
+| GET | `/api/studio/status` | Runtime health (agents online, KV connectivity, errors, activity) |
 
 ### Authentication
 
