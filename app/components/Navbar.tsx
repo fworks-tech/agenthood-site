@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { track } from "@vercel/analytics";
 import HelpTip from "../(main)/studio/_components/HelpTip";
 
 interface NavLink {
@@ -22,6 +23,9 @@ const navLinks: NavLink[] = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const trackNav = useCallback((label: string) => {
+    track("nav_click", { target: label.toLowerCase() });
+  }, []);
 
   return (
     <nav className="border-b border-zinc-800 bg-zinc-950">
@@ -39,6 +43,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => trackNav(link.label)}
                 className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
@@ -51,6 +56,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => trackNav(link.label)}
                 className="hover:text-white transition-colors"
               >
                 {link.label}
@@ -61,6 +67,7 @@ export default function Navbar() {
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackNav("github")}
             className="text-white border border-zinc-700 px-3 py-1.5 rounded-md hover:border-zinc-500 transition-colors"
           >
             GitHub →
@@ -106,7 +113,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => { trackNav(link.label); setMenuOpen(false); }}
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
@@ -119,7 +126,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => { trackNav(link.label); setMenuOpen(false); }}
                 className="block text-zinc-400 hover:text-white transition-colors"
               >
                 {link.label}
@@ -130,6 +137,7 @@ export default function Navbar() {
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => { trackNav("github"); setMenuOpen(false); }}
             className="block text-emerald-400 hover:text-emerald-300 transition-colors"
           >
             GitHub →

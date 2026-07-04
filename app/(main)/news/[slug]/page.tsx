@@ -3,6 +3,7 @@ import path from "node:path";
 import { notFound } from "next/navigation";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import { logger } from "@/app/(main)/studio/_lib/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 
@@ -18,7 +19,8 @@ interface NewsEntry {
 function readManifest(): NewsEntry[] {
   try {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8")) as NewsEntry[];
-  } catch {
+  } catch (err) {
+    logger.error("news.manifest.read_failed", { error: err instanceof Error ? err.message : String(err) });
     return [];
   }
 }
@@ -49,6 +51,7 @@ export default async function NewsPost({ params }: NewsPostProps) {
   const entry = findEntry([slug]);
 
   if (!entry) {
+    logger.warn("news.post.not_found", { slug });
     notFound();
   }
 
@@ -57,8 +60,11 @@ export default async function NewsPost({ params }: NewsPostProps) {
   try {
     markdown = fs.readFileSync(filePath, "utf8");
   } catch {
+    logger.error("news.post.file_missing", { slug, path: entry.path });
     notFound();
   }
+
+  logger.info("news.post.rendered", { slug, title: entry.title });
 
   const basePath = path.posix.dirname(entry.path);
 

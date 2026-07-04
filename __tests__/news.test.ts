@@ -24,7 +24,8 @@ function readManifest(): NewsEntry[] {
 describe("news manifest", () => {
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
-    expect(manifest.length).toBeGreaterThan(0);
+    expect(manifest.length).toBe(2);
+    expect(manifest[0].title).toContain("Vercel Speed Insights");
 
     for (const entry of manifest) {
       expect(entry).toHaveProperty("slug");

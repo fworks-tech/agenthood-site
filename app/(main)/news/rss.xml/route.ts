@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { logger } from "@/app/(main)/studio/_lib/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 
@@ -16,7 +17,8 @@ interface NewsEntry {
 function readManifest(): NewsEntry[] {
   try {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8")) as NewsEntry[];
-  } catch {
+  } catch (err) {
+    logger.error("rss.manifest.read_failed", { error: err instanceof Error ? err.message : String(err) });
     return [];
   }
 }
@@ -32,6 +34,12 @@ export async function GET() {
   const sorted = [...manifest].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
+
+  if (sorted.length === 0) {
+    logger.warn("rss.feed.empty");
+  }
+
+  logger.info("rss.feed.generated", { count: sorted.length });
 
   const items = sorted
     .map(

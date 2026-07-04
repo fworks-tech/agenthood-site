@@ -10,6 +10,7 @@ function loadFeedback(): Record<string, "up" | "down"> {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.FEEDBACK) ?? "{}");
   } catch {
+    console.warn("Failed to load feedback from localStorage");
     return {};
   }
 }
@@ -22,11 +23,15 @@ function saveFeedback(id: string, value: "up" | "down") {
 
 async function submitFeedback(messageId: string, value: "up" | "down" | null, conversationId?: string) {
   if (value) saveFeedback(messageId, value);
-  await fetch("/api/studio/feedback", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messageId, conversationId, value }),
-  }).catch(() => {});
+  try {
+    await fetch("/api/studio/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId, conversationId, value }),
+    });
+  } catch (err) {
+    console.warn("Feedback submission failed", err);
+  }
 }
 
 interface MessageBubbleProps {

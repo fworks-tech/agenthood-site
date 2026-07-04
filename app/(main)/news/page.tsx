@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Link from "next/link";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import { logger } from "@/app/(main)/studio/_lib/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 
@@ -17,7 +18,8 @@ interface NewsEntry {
 function readManifest(): NewsEntry[] {
   try {
     return JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8")) as NewsEntry[];
-  } catch {
+  } catch (err) {
+    logger.error("news.manifest.read_failed", { error: err instanceof Error ? err.message : String(err) });
     return [];
   }
 }
@@ -27,6 +29,8 @@ export default function NewsIndex() {
   const sorted = [...manifest].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
+
+  logger.info("news.index.rendered", { count: sorted.length });
 
   return (
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
