@@ -28,6 +28,7 @@ const RATE_LIMITS: RateLimits = {
   "/api/studio/chat": { max: 20, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/status": { max: 30, windowMs: 60_000 },
+  "/api/studio/feedback": { max: 60, windowMs: 60_000 },
 };
 
 const MAX_STORE_SIZE = 10_000;
@@ -74,8 +75,13 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/status"].max, `${RATE_LIMITS["/api/studio/status"].windowMs}ms`),
     prefix: "ratelimit:status",
   });
+  const feedback = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/feedback"].max, `${RATE_LIMITS["/api/studio/feedback"].windowMs}ms`),
+    prefix: "ratelimit:feedback",
+  });
 
-  return { chat, agents, status };
+  return { chat, agents, status, feedback };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -92,7 +98,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limits) return null;
 
   if (upstash) {
-    const limiter = upstash[pathname === "/api/studio/chat" ? "chat" : pathname === "/api/studio/agents" ? "agents" : "status"];
+    const limiter = upstash[pathname === "/api/studio/chat" ? "chat" : pathname === "/api/studio/agents" ? "agents" : pathname === "/api/studio/status" ? "status" : "feedback"];
     const { success, limit, remaining, reset } = await limiter.limit(ip);
 
     if (!success) {

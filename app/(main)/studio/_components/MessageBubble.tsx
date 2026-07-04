@@ -20,12 +20,22 @@ function saveFeedback(id: string, value: "up" | "down") {
   localStorage.setItem(STORAGE_KEYS.FEEDBACK, JSON.stringify(fb));
 }
 
+async function submitFeedback(messageId: string, value: "up" | "down" | null, conversationId?: string) {
+  if (value) saveFeedback(messageId, value);
+  await fetch("/api/studio/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId, conversationId, value }),
+  }).catch(() => {});
+}
+
 interface MessageBubbleProps {
   message: ChatMessage;
   isStreaming?: boolean;
+  conversationId?: string;
 }
 
-export default function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
+export default function MessageBubble({ message, isStreaming, conversationId }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 
@@ -74,7 +84,7 @@ export default function MessageBubble({ message, isStreaming }: MessageBubblePro
               onClick={() => {
                 const val = feedback === "up" ? null : "up";
                 setFeedback(val);
-                if (val) saveFeedback(message.id, val);
+                submitFeedback(message.id, val, conversationId);
               }}
               className={`rounded p-0.5 transition-colors ${
                 feedback === "up" ? "text-emerald-400" : "text-zinc-600 hover:text-zinc-400"
@@ -90,7 +100,7 @@ export default function MessageBubble({ message, isStreaming }: MessageBubblePro
               onClick={() => {
                 const val = feedback === "down" ? null : "down";
                 setFeedback(val);
-                if (val) saveFeedback(message.id, val);
+                submitFeedback(message.id, val, conversationId);
               }}
               className={`rounded p-0.5 transition-colors ${
                 feedback === "down" ? "text-red-400" : "text-zinc-600 hover:text-zinc-400"

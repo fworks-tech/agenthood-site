@@ -8,9 +8,10 @@ import HelpTip from "./HelpTip";
 interface MessageListProps {
   messages: ChatMessage[];
   isStreaming: boolean;
+  conversationId?: string;
 }
 
-export default function MessageList({ messages, isStreaming }: MessageListProps) {
+export default function MessageList({ messages, isStreaming, conversationId }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function MessageList({ messages, isStreaming }: MessageListProps)
             key={msg.id}
             message={msg}
             isStreaming={isStreaming && i === streamingIndex}
+            conversationId={conversationId}
           />
         ))}
         <div ref={bottomRef} />
