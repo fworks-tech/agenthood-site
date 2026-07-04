@@ -28,6 +28,15 @@ test.describe("News Section", () => {
     await expect(page.locator("h1")).toBeVisible();
   });
 
+  test("all articles render without error", async ({ page }) => {
+    const slugs = ["playground-hardening", "recent-updates", "vercel-speed-insights", "outage-post-mortem"];
+    for (const slug of slugs) {
+      await page.goto(`/news/${slug}`);
+      await page.waitForLoadState("networkidle");
+      await expect(page.locator("h1")).toBeVisible();
+    }
+  });
+
   test("RSS feed returns XML with correct content type", async ({ page }) => {
     const response = await page.goto("/news/rss.xml");
     expect(response?.status()).toBe(200);
