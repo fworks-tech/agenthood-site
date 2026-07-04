@@ -7,14 +7,16 @@ export async function GET() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
-  let kvStatus: string;
+  let kvStatus = "unavailable";
   let kvItem: unknown = null;
-  try {
-    const redis = Redis.fromEnv();
-    kvItem = await redis.get("item");
-    kvStatus = "connected";
-  } catch {
-    kvStatus = "unavailable";
+  if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    try {
+      const redis = Redis.fromEnv();
+      kvItem = await redis.get("item");
+      kvStatus = "connected";
+    } catch {
+      kvStatus = "unavailable";
+    }
   }
 
   const agentStatuses = agents.map((agent) => ({
