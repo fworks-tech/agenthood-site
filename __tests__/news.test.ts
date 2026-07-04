@@ -24,8 +24,8 @@ function readManifest(): NewsEntry[] {
 describe("news manifest", () => {
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
-    expect(manifest.length).toBe(2);
-    expect(manifest[0].title).toContain("Vercel Speed Insights");
+    expect(manifest.length).toBe(4);
+    expect(manifest[0].title).toBe("Feedback API, News Section, and Observability Improvements");
 
     for (const entry of manifest) {
       expect(entry).toHaveProperty("slug");
@@ -83,7 +83,8 @@ describe("RSS feed", () => {
     const text = await res.text();
 
     for (const entry of manifest) {
-      expect(text).toContain(entry.title);
+      const encoded = entry.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      expect(text).toContain(encoded);
     }
   });
 });

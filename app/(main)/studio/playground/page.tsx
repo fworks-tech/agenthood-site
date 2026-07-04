@@ -49,7 +49,6 @@ export default function PlaygroundPage() {
   const [logsOpen, setLogsOpen] = useState(true);
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
   const [leftColWidth, setLeftColWidth] = useState(288);
-  const [configPanelHeight, setConfigPanelHeight] = useState(50);
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -271,17 +270,7 @@ export default function PlaygroundPage() {
                   </div>
                 )}
               </div>
-              {/* <DragHandle
-              direction="horizontal"
-              onDrag={(delta) => {
-                const panel = document.querySelector('[data-config-panel]');
-                if (!panel) return;
-                const parentH = panel.parentElement?.clientHeight ?? 400;
-                const newRatio = Math.min(80, Math.max(15, configPanelHeight + (delta / parentH) * 100));
-                setConfigPanelHeight(newRatio);
-                if (!configPanelOpen) setConfigPanelOpen(true);
-              }}
-            /> */}
+              {/* DragHandle for config panel resize was removed — gesture conflicts with mobile drawer */}
               <div
                 data-config-panel
                 style={{
