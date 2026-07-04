@@ -1,5 +1,21 @@
 [
   {
+    "slug": ["recent-updates"],
+    "path": "news/recent-updates.md",
+    "title": "Feedback API, News Section, and Observability Improvements",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "New features: feedback API for chat responses, news section with RSS feed, enriched analytics, structured logging across the stack, and hardening follow-ups."
+  },
+  {
+    "slug": ["playground-hardening"],
+    "path": "news/playground-hardening.md",
+    "title": "Playground Security Hardening & Performance Improvements",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "We've completed a security audit of the Studio playground — adding SSRF protection, CSP headers, origin validation, rate limiting, hydration fixes, and eliminating all lint warnings."
+  },
+  {
     "slug": ["vercel-speed-insights"],
     "path": "news/vercel-speed-insights.md",
     "title": "Real-User Performance Monitoring with Vercel Speed Insights",
