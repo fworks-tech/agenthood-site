@@ -16,10 +16,14 @@ function validateOrigin(request: NextRequest): void {
   try {
     source = new URL(raw).origin;
   } catch {
+    console.warn("middleware.origin_parse_failed", { raw });
     throw new Error("Cross-origin request rejected");
   }
   const allowed = ALLOWED_ORIGINS.some((o) => source === o);
-  if (!allowed) throw new Error("Cross-origin request rejected");
+  if (!allowed) {
+    console.warn("middleware.cors_rejected", { source, pathname: request.nextUrl.pathname });
+    throw new Error("Cross-origin request rejected");
+  }
 }
 
 type RateLimits = Record<string, { max: number; windowMs: number }>;
@@ -57,7 +61,10 @@ function createInMemoryStore() {
 function createUpstashRatelimiter() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  if (!url || !token) return null;
+  if (!url || !token) {
+    console.warn("middleware.upstash_unavailable", { hasUrl: !!url, hasToken: !!token });
+    return null;
+  }
 
   const redis = new Redis({ url, token });
   const chat = new Ratelimit({
@@ -103,6 +110,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
 
     if (!success) {
       const retryAfter = Math.ceil((reset - Date.now()) / 1000);
+      console.warn("middleware.rate_limited", { pathname, ip, retryAfter });
       return new NextResponse(
         JSON.stringify({ error: "Too many requests. Please slow down.", code: "RATE_LIMITED", retryAfter }),
         {
@@ -138,6 +146,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
 
   if (entry.count >= limits.max) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    console.warn("middleware.rate_limited", { pathname, ip, retryAfter });
     return new NextResponse(
       JSON.stringify({ error: "Too many requests. Please slow down.", code: "RATE_LIMITED", retryAfter }),
       {
