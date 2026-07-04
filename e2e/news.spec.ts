@@ -8,7 +8,7 @@ test.describe("News Section", () => {
     await expect(page.locator("h1")).toContainText("News");
     await expect(page.locator("text=Incident reports, release notes, and project updates")).toBeVisible();
 
-    const posts = page.locator("a[href*='/news/']");
+    const posts = page.locator("main a[href*='/news/']");
     const count = await posts.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
@@ -17,7 +17,7 @@ test.describe("News Section", () => {
     await page.goto("/news");
     await page.waitForLoadState("networkidle");
 
-    const firstPost = page.locator("a[href*='/news/']").first();
+    const firstPost = page.locator("main a[href*='/news/']").first();
     await expect(firstPost).toBeVisible();
 
     const href = await firstPost.getAttribute("href");

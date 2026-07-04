@@ -1,0 +1,18 @@
+[
+  {
+    "slug": ["vercel-speed-insights"],
+    "path": "news/vercel-speed-insights.md",
+    "title": "Real-User Performance Monitoring with Vercel Speed Insights",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "We've added Vercel Speed Insights to monitor real-user Core Web Vitals — LCP, CLS, INP, and TTFB — across all pages."
+  },
+  {
+    "slug": ["outage-post-mortem"],
+    "path": "news/outage-post-mortem.md",
+    "title": "Agenthood Academy Outage Post-Mortem",
+    "date": "2026-04-28",
+    "author": "Agenthood Team",
+    "summary": "A detailed post-mortem of the Academy outage on April 28, 2026, covering the docs rendering issue, DNS misconfiguration, fixes applied, and preventive measures."
+  }
+]

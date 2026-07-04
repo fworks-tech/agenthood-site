@@ -24,7 +24,7 @@ function saveFeedback(id: string, value: "up" | "down") {
 async function submitFeedback(messageId: string, value: "up" | "down" | null, conversationId?: string) {
   if (value) saveFeedback(messageId, value);
   try {
-    await fetch("/api/studio/feedback", {
+    await fetch("/api/studio/feedback/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messageId, conversationId, value }),
