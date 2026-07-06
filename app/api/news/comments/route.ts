@@ -15,43 +15,47 @@ interface Comment {
   date: string;
 }
 
-function slugFromReferer(referer: string | null): string | null {
-  if (!referer) return null;
-  try {
-    const url = new URL(referer);
-    const match = url.pathname.match(/^\/news\/(.+)/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
-
 async function verifyTurnstile(token: string): Promise<boolean> {
-  if (!TURNSTILE_SECRET) return true;
+  if (!TURNSTILE_SECRET) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("comments.turnstile_secret_missing");
+    }
+    return true;
+  }
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
     });
-    const data = await res.json() as { success?: boolean };
-    return data.success === true;
+    const result = await res.json() as { success?: boolean };
+    return result.success === true;
   } catch {
     return false;
   }
 }
 
-export async function POST(request: Request) {
-  const slug = slugFromReferer(request.headers.get("referer"));
-  if (!slug) {
-    return NextResponse.json({ error: "Invalid page" }, { status: 400 });
+function parseComment(raw: string): Comment | null {
+  try {
+    const c = JSON.parse(raw) as Comment;
+    if (c.id && c.name && c.text && c.date) return c;
+    return null;
+  } catch {
+    return null;
   }
+}
 
-  let body: { name?: string; text?: string; token?: string };
+export async function POST(request: Request) {
+  let body: { name?: string; text?: string; token?: string; slug?: string };
   try {
     body = await request.json() as typeof body;
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const slug = (body.slug ?? "").trim();
+  if (!slug) {
+    return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   }
 
   const name = (body.name ?? "").trim().slice(0, 50);
@@ -78,15 +82,13 @@ export async function POST(request: Request) {
   };
 
   const key = `news:comments:${slug}`;
-  const existing = await KV.get<Comment[]>(key) ?? [];
-  existing.push(comment);
-  await KV.set(key, existing);
+  await KV.rpush(key, JSON.stringify(comment));
 
   return NextResponse.json({ success: true, comment });
 }
 
 export async function GET(request: NextRequest) {
-  const slug = slugFromReferer(request.headers.get("referer")) ?? request.nextUrl.searchParams.get("slug");
+  const slug = request.nextUrl.searchParams.get("slug");
   if (!slug) {
     return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   }
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
   }
 
   const key = `news:comments:${slug}`;
-  const comments = await KV.get<Comment[]>(key) ?? [];
+  const raw = await KV.lrange(key, 0, -1);
+  const comments: Comment[] = (raw ?? []).map(parseComment).filter(Boolean) as Comment[];
   return NextResponse.json({ comments });
 }

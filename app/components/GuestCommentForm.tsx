@@ -39,12 +39,14 @@ export default function GuestCommentForm() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const path = window.location.pathname.replace('/news/', '')
+    const path = window.location.pathname.replace(/^\/news\//, '')
     setSlug(path)
-    fetch(`/api/news/comments?slug=${encodeURIComponent(path)}`)
+    const controller = new AbortController()
+    fetch(`/api/news/comments?slug=${encodeURIComponent(path)}`, { signal: controller.signal })
       .then((r) => r.json())
-      .then((data) => setComments(data.comments ?? []))
+      .then((data) => { if (!controller.signal.aborted) setComments(data.comments ?? []) })
       .catch(() => {})
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export default function GuestCommentForm() {
       const res = await fetch('/api/news/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), text: text.trim(), token }),
+        body: JSON.stringify({ name: name.trim(), text: text.trim(), token, slug }),
       })
       const data = await res.json()
       if (!res.ok) {

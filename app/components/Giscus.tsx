@@ -6,11 +6,10 @@ import GuestCommentForm from './GuestCommentForm'
 export default function Giscus() {
   const [mode, setMode] = useState<'github' | 'guest'>('github')
   const ref = useRef<HTMLDivElement>(null)
-  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    if (mode !== 'github' || loaded || !ref.current) return
-    if (ref.current.hasChildNodes()) return
+    if (mode !== 'github' || !ref.current) return
+    ref.current.innerHTML = ''
 
     const script = document.createElement('script')
     script.src = 'https://giscus.app/client.js'
@@ -28,8 +27,7 @@ export default function Giscus() {
     script.setAttribute('crossorigin', 'anonymous')
     script.async = true
     ref.current.appendChild(script)
-    setLoaded(true)
-  }, [mode, loaded])
+  }, [mode])
 
   return (
     <div className="mt-16 pt-8 border-t border-zinc-800">
