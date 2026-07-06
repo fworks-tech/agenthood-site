@@ -29,7 +29,7 @@ test.describe("News Section", () => {
   });
 
   test("all articles render without error", async ({ page }) => {
-    const slugs = ["playground-hardening", "recent-updates", "vercel-speed-insights", "outage-post-mortem", "docs-audit", "ci-refinement"];
+    const slugs = ["playground-hardening", "recent-updates", "vercel-speed-insights", "outage-post-mortem", "docs-audit", "ci-refinement", "init-cleanup"];
     for (const slug of slugs) {
       await page.goto(`/news/${slug}`);
       await page.waitForLoadState("networkidle");

@@ -46,5 +46,13 @@
     "date": "2026-07-06",
     "author": "Agenthood Team",
     "summary": "Streamlined the CI pipeline by removing a duplicate workflow, skipping builds on doc-only changes, and fixing stale-comment encoding bugs in reviewer automation."
+  },
+  {
+    "slug": ["init-cleanup"],
+    "path": "news/init-cleanup.md",
+    "title": "Init Command Cleanup: Less Junk, More Quality",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "Stripped the init command down to essentials, fixed 5 quality findings from automated code review, and registered a new Society member — The Inspector."
   }
 ]
