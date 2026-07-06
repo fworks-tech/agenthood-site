@@ -5,6 +5,91 @@
 
 ---
 
+## v3.9.1 — July 6, 2026
+
+### 🐛 Bug Fixes
+
+- **Security:** sanitize error logging and pin dep versions
+
+---
+
+## v3.9.0 — July 4, 2026
+
+### ✨ Features
+
+- fix vector store crash, seed during init, add semantic pattern matcher #312 #354 #312
+
+---
+
+## v3.8.2 — July 4, 2026
+
+### 🐛 Bug Fixes
+
+- add root commitlint.config.ts for repo CI
+- **Init:** resolve 11 failing health checks by correcting source paths and workflow
+- pin commitlint versions, tighten CI perms, split check, extract stripConfig
+- **Struct:** sort workflow entries alphabetically in STRUCTURE.md
+
+---
+
+## v3.8.1 — July 4, 2026
+
+### 🐛 Bug Fixes
+
+- **Groq:** add error mapping, shared stream utils, and OpenAIProvider validation
+- **Groq:** resolve all Auditor, Warden, and Reviewer findings in GroqProvider
+- **Providers:** restore custom tool call handling in shared parseToolCall
+
+---
+
+## v3.8.0 — July 3, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** track .agenthood/config.json for CI agent analysis
+
+### ✨ Features
+
+- **Skills:** add 16 platform integration skills (CLI-focused)
+
+---
+
+## v3.7.0 — July 2, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** update Sentinel to warn on clear-named skills, remove bridge directories
+- **Skills:** add bridge docs/members/ dirs for clear-named skills
+
+### ✨ Features
+
+- **Skills:** add clear-named skill mirrors and shared reference checklists
+
+---
+
+## v3.6.0 — July 1, 2026
+
+### 🐛 Bug Fixes
+
+- **Core:** address Warden findings — extract memberLore, refactor run.ts, deduplicate constants, add injection guards
+- **Core:** address Warden findings round 3 — indentation, dead code, boolean naming, nesting, unused dep
+- **Core:** address Warden/Auditor/Reviewer findings round 2
+
+### ✨ Features
+
+- **Core:** rename src/skills to src/tools, add skill discovery infrastructure
+
+---
+
+## v3.5.3 — July 1, 2026
+
+### 🐛 Bug Fixes
+
+- **Groq:** update default model from decommissioned llama-3.1-70b to llama-3.3-70b-versatile
+- **Groq:** update test expectation to match default model llama-3.3-70b-versatile
+
+---
+
 ## v3.5.2 — June 29, 2026
 
 ### 🐛 Bug Fixes

@@ -33,6 +33,7 @@ const RATE_LIMITS: RateLimits = {
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/status": { max: 30, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },
+  "/api/news/comments": { max: 10, windowMs: 60_000 },
 };
 
 const MAX_STORE_SIZE = 10_000;
