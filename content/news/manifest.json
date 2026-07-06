@@ -30,5 +30,21 @@
     "date": "2026-04-28",
     "author": "Agenthood Team",
     "summary": "A detailed post-mortem of the Academy outage on April 28, 2026, covering the docs rendering issue, DNS misconfiguration, fixes applied, and preventive measures."
+  },
+  {
+    "slug": ["docs-audit"],
+    "path": "news/docs-audit.md",
+    "title": "Documentation Audit: 43 Issues Fixed Across 21 Files",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "A comprehensive audit of 106 documentation files found and fixed 43 issues — broken links, stale references, outdated paths, and inconsistencies across 21 files."
+  },
+  {
+    "slug": ["ci-refinement"],
+    "path": "news/ci-refinement.md",
+    "title": "CI Pipeline Refinement: Redundancy Removed, Builds Optimized",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "Streamlined the CI pipeline by removing a duplicate workflow, skipping builds on doc-only changes, and fixing stale-comment encoding bugs in reviewer automation."
   }
 ]
