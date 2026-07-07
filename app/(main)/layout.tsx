@@ -1,5 +1,6 @@
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { FloatingCompanion } from "../components/FloatingCompanion";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Navbar />
       {children}
       <Footer />
+      <FloatingCompanion />
     </>
   );
 }

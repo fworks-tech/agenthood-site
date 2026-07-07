@@ -176,3 +176,30 @@ export async function getTokenCounter(page: Page): Promise<Locator | null> {
   if (await counter.isVisible().catch(() => false)) return counter;
   return null;
 }
+
+/** Floating Companion helpers */
+
+export async function openCompanion(page: Page): Promise<void> {
+  const balloon = page.getByRole("button", { name: "Open assistant" });
+  await balloon.waitFor({ state: "visible", timeout: 5000 });
+  // force:true because the floating CSS animation makes Playwright see it as unstable
+  await balloon.click({ force: true });
+  await page.waitForTimeout(500);
+}
+
+export async function closeCompanion(page: Page): Promise<void> {
+  const closeBtn = page.getByRole("button", { name: "Close assistant" });
+  if (await closeBtn.isVisible().catch(() => false)) {
+    await closeBtn.click();
+    await page.waitForTimeout(500);
+  }
+}
+
+export async function sendCompanionMessage(page: Page, text: string): Promise<void> {
+  const textarea = page.locator("textarea[placeholder='Ask anything...']");
+  await textarea.waitFor({ state: "visible", timeout: 5000 });
+  await textarea.fill(text);
+  await page.waitForTimeout(100);
+  await textarea.press("Enter");
+  await page.waitForTimeout(300);
+}
