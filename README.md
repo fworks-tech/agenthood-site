@@ -132,12 +132,13 @@ app/(main)/studio/
 │   ├── useStudioChat.ts            Chat state + streaming + persistence
 │   └── useAgentDirectory.ts        Agent list fetch
 ├── _lib/
-│   ├── agenthood-adapter.ts        LLMRouter wrapper → ReadableStream
+│   ├── agenthood-adapter.ts        LLMRouter wrapper → ReadableStream, tool loop
 │   ├── constants.ts                LocalStorage/SessionStorage key constants
 │   ├── errors.ts                   StudioError hierarchy
 │   ├── logger.ts                   Structured JSON logging with redaction
-│   ├── stream.ts                   NDJSON/SSE stream reader
-│   └── studio-api.ts               Client-side fetch wrappers
+│   ├── stream.ts                   NDJSON/SSE stream reader (token, tool_call, tool_result)
+│   ├── studio-api.ts               Client-side fetch wrappers
+│   └── tools.ts                    Tool definitions (web_fetch, code_execution)
 ├── _data/
 │   ├── agents.ts                   Static agent registry (16 members)
 │   └── agents.generated.ts         Auto-generated skill prompts
@@ -159,13 +160,14 @@ npm run test:watch     # watch mode
 | File | Tests | What it covers |
 |------|-------|----------------|
 | `errors.test.ts` | 8 | Error hierarchy, status codes, instanceof checks |
-| `stream.test.ts` | 7 | SSE parsing, token events, error events, abort, malformed data, double-onDone guard |
+| `stream.test.ts` | 7 | SSE parsing, token events, tool_call/tool_result events, error events, abort, malformed data, double-onDone guard |
 | `logger.test.ts` | 4 | Secret redaction (apiKey, authorization, tokens), sanitization accuracy |
+| `adapter.test.ts` | 8 | Provider routing, model selection, abort, error handling |
 
 ### E2E tests (Playwright)
 
 ```bash
-npx playwright test                # run all 58 tests across chromium + mobile
+npx playwright test                # run all tests across chromium + mobile
 npx playwright test --project=mobile  # mobile-only (iPhone 13)
 npx playwright test --debug         # interactive debug mode
 ```
@@ -198,7 +200,7 @@ The `predev` script runs `sync-docs.mjs` and `sync-skills.mjs` to fetch latest c
 ## Architecture Decision Records
 
 - **ADR-001** — Build-time documentation sync (`docs/adr/001-build-time-docs-sync.md`)
-- **ADR-002** — Studio architecture and provider routing (`docs/adr/002-studio-architecture.md`), covers SSRF protection, rate limiting (Upstash + in-memory), CSP headers, model validation, hydration strategy, logger redaction
+- **ADR-002** — Studio architecture and provider routing (`docs/adr/002-studio-architecture.md`), covers SSRF protection, rate limiting (Upstash + in-memory), CSP headers, model validation, hydration strategy, logger redaction, server-side tool execution (web_fetch, code_execution)
 
 ---
 
