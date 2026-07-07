@@ -24,8 +24,8 @@ function readManifest(): NewsEntry[] {
 describe("news manifest", () => {
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
-    expect(manifest.length).toBe(7);
-    expect(manifest[0].title).toBe("Feedback API, News Section, and Observability Improvements");
+    expect(manifest.length).toBe(10);
+    expect(manifest[0].title).toBe("Studio Tools: Web Fetch & Code Execution in the Playground");
 
     for (const entry of manifest) {
       expect(entry).toHaveProperty("slug");
