@@ -47,33 +47,45 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
       await page.waitForTimeout(300);
       return;
     }
-    // Mobile select hidden (agent already selected). Open config panel for desktop select.
-    const openBtn = page.getByRole("button", { name: "Open config panel" });
-    let openVisible = false;
-    try {
-      await openBtn.waitFor({ state: "visible", timeout: 3000 });
-      openVisible = true;
-    } catch {
-      openVisible = false;
-    }
-    if (openVisible) {
-      await openBtn.click();
-      await page.waitForTimeout(300);
-    }
   }
 
-  // Desktop: use Mantine Select
+  // Desktop: open config panel and use Mantine Select
+  const openBtn = page.getByRole("button", { name: "Open config panel" });
+  if (await openBtn.isVisible().catch(() => false)) {
+    await openBtn.click();
+    await page.waitForTimeout(300);
+  }
+
   const agentSelect = page.getByLabel("Agent", { exact: true });
   await agentSelect.click();
-  const option = page.locator(`[role="option"][value="${agentId}"]`);
+  await page.waitForTimeout(200);
+  const option = page.locator(`[role="option"]`).filter({ hasText: agentId });
   await option.waitFor({ state: "visible", timeout: 10000 });
   await option.click();
   await page.waitForTimeout(300);
 }
 
+export async function openConfigPanel(page: Page): Promise<void> {
+  const vs = page.viewportSize();
+  const isMobile = vs !== null && vs.width < 768;
+  if (isMobile) {
+    const configBtn = page.getByText("Config", { exact: true });
+    if (await configBtn.isVisible().catch(() => false)) {
+      await configBtn.click();
+      await page.waitForTimeout(300);
+    }
+    return;
+  }
+  const openBtn = page.getByRole("button", { name: "Open config panel" });
+  if (await openBtn.isVisible().catch(() => false)) {
+    await openBtn.click();
+    await page.waitForTimeout(300);
+  }
+}
+
 export async function closeConfigPanel(page: Page): Promise<void> {
   await page.evaluate(() => {
-    const backdrop = document.querySelector('[class*="bg-black/50"]');
+    const backdrop = document.querySelector('.mantine-Overlay-root, [class*="bg-black/50"]');
     if (backdrop) (backdrop as HTMLElement).click();
   });
   await page.waitForTimeout(300);
@@ -93,18 +105,18 @@ export async function sendMessage(page: Page, text: string): Promise<void> {
 
 export async function getMessages(page: Page): Promise<{ role: string; text: string }[]> {
   const messages: { role: string; text: string }[] = [];
-  const userBubbles = page.locator("div.flex.justify-end").filter({ has: page.locator(".rounded-lg.bg-zinc-800") });
-  const assistantBubbles = page.locator("div.flex.justify-start").filter({ has: page.locator(".rounded-lg.bg-zinc-900") });
+  const userBubbles = page.locator("div.flex.justify-end").filter({ has: page.locator(".mantine-Paper-root") });
+  const assistantBubbles = page.locator("div.flex.justify-start").filter({ has: page.locator(".mantine-Paper-root") });
 
   const userCount = await userBubbles.count();
   const assistantCount = await assistantBubbles.count();
 
   for (let i = 0; i < userCount; i++) {
-    const text = await userBubbles.nth(i).locator(".rounded-lg").innerText();
+    const text = await userBubbles.nth(i).locator(".mantine-Paper-root").innerText();
     messages.push({ role: "user", text });
   }
   for (let i = 0; i < assistantCount; i++) {
-    const text = await assistantBubbles.nth(i).locator(".rounded-lg").innerText();
+    const text = await assistantBubbles.nth(i).locator(".mantine-Paper-root").innerText();
     messages.push({ role: "assistant", text });
   }
 
@@ -135,11 +147,11 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
     }
   }
   if (await sidebar.count() === 0) return entries;
-  const items = sidebar.locator("[class*='group']").filter({ has: page.locator(".truncate") });
+  const items = sidebar.locator("[class*='cursor-pointer']");
   const count = await items.count();
   for (let i = 0; i < count; i++) {
     const item = items.nth(i);
-    const title = await item.locator(".truncate").innerText();
+    const title = await item.locator("[data-truncate='true']").innerText();
     const classAttr = await item.getAttribute("class") || "";
     const active = classAttr.includes("border-emerald-500");
     entries.push({ title, active });
@@ -149,13 +161,13 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
 
 export async function getLogEntries(page: Page): Promise<{ time: string; level: string; message: string }[]> {
   const logs: { time: string; level: string; message: string }[] = [];
-  const logLines = page.locator("text=Live Logs").locator("..").locator("..").locator("div.flex.items-start.gap-2");
+  const logLines = page.locator("text=Live Logs").locator("..").locator("..").locator(".mantine-Group-root");
 
   const count = await logLines.count();
   for (let i = 0; i < count; i++) {
     const line = logLines.nth(i);
     const time = await line.locator("span").first().innerText();
-    const levelEl = line.locator("span.rounded");
+    const levelEl = line.locator(".mantine-Badge-root");
     const level = await levelEl.innerText();
     const message = await line.locator("span").last().innerText();
     logs.push({ time, level, message });

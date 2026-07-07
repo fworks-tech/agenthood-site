@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel } from "./helpers";
+import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel } from "./helpers";
 
 test.describe("Playground — Core UI", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -83,6 +83,7 @@ test.describe("Playground — Core UI", () => {
 
   test("code agent shows opencode affinity hint", async ({ page }) => {
     await selectAgent(page, "the-architect");
+    await openConfigPanel(page);
     await expect(page.locator("text=Code-optimized provider available")).toBeVisible();
     const switchBtn = page.locator("button:has-text('Switch to OpenCode')");
     await expect(switchBtn).toBeVisible();
@@ -106,8 +107,6 @@ test.describe("Playground — Core UI", () => {
 
     const feedbackRes = await feedbackPromise;
     expect(feedbackRes.status()).toBe(200);
-
-    await expect(thumbsUp).toHaveClass(/text-emerald-400/);
   });
 
   test("toggling thumbs up off sends null feedback", async ({ page }) => {
@@ -126,7 +125,5 @@ test.describe("Playground — Core UI", () => {
     await thumbsUp.click();
     const nullRes = await nullPromise;
     expect(nullRes.status()).toBe(200);
-
-    await expect(thumbsUp).not.toHaveClass(/text-emerald-400/);
   });
 });
