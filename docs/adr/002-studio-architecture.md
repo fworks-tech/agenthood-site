@@ -1,7 +1,7 @@
 # ADR-002: Agenthood Studio — browser-based chat and dashboard
 
 **Date:** 2026-06-29
-**Last updated:** 2026-07-01
+**Last updated:** 2026-07-06
 **Status:** Accepted
 
 ## Context
@@ -165,7 +165,39 @@ useEffect(() => {
 
 A `hydrated` boolean flag prevents the `ConversationList` from rendering until data is loaded, eliminating the visual flash of "0 conversations" turning into "N conversations." The same pattern is applied to config restoration from sessionStorage.
 
-## Alternatives Considered
+### 14. Server-side tool execution loop
+
+The Studio supports two tools that agents can use during chat: `web_fetch` and `code_execution`.
+
+**Tool definitions** live in `app/studio/_lib/tools.ts`:
+
+| Tool | Schema | Execution |
+|------|--------|-----------|
+| `web_fetch` | `url: string` (required) | Fetches URL content via HTTPS. Allowed hosts: `github.com`, `raw.githubusercontent.com`, `gist.github.com`. Strips HTML, returns text. 15s timeout, 100KB limit. |
+| `code_execution` | `code: string` (required) | Runs JavaScript in sandboxed `node:vm` with 5s timeout. Returns JSON-stringified result. |
+
+**Agentic loop** in `app/studio/_lib/agenthood-adapter.ts`:
+
+When tools are enabled, the adapter switches from `stream()` to `complete()` for the tool execution phase:
+
+1. Call `provider.complete()` with `tools` in the request
+2. If the response includes `toolCalls`, execute each tool server-side
+3. Append tool results as new `role: "tool"` messages
+4. Repeat up to 5 iterations (`MAX_TOOL_ITERATIONS`)
+5. Once no more tool calls are requested, stream the final text response as character-level tokens
+
+After the tool loop, the final text is streamed character-by-character (with `tool_call` and `tool_result` events sent first) so the client can display tool usage before the response text appears.
+
+**Streaming protocol extension.** Two new NDJSON event types were added:
+
+| Event | Payload | Purpose |
+|-------|---------|---------|
+| `tool_call` | `{ id, name, args }` | Informs the client that a tool was invoked |
+| `tool_result` | `{ id, name, result, error? }` | Provides the tool's output or error |
+
+**Client-side handling.** The `readSSEStream` parser dispatches these to `onToolCall`/`onToolResult` callbacks. The `useStudioChat` hook accumulates `ToolCallInfo` objects on the assistant message, and `MessageBubble.tsx` renders each tool call as a compact status badge (green checkmark for success, red X for error, spinner for pending).
+
+**UI toggle.** The AgentConfigPanel includes a "Tools & Capabilities" section with checkboxes for each tool. Tool enablement is transmitted as `config.enabledTools` in the chat request body.
 
 | Option | Pros | Cons | Why Rejected |
 |--------|------|------|--------------|

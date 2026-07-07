@@ -24,7 +24,7 @@ function readManifest(): NewsEntry[] {
 describe("news manifest", () => {
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
-    expect(manifest.length).toBe(4);
+    expect(manifest.length).toBe(7);
     expect(manifest[0].title).toBe("Feedback API, News Section, and Observability Improvements");
 
     for (const entry of manifest) {
