@@ -88,7 +88,7 @@ test.describe("Playground — Core UI", () => {
     await expect(switchBtn).toBeVisible();
     await switchBtn.click();
     await page.waitForTimeout(200);
-    await expect(page.locator("select").nth(1)).toHaveValue("opencode");
+    await expect(page.getByLabel("Provider", { exact: true })).toHaveValue("OpenCode Zen");
   });
 
   test("thumbs up sends feedback to server", async ({ page }) => {

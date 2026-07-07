@@ -19,6 +19,16 @@ export async function mockTurnstile(page: Page): Promise<void> {
   });
 }
 
+export async function selectMantineOption(page: Page, label: string, optionText: string): Promise<void> {
+  const input = page.getByLabel(label, { exact: true });
+  await input.click();
+  const option = page.locator(`[role="option"]`).filter({ hasText: optionText }).or(
+    page.locator(`[data-combobox-option]`).filter({ hasText: optionText }).first()
+  );
+  await option.waitFor({ state: "visible", timeout: 5000 });
+  await option.click();
+}
+
 export async function selectAgent(page: Page, agentId: string): Promise<void> {
   const vs = page.viewportSize();
   const isMobile = vs !== null && vs.width < 768;
@@ -33,14 +43,6 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
       mobileVisible = false;
     }
     if (mobileVisible) {
-      await page.waitForFunction((id) => {
-        const ms = document.querySelector("select[aria-label='Select an agent']") as HTMLSelectElement | null;
-        if (!ms) return false;
-        for (let i = 0; i < ms.options.length; i++) {
-          if (ms.options[i].value === id && !ms.disabled) return true;
-        }
-        return false;
-      }, agentId, { timeout: 10000 });
       await mobileSelect.selectOption(agentId, { force: true });
       await page.waitForTimeout(300);
       return;
@@ -60,18 +62,12 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
     }
   }
 
-  await page.waitForFunction((id) => {
-    const selects = document.querySelectorAll("select");
-    for (const s of selects) {
-      for (let i = 0; i < s.options.length; i++) {
-        if (s.options[i].value === id && !s.disabled) return true;
-      }
-    }
-    return false;
-  }, agentId, { timeout: 10000 });
-
-  const select = page.getByLabel("Agent", { exact: true });
-  await select.selectOption(agentId, { force: true });
+  // Desktop: use Mantine Select
+  const agentSelect = page.getByLabel("Agent", { exact: true });
+  await agentSelect.click();
+  const option = page.locator(`[role="option"][value="${agentId}"]`);
+  await option.waitFor({ state: "visible", timeout: 10000 });
+  await option.click();
   await page.waitForTimeout(300);
 }
 
