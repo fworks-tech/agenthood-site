@@ -8,6 +8,7 @@ export interface ChatConfig {
   systemPrompt: string;
   baseUrl?: string;
   apiKey?: string;
+  enabledTools?: string[];
 }
 
 export interface ProviderMeta {
