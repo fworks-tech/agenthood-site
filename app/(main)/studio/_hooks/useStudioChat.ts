@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
-import type { ChatMessage } from "../_lib/studio-api";
+import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
 import type { ChatConfig } from "../_types/studio";
 import { STORAGE_KEYS } from "../_lib/constants";
 const MAX_CONVERSATIONS = 50;
@@ -199,7 +199,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     if (!conv || isStreaming || !content.trim()) return;
 
     const userMsg: ChatMessage = { role: "user", content: content.trim(), id: generateId() };
-    const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId() };
+    const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId(), toolCalls: [] };
 
     const updatedMessages = [...conv.messages, userMsg, assistantMsg];
     const autoTitle = conv.title === "New conversation"
@@ -228,6 +228,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       }
 
       let streamedContent = "";
+      const pendingToolCalls: ToolCallInfo[] = [];
 
       await readSSEStream(
         res,
@@ -236,6 +237,35 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             streamedContent += token;
             setTotalTokens((prev) => prev + 1);
             setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
+          },
+          onToolCall: (tc) => {
+            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending" });
+            setConversations((prev) => {
+              const conv = prev.find((c) => c.id === activeConversationId);
+              if (!conv) return prev;
+              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
+              if (!msg) return prev;
+              return updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
+            });
+          },
+          onToolResult: (tr) => {
+            const existing = pendingToolCalls.find((t) => t.id === tr.id);
+            if (existing) {
+              existing.status = tr.error ? "error" : "complete";
+              existing.result = tr.result;
+              existing.error = tr.error;
+            }
+            setConversations((prev) => {
+              const conv = prev.find((c) => c.id === activeConversationId);
+              if (!conv) return prev;
+              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
+              if (!msg) return prev;
+              return prev.map((c) =>
+                c.id === activeConversationId
+                  ? { ...c, messages: c.messages.map((m) => m.id === assistantMsg.id ? { ...m, toolCalls: [...pendingToolCalls] } : m) }
+                  : c,
+              );
+            });
           },
           onDone: () => {
             setConversations((prev) => {

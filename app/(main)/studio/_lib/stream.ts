@@ -2,6 +2,8 @@ export interface StreamCallbacks {
   onToken: (token: string) => void;
   onDone: () => void;
   onError: (error: Error) => void;
+  onToolCall?: (toolCall: { id: string; name: string; args: Record<string, unknown> }) => void;
+  onToolResult?: (toolResult: { id: string; name: string; result: string; error?: string }) => void;
 }
 
 export async function readSSEStream(
@@ -46,6 +48,12 @@ export async function readSSEStream(
           switch (event.type) {
             case "token":
               callbacks.onToken(event.data);
+              break;
+            case "tool_call":
+              callbacks.onToolCall?.({ id: event.id, name: event.name, args: event.args });
+              break;
+            case "tool_result":
+              callbacks.onToolResult?.({ id: event.id, name: event.name, result: event.result, error: event.error });
               break;
             case "done":
               safeOnDone();

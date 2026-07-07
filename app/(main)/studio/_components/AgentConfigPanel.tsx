@@ -410,6 +410,51 @@ export default function AgentConfigPanel({
             />
           )}
 
+          {/* Tools */}
+          <section>
+            <div className="mb-2 flex items-center gap-1 text-xs font-medium text-zinc-400">
+              <h3>Tools &amp; Capabilities</h3>
+              <HelpTip
+                text="Enable tools the agent can use. web_fetch fetches URLs (allowed hosts: github.com). code_execution runs JavaScript in a sandboxed VM."
+                side="right"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.enabledTools?.includes("web_fetch") ?? false}
+                  onChange={(e) => {
+                    const tools = config.enabledTools ?? [];
+                    const updated = e.target.checked
+                      ? [...tools, "web_fetch"]
+                      : tools.filter((t) => t !== "web_fetch");
+                    onChangeConfig({ ...config, enabledTools: updated });
+                  }}
+                  className="rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                />
+                <span className="text-sm text-zinc-300">Web Fetch</span>
+                <span className="text-xs text-zinc-600">— fetch URL content</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.enabledTools?.includes("code_execution") ?? false}
+                  onChange={(e) => {
+                    const tools = config.enabledTools ?? [];
+                    const updated = e.target.checked
+                      ? [...tools, "code_execution"]
+                      : tools.filter((t) => t !== "code_execution");
+                    onChangeConfig({ ...config, enabledTools: updated });
+                  }}
+                  className="rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                />
+                <span className="text-sm text-zinc-300">Code Execution</span>
+                <span className="text-xs text-zinc-600">— run JavaScript</span>
+              </label>
+            </div>
+          </section>
+
           {/* Safety */}
           <section className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
             <h3 className="mb-2 flex items-center gap-1 text-xs font-semibold text-zinc-400">
