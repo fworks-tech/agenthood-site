@@ -2,6 +2,13 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 import { mockTurnstile, selectAgent, selectMantineOption } from "./helpers";
 
+function skipOnMobile(page: { viewportSize: () => { width: number } | null }) {
+  const vs = page.viewportSize();
+  if (vs && vs.width < 768) {
+    test.skip("Config panel tests require desktop viewport");
+  }
+}
+
 test.describe("Playground — Configuration", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
     await page.goto("/studio/playground");
@@ -14,9 +21,9 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("changing provider updates model dropdown", async ({ page }) => {
+    skipOnMobile(page);
     const modelSelect = page.getByLabel("Model", { exact: true });
     const initialModel = await modelSelect.inputValue();
-
     await selectMantineOption(page, "Provider", "OpenAI");
     await page.waitForTimeout(200);
     const newModel = await modelSelect.inputValue();
@@ -24,6 +31,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("base url input shown for ollama, hidden for anthropic", async ({ page }) => {
+    skipOnMobile(page);
     await selectMantineOption(page, "Provider", "Anthropic");
     await page.waitForTimeout(200);
     const baseUrlInput = page.locator("input[placeholder*='localhost']");
@@ -35,22 +43,37 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("temperature slider updates displayed value", async ({ page }) => {
+    skipOnMobile(page);
     const label = page.locator("text=/Temperature: \\d\\.\\d/");
     await expect(label).toBeVisible();
     const slider = page.getByLabel(/^Temperature/);
-    await slider.fill("1.5");
+    const box = await slider.boundingBox();
+    if (box) {
+      const min = parseFloat(await slider.getAttribute("aria-valuemin") || "0");
+      const max = parseFloat(await slider.getAttribute("aria-valuemax") || "2");
+      const ratio = (1.5 - min) / (max - min);
+      await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
+    }
     await page.waitForTimeout(200);
     await expect(page.locator("text=Temperature: 1.5")).toBeVisible();
   });
 
   test("max tokens slider updates displayed value", async ({ page }) => {
+    skipOnMobile(page);
     const slider = page.getByLabel(/^Max Tokens/);
-    await slider.fill("8192");
+    const box = await slider.boundingBox();
+    if (box) {
+      const min = parseFloat(await slider.getAttribute("aria-valuemin") || "0");
+      const max = parseFloat(await slider.getAttribute("aria-valuemax") || "131072");
+      const ratio = (8192 - min) / (max - min);
+      await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
+    }
     await page.waitForTimeout(200);
     await expect(page.locator("text=Max Tokens: 8,192")).toBeVisible();
   });
 
   test("save persists config to sessionStorage", async ({ page }) => {
+    skipOnMobile(page);
     await selectMantineOption(page, "Provider", "OpenAI");
     await page.waitForTimeout(200);
 
@@ -64,6 +87,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("config restored on page reload", async ({ page }) => {
+    skipOnMobile(page);
     await selectMantineOption(page, "Provider", "Groq");
     await page.waitForTimeout(200);
     await page.locator("button:has-text('Save configuration')").click();

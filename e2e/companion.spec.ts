@@ -91,7 +91,7 @@ test.describe("Floating Companion — Desktop", () => {
     for (let i = 0; i < 20; i++) {
       await sendCompanionMessage(page, `Question ${i + 1}`);
     }
-    await expect(page.getByText("limit reached")).toBeVisible();
+    await expect(page.getByText("Conversation limit reached")).toBeVisible();
     await expect(page.locator("textarea[placeholder='Ask anything...']")).not.toBeVisible();
   });
 
