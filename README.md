@@ -13,8 +13,10 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 | `/` | Landing page — agents, how it works, GitHub link |
 | `/academy/` | Academy — educational articles (synced from agenthood repo) |
 | `/adr/` | Architecture Decision Records from the agenthood repo |
+| `/docs/*` | Docs pages with floating companion (The Oracle) for inline assistance |
+| `/getting-started/` | Getting started guide with floating companion |
 | `/studio` | Agenthood Studio — chat with Society members, dashboard |
-| `/studio/playground` | Interactive chat playground with agent config panel |
+| `/studio/playground` | Interactive chat playground with agent config panel and tools (web fetch, code execution) |
 | `/studio/dashboard` | Runtime dashboard: KPI cards, agent status, activity feed |
 | `/releases` | Release notes (synced from agenthood repo) |
 
@@ -167,7 +169,7 @@ npm run test:watch     # watch mode
 ### E2E tests (Playwright)
 
 ```bash
-npx playwright test                # run all tests across chromium + mobile
+npx playwright test                # run all 106 tests across chromium + mobile
 npx playwright test --project=mobile  # mobile-only (iPhone 13)
 npx playwright test --debug         # interactive debug mode
 ```
@@ -179,6 +181,7 @@ npx playwright test --debug         # interactive debug mode
 | `errors.spec.ts` | 3 | Log entries for streaming, errors, abort, config save |
 | `playground.spec.ts` | 8 | Agent selection, send/stream messages, token counter, clear, code agent hint |
 | `responsive.spec.ts` | 5 | Mobile overlay, desktop side-by-side, toggle, backdrop |
+| `companion.spec.ts` | 18 | Floating companion visibility, quick actions, close/expand, mobile layout |
 
 The E2E suite uses Cloudflare Turnstile test keys (`1x00000000000000000000AA`) to bypass CAPTCHA, and SSE route interception to mock provider responses.
 
