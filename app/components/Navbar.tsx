@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useCallback } from "react";
 import { track } from "@vercel/analytics";
+import { Button, Group, Badge, Burger, Drawer, Stack } from "@mantine/core";
 import HelpTip from "../(main)/studio/_components/HelpTip";
 
 interface NavLink {
@@ -37,7 +38,7 @@ export default function Navbar() {
           agenthood
         </Link>
 
-        <div className="hidden md:flex items-center gap-6 text-sm text-zinc-400">
+        <Group visibleFrom="md" gap="lg" c="dimmed" fz="sm">
           {navLinks.map((link) =>
             link.highlight ? (
               <Link
@@ -47,10 +48,17 @@ export default function Navbar() {
                 className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
-                <span className="flex items-center gap-1 rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                <Badge
+                  size="xs"
+                  variant="outline"
+                  color="emerald"
+                  rightSection={
+                    <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
+                  }
+                  styles={{ label: { textTransform: "uppercase", letterSpacing: "0.05em" } }}
+                >
                   New
-                  <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
-                </span>
+                </Badge>
               </Link>
             ) : (
               <Link
@@ -63,51 +71,42 @@ export default function Navbar() {
               </Link>
             )
           )}
-          <a
+          <Button
+            component="a"
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
+            variant="outline"
+            color="gray"
+            size="sm"
             onClick={() => trackNav("github")}
-            className="text-white border border-zinc-700 px-3 py-1.5 rounded-md hover:border-zinc-500 transition-colors"
           >
             GitHub →
-          </a>
-        </div>
+          </Button>
+        </Group>
 
-        <button
-          type="button"
+        <Burger
+          opened={menuOpen}
+          onClick={() => setMenuOpen((o) => !o)}
+          hiddenFrom="md"
+          color="gray"
           aria-label="Toggle menu"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
-          className="md:hidden p-2 text-zinc-400 hover:text-white transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            {menuOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            )}
-          </svg>
-        </button>
+        />
       </div>
 
-      {menuOpen && (
-        <div className="md:hidden absolute left-0 right-0 z-50 border-t border-zinc-800 px-6 py-4 space-y-3 bg-zinc-950 shadow-xl">
+      <Drawer
+        opened={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        size="xs"
+        padding="md"
+        hiddenFrom="md"
+        title={
+          <Link href="/" className="font-semibold text-white tracking-tight">
+            agenthood
+          </Link>
+        }
+      >
+        <Stack gap="sm">
           {navLinks.map((link) =>
             link.highlight ? (
               <Link
@@ -117,10 +116,17 @@ export default function Navbar() {
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
-                <span className="flex items-center gap-1 rounded-full border border-emerald-700 bg-emerald-950/50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                <Badge
+                  size="xs"
+                  variant="outline"
+                  color="emerald"
+                  rightSection={
+                    <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
+                  }
+                  styles={{ label: { textTransform: "uppercase", letterSpacing: "0.05em" } }}
+                >
                   New
-                  <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
-                </span>
+                </Badge>
               </Link>
             ) : (
               <Link
@@ -133,17 +139,20 @@ export default function Navbar() {
               </Link>
             )
           )}
-          <a
+          <Button
+            component="a"
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
+            variant="outline"
+            color="emerald"
+            fullWidth
             onClick={() => { trackNav("github"); setMenuOpen(false); }}
-            className="block text-emerald-400 hover:text-emerald-300 transition-colors"
           >
             GitHub →
-          </a>
-        </div>
-      )}
+          </Button>
+        </Stack>
+      </Drawer>
     </nav>
   );
 }

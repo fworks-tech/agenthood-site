@@ -49,9 +49,6 @@ function buildLLMConfig(providerName: ProviderName, req: ChatRequest): LLMConfig
   };
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {

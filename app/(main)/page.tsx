@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Text, Group, Badge, SimpleGrid } from "@mantine/core";
+import { IconPlayerPlay, IconCode } from "@tabler/icons-react";
 import HelpTip from "./studio/_components/HelpTip";
 
 const agents = [
@@ -26,35 +28,35 @@ export default function Home() {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
-        <div className="inline-block text-xs font-medium bg-zinc-800 text-zinc-400 px-3 py-1 rounded-full mb-6 tracking-wide uppercase">
+        <Badge variant="outline" color="dark" size="lg" className="mb-6 tracking-wide uppercase">
           Open source · AI dev tools
-        </div>
+        </Badge>
         <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
           A full AI engineering team<br />
           <span className="text-zinc-500">as plain Markdown files.</span>
         </h1>
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
           16 specialized AI agents — architect, reviewer, security expert, DevOps engineer, strategist, operator, and more —
           each a single Markdown skill file any agent runtime can load into any project.
           Features autonomous agents with memory, RAG, CI enforcement, and multi-member orchestration.
           No lock-in. No configuration. Just drop them in.
-        </p>
-        <div className="flex items-center justify-center gap-4 flex-wrap">
+        </Text>
+        <Group justify="center" gap="md">
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-zinc-950 font-medium px-6 py-3 rounded-lg hover:bg-zinc-100 transition-colors"
+            className="bg-white text-zinc-950 font-medium px-6 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-block"
           >
             View on GitHub
           </a>
           <Link
             href="#how"
-            className="text-zinc-400 border border-zinc-700 px-6 py-3 rounded-lg hover:border-zinc-500 hover:text-white transition-colors"
+            className="text-zinc-400 border border-zinc-700 px-6 py-3 rounded-lg hover:border-zinc-500 hover:text-white transition-colors inline-block"
           >
             How it works
           </Link>
-        </div>
+        </Group>
         <div className="mt-8 flex flex-col items-center gap-3">
           <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
             <span className="text-zinc-500">$</span>
@@ -97,25 +99,24 @@ export default function Home() {
       {/* Studio preview */}
       <section className="border-y border-zinc-800 bg-gradient-to-b from-zinc-900/30 to-zinc-950">
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-800 bg-emerald-950/30 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-xs text-emerald-400">Agenthood Studio</span>
-          </div>
+          <Group justify="center" mb="md">
+            <Badge variant="outline" color="emerald" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
+              Agenthood Studio
+            </Badge>
+          </Group>
           <h2 className="text-3xl font-semibold text-white mb-4">
             Try the Society in your browser
           </h2>
-          <p className="text-zinc-400 max-w-2xl mx-auto mb-8 leading-relaxed">
+          <Text c="dimmed" className="max-w-2xl mx-auto mb-8 leading-relaxed">
             Pick any agent, choose your provider, and start a live conversation.
             No install, no setup — just you and the agents.
-          </p>
-          <div className="flex items-center justify-center gap-4">
+          </Text>
+          <Group justify="center" gap="md">
             <Link
               href="/studio/playground"
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <IconPlayerPlay size={16} />
               Open Playground
             </Link>
             <Link
@@ -124,8 +125,8 @@ export default function Home() {
             >
               About Studio
             </Link>
-          </div>
-          <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
+          </Group>
+          <SimpleGrid cols={{ base: 2, sm: 4 }} mt="xl" spacing="md">
             {[
               { label: "16 agents", desc: "architect, reviewer, tester, and more", tip: "All 16 Society members available with their full system prompts from SKILL.md." },
               { label: "6 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode", tip: "Switch providers per conversation. Each offers different models and pricing." },
@@ -140,16 +141,16 @@ export default function Home() {
                 <div className="text-xs text-zinc-500 mt-0.5">{s.desc}</div>
               </div>
             ))}
-          </div>
+          </SimpleGrid>
         </div>
       </section>
 
       {/* Agents grid */}
       <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
         <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
-        <p className="text-zinc-400 mb-12 max-w-2xl">
+        <Text c="dimmed" className="mb-12 max-w-2xl">
           Every role a real software team needs — available as a skill file with impeccable standards.
-        </p>
+        </Text>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {agents.map((a) => (
             <Link
@@ -168,12 +169,12 @@ export default function Home() {
       {/* How it works */}
       <section id="how" className="max-w-6xl mx-auto px-6 py-10">
         <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
-        <p className="text-zinc-400 mb-12 w-full">
+        <Text c="dimmed" className="mb-12 w-full">
           Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
           that describes a role, its responsibilities, standards, and how it communicates.
           Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
           Or run them autonomously via the TypeScript CLI.
-        </p>
+        </Text>
         <div className="grid md:grid-cols-3 gap-6">
           {[
             { step: "01", title: "Install the Society", body: "npm install agenthood && npx agenthood init — interactive setup, hooks, and conventions in ~2 minutes." },
@@ -193,14 +194,15 @@ export default function Home() {
       <section className="border-t border-zinc-800 bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
           <h2 className="text-3xl font-semibold text-white mb-4">Your project deserves a full team.</h2>
-          <p className="text-zinc-400 mb-8">Open source. No sign-up. Works with any agent runtime.</p>
+          <Text c="dimmed" mb="lg">Open source. No sign-up. Works with any agent runtime.</Text>
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-zinc-950 font-medium px-8 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-block"
+            className="bg-white text-zinc-950 font-medium px-8 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-flex items-center gap-2"
           >
-            Get started on GitHub →
+            Get started on GitHub
+            <IconCode size={16} />
           </a>
         </div>
       </section>

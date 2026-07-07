@@ -40,6 +40,7 @@ export default function GuestCommentForm() {
 
   useEffect(() => {
     const path = window.location.pathname.replace(/^\/news\//, '')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSlug(path)
     const controller = new AbortController()
     fetch(`/api/news/comments?slug=${encodeURIComponent(path)}`, { signal: controller.signal })

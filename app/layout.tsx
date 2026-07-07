@@ -3,6 +3,8 @@ import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/core";
+import theme from "../mantine-theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -69,8 +71,10 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} h-full antialiased`}
+      {...mantineHtmlProps}
     >
       <head>
+        <ColorSchemeScript defaultColorScheme="dark" />
         <meta property="og:author" content="Fabio Ritzel Borges" />
         <Script
           id="json-ld"
@@ -79,15 +83,17 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white focus:outline-none"
-        >
-          Skip to main content
-        </a>
-        <div id="main-content" className="flex flex-col flex-1">
-          {children}
-        </div>
+        <MantineProvider theme={theme} defaultColorScheme="dark">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white focus:outline-none"
+          >
+            Skip to main content
+          </a>
+          <div id="main-content" className="flex flex-col flex-1">
+            {children}
+          </div>
+        </MantineProvider>
         <Analytics />
         <SpeedInsights />
       </body>

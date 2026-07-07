@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Textarea, ActionIcon, Alert, Group } from "@mantine/core";
+import { IconSquare, IconSend, IconInfoCircle } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
 
 interface ChatComposerProps {
@@ -33,23 +35,12 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
     if (!trimmed || isStreaming || disabled) return;
     onSend(trimmed);
     setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
-    }
-  };
-
-  const adjustHeight = () => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = "auto";
-      el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
     }
   };
 
@@ -78,56 +69,65 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
   return (
     <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
       {imageWarning && (
-        <div className="mx-auto mb-2 flex max-w-3xl items-center gap-1 rounded-md border border-amber-900/40 bg-amber-950/20 px-3 py-2 text-xs text-amber-400">
-          {imageWarning}
-          <HelpTip text="This provider only supports text input. Images are ignored." side="right" />
+        <div className="mx-auto mb-2 max-w-3xl">
+          <Alert
+            variant="outline"
+            color="yellow"
+            icon={<IconInfoCircle size={16} />}
+            py="xs"
+            px="sm"
+          >
+            <Group gap="xs">
+              {imageWarning}
+              <HelpTip text="This provider only supports text input. Images are ignored." side="right" />
+            </Group>
+          </Alert>
         </div>
       )}
       <div className="mx-auto flex max-w-3xl items-end gap-2">
-        <textarea
+        <Textarea
           ref={textareaRef}
           value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            adjustHeight();
-          }}
+          onChange={(e) => setInput(e.currentTarget.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           placeholder="Type a message..."
-          rows={1}
+          minRows={1}
+          maxRows={4}
           disabled={isStreaming || disabled}
-          className="max-h-[120px] md:max-h-[200px] min-h-[40px] flex-1 resize-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+          className="flex-1"
+          autosize
         />
 
         {isStreaming ? (
-          <div className="flex items-center gap-1">
-            <button
+          <Group gap={4}>
+            <ActionIcon
               onClick={onStop}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-red-600 text-white hover:bg-red-500 transition-colors"
+              size="lg"
+              variant="filled"
+              color="red"
               aria-label="Stop streaming"
             >
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                <rect x="3" y="3" width="10" height="10" rx="1" />
-              </svg>
-            </button>
+              <IconSquare size={16} />
+            </ActionIcon>
             <HelpTip text="Halts the currently streaming response. The partial response remains visible." side="right" />
-          </div>
+          </Group>
         ) : (
-          <div className="flex items-center gap-1">
-            <button
+          <Group gap={4}>
+            <ActionIcon
               onClick={handleSend}
               disabled={!input.trim() || disabled}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              size="lg"
+              variant="filled"
+              color="emerald"
               aria-label="Send message"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </button>
+              <IconSend size={16} />
+            </ActionIcon>
             <HelpTip text="Sends your message. Press Enter to send, Shift+Enter for a new line." side="right" />
-          </div>
+          </Group>
         )}
       </div>
     </div>

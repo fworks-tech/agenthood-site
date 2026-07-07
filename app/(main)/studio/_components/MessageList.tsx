@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ScrollArea, Stack, Text, Group } from "@mantine/core";
 import MessageBubble from "./MessageBubble";
 import type { ChatMessage } from "../_lib/studio-api";
 import HelpTip from "./HelpTip";
@@ -20,12 +21,12 @@ export default function MessageList({ messages, isStreaming, conversationId }: M
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="flex items-center gap-1 text-sm text-zinc-500">
+      <Group className="flex-1" justify="center" align="center">
+        <Text size="sm" c="zinc.5" className="flex items-center gap-1">
           Send a message to start the conversation.
           <HelpTip text="This area displays the chat conversation. Select an agent and type a message to begin." />
-        </p>
-      </div>
+        </Text>
+      </Group>
     );
   }
 
@@ -33,8 +34,8 @@ export default function MessageList({ messages, isStreaming, conversationId }: M
   const streamingIndex = lastAssistantIndex >= 0 ? messages.length - 1 - lastAssistantIndex : -1;
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6">
-      <div className="mx-auto max-w-3xl space-y-4">
+    <ScrollArea className="flex-1" px="lg" py="xl">
+      <Stack className="mx-auto max-w-3xl" gap="md">
         {messages.map((msg, i) => (
           <MessageBubble
             key={msg.id}
@@ -44,7 +45,7 @@ export default function MessageList({ messages, isStreaming, conversationId }: M
           />
         ))}
         <div ref={bottomRef} />
-      </div>
-    </div>
+      </Stack>
+    </ScrollArea>
   );
 }
