@@ -68,7 +68,7 @@ test.describe("Floating Companion — Desktop", () => {
   test("expand button increases panel width", async ({ page }) => {
     await page.goto("/docs/members/");
     await openCompanion(page);
-    const panel = page.locator(".rounded-2xl.border").first();
+    const panel = page.locator(".overflow-hidden.flex-col").first();
     const initWidth = await panel.evaluate((el) => el.clientWidth);
     await page.getByRole("button", { name: "Expand" }).click();
     await page.waitForTimeout(300);
@@ -127,7 +127,7 @@ test.describe("Floating Companion — Mobile (iPhone 13)", () => {
   test("chat panel fits within mobile viewport", async ({ page }) => {
     await page.goto("/docs/members/");
     await openCompanion(page);
-    const panel = page.locator(".rounded-2xl.border").first();
+    const panel = page.locator(".overflow-hidden.flex-col").first();
     const box = await panel.boundingBox();
     expect(box).not.toBeNull();
     if (box) {
@@ -161,7 +161,7 @@ test.describe("Floating Companion — Mobile (iPhone 13)", () => {
     await input.focus();
     await page.setViewportSize({ width: 375, height: 500 });
     await page.waitForTimeout(300);
-    const panel = page.locator(".rounded-2xl.border").first();
+    const panel = page.locator(".overflow-hidden.flex-col").first();
     const box = await panel.boundingBox();
     expect(box).not.toBeNull();
     if (box) {

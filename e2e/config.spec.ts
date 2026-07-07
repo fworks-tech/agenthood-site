@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent } from "./helpers";
+import { mockTurnstile, selectAgent, selectMantineOption } from "./helpers";
 
 test.describe("Playground — Configuration", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -14,25 +14,22 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("changing provider updates model dropdown", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider", { exact: true });
     const modelSelect = page.getByLabel("Model", { exact: true });
     const initialModel = await modelSelect.inputValue();
 
-    await providerSelect.selectOption("openai");
+    await selectMantineOption(page, "Provider", "OpenAI");
     await page.waitForTimeout(200);
     const newModel = await modelSelect.inputValue();
     expect(newModel).not.toBe(initialModel);
   });
 
   test("base url input shown for ollama, hidden for anthropic", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider", { exact: true });
-
-    await providerSelect.selectOption("anthropic");
+    await selectMantineOption(page, "Provider", "Anthropic");
     await page.waitForTimeout(200);
     const baseUrlInput = page.locator("input[placeholder*='localhost']");
     await expect(baseUrlInput).not.toBeVisible();
 
-    await providerSelect.selectOption("ollama");
+    await selectMantineOption(page, "Provider", "Ollama (local)");
     await page.waitForTimeout(200);
     await expect(baseUrlInput).toBeVisible();
   });
@@ -54,8 +51,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("save persists config to sessionStorage", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider", { exact: true });
-    await providerSelect.selectOption("openai");
+    await selectMantineOption(page, "Provider", "OpenAI");
     await page.waitForTimeout(200);
 
     await page.locator("button:has-text('Save configuration')").click();
@@ -68,8 +64,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("config restored on page reload", async ({ page }) => {
-    const providerSelect = page.getByLabel("Provider", { exact: true });
-    await providerSelect.selectOption("groq");
+    await selectMantineOption(page, "Provider", "Groq");
     await page.waitForTimeout(200);
     await page.locator("button:has-text('Save configuration')").click();
     await page.waitForTimeout(300);
@@ -92,7 +87,7 @@ test.describe("Playground — Configuration", () => {
     }
 
     const restoredProvider = await page.getByLabel("Provider", { exact: true }).inputValue();
-    expect(restoredProvider).toBe("groq");
+    expect(restoredProvider).toBe("Groq");
   });
 
   test("api key input accepts text and shows placeholder", async ({ page }) => {
