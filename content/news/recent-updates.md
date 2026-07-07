@@ -29,7 +29,7 @@ The site now has a complete news publishing system:
 - **`/news/[slug]`** — individual article pages built at compile time (static generation)
 - **`/news/rss.xml`** — RSS 2.0 feed for external readers
 
-The navigation bar and breadcrumbs have been updated with a News link. Three articles are published so far: the Academy outage post-mortem, Speed Insights announcement, and playground hardening report.
+The navigation bar and breadcrumbs have been updated with a News link. Five articles are published so far: the Academy outage post-mortem, Speed Insights announcement, playground hardening report, documentation audit, and CI refinement report.
 
 ---
 
@@ -80,7 +80,7 @@ The remaining items from the playground hardening audit have been addressed:
 - **Vercel OIDC tokens** — stale references removed from local env files; tokens rotated on Vercel dashboard
 - **Flaky E2E test** — the `config restored on page reload` mobile test no longer races with CSS transitions
 - **Lint** — final 2 warnings eliminated (unused `configPanelHeight` state from a previously commented-out DragHandle)
-- **News tests** — updated to expect 4 manifest entries, with proper XML entity encoding in RSS title checks
+- **News tests** — updated to expect 6 manifest entries, with proper XML entity encoding in RSS title checks
 
 ---
 

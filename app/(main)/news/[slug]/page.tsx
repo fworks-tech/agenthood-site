@@ -3,6 +3,7 @@ import path from "node:path";
 import { notFound } from "next/navigation";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import Giscus from "../../../components/Giscus";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
@@ -73,6 +74,7 @@ export default async function NewsPost({ params }: NewsPostProps) {
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Breadcrumbs segments={["news", slug]} />
         <MarkdownRenderer basePath={basePath}>{markdown}</MarkdownRenderer>
+        <Giscus />
       </div>
     </main>
   );
