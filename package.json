@@ -18,8 +18,16 @@
     "predev": "npm run sync && npm run sync-skills"
   },
   "dependencies": {
+    "@mantine/code-highlight": "^9.4.1",
+    "@mantine/core": "^9.4.1",
+    "@mantine/form": "^9.4.1",
+    "@mantine/hooks": "^9.4.1",
+    "@mantine/modals": "^9.4.1",
+    "@mantine/notifications": "^9.4.1",
+    "@mantine/nprogress": "^9.4.1",
+    "@mantine/spotlight": "^9.4.1",
     "@sentry/nextjs": "^10.62.0",
-    "@tailwindcss/typography": "^0.5.20",
+    "@tabler/icons-react": "^3.44.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
@@ -40,6 +48,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.2.7",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
+    "tailwind-preset-mantine": "^4.1.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.1.3"

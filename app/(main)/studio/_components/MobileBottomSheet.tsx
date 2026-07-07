@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useEffect, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
+import { Drawer } from "@mantine/core";
 
 interface MobileBottomSheetProps {
   open: boolean;
@@ -9,7 +10,6 @@ interface MobileBottomSheetProps {
 }
 
 export default function MobileBottomSheet({ open, onClose, children }: MobileBottomSheetProps) {
-  const sheetRef = useRef<HTMLDivElement>(null);
   const [translateY, setTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
@@ -21,9 +21,7 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging) return;
-    const delta = e.touches[0].clientY - startY.current;
-    const newTranslate = Math.max(0, delta);
-    setTranslateY(newTranslate);
+    setTranslateY(Math.max(0, e.touches[0].clientY - startY.current));
   }, [isDragging]);
 
   const handleTouchEnd = useCallback(() => {
@@ -37,27 +35,31 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
   }, [isDragging, translateY, onClose]);
 
   useEffect(() => {
-    if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTranslateY(0);
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!open) setTranslateY(0);
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-40 md:hidden">
-      <div
-        className="absolute inset-0 bg-black/60 transition-opacity"
-        onClick={onClose}
-      />
-      <div
-        ref={sheetRef}
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl bg-zinc-950 border border-zinc-800 shadow-2xl transition-transform"
-        style={{
+    <Drawer
+      opened={open}
+      onClose={onClose}
+      position="bottom"
+      size="85vh"
+      withCloseButton={false}
+      padding={0}
+      styles={{
+        content: {
+          borderRadius: "16px 16px 0 0",
+          border: "1px solid var(--mantine-color-zinc-8)",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           transform: `translateY(${translateY}px)`,
           transition: isDragging ? "none" : "transform 0.3s ease-out",
-        }}
+        },
+        body: { padding: 0, overflow: "hidden" },
+      }}
+      transitionProps={{ transition: "slide-up", duration: 300 }}
+    >
+      <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -65,10 +67,10 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
         <div className="flex justify-center pt-3 pb-2">
           <div className="h-1 w-10 rounded-full bg-zinc-700" />
         </div>
-        <div className="overflow-y-auto max-h-[calc(85vh-40px)]">
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 40px)" }}>
           {children}
         </div>
       </div>
-    </div>
+    </Drawer>
   );
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Text, Badge, Group, SimpleGrid } from "@mantine/core";
+import { IconPlayerPlay, IconCode, IconShieldCheck, IconMessages } from "@tabler/icons-react";
 import HelpTip from "./_components/HelpTip";
 
 export const metadata: Metadata = {
@@ -12,25 +14,24 @@ export default function StudioHubPage() {
     <div className="h-full bg-zinc-950">
       <section className="border border-zinc-800">
         <div className="mx-auto max-w-4xl px-6 py-20 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-xs text-zinc-400">Agenthood Studio</span>
-          </div>
+          <Group justify="center" mb="md">
+            <Badge variant="outline" color="dark" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
+              Agenthood Studio
+            </Badge>
+          </Group>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
             Try the Society live
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-zinc-500">
+          <Text className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" c="dimmed">
             Select any of the 16 AI agent members, pick your provider, and start a conversation.
             All requests are routed server-side through the agenthood runtime.
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-4">
+          </Text>
+          <Group justify="center" mt="lg" gap="md">
             <Link
               href="/studio/playground"
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <IconPlayerPlay size={16} />
               Open Playground
             </Link>
             <Link
@@ -39,23 +40,21 @@ export default function StudioHubPage() {
             >
               Getting started
             </Link>
-          </div>
+          </Group>
         </div>
       </section>
 
       {/* Feature grid */}
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="grid gap-8 sm:grid-cols-2">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-emerald-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-              </svg>
+              <IconMessages size={20} />
             </div>
-            <h3 className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+            <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
               Talk to any member
               <HelpTip text="Each member's system prompt is synced from its SKILL.md file at build time." />
-            </h3>
+            </div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
               Each of the 16 Society members has its own system prompt synced from its SKILL.md file.
               Select one and start a conversation with their exact agent persona.
@@ -64,14 +63,12 @@ export default function StudioHubPage() {
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-blue-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-              </svg>
+              <IconCode size={20} />
             </div>
-            <h3 className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+            <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
               Choose your provider
               <HelpTip text="Switch between 6 providers. Adjust temperature, max tokens, and model per conversation." />
-            </h3>
+            </div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
               Switch between Anthropic, OpenAI, Groq, Ollama, or your own OpenCode server.
               Adjust temperature, max tokens, and model per conversation.
@@ -80,14 +77,12 @@ export default function StudioHubPage() {
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-purple-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </svg>
+              <IconShieldCheck size={20} />
             </div>
-            <h3 className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+            <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
               Server-side routing
               <HelpTip text="Requests go through the LLMRouter with automatic failover. Rate limited and logged." />
-            </h3>
+            </div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
               Every request goes through the agenthood LLMRouter with automatic failover.
               Rate limited, validated, and logged server-side. Your keys are never stored on the server.
@@ -96,20 +91,18 @@ export default function StudioHubPage() {
 
           <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
             <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-amber-500">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-              </svg>
+              <IconMessages size={20} />
             </div>
-            <h3 className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+            <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
               Conversations saved
               <HelpTip text="Chat history persists in your browser between sessions via localStorage." />
-            </h3>
+            </div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
               Chat history persists in your browser between sessions.
               Switch between conversations, clear history, or start fresh.
             </p>
           </div>
-        </div>
+        </SimpleGrid>
       </section>
     </div>
   );

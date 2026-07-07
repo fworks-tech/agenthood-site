@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton, Group, Text } from "@mantine/core";
 import type { AgentEntry } from "../_data/agents";
 
 interface AgentListItemProps {
@@ -17,7 +18,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function AgentListItem({ agent, isSelected, onSelect }: AgentListItemProps) {
   return (
-    <button
+    <UnstyledButton
       onClick={onSelect}
       className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
         isSelected
@@ -25,9 +26,9 @@ export default function AgentListItem({ agent, isSelected, onSelect }: AgentList
           : "hover:bg-zinc-800/50"
       }`}
     >
-      <div className="flex items-center gap-2.5">
+      <Group gap="sm" wrap="nowrap">
         {agent.icon ? (
-          <span className="shrink-0 text-base">{agent.icon}</span>
+          <Text className="shrink-0 text-base">{agent.icon}</Text>
         ) : (
           <span
             className={`inline-block h-2 w-2 shrink-0 rounded-full ${
@@ -36,14 +37,14 @@ export default function AgentListItem({ agent, isSelected, onSelect }: AgentList
           />
         )}
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-sm font-medium ${
-            isSelected ? "text-white" : "text-zinc-300"
-          }`}>
+          <Text size="sm" fw={500} truncate c={isSelected ? "white" : "zinc.3"}>
             {agent.name}
-          </p>
-          <p className="truncate text-xs text-zinc-500">{agent.role}</p>
+          </Text>
+          <Text size="xs" c="zinc.5" truncate>
+            {agent.role}
+          </Text>
         </div>
-      </div>
-    </button>
+      </Group>
+    </UnstyledButton>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect } from "react";
+import { Box } from "@mantine/core";
 
 interface DragHandleProps {
   direction: "horizontal" | "vertical";
@@ -74,7 +75,7 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
   }, [direction, isHorizontal]);
 
   return (
-    <div
+    <Box
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       className={`group relative z-30 flex items-center justify-center shrink-0 ${
@@ -87,6 +88,6 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
           isHorizontal ? "h-8 w-px" : "h-px w-8"
         } bg-zinc-700 group-hover:bg-emerald-500 group-active:bg-emerald-400`}
       />
-    </div>
+    </Box>
   );
 }
