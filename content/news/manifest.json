@@ -1,5 +1,21 @@
 [
   {
+    "slug": ["floating-companion"],
+    "path": "news/floating-companion.md",
+    "title": "Meet The Oracle — Your Floating Companion on Docs & Academy",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "The Oracle — a floating AI companion with quick actions for summaries, knowledge checks, and feedback — now on every docs and academy page."
+  },
+  {
+    "slug": ["ai-trends-july-2026"],
+    "path": "news/ai-trends-july-2026.md",
+    "title": "AI Trends: June 2026 Highlights & What to Expect in July",
+    "date": "2026-07-05",
+    "author": "Agenthood Team",
+    "summary": "A roundup of June 2026 AI developments — GPT-5.6, Siri AI, Claude Mythos 5, Grok 4.3, Gartner's $2.59T spending forecast, policy shifts, and what to watch in July."
+  },
+  {
     "slug": ["recent-updates"],
     "path": "news/recent-updates.md",
     "title": "Feedback API, News Section, and Observability Improvements",
