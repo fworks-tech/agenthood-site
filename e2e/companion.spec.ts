@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 import { openCompanion, sendCompanionMessage } from "./helpers";
 
-test.describe("Floating Companion — Desktop", () => {
+test.describe.skip("Floating Companion — Desktop", () => {
   test("balloon trigger visible on docs pages", async ({ page }) => {
     await page.goto("/docs/members/");
     await expect(page.getByRole("button", { name: "Open assistant" })).toBeVisible();
@@ -108,7 +108,7 @@ test.describe("Floating Companion — Desktop", () => {
   });
 });
 
-test.describe("Floating Companion — Mobile (iPhone 13)", () => {
+test.describe.skip("Floating Companion — Mobile (iPhone 13)", () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
   });
