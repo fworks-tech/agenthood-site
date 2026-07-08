@@ -59,7 +59,8 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
   const agentSelect = page.getByLabel("Agent", { exact: true });
   await agentSelect.click();
   await page.waitForTimeout(200);
-  const option = page.locator(`[role="option"]`).filter({ hasText: agentId });
+  const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const option = page.locator(`[role="option"]`).filter({ hasText: agentName });
   await option.waitFor({ state: "visible", timeout: 10000 });
   await option.click();
   await page.waitForTimeout(300);
@@ -151,7 +152,7 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
   const count = await items.count();
   for (let i = 0; i < count; i++) {
     const item = items.nth(i);
-    const title = await item.locator("[data-truncate='true']").innerText();
+    const title = await item.locator("[data-truncate]").innerText();
     const classAttr = await item.getAttribute("class") || "";
     const active = classAttr.includes("border-emerald-500");
     entries.push({ title, active });

@@ -84,7 +84,7 @@ test.describe("Playground — Core UI", () => {
   test("code agent shows opencode affinity hint", async ({ page }) => {
     await selectAgent(page, "the-architect");
     await openConfigPanel(page);
-    await expect(page.locator("text=Code-optimized provider available")).toBeVisible();
+    await expect(page.locator("text=Code-optimized provider available").first()).toBeVisible();
     const switchBtn = page.locator("button:has-text('Switch to OpenCode')");
     await expect(switchBtn).toBeVisible();
     await switchBtn.click();

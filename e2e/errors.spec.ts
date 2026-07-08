@@ -18,7 +18,7 @@ test.describe("Playground — Error & Log States", () => {
     await waitForStreamComplete(page);
 
     await expect(page.locator("text=completed in").first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator("span").filter({ hasText: /^→/ }).first()).toBeVisible();
+    await expect(page.getByText(/^→/).first()).toBeVisible();
   });
 
   test("creates error log entry on chat error", async ({ page, mockChatError }) => {
