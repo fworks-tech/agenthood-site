@@ -1,0 +1,43 @@
+diff --git a/node_modules/tailwind-preset-mantine/src/core/theme-loader.js b/node_modules/tailwind-preset-mantine/src/core/theme-loader.js
+index c07204a..c117e43 100644
+--- a/node_modules/tailwind-preset-mantine/src/core/theme-loader.js
++++ b/node_modules/tailwind-preset-mantine/src/core/theme-loader.js
+@@ -1,6 +1,6 @@
+ import { execFile as execFileCallback } from "node:child_process";
+ import * as nodeModule from "node:module";
+-import { resolve } from "node:path";
++import { extname, resolve } from "node:path";
+ import { fileURLToPath, pathToFileURL } from "node:url";
+ import { promisify } from "node:util";
+ 
+@@ -8,6 +8,9 @@ const execFile = promisify(execFileCallback);
+ const THIS_FILE = fileURLToPath(import.meta.url);
+ const CHILD_RESULT_MARKER = "__TWPM_THEME_RESULT__";
+ const require = nodeModule.createRequire(import.meta.url);
++
++// .mjs and .cjs are native ESM/CJS — no transpiler needed on Node 22+
++const NATIVE_ESM_EXTENSIONS = [".mjs", ".cjs", ".js"];
+ const TSX_LOADER_PATH = require.resolve("tsx");
+ const TSX_LOADER_URL = pathToFileURL(TSX_LOADER_PATH).href;
+ const STYLE_EXTENSIONS = [
+@@ -138,14 +141,12 @@ async function loadThemeFromFileInProcess(themePath, baseDir = process.cwd()) {
+  * @param {string} baseDir
+  */
+ export function getThemeLoaderChildArgs(themePath, baseDir = process.cwd()) {
+-	return [
+-		"--import",
+-		TSX_LOADER_URL,
+-		THIS_FILE,
+-		"--child",
+-		themePath,
+-		resolve(baseDir),
+-	];
++	const ext = extname(themePath);
++	// Only use tsx for TypeScript files; native ESM/CJS doesn't need it
++	const needsTsx = !NATIVE_ESM_EXTENSIONS.includes(ext);
++	const args = needsTsx ? ["--import", TSX_LOADER_URL] : [];
++	args.push(THIS_FILE, "--child", themePath, resolve(baseDir));
++	return args;
+ }
+ 
+ /**

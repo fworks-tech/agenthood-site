@@ -14,6 +14,7 @@
     "test:e2e:report": "playwright show-report",
     "sync": "node scripts/sync-docs.mjs",
     "sync-skills": "node scripts/sync-skills.mjs",
+    "postinstall": "patch-package",
     "prebuild": "npm run sync && npm run sync-skills",
     "predev": "npm run sync && npm run sync-skills"
   },
@@ -48,10 +49,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.2.7",
+    "patch-package": "^8.0.1",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "tailwind-preset-mantine": "^4.1.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.0",
     "typescript": "^5",
     "vitest": "^3.1.3"
   }

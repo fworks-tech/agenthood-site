@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/core";
-import theme from "../mantine-theme";
+import theme from "../mantine-theme.mjs";
 import "./globals.css";
 
 const geistSans = Geist({
