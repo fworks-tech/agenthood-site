@@ -38,7 +38,7 @@ test.describe("Playground — Conversation Management", () => {
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(2);
 
-    const firstEntry = page.locator("[class*='group']").filter({ has: page.locator(".truncate") }).first();
+    const firstEntry = page.locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']").first();
     await firstEntry.click();
     await page.waitForTimeout(500);
     const messages = await getMessages(page);
@@ -54,8 +54,8 @@ test.describe("Playground — Conversation Management", () => {
     let entries = await getConversationEntries(page);
     expect(entries.length).toBe(1);
 
-    const deleteBtn = page.locator("[class*='group'] button[title='Delete conversation']").first();
-    await deleteBtn.click();
+    const deleteBtn = page.locator("[data-conversation-list='sidebar'] button[title='Delete conversation']").first();
+    await deleteBtn.click({ force: true });
     await page.waitForTimeout(500);
 
     entries = await getConversationEntries(page);
