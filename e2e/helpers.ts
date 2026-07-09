@@ -159,8 +159,8 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
     if (count === 0) return entries;
     for (let i = 0; i < count; i++) {
       const item = items.nth(i);
-      const titleLocator = item.locator("[data-truncate='true']");
-      await titleLocator.waitFor({ state: 'attached', timeout: 10000 });
+      const titleLocator = item.locator("div.flex-1 .mantine-Text-root").first();
+      await titleLocator.waitFor({ state: "attached", timeout: 10000 });
       const title = await titleLocator.innerText();
       const classAttr = await item.getAttribute("class") || "";
       const active = classAttr.includes("border-emerald-500");

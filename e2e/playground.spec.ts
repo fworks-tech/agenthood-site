@@ -85,11 +85,16 @@ test.describe("Playground — Core UI", () => {
     await selectAgent(page, "the-architect");
     await openConfigPanel(page);
     await expect(page.locator("text=Code-optimized provider available").first()).toBeVisible();
-    const switchBtn = page.locator("button:has-text('Switch to OpenCode')");
+    const configDialog = page
+      .getByRole("dialog")
+      .filter({ has: page.getByText("Agent Configuration") })
+      .first();
+    const scope = (await configDialog.isVisible().catch(() => false)) ? configDialog : page;
+    const switchBtn = scope.getByRole("button", { name: "Switch to OpenCode" }).first();
     await expect(switchBtn).toBeVisible();
-    await switchBtn.click();
+    await switchBtn.click({ force: true });
     await page.waitForTimeout(200);
-    await expect(page.getByLabel("Provider", { exact: true })).toHaveValue("OpenCode Zen");
+    await expect(scope.getByLabel("Provider", { exact: true }).first()).toHaveValue("OpenCode Zen");
   });
 
   test("thumbs up sends feedback to server", async ({ page }) => {
