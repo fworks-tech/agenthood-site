@@ -5,6 +5,41 @@
 
 ---
 
+## v3.11.1 — July 9, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** point member structure checks at canonical skills/ source
+- **Members:** make skills/ the single source of truth for member SKILL.md
+- **Members:** make tool tier construction order-independent
+- **Project:** scope supersedes regex to its section
+- **Security:** replace execSync postinstall eval and drop esbuild allowScripts
+
+---
+
+## v3.11.0 — July 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Cli:** add missing run command to COMMANDS map
+- **Cli:** fix flag parsing and status member count
+- **Status:** remove readMetrics duplication, restore MetricsCollector with centralized usage
+
+### ✨ Features
+
+- **Commands:** add adapter for MetricsCollector to isolate infrastructure dependency
+
+---
+
+## v3.10.0 — July 7, 2026
+
+### ✨ Features
+
+- add The Mailman — 17th Society member for delivery and cross-posting
+- **Init:** strip junk files from init (#360)
+
+---
+
 ## v3.9.1 — July 6, 2026
 
 ### 🐛 Bug Fixes

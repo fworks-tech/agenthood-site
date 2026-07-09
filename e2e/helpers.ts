@@ -125,40 +125,49 @@ export async function getMessages(page: Page): Promise<{ role: string; text: str
 }
 
 export async function getConversationEntries(page: Page): Promise<{ title: string; active: boolean }[]> {
-  const vs = page.viewportSize();
-  const isMobile = vs !== null && vs.width < 768;
-  if (isMobile) {
-    const closeBtn = page.getByRole("button", { name: "Close config panel" });
-    if (!(await closeBtn.isVisible().catch(() => false))) {
+    const vs = page.viewportSize();
+    const isMobile = vs !== null && vs.width < 768;
+    if (isMobile) {
+      const closeBtn = page.getByRole("button", { name: "Close config panel" });
+      if (!(await closeBtn.isVisible().catch(() => false))) {
+        const openBtn = page.getByRole("button", { name: "Open config panel" });
+        if (await openBtn.isVisible().catch(() => false)) {
+          await openBtn.click();
+          await page.waitForTimeout(300);
+        }
+      }
+    }
+
+    const entries: { title: string; active: boolean }[] = [];
+    const sidebar = page.locator("[data-conversation-list='sidebar']");
+    if (await sidebar.count() === 0) {
       const openBtn = page.getByRole("button", { name: "Open config panel" });
       if (await openBtn.isVisible().catch(() => false)) {
         await openBtn.click();
         await page.waitForTimeout(300);
       }
     }
-  }
-
-  const entries: { title: string; active: boolean }[] = [];
-  const sidebar = page.locator("[data-conversation-list='sidebar']");
-  if (await sidebar.count() === 0) {
-    const openBtn = page.getByRole("button", { name: "Open config panel" });
-    if (await openBtn.isVisible().catch(() => false)) {
-      await openBtn.click();
-      await page.waitForTimeout(300);
+    // Wait for sidebar to be attached
+    await sidebar.waitFor({ state: 'attached', timeout: 10000 });
+    if (await sidebar.count() === 0) return entries;
+    
+    // Wait for at least one conversation item to be attached
+    const items = sidebar.locator("[class*='cursor-pointer']");
+    await items.first().waitFor({ state: 'attached', timeout: 10000 });
+    
+    const count = await items.count();
+    if (count === 0) return entries;
+    for (let i = 0; i < count; i++) {
+      const item = items.nth(i);
+      const titleLocator = item.locator("[data-truncate='true']");
+      await titleLocator.waitFor({ state: 'attached', timeout: 10000 });
+      const title = await titleLocator.innerText();
+      const classAttr = await item.getAttribute("class") || "";
+      const active = classAttr.includes("border-emerald-500");
+      entries.push({ title, active });
     }
+    return entries;
   }
-  if (await sidebar.count() === 0) return entries;
-  const items = sidebar.locator("[class*='cursor-pointer']");
-  const count = await items.count();
-  for (let i = 0; i < count; i++) {
-    const item = items.nth(i);
-    const title = await item.locator("[data-truncate]").innerText();
-    const classAttr = await item.getAttribute("class") || "";
-    const active = classAttr.includes("border-emerald-500");
-    entries.push({ title, active });
-  }
-  return entries;
-}
 
 export async function getLogEntries(page: Page): Promise<{ time: string; level: string; message: string }[]> {
   const logs: { time: string; level: string; message: string }[] = [];

@@ -1,7 +1,7 @@
 const config = {
   plugins: {
     "tailwind-preset-mantine/postcss": {
-      input: "./mantine-theme.ts",
+      input: "./mantine-theme.mjs",
     },
     "@tailwindcss/postcss": {},
     "postcss-preset-mantine": {},
