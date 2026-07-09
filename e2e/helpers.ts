@@ -151,13 +151,10 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
     await sidebar.waitFor({ state: 'attached', timeout: 10000 });
     if (await sidebar.count() === 0) return entries;
     
-    // Wait for at least one conversation item to be attached
     const items = sidebar.locator("[class*='cursor-pointer']");
-    await items.first().waitFor({ state: 'attached', timeout: 10000 });
-    
-    const count = await items.count();
-    if (count === 0) return entries;
-    for (let i = 0; i < count; i++) {
+    const itemCount = await items.count();
+    if (itemCount === 0) return entries;
+    for (let i = 0; i < itemCount; i++) {
       const item = items.nth(i);
       const titleLocator = item.locator("div.flex-1 .mantine-Text-root").first();
       await titleLocator.waitFor({ state: "attached", timeout: 10000 });

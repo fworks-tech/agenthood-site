@@ -46,12 +46,10 @@ test.describe("Playground — Configuration", () => {
     skipOnMobile(page);
     const label = page.locator("text=/Temperature: \\d\\.\\d/");
     await expect(label).toBeVisible();
-    const slider = page.getByLabel(/^Temperature/);
-    const box = await slider.boundingBox();
+    const track = label.locator("xpath=../..").locator(".mantine-Slider-barContainer");
+    const box = await track.boundingBox();
     if (box) {
-      const min = parseFloat(await slider.getAttribute("aria-valuemin") || "0");
-      const max = parseFloat(await slider.getAttribute("aria-valuemax") || "2");
-      const ratio = (1.5 - min) / (max - min);
+      const ratio = 1.5 / 2;
       await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
     }
     await page.waitForTimeout(200);
@@ -60,12 +58,12 @@ test.describe("Playground — Configuration", () => {
 
   test("max tokens slider updates displayed value", async ({ page }) => {
     skipOnMobile(page);
-    const slider = page.getByLabel(/^Max Tokens/);
-    const box = await slider.boundingBox();
+    const label = page.locator("text=/Max Tokens: [\\d,]+/");
+    await expect(label).toBeVisible();
+    const track = label.locator("xpath=../..").locator(".mantine-Slider-barContainer");
+    const box = await track.boundingBox();
     if (box) {
-      const min = parseFloat(await slider.getAttribute("aria-valuemin") || "0");
-      const max = parseFloat(await slider.getAttribute("aria-valuemax") || "131072");
-      const ratio = (8192 - min) / (max - min);
+      const ratio = (8192 - 256) / (16384 - 256);
       await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
     }
     await page.waitForTimeout(200);
