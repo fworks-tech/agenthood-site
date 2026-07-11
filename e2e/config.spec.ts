@@ -44,10 +44,11 @@ test.describe("Playground — Configuration", () => {
 
   test("temperature slider updates displayed value", async ({ page }) => {
     skipOnMobile(page);
-    const label = page.locator("text=/Temperature: \\d\\.\\d/");
+    const label = page.locator("label:has-text('Temperature:')");
     await expect(label).toBeVisible();
-    const track = label.locator("xpath=../..").locator(".mantine-Slider-barContainer");
-    const box = await track.boundingBox();
+    const forAttr = await label.getAttribute("for");
+    const sliderRoot = page.locator(`[id="${forAttr}"]`);
+    const box = await sliderRoot.boundingBox();
     if (box) {
       const ratio = 1.5 / 2;
       await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
@@ -58,10 +59,11 @@ test.describe("Playground — Configuration", () => {
 
   test("max tokens slider updates displayed value", async ({ page }) => {
     skipOnMobile(page);
-    const label = page.locator("text=/Max Tokens: [\\d,]+/");
+    const label = page.locator("label:has-text('Max Tokens:')");
     await expect(label).toBeVisible();
-    const track = label.locator("xpath=../..").locator(".mantine-Slider-barContainer");
-    const box = await track.boundingBox();
+    const forAttr = await label.getAttribute("for");
+    const sliderRoot = page.locator(`[id="${forAttr}"]`);
+    const box = await sliderRoot.boundingBox();
     if (box) {
       const ratio = (8192 - 256) / (16384 - 256);
       await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
