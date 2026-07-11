@@ -128,8 +128,14 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
     const vs = page.viewportSize();
     const isMobile = vs !== null && vs.width < 768;
     if (isMobile) {
-      const closeBtn = page.getByRole("button", { name: "Close config panel" });
-      if (!(await closeBtn.isVisible().catch(() => false))) {
+      const convBtn = page.locator("button").filter({ hasText: "Conversations" });
+      if (await convBtn.isVisible().catch(() => false)) {
+        await convBtn.click();
+        await page.waitForTimeout(400);
+      }
+    } else {
+      const sidebar = page.locator("[data-conversation-list='sidebar']");
+      if (await sidebar.count() === 0) {
         const openBtn = page.getByRole("button", { name: "Open config panel" });
         if (await openBtn.isVisible().catch(() => false)) {
           await openBtn.click();
@@ -140,15 +146,8 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
 
     const entries: { title: string; active: boolean }[] = [];
     const sidebar = page.locator("[data-conversation-list='sidebar']");
-    if (await sidebar.count() === 0) {
-      const openBtn = page.getByRole("button", { name: "Open config panel" });
-      if (await openBtn.isVisible().catch(() => false)) {
-        await openBtn.click();
-        await page.waitForTimeout(300);
-      }
-    }
     // Wait for sidebar to be attached
-    await sidebar.waitFor({ state: 'attached', timeout: 10000 });
+    await sidebar.waitFor({ state: 'attached', timeout: 15000 });
     if (await sidebar.count() === 0) return entries;
     
     const items = sidebar.locator("[class*='cursor-pointer']");

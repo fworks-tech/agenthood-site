@@ -609,16 +609,18 @@ export default function PlaygroundPage() {
         onClose={() => setMobileDrawerOpen(false)}
         onOpen={() => setMobileDrawerOpen(true)}
       >
-        <ConversationList
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSelect={(id) => {
-            chat.switchConversation(id);
-            setMobileDrawerOpen(false);
-          }}
-          onNewConversation={handleNewConversation}
-          onDelete={handleDeleteConversation}
-        />
+        <div data-conversation-list="sidebar">
+          <ConversationList
+            conversations={conversations}
+            activeConversationId={activeConversationId}
+            onSelect={(id) => {
+              chat.switchConversation(id);
+              setMobileDrawerOpen(false);
+            }}
+            onNewConversation={handleNewConversation}
+            onDelete={handleDeleteConversation}
+          />
+        </div>
       </MobileDrawer>
 
       {/* Mobile Bottom Sheet for Config */}
