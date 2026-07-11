@@ -48,10 +48,11 @@ test.describe("Playground — Configuration", () => {
     await expect(label).toBeVisible();
     const forAttr = await label.getAttribute("for");
     const sliderRoot = page.locator(`[id="${forAttr}"]`);
-    const box = await sliderRoot.boundingBox();
+    const trackContainer = sliderRoot.locator("> div").first();
+    const box = await trackContainer.boundingBox();
     if (box) {
       const ratio = 1.5 / 2;
-      await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
+      await trackContainer.click({ position: { x: box.width * ratio, y: box.height / 2 } });
     }
     await page.waitForTimeout(200);
     await expect(page.locator("text=Temperature: 1.5")).toBeVisible();
@@ -63,10 +64,11 @@ test.describe("Playground — Configuration", () => {
     await expect(label).toBeVisible();
     const forAttr = await label.getAttribute("for");
     const sliderRoot = page.locator(`[id="${forAttr}"]`);
-    const box = await sliderRoot.boundingBox();
+    const trackContainer = sliderRoot.locator("> div").first();
+    const box = await trackContainer.boundingBox();
     if (box) {
       const ratio = (8192 - 256) / (16384 - 256);
-      await page.mouse.click(box.x + box.width * ratio, box.y + box.height / 2);
+      await trackContainer.click({ position: { x: box.width * ratio, y: box.height / 2 } });
     }
     await page.waitForTimeout(200);
     await expect(page.locator("text=Max Tokens: 8,192")).toBeVisible();
