@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, sendMessage, waitForStreamComplete, getConversationEntries, getMessages } from "./helpers";
+import { mockTurnstile, selectAgent, sendMessage, waitForStreamComplete, getConversationEntries, getMessages, waitForHydration } from "./helpers";
 
 test.describe("Playground — Conversation Management", () => {
   test.beforeEach(async ({ page, clearStorage }) => {
@@ -8,18 +8,18 @@ test.describe("Playground — Conversation Management", () => {
     await clearStorage();
     await mockTurnstile(page);
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
   });
 
   test("multiple conversations listed after sending messages", async ({ page, mockChat }) => {
     await mockChat(["First response"]);
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "first message");
-    await waitForStreamComplete(page);
+    await waitForStreamComplete(page, 1);
 
     await selectAgent(page, "the-architect");
     await sendMessage(page, "second message");
-    await waitForStreamComplete(page);
+    await waitForStreamComplete(page, 2);
 
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(2);
@@ -29,11 +29,11 @@ test.describe("Playground — Conversation Management", () => {
     await mockChat(["Response A"]);
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "message A");
-    await waitForStreamComplete(page);
+    await waitForStreamComplete(page, 1);
 
     await selectAgent(page, "the-architect");
     await sendMessage(page, "message B");
-    await waitForStreamComplete(page);
+    await waitForStreamComplete(page, 2);
 
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(2);
@@ -96,9 +96,7 @@ test.describe("Playground — Conversation Management", () => {
     await page.waitForTimeout(500);
 
     await page.reload();
-    await page.waitForLoadState("networkidle");
-
-    await expect(page.getByText("Agents loaded").first()).toBeVisible({ timeout: 15000 });
+    await waitForHydration(page);
 
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(1);

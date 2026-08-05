@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile } from "./helpers";
+import { mockTurnstile, waitForHydration } from "./helpers";
 
 test.describe("Playground — Responsive Layout", () => {
   async function setup(page: import("@playwright/test").Page, width: number, height: number, clearStorage: () => Promise<void>) {
@@ -8,10 +8,10 @@ test.describe("Playground — Responsive Layout", () => {
     await page.goto("/studio/playground");
     await mockTurnstile(page);
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
     await clearStorage();
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
   }
 
   test("config panel overlays on mobile", async ({ page, clearStorage }) => {

@@ -24,8 +24,12 @@ function readManifest(): NewsEntry[] {
 describe("news manifest", () => {
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
-    expect(manifest.length).toBe(10);
-    expect(manifest[0].title).toBe("Studio Tools: Web Fetch & Code Execution in the Playground");
+    const newsDir = path.join(process.cwd(), "content", "news");
+    const filesOnDisk = fs
+      .readdirSync(newsDir)
+      .filter((f) => f.endsWith(".md"));
+    expect(manifest.length).toBe(filesOnDisk.length);
+    expect(manifest[0].title).toBe("Automated Review Follow-Up: Warden & Auditor Catch What Humans Miss");
 
     for (const entry of manifest) {
       expect(entry).toHaveProperty("slug");
