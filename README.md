@@ -49,7 +49,7 @@ The Studio is a browser-based proof-of-work for the agenthood runtime. It allows
 
 ### Authentication
 
-The Studio API is protected by Cloudflare Turnstile CAPTCHA (chat), rate limiting, and origin validation. No token-based auth is required — the endpoint is public by design.
+The Studio API is protected by Cloudflare Turnstile CAPTCHA (chat), rate limiting, and origin validation. No token-based auth is required — the endpoint is public by design. If Turnstile credentials are missing, the chat endpoint fails closed in production (503) rather than serving unauthenticated requests.
 
 ### Provider Routing
 

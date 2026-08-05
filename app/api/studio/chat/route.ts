@@ -106,7 +106,16 @@ function validateBaseUrl(baseUrl: string): void {
 }
 
 async function validateTurnstile(token: unknown): Promise<void> {
-  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) return;
+  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
+    if (process.env.NODE_ENV === "production") {
+      throw new StudioError(
+        "CAPTCHA is not configured on this deployment. The chat endpoint is unavailable.",
+        "CAPTCHA_MISCONFIGURED",
+        503,
+      );
+    }
+    return;
+  }
   if (typeof token !== "string" || !token) {
     throw new ValidationError("Missing CAPTCHA token. Please refresh and try again.");
   }

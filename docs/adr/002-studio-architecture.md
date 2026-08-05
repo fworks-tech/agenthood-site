@@ -68,7 +68,7 @@ The middleware probes the environment at startup: if Redis credentials are prese
 
 The chat API validates the `Origin` header before processing requests. Cross-origin requests are rejected with 403 unless the origin matches `https://agenthood.flabs.tech` (production) or `http://localhost:3000` / `http://127.0.0.1:3000` (development). The origin is parsed to its `origin` form (protocol + hostname) before comparison — string-level starts-with bypasses are not possible.
 
-The endpoint is public by design: it is protected by Cloudflare Turnstile CAPTCHA, rate limiting, and origin validation. Token-based auth (`STUDIO_API_TOKEN`) was removed — the client cannot send a server-only token, so enabling it previously broke every request with 401.
+The endpoint is public by design: it is protected by Cloudflare Turnstile CAPTCHA, rate limiting, and origin validation. Token-based auth (`STUDIO_API_TOKEN`) was removed — the client cannot send a server-only token, so enabling it previously broke every request with 401. If Turnstile credentials are missing, the chat endpoint fails closed in production (503) instead of serving unauthenticated requests; in development it stays open so local setups without keys keep working.
 
 ### 7. Build-time skill sync
 
