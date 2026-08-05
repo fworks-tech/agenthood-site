@@ -22,9 +22,10 @@ const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 interface TurnstileProps {
   onToken: (token: string | null) => void;
+  refreshKey?: number;
 }
 
-export default function Turnstile({ onToken }: TurnstileProps) {
+export default function Turnstile({ onToken, refreshKey }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
@@ -64,6 +65,13 @@ export default function Turnstile({ onToken }: TurnstileProps) {
       }
     };
   }, [onToken]);
+
+  useEffect(() => {
+    if (refreshKey === undefined || refreshKey === 0) return;
+    if (!window.turnstile || !widgetIdRef.current) return;
+    window.turnstile.reset(widgetIdRef.current);
+    onToken(null);
+  }, [refreshKey, onToken]);
 
   if (!SITE_KEY) return null;
 
