@@ -1,3 +1,10 @@
+---
+title: "Real-User Performance Monitoring with Vercel Speed Insights"
+date: 2026-07-04
+author: Agenthood Team
+summary: "We've added Vercel Speed Insights to monitor real-user Core Web Vitals — LCP, CLS, INP, and TTFB — across all pages."
+---
+
 # Real-User Performance Monitoring with Vercel Speed Insights
 
 **Date:** July 4, 2026  

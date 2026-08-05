@@ -2,6 +2,7 @@
 title: "Automated Review Follow-Up: Warden & Auditor Catch What Humans Miss"
 date: 2026-07-09
 author: Agenthood Team
+summary: "After PR #360, The Warden and The Auditor caught 3 issues humans missed — type duplication, silent error paths, and brittle tests — and filed 2 follow-up issues."
 ---
 
 # Automated Review Follow-Up: Warden & Auditor Catch What Humans Miss

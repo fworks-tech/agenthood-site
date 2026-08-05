@@ -2,6 +2,7 @@
 title: "Init Command Cleanup: Less Junk, More Quality"
 date: 2026-07-06
 author: Agenthood Team
+summary: "Stripped the init command down to essentials, fixed 5 quality findings from automated code review, and registered a new Society member — The Inspector."
 ---
 
 # Init Command Cleanup: Less Junk, More Quality
