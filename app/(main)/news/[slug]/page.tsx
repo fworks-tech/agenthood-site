@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { notFound } from "next/navigation";
+import { load as parseYaml } from "js-yaml";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Giscus from "../../../components/Giscus";
@@ -48,7 +49,15 @@ export async function generateMetadata({ params }: NewsPostProps) {
 }
 
 function stripFrontMatter(markdown: string): string {
-  return markdown.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const match = markdown.match(/^---\n([\s\S]*?)\n---\n/);
+  if (!match) return markdown;
+  try {
+    const parsed = parseYaml(match[1]);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return markdown;
+  } catch {
+    return markdown;
+  }
+  return markdown.slice(match[0].length);
 }
 
 export default async function NewsPost({ params }: NewsPostProps) {
