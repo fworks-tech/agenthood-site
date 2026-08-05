@@ -14,9 +14,11 @@
     "test:e2e:report": "playwright show-report",
     "sync": "node scripts/sync-docs.mjs",
     "sync-skills": "node scripts/sync-skills.mjs",
+    "sync-news": "node scripts/build-news-manifest.mjs",
+    "summarize-news": "node scripts/summarize-news.mjs",
     "postinstall": "patch-package",
-    "prebuild": "npm run sync && npm run sync-skills",
-    "predev": "npm run sync && npm run sync-skills"
+    "prebuild": "npm run sync && npm run sync-news && npm run sync-skills",
+    "predev": "npm run sync && npm run sync-news && npm run sync-skills"
   },
   "dependencies": {
     "@mantine/code-highlight": "^9.4.1",
@@ -35,6 +37,7 @@
     "@vercel/kv": "^3.0.0",
     "@vercel/speed-insights": "^2.0.0",
     "agenthood": "3.5.2",
+    "js-yaml": "^5.2.3",
     "next": "^16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
