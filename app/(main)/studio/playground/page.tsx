@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAgentDirectory } from "../_hooks/useAgentDirectory";
 import { useStudioChat } from "../_hooks/useStudioChat";
 import AgentConfigPanel from "../_components/AgentConfigPanel";
@@ -44,6 +44,7 @@ export default function PlaygroundPage() {
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
@@ -77,6 +78,19 @@ export default function PlaygroundPage() {
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
+
+  const lastConfigConvIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeConversationId === lastConfigConvIdRef.current) return;
+    lastConfigConvIdRef.current = activeConversationId;
+    const saved = loadSavedConfig();
+    if (saved.provider) return;
+    const conv = conversations.find((c) => c.id === activeConversationId);
+    if (!conv?.config || Object.keys(conv.config).length === 0) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setConfig((prev) => ({ ...prev, ...conv.config, apiKey: prev.apiKey }));
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [activeConversationId, conversations]);
 
   useEffect(() => {
     if (!isLoading && !error) {
@@ -140,6 +154,8 @@ export default function PlaygroundPage() {
           provider: config.provider,
           error: err instanceof Error ? err.message : String(err),
         });
+      } finally {
+        setTurnstileRefreshKey((k) => k + 1);
       }
     },
     [
@@ -175,8 +191,9 @@ export default function PlaygroundPage() {
       const model = getDefaultModel(provider);
       const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
       setSelectedAgent(agent);
-      setConfig((prev) => ({ ...prev, provider, model, systemPrompt: prompt }));
-      chat.newConversation(agent.id);
+      const agentConfig = { provider, model, systemPrompt: prompt };
+      setConfig((prev) => ({ ...prev, ...agentConfig }));
+      chat.newConversation(agent.id, agentConfig);
       addLog(
         "info",
         `Selected: ${agent.icon ?? ""} ${agent.name} · ${agent.role} · ${provider}/${model}`,
@@ -435,7 +452,7 @@ export default function PlaygroundPage() {
             />
           )}
 
-          <Turnstile onToken={setTurnstileToken} />
+          <Turnstile onToken={setTurnstileToken} refreshKey={turnstileRefreshKey} />
 
           {/* Mobile agent selector */}
           {!selectedAgent && (
