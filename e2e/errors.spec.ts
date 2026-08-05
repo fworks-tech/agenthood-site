@@ -68,6 +68,7 @@ test.describe("Playground — Error & Log States", () => {
     await page.waitForTimeout(500);
 
     await expect(page.locator("text=cancelled")).toBeVisible({ timeout: 5000 });
+    await expect(page.locator("text=completed in").first()).toHaveCount(0);
   });
 
   test("config save creates success log entry", async ({ page }) => {

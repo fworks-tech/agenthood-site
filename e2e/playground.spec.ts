@@ -79,6 +79,10 @@ test.describe("Playground — Core UI", () => {
     expect(messages.length).toBe(0);
     const counter = await getTokenCounter(page);
     expect(counter).toBeNull();
+
+    await sendMessage(page, "test");
+    await waitForStreamComplete(page, 2);
+    await expect(page.locator("text=~3 tok").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("code agent shows opencode affinity hint", async ({ page }) => {

@@ -180,6 +180,8 @@ export async function openConversationSidebar(page: Page): Promise<void> {
       }
     }
   }
+  // On mobile the desktop panel (when open) and the drawer both render this
+  // attribute; the drawer is later in the DOM, so .last() prefers it.
   const sidebar = page.locator("[data-conversation-list='sidebar']").last();
   await sidebar.waitFor({ state: "attached", timeout: 15000 });
 }
