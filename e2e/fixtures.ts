@@ -13,6 +13,7 @@ export function buildChatErrorBody(msg: string): string {
 
 export const test = base.extend<{
   mockChat: (tokens?: string[]) => Promise<void>;
+  mockChatSequence: (responses: string[][]) => Promise<void>;
   mockChatError: (msg?: string) => Promise<void>;
   clearStorage: () => Promise<void>;
 }>({
@@ -30,6 +31,26 @@ export const test = base.extend<{
           status: 200,
           headers: { "Content-Type": "text/event-stream" },
           body,
+        });
+      });
+    });
+  },
+  mockChatSequence: async ({ page }, use) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    await use(async (responses: string[][]) => {
+      let index = 0;
+      await page.route("**/api/studio/chat/**", async (route) => {
+        const reqBody = route.request().postDataJSON();
+        if (!reqBody?.agentId || !reqBody?.messages) {
+          await route.fulfill({ status: 400, body: JSON.stringify({ error: "Invalid request" }) });
+          return;
+        }
+        const tokens = responses[Math.min(index, responses.length - 1)] ?? [];
+        index++;
+        await route.fulfill({
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+          body: buildChatSSEBody(tokens),
         });
       });
     });

@@ -6,13 +6,28 @@ export async function mockTurnstile(page: Page): Promise<void> {
     await route.fulfill({
       contentType: "application/javascript",
       body: `
-        window.turnstile = {
-          render: function(container, options) {
-            setTimeout(function() { options.callback("TEST_TOKEN_123"); }, 50);
-            return "widget-id";
-          },
-          remove: function() {}
-        };
+        window.turnstile = (function () {
+          var counter = 0;
+          var active = {};
+          function issue(options) {
+            counter += 1;
+            var token = "TEST_TOKEN_" + counter;
+            setTimeout(function () { options.callback(token); }, 50);
+            return "widget-" + counter;
+          }
+          return {
+            render: function(container, options) {
+              var id = issue(options);
+              active[id] = options;
+              return id;
+            },
+            reset: function(id) {
+              var options = active[id];
+              if (options) issue(options);
+            },
+            remove: function() {}
+          };
+        })();
         if (window.onloadTurnstileCallback) window.onloadTurnstileCallback();
       `,
     });
@@ -35,18 +50,35 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
 
   if (isMobile) {
     const mobileSelect = page.getByLabel("Select an agent");
-    let mobileVisible = false;
-    try {
-      await mobileSelect.waitFor({ state: "visible", timeout: 3000 });
-      mobileVisible = true;
-    } catch {
-      mobileVisible = false;
-    }
+    const mobileVisible = await mobileSelect
+      .waitFor({ state: "visible", timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
     if (mobileVisible) {
       await mobileSelect.selectOption(agentId, { force: true });
       await page.waitForTimeout(300);
       return;
     }
+
+    // An agent is already selected — switch via the config bottom sheet.
+    await closeConfigPanel(page);
+    const configBtn = page.getByText("Config", { exact: true });
+    await configBtn.click();
+    await page.waitForTimeout(400);
+    const agentSelect = page.getByLabel("Agent", { exact: true });
+    await agentSelect.click();
+    await page.waitForTimeout(200);
+    const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    const option = page.locator(`[role="option"]`).filter({ hasText: agentName });
+    await option.waitFor({ state: "visible", timeout: 10000 });
+    await option.click();
+    await page.waitForTimeout(300);
+    const overlay = page.locator(".mantine-Overlay-root").last();
+    if (await overlay.count() > 0) {
+      await overlay.click({ position: { x: 5, y: 5 } }).catch(() => {});
+    }
+    await page.waitForTimeout(400);
+    return;
   }
 
   // Desktop: open config panel and use Mantine Select
@@ -73,7 +105,7 @@ export async function openConfigPanel(page: Page): Promise<void> {
     const configBtn = page.getByText("Config", { exact: true });
     if (await configBtn.isVisible().catch(() => false)) {
       await configBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
     }
     return;
   }
@@ -113,41 +145,50 @@ export async function getMessages(page: Page): Promise<{ role: string; text: str
   const assistantCount = await assistantBubbles.count();
 
   for (let i = 0; i < userCount; i++) {
-    const text = await userBubbles.nth(i).locator(".mantine-Paper-root").innerText();
+    const paper = userBubbles.nth(i).locator(".mantine-Paper-root");
+    await paper.waitFor({ state: "attached", timeout: 10000 });
+    const text = await paper.innerText();
     messages.push({ role: "user", text });
   }
   for (let i = 0; i < assistantCount; i++) {
-    const text = await assistantBubbles.nth(i).locator(".mantine-Paper-root").innerText();
+    const paper = assistantBubbles.nth(i).locator(".mantine-Paper-root");
+    await paper.waitFor({ state: "attached", timeout: 10000 });
+    const text = await paper.innerText();
     messages.push({ role: "assistant", text });
   }
 
   return messages;
 }
 
-export async function getConversationEntries(page: Page): Promise<{ title: string; active: boolean }[]> {
-    const vs = page.viewportSize();
-    const isMobile = vs !== null && vs.width < 768;
-    if (isMobile) {
-      const convBtn = page.locator("button").filter({ hasText: "Conversations" });
-      if (await convBtn.isVisible().catch(() => false)) {
-        await convBtn.click();
-        await page.waitForTimeout(400);
-      }
-    } else {
-      const sidebar = page.locator("[data-conversation-list='sidebar']");
-      if (await sidebar.count() === 0) {
-        const openBtn = page.getByRole("button", { name: "Open config panel" });
-        if (await openBtn.isVisible().catch(() => false)) {
-          await openBtn.click();
-          await page.waitForTimeout(300);
-        }
+export async function openConversationSidebar(page: Page): Promise<void> {
+  const vs = page.viewportSize();
+  const isMobile = vs !== null && vs.width < 768;
+  if (isMobile) {
+    const sidebar = page.locator("[data-conversation-list='sidebar']");
+    if (await sidebar.count() === 0) {
+      const convBtn = page.locator("button").filter({ hasText: "Conversations" }).last();
+      await convBtn.click();
+      await page.waitForTimeout(400);
+    }
+  } else {
+    const sidebar = page.locator("[data-conversation-list='sidebar']");
+    if (await sidebar.count() === 0) {
+      const openBtn = page.getByRole("button", { name: "Open config panel" });
+      if (await openBtn.isVisible().catch(() => false)) {
+        await openBtn.click();
+        await page.waitForTimeout(300);
       }
     }
+  }
+  const sidebar = page.locator("[data-conversation-list='sidebar']").last();
+  await sidebar.waitFor({ state: "attached", timeout: 15000 });
+}
+
+export async function getConversationEntries(page: Page): Promise<{ title: string; active: boolean }[]> {
+    await openConversationSidebar(page);
 
     const entries: { title: string; active: boolean }[] = [];
-    const sidebar = page.locator("[data-conversation-list='sidebar']");
-    // Wait for sidebar to be attached
-    await sidebar.waitFor({ state: 'attached', timeout: 15000 });
+    const sidebar = page.locator("[data-conversation-list='sidebar']").last();
     if (await sidebar.count() === 0) return entries;
     
     const items = sidebar.locator("[class*='cursor-pointer']");
@@ -181,8 +222,22 @@ export async function getLogEntries(page: Page): Promise<{ time: string; level: 
   return logs;
 }
 
-export async function waitForStreamComplete(page: Page): Promise<void> {
-  await expect(page.locator("text=completed in").first()).toBeVisible({ timeout: 15000 });
+export async function waitForHydration(page: Page): Promise<void> {
+  await expect(page.getByText("Agents loaded").first()).toBeVisible({ timeout: 15000 });
+}
+
+export async function waitForStreamComplete(page: Page, count = 1): Promise<void> {
+  await expect
+    .poll(async () => await page.locator("text=completed in").count(), { timeout: 15000 })
+    .toBeGreaterThanOrEqual(count);
+}
+
+export async function waitForAssistantCount(page: Page, count: number): Promise<void> {
+  await expect
+    .poll(async () => (await getMessages(page)).filter((m) => m.role === "assistant").length, {
+      timeout: 15000,
+    })
+    .toBeGreaterThanOrEqual(count);
 }
 
 export async function getTokenCounter(page: Page): Promise<Locator | null> {
