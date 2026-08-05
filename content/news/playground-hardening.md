@@ -2,6 +2,7 @@
 title: "Playground Security Hardening & Performance Improvements"
 date: 2026-07-04
 author: Agenthood Team
+summary: "We've completed a security audit of the Studio playground — adding SSRF protection, CSP headers, origin validation, rate limiting, hydration fixes, and eliminating all lint warnings."
 ---
 
 # Playground Security Hardening & Performance Improvements

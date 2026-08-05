@@ -2,6 +2,7 @@
 title: "CI Pipeline Refinement: Redundancy Removed, Builds Optimized"
 date: 2026-07-06
 author: Agenthood Team
+summary: "Streamlined the CI pipeline by removing a duplicate workflow, skipping builds on doc-only changes, and fixing stale-comment encoding bugs in reviewer automation."
 ---
 
 # CI Pipeline Refinement: Redundancy Removed, Builds Optimized

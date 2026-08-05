@@ -2,6 +2,7 @@
 title: "AI Trends: June 2026 Highlights & What to Expect in July"
 date: 2026-07-05
 author: Agenthood Team
+summary: "A roundup of June 2026 AI developments — GPT-5.6, Siri AI, Claude Mythos 5, Grok 4.3, Gartner's ---.59T spending forecast, policy shifts, and what to watch in July."
 ---
 
 # AI Trends: June 2026 Highlights & What to Expect in July

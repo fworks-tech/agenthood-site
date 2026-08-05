@@ -1,3 +1,10 @@
+---
+title: "Meet The Oracle — Your Floating Companion on Docs & Academy"
+date: 2026-07-06
+author: Agenthood Team
+summary: "The Oracle — a floating AI companion with quick actions for summaries, knowledge checks, and feedback — now on every docs and academy page."
+---
+
 # Meet The Oracle — Your Floating Companion on Docs & Academy
 
 **Date:** July 6, 2026

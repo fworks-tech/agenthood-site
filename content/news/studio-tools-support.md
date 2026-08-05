@@ -2,6 +2,7 @@
 title: "Studio Tools: Web Fetch & Code Execution in the Playground"
 date: 2026-07-07
 author: Agenthood Team
+summary: "Agents can now use tools during chat — web_fetch for retrieving content and code_execution for running JavaScript in a sandboxed environment."
 ---
 
 # Studio Tools: Web Fetch & Code Execution in the Playground

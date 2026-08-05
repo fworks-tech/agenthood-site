@@ -2,6 +2,7 @@
 title: "Feedback API, News Section, and Observability Improvements"
 date: 2026-07-04
 author: Agenthood Team
+summary: "New features: feedback API for chat responses, news section with RSS feed, enriched analytics, structured logging across the stack, and hardening follow-ups."
 ---
 
 # Feedback API, News Section, and Observability Improvements

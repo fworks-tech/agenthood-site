@@ -2,6 +2,7 @@
 title: "Agenthood Academy Outage Post-Mortem"
 date: 2026-04-28
 author: Agenthood Team
+summary: "A detailed post-mortem of the Academy outage on April 28, 2026, covering the docs rendering issue, DNS misconfiguration, fixes applied, and preventive measures."
 ---
 
 # Agenthood Academy Outage Post-Mortem
