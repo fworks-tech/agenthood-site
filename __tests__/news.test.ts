@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import { buildNewsManifest } from "../scripts/build-news-manifest.mjs";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 
@@ -22,6 +23,18 @@ function readManifest(): NewsEntry[] {
 }
 
 describe("news manifest", () => {
+  it("matches what the generator produces from article front matter", () => {
+    const generated = buildNewsManifest();
+    expect(readManifest()).toEqual(generated);
+  });
+
+  it("is sorted by date descending", () => {
+    const manifest = readManifest();
+    for (let i = 1; i < manifest.length; i++) {
+      expect(manifest[i - 1].date >= manifest[i].date).toBe(true);
+    }
+  });
+
   it("parses and returns entries with required fields", () => {
     const manifest = readManifest();
     const newsDir = path.join(process.cwd(), "content", "news");
@@ -29,7 +42,6 @@ describe("news manifest", () => {
       .readdirSync(newsDir)
       .filter((f) => f.endsWith(".md"));
     expect(manifest.length).toBe(filesOnDisk.length);
-    expect(manifest[0].title).toBe("Automated Review Follow-Up: Warden & Auditor Catch What Humans Miss");
 
     for (const entry of manifest) {
       expect(entry).toHaveProperty("slug");

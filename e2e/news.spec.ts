@@ -33,6 +33,13 @@ test.describe("News Section", () => {
     }
   });
 
+  test("article pages do not render front matter as content", async ({ page }) => {
+    await page.goto("/news/automated-review-followup", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator("text=/^date: \\d{4}-\\d{2}-\\d{2}$/")).toHaveCount(0);
+    await expect(page.locator("text=/^author: Agenthood Team$/")).toHaveCount(0);
+  });
+
   test("RSS feed returns XML with correct content type", async ({ page }) => {
     const response = await page.goto("/news/rss.xml");
     expect(response?.status()).toBe(200);
