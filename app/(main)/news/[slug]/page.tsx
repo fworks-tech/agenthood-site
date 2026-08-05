@@ -47,6 +47,10 @@ export async function generateMetadata({ params }: NewsPostProps) {
   return { title: `${entry.title} · Agenthood News` };
 }
 
+function stripFrontMatter(markdown: string): string {
+  return markdown.replace(/^---\n[\s\S]*?\n---\n/, "");
+}
+
 export default async function NewsPost({ params }: NewsPostProps) {
   const { slug } = await params;
   const entry = findEntry([slug]);
@@ -59,7 +63,7 @@ export default async function NewsPost({ params }: NewsPostProps) {
   const filePath = path.join(process.cwd(), "content", entry.path);
   let markdown: string;
   try {
-    markdown = fs.readFileSync(filePath, "utf8");
+    markdown = stripFrontMatter(fs.readFileSync(filePath, "utf8"));
   } catch {
     logger.error("news.post.file_missing", { slug, path: entry.path });
     notFound();
