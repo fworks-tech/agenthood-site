@@ -49,7 +49,7 @@ The Studio is a browser-based proof-of-work for the agenthood runtime. It allows
 
 ### Authentication
 
-The chat endpoint supports optional token-based auth. Set `STUDIO_API_TOKEN` in Vercel env vars. If set, all requests must include `Authorization: Bearer <token>`. If unset, the endpoint is public (for development).
+The Studio API is protected by Cloudflare Turnstile CAPTCHA (chat), rate limiting, and origin validation. No token-based auth is required — the endpoint is public by design.
 
 ### Provider Routing
 
@@ -102,7 +102,6 @@ Applied to all routes via `next.config.ts`:
 | `ANTHROPIC_API_KEY` | For Anthropic | Claude API key |
 | `OPENAI_API_KEY` | For OpenAI | GPT API key |
 | `GROQ_API_KEY` | For Groq | Groq API key |
-| `STUDIO_API_TOKEN` | Optional | Bearer token for API auth |
 | `KV_REST_API_URL` | For Upstash | Redis REST API URL for distributed rate limiting |
 | `KV_REST_API_TOKEN` | For Upstash | Redis REST API token for distributed rate limiting |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | For CAPTCHA | Cloudflare Turnstile site key |

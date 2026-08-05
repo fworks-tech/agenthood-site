@@ -15,7 +15,6 @@ const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
 const MAX_TOKENS = 100_000;
 
-const STUDIO_TOKEN = process.env.STUDIO_API_TOKEN;
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -26,14 +25,6 @@ type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "max
 
 function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function authGuard(request: Request): void {
-  if (!STUDIO_TOKEN) return;
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${STUDIO_TOKEN}`) {
-    throw new StudioError("Unauthorized. Provide a valid STUDIO_API_TOKEN.", "UNAUTHORIZED", 401);
-  }
 }
 
 function validateMessages(messages: unknown): { role: string; content: string }[] {
@@ -132,8 +123,6 @@ async function validateTurnstile(token: unknown): Promise<void> {
 export async function POST(request: Request) {
   const requestId = generateId();
   try {
-    authGuard(request);
-
     const body = await request.json();
     if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
 

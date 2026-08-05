@@ -64,11 +64,11 @@ Rate limiting is implemented in `app/middleware.ts` with two backends:
 
 The middleware probes the environment at startup: if Redis credentials are present, it creates `@upstash/ratelimit` instances per path; otherwise it falls back to the in-memory store. No runtime branching per-request — the backend is chosen once at cold start.
 
-### 6. Origin validation and optional token authentication
+### 6. Origin validation
 
 The chat API validates the `Origin` header before processing requests. Cross-origin requests are rejected with 403 unless the origin matches `https://agenthood.flabs.tech` (production) or `http://localhost:3000` / `http://127.0.0.1:3000` (development). The origin is parsed to its `origin` form (protocol + hostname) before comparison — string-level starts-with bypasses are not possible.
 
-Additionally, the API accepts a `STUDIO_API_TOKEN` environment variable. If set, all requests must include `Authorization: Bearer <token>`. If unset, the endpoint is public. This allows the Studio to be deployed without auth for development while supporting token-gating in production.
+The endpoint is public by design: it is protected by Cloudflare Turnstile CAPTCHA, rate limiting, and origin validation. Token-based auth (`STUDIO_API_TOKEN`) was removed — the client cannot send a server-only token, so enabling it previously broke every request with 401.
 
 ### 7. Build-time skill sync
 
