@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, selectMantineOption } from "./helpers";
+import { mockTurnstile, selectAgent, selectMantineOption, waitForHydration } from "./helpers";
 
 function skipOnMobile(page: { viewportSize: () => { width: number } | null }) {
   const vs = page.viewportSize();
   if (vs && vs.width < 768) {
-    test.skip("Config panel tests require desktop viewport");
+    test.skip(true, "Config panel tests require desktop viewport");
   }
 }
 
@@ -16,7 +16,7 @@ test.describe("Playground — Configuration", () => {
     await mockTurnstile(page);
     await mockChat(["ok"]);
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
     await selectAgent(page, "the-scribe");
   });
 
@@ -96,10 +96,7 @@ test.describe("Playground — Configuration", () => {
     await page.waitForTimeout(300);
 
     await page.reload();
-    await page.waitForLoadState("networkidle");
-
-    // Wait for agents to finish loading
-    await expect(page.getByText("Agents loaded").first()).toBeVisible({ timeout: 15000 });
+    await waitForHydration(page);
 
     // Wait for CSS transition to settle, then force-click to bypass actionability check
     const openBtn = page.getByRole("button", { name: "Open config panel" });

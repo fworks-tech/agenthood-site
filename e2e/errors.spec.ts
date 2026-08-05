@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, sendMessage, waitForStreamComplete } from "./helpers";
+import { mockTurnstile, selectAgent, sendMessage, waitForStreamComplete, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
 
 test.describe("Playground — Error & Log States", () => {
   test.beforeEach(async ({ page, clearStorage }) => {
@@ -8,7 +8,7 @@ test.describe("Playground — Error & Log States", () => {
     await clearStorage();
     await mockTurnstile(page);
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
   });
 
   test("creates log entry on send and completion", async ({ page, mockChat }) => {
@@ -25,10 +25,9 @@ test.describe("Playground — Error & Log States", () => {
     await mockChatError("Something went wrong");
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "trigger error");
-    await page.waitForTimeout(2000);
 
-    const errorVisible = await page.locator("text=Something went wrong").isVisible().catch(() => false);
-    expect(errorVisible).toBe(true);
+    await expect(page.locator("text=Something went wrong").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=failed after").first()).toBeVisible({ timeout: 5000 });
   });
 
   test("stream abort creates cancelled log entry", async ({ page }) => {
@@ -73,6 +72,11 @@ test.describe("Playground — Error & Log States", () => {
 
   test("config save creates success log entry", async ({ page }) => {
     await selectAgent(page, "the-scribe");
+    const vs = page.viewportSize();
+    if (vs !== null && vs.width < 768) {
+      await closeConfigPanel(page);
+      await openConfigPanel(page);
+    }
     await page.locator("button:has-text('Save configuration')").click();
     await page.waitForTimeout(300);
 

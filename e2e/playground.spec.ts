@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel } from "./helpers";
+import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
 
 test.describe("Playground — Core UI", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -9,7 +9,7 @@ test.describe("Playground — Core UI", () => {
     await mockTurnstile(page);
     await mockChat(["Hello", " world"]);
     await page.reload();
-    await page.waitForLoadState("networkidle");
+    await waitForHydration(page);
   });
 
   test("loads with config panel open on desktop", async ({ page }) => {
