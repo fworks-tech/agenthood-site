@@ -10,9 +10,10 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { load as parseYaml } from "js-yaml";
 
-const API_BASE = process.env.OPENCODE_API_BASE_URL ?? "https://opencode.ai/zen/go/v1";
+const API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/go/v1";
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
 const MAX_SUMMARY_CHARS = 160;
 
@@ -20,7 +21,8 @@ function parseFrontMatter(text) {
   const match = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!match) return null;
   try {
-    return { meta: parseYaml(match[1]), body: match[2] };
+    parseYaml(match[1]);
+    return match[2];
   } catch {
     return null;
   }
@@ -101,32 +103,41 @@ function upsertSummary(filePath, summary) {
   fs.writeFileSync(filePath, output, "utf8");
 }
 
-const fileArg = process.argv[2];
-const write = process.argv.includes("--write");
+async function main() {
+  const fileArg = process.argv[2];
+  const write = process.argv.includes("--write");
 
-if (!fileArg) {
-  console.error("Usage: node scripts/summarize-news.mjs <article.md> [--write]");
-  process.exit(1);
-}
-
-const filePath = path.resolve(fileArg);
-const parsed = parseFrontMatter(fs.readFileSync(filePath, "utf8"));
-if (!parsed) {
-  console.error(`${filePath}: missing YAML front matter. Add front matter first, then re-run.`);
-  process.exit(1);
-}
-
-const source = `${plainText(parsed.body).slice(0, 2000)}`;
-console.error(`[summarize-news] using ${MODEL} via ${API_BASE}`);
-
-try {
-  const summary = await summarize(source);
-  console.log(summary);
-  if (write) {
-    upsertSummary(filePath, summary);
-    console.error(`[summarize-news] wrote summary to ${filePath}`);
+  if (!fileArg) {
+    console.error("Usage: node scripts/summarize-news.mjs <article.md> [--write]");
+    process.exit(1);
   }
-} catch (err) {
-  console.error(`[summarize-news] failed: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(1);
+
+  const filePath = path.resolve(fileArg);
+  const body = parseFrontMatter(fs.readFileSync(filePath, "utf8"));
+  if (body === null) {
+    console.error(`${filePath}: missing or invalid YAML front matter. Add front matter first, then re-run.`);
+    process.exit(1);
+  }
+
+  const source = plainText(body).slice(0, 2000);
+  console.error(`[summarize-news] using ${MODEL} via ${API_BASE}`);
+
+  try {
+    const summary = await summarize(source);
+    console.log(summary);
+    if (write) {
+      upsertSummary(filePath, summary);
+      console.error(`[summarize-news] wrote summary to ${filePath}`);
+    }
+  } catch (err) {
+    console.error(`[summarize-news] failed: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
+}
+
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main();
 }
