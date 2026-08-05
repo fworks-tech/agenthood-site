@@ -1,6 +1,8 @@
 [
   {
-    "slug": ["automated-review-followup"],
+    "slug": [
+      "automated-review-followup"
+    ],
     "path": "news/automated-review-followup.md",
     "title": "Automated Review Follow-Up: Warden & Auditor Catch What Humans Miss",
     "date": "2026-07-09",
@@ -8,7 +10,9 @@
     "summary": "After PR #360, The Warden and The Auditor caught 3 issues humans missed — type duplication, silent error paths, and brittle tests — and filed 2 follow-up issues."
   },
   {
-    "slug": ["studio-tools-support"],
+    "slug": [
+      "studio-tools-support"
+    ],
     "path": "news/studio-tools-support.md",
     "title": "Studio Tools: Web Fetch & Code Execution in the Playground",
     "date": "2026-07-07",
@@ -16,63 +20,9 @@
     "summary": "Agents can now use tools during chat — web_fetch for retrieving content and code_execution for running JavaScript in a sandboxed environment."
   },
   {
-    "slug": ["floating-companion"],
-    "path": "news/floating-companion.md",
-    "title": "Meet The Oracle — Your Floating Companion on Docs & Academy",
-    "date": "2026-07-06",
-    "author": "Agenthood Team",
-    "summary": "The Oracle — a floating AI companion with quick actions for summaries, knowledge checks, and feedback — now on every docs and academy page."
-  },
-  {
-    "slug": ["ai-trends-july-2026"],
-    "path": "news/ai-trends-july-2026.md",
-    "title": "AI Trends: June 2026 Highlights & What to Expect in July",
-    "date": "2026-07-05",
-    "author": "Agenthood Team",
-    "summary": "A roundup of June 2026 AI developments — GPT-5.6, Siri AI, Claude Mythos 5, Grok 4.3, Gartner's $2.59T spending forecast, policy shifts, and what to watch in July."
-  },
-  {
-    "slug": ["recent-updates"],
-    "path": "news/recent-updates.md",
-    "title": "Feedback API, News Section, and Observability Improvements",
-    "date": "2026-07-04",
-    "author": "Agenthood Team",
-    "summary": "New features: feedback API for chat responses, news section with RSS feed, enriched analytics, structured logging across the stack, and hardening follow-ups."
-  },
-  {
-    "slug": ["playground-hardening"],
-    "path": "news/playground-hardening.md",
-    "title": "Playground Security Hardening & Performance Improvements",
-    "date": "2026-07-04",
-    "author": "Agenthood Team",
-    "summary": "We've completed a security audit of the Studio playground — adding SSRF protection, CSP headers, origin validation, rate limiting, hydration fixes, and eliminating all lint warnings."
-  },
-  {
-    "slug": ["vercel-speed-insights"],
-    "path": "news/vercel-speed-insights.md",
-    "title": "Real-User Performance Monitoring with Vercel Speed Insights",
-    "date": "2026-07-04",
-    "author": "Agenthood Team",
-    "summary": "We've added Vercel Speed Insights to monitor real-user Core Web Vitals — LCP, CLS, INP, and TTFB — across all pages."
-  },
-  {
-    "slug": ["outage-post-mortem"],
-    "path": "news/outage-post-mortem.md",
-    "title": "Agenthood Academy Outage Post-Mortem",
-    "date": "2026-04-28",
-    "author": "Agenthood Team",
-    "summary": "A detailed post-mortem of the Academy outage on April 28, 2026, covering the docs rendering issue, DNS misconfiguration, fixes applied, and preventive measures."
-  },
-  {
-    "slug": ["docs-audit"],
-    "path": "news/docs-audit.md",
-    "title": "Documentation Audit: 43 Issues Fixed Across 21 Files",
-    "date": "2026-07-06",
-    "author": "Agenthood Team",
-    "summary": "A comprehensive audit of 106 documentation files found and fixed 43 issues — broken links, stale references, outdated paths, and inconsistencies across 21 files."
-  },
-  {
-    "slug": ["ci-refinement"],
+    "slug": [
+      "ci-refinement"
+    ],
     "path": "news/ci-refinement.md",
     "title": "CI Pipeline Refinement: Redundancy Removed, Builds Optimized",
     "date": "2026-07-06",
@@ -80,11 +30,83 @@
     "summary": "Streamlined the CI pipeline by removing a duplicate workflow, skipping builds on doc-only changes, and fixing stale-comment encoding bugs in reviewer automation."
   },
   {
-    "slug": ["init-cleanup"],
+    "slug": [
+      "docs-audit"
+    ],
+    "path": "news/docs-audit.md",
+    "title": "Documentation Audit: 43 Issues Fixed Across 21 Files",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "A comprehensive audit of 106 documentation files found and fixed 43 issues — broken links, stale references, outdated paths, and inconsistencies across 21 files."
+  },
+  {
+    "slug": [
+      "init-cleanup"
+    ],
     "path": "news/init-cleanup.md",
     "title": "Init Command Cleanup: Less Junk, More Quality",
     "date": "2026-07-06",
     "author": "Agenthood Team",
     "summary": "Stripped the init command down to essentials, fixed 5 quality findings from automated code review, and registered a new Society member — The Inspector."
+  },
+  {
+    "slug": [
+      "floating-companion"
+    ],
+    "path": "news/floating-companion.md",
+    "title": "Meet The Oracle — Your Floating Companion on Docs & Academy",
+    "date": "2026-07-06",
+    "author": "Agenthood Team",
+    "summary": "The Oracle — a floating AI companion with quick actions for summaries, knowledge checks, and feedback — now on every docs and academy page."
+  },
+  {
+    "slug": [
+      "ai-trends-july-2026"
+    ],
+    "path": "news/ai-trends-july-2026.md",
+    "title": "AI Trends: June 2026 Highlights & What to Expect in July",
+    "date": "2026-07-05",
+    "author": "Agenthood Team",
+    "summary": "A roundup of June 2026 AI developments — GPT-5.6, Siri AI, Claude Mythos 5, Grok 4.3, Gartner's ---.59T spending forecast, policy shifts, and what to watch in July."
+  },
+  {
+    "slug": [
+      "recent-updates"
+    ],
+    "path": "news/recent-updates.md",
+    "title": "Feedback API, News Section, and Observability Improvements",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "New features: feedback API for chat responses, news section with RSS feed, enriched analytics, structured logging across the stack, and hardening follow-ups."
+  },
+  {
+    "slug": [
+      "playground-hardening"
+    ],
+    "path": "news/playground-hardening.md",
+    "title": "Playground Security Hardening & Performance Improvements",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "We've completed a security audit of the Studio playground — adding SSRF protection, CSP headers, origin validation, rate limiting, hydration fixes, and eliminating all lint warnings."
+  },
+  {
+    "slug": [
+      "vercel-speed-insights"
+    ],
+    "path": "news/vercel-speed-insights.md",
+    "title": "Real-User Performance Monitoring with Vercel Speed Insights",
+    "date": "2026-07-04",
+    "author": "Agenthood Team",
+    "summary": "We've added Vercel Speed Insights to monitor real-user Core Web Vitals — LCP, CLS, INP, and TTFB — across all pages."
+  },
+  {
+    "slug": [
+      "outage-post-mortem"
+    ],
+    "path": "news/outage-post-mortem.md",
+    "title": "Agenthood Academy Outage Post-Mortem",
+    "date": "2026-04-28",
+    "author": "Agenthood Team",
+    "summary": "A detailed post-mortem of the Academy outage on April 28, 2026, covering the docs rendering issue, DNS misconfiguration, fixes applied, and preventive measures."
   }
 ]
