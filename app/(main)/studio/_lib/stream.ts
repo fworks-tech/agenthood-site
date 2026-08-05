@@ -43,27 +43,29 @@ export async function readSSEStream(
         const trimmed = line.trim();
         if (!trimmed) continue;
 
+        let event: { type: string; [key: string]: unknown };
         try {
-          const event = JSON.parse(trimmed);
-          switch (event.type) {
-            case "token":
-              callbacks.onToken(event.data);
-              break;
-            case "tool_call":
-              callbacks.onToolCall?.({ id: event.id, name: event.name, args: event.args });
-              break;
-            case "tool_result":
-              callbacks.onToolResult?.({ id: event.id, name: event.name, result: event.result, error: event.error });
-              break;
-            case "done":
-              safeOnDone();
-              return;
-            case "error":
-              callbacks.onError(new Error(event.data));
-              return;
-          }
+          event = JSON.parse(trimmed);
         } catch {
           continue;
+        }
+
+        switch (event.type) {
+          case "token":
+            callbacks.onToken(event.data as string);
+            break;
+          case "tool_call":
+            callbacks.onToolCall?.({ id: event.id as string, name: event.name as string, args: event.args as Record<string, unknown> });
+            break;
+          case "tool_result":
+            callbacks.onToolResult?.({ id: event.id as string, name: event.name as string, result: event.result as string, error: event.error as string | undefined });
+            break;
+          case "done":
+            safeOnDone();
+            return;
+          case "error":
+            callbacks.onError(new Error(event.data as string));
+            return;
         }
       }
     }

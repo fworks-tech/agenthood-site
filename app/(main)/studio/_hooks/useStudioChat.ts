@@ -16,6 +16,7 @@ export interface Conversation {
   messages: ChatMessage[];
   config: Partial<ChatConfig>;
   createdAt: number;
+  tokenCount: number;
 }
 
 interface UseStudioChatOptions {
@@ -33,7 +34,7 @@ interface UseStudioChatReturn {
   sendMessage: (content: string) => Promise<void>;
   abortStream: () => void;
   clearMessages: () => void;
-  newConversation: (agentId: string) => void;
+  newConversation: (agentId: string, config?: Partial<ChatConfig>) => void;
   switchConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
 }
@@ -50,6 +51,7 @@ function migrateConversation(c: Record<string, unknown>): Conversation {
     messages: (c.messages as Conversation["messages"]) ?? [],
     config: (c.config as Conversation["config"]) ?? {},
     createdAt: (c.createdAt as number) ?? Date.now(),
+    tokenCount: (c.tokenCount as number) ?? 0,
   };
 }
 
@@ -156,14 +158,15 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     return "New conversation";
   }, []);
 
-  const newConversation = useCallback((agentId: string) => {
+  const newConversation = useCallback((agentId: string, config?: Partial<ChatConfig>) => {
     const conv: Conversation = {
       id: generateId(),
       agentId,
       title: "New conversation",
       messages: [],
-      config: configRef.current ?? {},
+      config: config ?? configRef.current ?? {},
       createdAt: Date.now(),
+      tokenCount: 0,
     };
     const updated = [...conversationsRef.current, conv];
     persist(updated, conv.id);
@@ -182,6 +185,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const switchConversation = useCallback((id: string) => {
     setActiveConversationId(id);
     setActiveId(id);
+    const conv = conversationsRef.current.find((c) => c.id === id);
+    setTotalTokens(conv?.tokenCount ?? 0);
   }, []);
 
   const clearMessages = useCallback(() => {
@@ -214,6 +219,17 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     const abortController = new AbortController();
     abortRef.current = abortController;
 
+    const baseTokens = conv.tokenCount ?? 0;
+    const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+    let estimatedTokens = 0;
+    const persistTokens = (convs: Conversation[]): Conversation[] => {
+      const withTokens = convs.map((c) =>
+        c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
+      );
+      saveConversations(withTokens);
+      return withTokens;
+    };
+
     try {
       const res = await sendChat(
         conv.agentId,
@@ -228,6 +244,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       }
 
       let streamedContent = "";
+      let streamError: Error | null = null;
       const pendingToolCalls: ToolCallInfo[] = [];
 
       await readSSEStream(
@@ -235,7 +252,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         {
           onToken: (token) => {
             streamedContent += token;
-            setTotalTokens((prev) => prev + 1);
+            estimatedTokens = estimateTokens(streamedContent);
+            setTotalTokens(baseTokens + estimatedTokens);
             setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
           },
           onToolCall: (tc) => {
@@ -269,17 +287,16 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
           },
           onDone: () => {
             setConversations((prev) => {
-              const final = updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
-              saveConversations(final);
+              const final = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
               return final;
             });
             setIsStreaming(false);
           },
           onError: (err) => {
+            streamError = err;
             const errorMsg = `Error: ${err.message}`;
             setConversations((prev) => {
-              const withError = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
-              saveConversations(withError);
+              const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
               return withError;
             });
             setIsStreaming(false);
@@ -287,6 +304,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         },
         abortController.signal,
       );
+
+      if (streamError) throw streamError;
     } catch (err) {
       if (abortController.signal.aborted) {
         setIsStreaming(false);
@@ -294,11 +313,11 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       }
       const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`;
       setConversations((prev) => {
-        const withError = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
-        saveConversations(withError);
+        const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
         return withError;
       });
       setIsStreaming(false);
+      throw err;
     }
   }, [activeConversationId, isStreaming, persist, generateTitle]);
 
