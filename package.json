@@ -18,7 +18,7 @@
     "summarize-news": "node scripts/summarize-news.mjs",
     "postinstall": "patch-package",
     "prebuild": "npm run sync && npm run sync-news && npm run sync-skills",
-    "predev": "npm run sync && npm run sync-news && npm run sync-skills"
+    "predev": "npm run sync && npm run sync-news -- --lenient && npm run sync-skills"
   },
   "dependencies": {
     "@mantine/code-highlight": "^9.4.1",

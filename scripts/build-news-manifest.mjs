@@ -4,9 +4,12 @@
  * Generates content/news/manifest.json from the front matter of the articles
  * in content/news/. Runs locally on predev/prebuild — no network access.
  *
- * Contract (validated per article, exits 1 on violation):
+ * Contract (validated per article, exits 1 on violation unless --lenient):
  * - YAML front matter with `title`, `date` (YYYY-MM-DD), `author`, `summary`
  * - `title` must match the first `# ` heading
+ *
+ * `--lenient` (used by predev) skips invalid articles with a warning so the
+ * dev server still boots while an article is being written; prebuild stays strict.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +22,7 @@ const MANIFEST_PATH = path.join(NEWS_DIR, "manifest.json");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-export function buildNewsManifest() {
+export function buildNewsManifest({ strict = true } = {}) {
   const files = fs
     .readdirSync(NEWS_DIR)
     .filter((f) => f.endsWith(".md"))
@@ -30,64 +33,76 @@ export function buildNewsManifest() {
   for (const file of files) {
     const filePath = path.join(NEWS_DIR, file);
     const text = fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
-    const slug = file.replace(/\.md$/i, "");
-
-    const frontMatter = parseFrontMatter(text);
-    if (!frontMatter) {
-      throw new Error(`[news-manifest] ${file}: missing YAML front matter`);
+    try {
+      entries.push(buildEntry(file, text));
+    } catch (err) {
+      if (strict) throw err;
+      console.warn(`[news-manifest] skipping ${file}: ${err instanceof Error ? err.message : String(err)}`);
     }
-
-    const title = frontMatter.title;
-    const date = frontMatter.date;
-    const author = frontMatter.author;
-    const summary = frontMatter.summary;
-
-    if (typeof title !== "string" || !title.trim()) {
-      throw new Error(`[news-manifest] ${file}: front matter must define a non-empty "title"`);
-    }
-    if (typeof date !== "string" || !DATE_PATTERN.test(date) || Number.isNaN(new Date(date).getTime())) {
-      throw new Error(`[news-manifest] ${file}: front matter "date" must be an ISO date (YYYY-MM-DD)`);
-    }
-    if (typeof author !== "string" || !author.trim()) {
-      throw new Error(`[news-manifest] ${file}: front matter must define a non-empty "author"`);
-    }
-    if (typeof summary !== "string" || !summary.trim()) {
-      throw new Error(`[news-manifest] ${file}: front matter must define a non-empty "summary"`);
-    }
-
-    const heading = titleFromMarkdown(text);
-    if (heading && heading !== title) {
-      throw new Error(
-        `[news-manifest] ${file}: front matter "title" (${JSON.stringify(title)}) does not match the "# " heading (${JSON.stringify(heading)})`,
-      );
-    }
-
-    entries.push({
-      slug: [slug],
-      path: `news/${file}`,
-      title,
-      date,
-      author,
-      summary,
-    });
   }
 
   entries.sort((a, b) => {
     if (a.date !== b.date) return a.date < b.date ? 1 : -1;
-    return a.title.localeCompare(b.title);
+    return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
   });
 
   return entries;
 }
 
+function buildEntry(file, text) {
+  const slug = file.replace(/\.md$/i, "");
+
+  const frontMatter = parseFrontMatter(text);
+  if (!frontMatter.ok) {
+    const detail = frontMatter.reason === "invalid"
+      ? "invalid YAML in front matter"
+      : "missing YAML front matter";
+    throw new Error(detail);
+  }
+
+  const { title, date, author, summary } = frontMatter.data;
+
+  if (typeof title !== "string" || !title.trim()) {
+    throw new Error(`front matter must define a non-empty "title"`);
+  }
+  if (typeof date !== "string" || !DATE_PATTERN.test(date) || Number.isNaN(new Date(date).getTime())) {
+    throw new Error(`front matter "date" must be an ISO date (YYYY-MM-DD)`);
+  }
+  if (typeof author !== "string" || !author.trim()) {
+    throw new Error(`front matter must define a non-empty "author"`);
+  }
+  if (typeof summary !== "string" || !summary.trim()) {
+    throw new Error(`front matter must define a non-empty "summary"`);
+  }
+
+  const heading = titleFromMarkdown(text);
+  if (heading && heading !== title) {
+    throw new Error(
+      `front matter "title" (${JSON.stringify(title)}) does not match the "# " heading (${JSON.stringify(heading)})`,
+    );
+  }
+
+  return {
+    slug: [slug],
+    path: `news/${file}`,
+    title,
+    date,
+    author,
+    summary,
+  };
+}
+
 function parseFrontMatter(text) {
   const match = text.match(/^---\n([\s\S]*?)\n---\n/);
-  if (!match) return null;
+  if (!match) return { ok: false, reason: "missing" };
   try {
     const parsed = parseYaml(match[1]);
-    return parsed && typeof parsed === "object" ? parsed : null;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { ok: false, reason: "invalid" };
+    }
+    return { ok: true, data: parsed };
   } catch {
-    return null;
+    return { ok: false, reason: "invalid" };
   }
 }
 
@@ -97,7 +112,8 @@ function titleFromMarkdown(text) {
 }
 
 function main() {
-  const entries = buildNewsManifest();
+  const lenient = process.argv.includes("--lenient");
+  const entries = buildNewsManifest({ strict: !lenient });
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n", "utf8");
   console.log(`[news-manifest] wrote ${entries.length} entries to content/news/manifest.json`);
 }
