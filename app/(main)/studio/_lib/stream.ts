@@ -43,12 +43,13 @@ export async function readSSEStream(
         const trimmed = line.trim();
         if (!trimmed) continue;
 
-        let event: { type: string; [key: string]: unknown };
+        let event: { type: string; [key: string]: unknown } | null;
         try {
           event = JSON.parse(trimmed);
         } catch {
           continue;
         }
+        if (!event) continue;
 
         switch (event.type) {
           case "token":
