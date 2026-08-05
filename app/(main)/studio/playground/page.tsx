@@ -112,11 +112,11 @@ export default function PlaygroundPage() {
   }, [turnstileToken, addLog]);
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
-      if (!selectedAgent) return;
+    async (content: string): Promise<boolean> => {
+      if (!selectedAgent) return false;
       if (!turnstileToken) {
         addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.");
-        return;
+        return false;
       }
       const ts = Date.now();
       addLog(
@@ -130,19 +130,21 @@ export default function PlaygroundPage() {
         conversationId: activeConversationId ?? undefined,
       });
       try {
-        await chat.sendMessage(content);
+        const status = await chat.sendMessage(content);
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-        addLog(
-          "info",
-          `✓ ${selectedAgent.icon ?? ""} ${selectedAgent.name} completed in ${elapsed}s`,
-        );
-        track("message_completed", {
-          agentId: selectedAgent.id,
-          provider: config.provider,
-          model: config.model,
-          durationMs: Date.now() - ts,
-          tokenCount: totalTokens,
-        });
+        if (status === "completed") {
+          addLog(
+            "info",
+            `✓ ${selectedAgent.icon ?? ""} ${selectedAgent.name} completed in ${elapsed}s`,
+          );
+          track("message_completed", {
+            agentId: selectedAgent.id,
+            provider: config.provider,
+            model: config.model,
+            durationMs: Date.now() - ts,
+            tokenCount: totalTokens,
+          });
+        }
       } catch (err) {
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
         addLog(
@@ -157,6 +159,7 @@ export default function PlaygroundPage() {
       } finally {
         setTurnstileRefreshKey((k) => k + 1);
       }
+      return true;
     },
     [
       chat,

@@ -6,7 +6,7 @@ import { IconSquare, IconSend, IconInfoCircle } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
 
 interface ChatComposerProps {
-  onSend: (content: string) => void;
+  onSend: (content: string) => boolean | Promise<boolean>;
   onStop: () => void;
   isStreaming: boolean;
   disabled?: boolean;
@@ -30,11 +30,11 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
     warningTimeout.current = setTimeout(() => setImageWarning(null), 5000);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isStreaming || disabled) return;
-    onSend(trimmed);
-    setInput("");
+    const accepted = await onSend(trimmed);
+    if (accepted) setInput("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
