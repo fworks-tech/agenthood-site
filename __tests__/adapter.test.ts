@@ -110,6 +110,30 @@ describe("LightweightAdapter", () => {
     });
   });
 
+  it("accepts openrouter as a valid provider", async () => {
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([
+        { delta: "Hello", done: false },
+        { delta: "", done: true },
+      ]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "test" }],
+      config: { provider: "openrouter", model: "openai/gpt-4o-mini", apiKey: "test-key" },
+    });
+
+    const events = await collectStream(stream);
+    expect(JSON.parse(events[0])).toEqual({ type: "token", data: "Hello" });
+
+    const llmConfig = mockFromConfig.mock.calls[0][0];
+    expect(llmConfig.providers[0]).toMatchObject({
+      name: "openrouter",
+      apiKey: "test-key",
+    });
+  });
+
   it("falls back to groq then openai then ollama when primary is configured", async () => {
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "test", done: false }, { delta: "", done: true }]),

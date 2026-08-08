@@ -8,9 +8,9 @@ const OUTPUT_DIR = join(PROJECT_ROOT, "app", "(main)", "studio", "_data");
 const OUTPUT_FILE = join(OUTPUT_DIR, "agents.generated.ts");
 
 const MEMBERS = [
-  "the-architect", "the-auditor", "the-debugger", "the-doorman",
-  "the-envoy", "the-herald", "the-librarian", "the-operator",
-  "the-oracle", "the-reviewer", "the-scribe", "the-sentinel",
+  "the-architect", "the-auditor", "the-builder", "the-debugger", "the-doorman",
+  "the-envoy", "the-herald", "the-inspector", "the-librarian", "the-mailman",
+  "the-operator", "the-oracle", "the-reviewer", "the-scribe", "the-sentinel",
   "the-steward", "the-strategist", "the-tester", "the-warden",
 ];
 

@@ -5,6 +5,88 @@
 
 ---
 
+## v3.13.5 — August 8, 2026
+
+### 🐛 Bug Fixes
+
+- **Rag:** cache a tree-sitter parser per language (#390)
+
+---
+
+## v3.13.4 — August 8, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** enforce audit, declare commitlint, add build gate (#386)
+
+---
+
+## v3.13.3 — August 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Lint:** resolve lint errors and add ci gates
+- **Llm:** clamp retry-after to 300 seconds
+- **Llm:** guard NaN retry-after header in rate limit errors
+
+---
+
+## v3.13.2 — August 6, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** byte-truncate review diff to stay within argument limits
+- **Ci:** guard member dir glob in librarian check
+- **Ci:** ignore lifecycle scripts in agent analysis install
+- **Ci:** mark truncated diffs in review prompt
+- **Ci:** require RANGE env in agent analysis script
+- **Ci:** review first push of a branch against empty tree
+- **Ci:** truncate review diff at line boundaries
+
+---
+
+## v3.13.1 — August 6, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** fail agent analysis on missing or malformed decision block
+- **Ci:** isolate agent analysis temp files per run
+
+---
+
+## v3.13.0 — August 5, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** always build before agent analysis runs
+- **Docs:** point member skill references to skills canonical home
+- **Docs:** update member counts and skill links after canonicalization
+- **Marketplace:** add new members to agenthood-all bundle and update counts
+- **Marketplace:** align copy with 19 members
+- **Members:** satisfy sentinel and librarian checks for the-builder
+- **Runtime:** route skill file changes to oracle and sentinel triggers
+- **Runtime:** watch skills dir for operator drift and test sentinel pattern
+
+### ✨ Features
+
+- **Members:** add builder member
+- **Members:** bring the-builder to full society standards
+- **Runtime:** add the-builder to member triggers
+
+---
+
+## v3.12.0 — July 9, 2026
+
+### 🐛 Bug Fixes
+
+- **Pr:** address reviewer and warden findings on PR #371
+
+### ✨ Features
+
+- **Llm:** add OpenRouter provider
+
+---
+
 ## v3.11.1 — July 9, 2026
 
 ### 🐛 Bug Fixes

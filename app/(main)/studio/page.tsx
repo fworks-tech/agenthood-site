@@ -6,7 +6,7 @@ import HelpTip from "./_components/HelpTip";
 
 export const metadata: Metadata = {
   title: "Agenthood Studio — Try AI agents in your browser",
-  description: "Chat with 16 specialized AI agents live. Select your provider and start a conversation.",
+  description: "Chat with 19 specialized AI agents live. Select your provider and start a conversation.",
 };
 
 export default function StudioHubPage() {
@@ -23,7 +23,7 @@ export default function StudioHubPage() {
             Try the Society live
           </h1>
           <Text className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" c="dimmed">
-            Select any of the 16 AI agent members, pick your provider, and start a conversation.
+            Select any of the 19 AI agent members, pick your provider, and start a conversation.
             All requests are routed server-side through the agenthood runtime.
           </Text>
           <Group justify="center" mt="lg" gap="md">
@@ -56,7 +56,7 @@ export default function StudioHubPage() {
               <HelpTip text="Each member's system prompt is synced from its SKILL.md file at build time." />
             </div>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-              Each of the 16 Society members has its own system prompt synced from its SKILL.md file.
+              Each of the 19 Society members has its own system prompt synced from its SKILL.md file.
               Select one and start a conversation with their exact agent persona.
             </p>
           </div>

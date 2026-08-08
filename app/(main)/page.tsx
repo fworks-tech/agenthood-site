@@ -6,12 +6,14 @@ import HelpTip from "./studio/_components/HelpTip";
 const agents = [
   { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
   { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
+  { name: "The Builder", slug: "the-builder", icon: "🛠️", desc: "Coding, implementation, refactoring" },
   { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
   { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
   { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
   { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
   { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs" },
   { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references" },
+  { name: "The Mailman", slug: "the-mailman", icon: "📮", desc: "Message delivery, content scheduling, cross-posting" },
   { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
   { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
   { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
@@ -20,6 +22,7 @@ const agents = [
   { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
   { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
   { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
+  { name: "The Inspector", slug: "the-inspector", icon: "🔬", desc: "Visual reasoning, pixel-level analysis" },
 ];
 
 export default function Home() {
@@ -36,7 +39,7 @@ export default function Home() {
           <span className="text-zinc-500">as plain Markdown files.</span>
         </h1>
         <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          16 specialized AI agents — architect, reviewer, security expert, DevOps engineer, strategist, operator, and more —
+          19 specialized AI agents — architect, reviewer, security expert, DevOps engineer, strategist, operator, and more —
           each a single Markdown skill file any agent runtime can load into any project.
           Features autonomous agents with memory, RAG, CI enforcement, and multi-member orchestration.
           No lock-in. No configuration. Just drop them in.
@@ -128,8 +131,8 @@ export default function Home() {
           </Group>
           <SimpleGrid cols={{ base: 2, sm: 4 }} mt="xl" spacing="md">
             {[
-              { label: "16 agents", desc: "architect, reviewer, tester, and more", tip: "All 16 Society members available with their full system prompts from SKILL.md." },
-              { label: "6 providers", desc: "Anthropic, OpenAI, Groq, Ollama, OpenCode", tip: "Switch providers per conversation. Each offers different models and pricing." },
+              { label: "19 agents", desc: "architect, reviewer, tester, and more", tip: "All 19 Society members available with their full system prompts from SKILL.md." },
+              { label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode", tip: "Switch providers per conversation. Each offers different models and pricing." },
               { label: "SSE streaming", desc: "real-time token-by-token responses", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
               { label: "BYOK", desc: "use your own API keys", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
             ].map((s) => (

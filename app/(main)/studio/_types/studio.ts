@@ -1,4 +1,4 @@
-export type Provider = "anthropic" | "openai" | "groq" | "ollama" | "opencode" | "opencode-go";
+export type Provider = "anthropic" | "openai" | "groq" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
 export interface ChatConfig {
   provider: Provider;
@@ -121,6 +121,18 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
       { id: "glm-5.2", label: "GLM 5.2" },
       { id: "kimi-k2.7-code", label: "Kimi K2.7 Code" },
       { id: "minimax-m3", label: "MiniMax M3" },
+    ],
+  },
+  openrouter: {
+    label: "OpenRouter",
+    requiresKey: true,
+    requiresBaseUrl: false,
+    models: [
+      { id: "openai/gpt-4o-mini", label: "OpenAI GPT-4o Mini (default)" },
+      { id: "openai/gpt-4o", label: "OpenAI GPT-4o" },
+      { id: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
+      { id: "google/gemini-3-flash", label: "Gemini 3 Flash" },
+      { id: "meta-llama/llama-3.3-70b-instruct", label: "Llama 3.3 70B" },
     ],
   },
 };

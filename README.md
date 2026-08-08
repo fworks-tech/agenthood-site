@@ -37,7 +37,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 
 ## Studio Architecture
 
-The Studio is a browser-based proof-of-work for the agenthood runtime. It allows users to chat with any of the 16 Society members through a configurable provider backend.
+The Studio is a browser-based proof-of-work for the agenthood runtime. It allows users to chat with any of the 19 Society members through a configurable provider backend.
 
 ### API Endpoints
 
@@ -65,7 +65,7 @@ Ollama requests are proxied server-side — the browser never connects directly 
 
 **Model Validation:** Model IDs are validated server-side against a known set (`PROVIDER_MODELS` in `studio.ts`). Unknown model IDs trigger a `ValidationError` before any provider call.
 
-**Supported providers:** Anthropic, OpenAI, Groq, Ollama (local), OpenCode (local/cloud)
+**Supported providers:** Anthropic, OpenAI, Groq, OpenRouter, Ollama (local), OpenCode (local/cloud)
 
 ### Rate Limiting
 
@@ -88,7 +88,7 @@ Applied to all routes via `next.config.ts`:
 
 | Header | Value |
 |--------|-------|
-| `Content-Security-Policy` | `default-src 'self'`; `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com`; `connect-src 'self' https://opencode.ai https://api.anthropic.com https://api.openai.com https://api.groq.com https://o4508931134267392.ingest.us.sentry.io`; `frame-src https://challenges.cloudflare.com` |
+| `Content-Security-Policy` | `default-src 'self'`; `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com`; `connect-src 'self' https://opencode.ai https://api.anthropic.com https://api.openai.com https://api.groq.com https://openrouter.ai/api https://o4508931134267392.ingest.us.sentry.io`; `frame-src https://challenges.cloudflare.com` |
 | `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `DENY` |
@@ -141,7 +141,7 @@ app/(main)/studio/
 │   ├── studio-api.ts               Client-side fetch wrappers
 │   └── tools.ts                    Tool definitions (web_fetch, code_execution)
 ├── _data/
-│   ├── agents.ts                   Static agent registry (16 members)
+│   ├── agents.ts                   Static agent registry (19 members)
 │   └── agents.generated.ts         Auto-generated skill prompts
 └── _types/
     └── studio.ts                   TypeScript types for providers, config
@@ -210,7 +210,7 @@ The `predev` script runs `sync-docs.mjs` and `sync-skills.mjs` to fetch latest c
 
 | Repo | Purpose |
 |------|---------|
-| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 16 agent skill files, TypeScript runtime, CI workflows |
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 19 agent skill files, TypeScript runtime, CI workflows |
 | [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
 ---
