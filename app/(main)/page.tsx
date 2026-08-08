@@ -114,7 +114,7 @@ export default function Home() {
             Pick any agent, choose your provider, and start a live conversation.
             No install, no setup — just you and the agents.
           </Text>
-          <Group justify="center" gap="md">
+          <Group justify="center" gap="md" className="mb-6">
             <Link
               href="/studio/playground"
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
@@ -137,11 +137,11 @@ export default function Home() {
               { label: "BYOK", desc: "use your own API keys", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
             ].map((s) => (
               <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+                <div className="flex items-center justify-center gap-1 text-sm font-semibold text-zinc-200">
                   {s.label}
                   <HelpTip text={s.tip} side="top" />
                 </div>
-                <div className="text-xs text-zinc-500 mt-0.5">{s.desc}</div>
+                <div className="text-xs text-zinc-500 mt-2">{s.desc}</div>
               </div>
             ))}
           </SimpleGrid>
