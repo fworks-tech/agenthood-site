@@ -77,7 +77,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
           <div className="flex items-center justify-center gap-1 px-6">
             <div>
-              <div className="text-3xl font-semibold text-white">16</div>
+              <div className="text-3xl font-semibold text-white">19</div>
               <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
             </div>
             <HelpTip text="Each agent has a unique role: architect, reviewer, tester, auditor, and more." side="right" />
