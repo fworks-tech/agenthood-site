@@ -5,7 +5,7 @@ import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS } from "./tools";
 import type { ToolCall } from "./tools";
 
-type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go";
+type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
 export interface ChatRequest {
   agentId: string;
@@ -28,7 +28,7 @@ export interface AgenthoodAdapter {
 const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"];
 
 function isKnownProvider(name: string): name is ProviderName {
-  return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go"].includes(name);
+  return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go", "openrouter"].includes(name);
 }
 
 function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {

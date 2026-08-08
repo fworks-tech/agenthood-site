@@ -7,7 +7,7 @@ interface FooterProps {
   className?: string;
 }
 
-export default function Footer({ version = "v3.5.2", className = "" }: FooterProps) {
+export default function Footer({ version = "v3.13.6", className = "" }: FooterProps) {
   return (
     <footer
       className={`border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto ${className}`}
