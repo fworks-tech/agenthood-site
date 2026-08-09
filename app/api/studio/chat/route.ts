@@ -17,6 +17,7 @@ const MAX_TOKENS = 100_000;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
   provider?: string;
@@ -106,17 +107,28 @@ function validateBaseUrl(baseUrl: string): void {
 }
 
 async function validateTurnstile(token: unknown): Promise<void> {
-  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) return;
+  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
+    if (TURNSTILE_REQUIRED) {
+      logger.error("turnstile.config_missing", { message: "TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set. CAPTCHA bypassed." });
+    }
+    return;
+  }
   if (typeof token !== "string" || !token) {
     throw new ValidationError("Missing CAPTCHA token. Please refresh and try again.");
   }
-  const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-    method: "POST",
-    body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
-  });
-  const data = await res.json() as { success?: boolean };
-  if (!data.success) {
-    throw new ValidationError("CAPTCHA verification failed. Please refresh and try again.");
+  try {
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
+    });
+    const data = await res.json() as { success?: boolean };
+    if (!data.success) {
+      throw new ValidationError("CAPTCHA verification failed. Please refresh and try again.");
+    }
+  } catch (err) {
+    if (err instanceof ValidationError) throw err;
+    throw new ValidationError("CAPTCHA service unavailable. Please try again.");
   }
 }
 

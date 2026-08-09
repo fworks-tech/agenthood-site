@@ -10,9 +10,10 @@ interface ChatComposerProps {
   onStop: () => void;
   isStreaming: boolean;
   disabled?: boolean;
+  captchaReady?: boolean;
 }
 
-export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: ChatComposerProps) {
+export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true }: ChatComposerProps) {
   const [input, setInput] = useState("");
   const [imageWarning, setImageWarning] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -32,7 +33,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
 
   const handleSend = () => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming || disabled) return;
+    if (!trimmed || isStreaming || disabled || !captchaReady) return;
     onSend(trimmed);
     setInput("");
   };
@@ -117,9 +118,14 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
           </Group>
         ) : (
           <Group gap={4}>
+            {!captchaReady && (
+              <span className="text-[10px] text-zinc-600 animate-pulse whitespace-nowrap">
+                Verifying...
+              </span>
+            )}
             <ActionIcon
               onClick={handleSend}
-              disabled={!input.trim() || disabled}
+              disabled={!input.trim() || disabled || !captchaReady}
               size="lg"
               variant="filled"
               color="emerald"

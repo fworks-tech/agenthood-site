@@ -9,6 +9,8 @@ declare global {
         sitekey: string;
         callback: (token: string) => void;
         "expired-callback": () => void;
+        "error-callback": () => void;
+        "timeout-callback": () => void;
         theme?: "light" | "dark" | "auto";
       }) => string;
       reset: (widgetId: string) => void;
@@ -22,10 +24,11 @@ const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
 interface TurnstileProps {
   onToken: (token: string | null) => void;
+  onError?: (error: string) => void;
   refreshKey?: number;
 }
 
-export default function Turnstile({ onToken, refreshKey }: TurnstileProps) {
+export default function Turnstile({ onToken, onError, refreshKey }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
@@ -40,6 +43,14 @@ export default function Turnstile({ onToken, refreshKey }: TurnstileProps) {
         sitekey: SITE_KEY,
         callback: (token: string) => onToken(token),
         "expired-callback": () => onToken(null),
+        "error-callback": () => {
+          onToken(null);
+          onError?.("CAPTCHA failed to load. Please refresh the page.");
+        },
+        "timeout-callback": () => {
+          onToken(null);
+          onError?.("CAPTCHA verification timed out. Please try again.");
+        },
         theme: "dark",
       });
     }
@@ -55,6 +66,10 @@ export default function Turnstile({ onToken, refreshKey }: TurnstileProps) {
         script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit";
         script.async = true;
         script.defer = true;
+        script.onerror = () => {
+          onToken(null);
+          onError?.("Failed to load CAPTCHA script. Please disable your ad blocker and refresh.");
+        };
         document.head.appendChild(script);
       }
     }
@@ -64,7 +79,7 @@ export default function Turnstile({ onToken, refreshKey }: TurnstileProps) {
         window.turnstile.remove(widgetIdRef.current);
       }
     };
-  }, [onToken]);
+  }, [onToken, onError]);
 
   useEffect(() => {
     if (refreshKey === undefined || refreshKey === 0) return;

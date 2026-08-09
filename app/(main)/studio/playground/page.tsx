@@ -448,10 +448,15 @@ export default function PlaygroundPage() {
               onStop={handleAbortStream}
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
+              captchaReady={!!turnstileToken}
             />
           )}
 
-          <Turnstile onToken={setTurnstileToken} refreshKey={turnstileRefreshKey} />
+          <Turnstile
+            onToken={setTurnstileToken}
+            onError={(msg) => addLog("error", msg)}
+            refreshKey={turnstileRefreshKey}
+          />
 
           {/* Mobile agent selector */}
           {!selectedAgent && (

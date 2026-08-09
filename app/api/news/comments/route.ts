@@ -7,6 +7,7 @@ const KV = process.env.KV_URL && process.env.KV_TOKEN
   : null;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
+const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 interface Comment {
   id: string;
@@ -17,7 +18,7 @@ interface Comment {
 
 async function verifyTurnstile(token: string): Promise<boolean> {
   if (!TURNSTILE_SECRET) {
-    if (process.env.NODE_ENV === "production") {
+    if (TURNSTILE_REQUIRED) {
       console.error("comments.turnstile_secret_missing");
     }
     return true;

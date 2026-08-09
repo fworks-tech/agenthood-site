@@ -1,24 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (container: string | HTMLElement, options: {
-        sitekey: string
-        callback: (token: string) => void
-        'expired-callback': () => void
-        theme?: 'light' | 'dark' | 'auto'
-      }) => string
-      reset: (widgetId: string) => void
-      remove: (widgetId: string) => void
-    }
-    onloadTurnstileCallback?: () => void
-  }
-}
-
-const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+import Turnstile from './Turnstile'
 
 interface GuestComment {
   id: string
@@ -35,8 +18,7 @@ export default function GuestCommentForm() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [slug, setSlug] = useState('')
-  const widgetRef = useRef<string | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const path = window.location.pathname.replace(/^\/news\//, '')
@@ -48,38 +30,6 @@ export default function GuestCommentForm() {
       .then((data) => { if (!controller.signal.aborted) setComments(data.comments ?? []) })
       .catch(() => {})
     return () => controller.abort()
-  }, [])
-
-  useEffect(() => {
-    if (!SITE_KEY || !containerRef.current) return
-    const id = 'turnstile-guest-' + Math.random().toString(36).slice(2, 9)
-    function render() {
-      if (!window.turnstile || !containerRef.current) return
-      widgetRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: SITE_KEY,
-        callback: (t: string) => setToken(t),
-        'expired-callback': () => setToken(null),
-        theme: 'dark',
-      })
-    }
-    containerRef.current.id = id
-    if (window.turnstile) {
-      render()
-    } else {
-      window.onloadTurnstileCallback = render
-      if (!document.querySelector('script[src*="turnstile"]')) {
-        const script = document.createElement('script')
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit'
-        script.async = true
-        script.defer = true
-        document.head.appendChild(script)
-      }
-    }
-    return () => {
-      if (widgetRef.current && window.turnstile) {
-        window.turnstile.remove(widgetRef.current)
-      }
-    }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -102,9 +52,7 @@ export default function GuestCommentForm() {
       setName('')
       setText('')
       setToken(null)
-      if (widgetRef.current && window.turnstile) {
-        window.turnstile.reset(widgetRef.current)
-      }
+      setRefreshKey((k) => k + 1)
     } catch {
       setError('Network error')
     } finally {
@@ -167,7 +115,7 @@ export default function GuestCommentForm() {
           rows={3}
           className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 resize-none"
         />
-        <div ref={containerRef} className="min-h-[65px]" />
+        <Turnstile onToken={setToken} refreshKey={refreshKey} />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           type="submit"
