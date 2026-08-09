@@ -76,7 +76,7 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
               </Group>
             ) : (
               logs.map((log, i) => (
-                <Group key={i} gap="sm" wrap="nowrap" align="flex-start">
+                <Group key={i} gap="sm" wrap="nowrap" align="flex-start" className="animate-[slide-up_0.2s_ease-out_forwards]">
                   <Text size="xs" c="zinc.6" className="shrink-0">{log.time}</Text>
                   <Badge
                     size="xs"

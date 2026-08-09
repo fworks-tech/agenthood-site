@@ -97,7 +97,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
           minRows={1}
           maxRows={4}
           disabled={isStreaming || disabled}
-          className="flex-1"
+          className={`flex-1 transition-all duration-200 ${input.trim() ? "ring-1 ring-emerald-500/20" : ""}`}
           autosize
         />
 
@@ -109,6 +109,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
               variant="filled"
               color="red"
               aria-label="Stop streaming"
+              className="animate-pulse active:scale-90 transition-transform duration-100"
             >
               <IconSquare size={16} />
             </ActionIcon>
@@ -123,6 +124,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled }: 
               variant="filled"
               color="emerald"
               aria-label="Send message"
+              className="active:scale-90 transition-transform duration-100"
             >
               <IconSend size={16} />
             </ActionIcon>

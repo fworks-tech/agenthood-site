@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ScrollArea, Stack, Text, Group } from "@mantine/core";
 import MessageBubble from "./MessageBubble";
+import AnimatedMessage from "../playground/_components/AnimatedMessage";
 import type { ChatMessage } from "../_lib/studio-api";
 import HelpTip from "./HelpTip";
 
@@ -37,12 +38,13 @@ export default function MessageList({ messages, isStreaming, conversationId }: M
     <ScrollArea className="flex-1" px="lg" py="xl">
       <Stack className="mx-auto max-w-3xl" gap="md">
         {messages.map((msg, i) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isStreaming={isStreaming && i === streamingIndex}
-            conversationId={conversationId}
-          />
+          <AnimatedMessage key={msg.id}>
+            <MessageBubble
+              message={msg}
+              isStreaming={isStreaming && i === streamingIndex}
+              conversationId={conversationId}
+            />
+          </AnimatedMessage>
         ))}
         <div ref={bottomRef} />
       </Stack>

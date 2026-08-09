@@ -17,6 +17,8 @@ import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
+import { agentPrompts } from "../_data/agentPrompts.generated";
+import WelcomeTerminal from "./_components/WelcomeTerminal";
 import type { LogEntry } from "../_components/LiveLogs";
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
@@ -357,7 +359,7 @@ export default function PlaygroundPage() {
               </div>
             </div>
             {selectedAgent && (
-              <div className="flex items-center gap-3">
+              <div key={selectedAgent.id} className="flex items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
                 {selectedAgent.icon && (
                   <span className="text-base">{selectedAgent.icon}</span>
                 )}
@@ -402,41 +404,38 @@ export default function PlaygroundPage() {
               ) : (
                 <div className="flex h-full items-center justify-center">
                   <div className="max-w-md text-center px-6">
-                    <p className="flex items-center justify-center gap-1 text-sm text-zinc-500">
-                      <span>
-                        Start a conversation with{" "}
-                        {selectedAgent.icon && (
-                          <span className="text-base">
-                            {selectedAgent.icon}
-                          </span>
-                        )}
-                        <span className="text-zinc-300 font-medium">
-                          {selectedAgent.name}
-                        </span>
-                        .
-                      </span>
-                      <HelpTip
-                        text="Type a message below to begin. Prompts are validated and rate-limited server-side."
-                        side="right"
-                      />
+                    <span className="text-4xl">{selectedAgent.icon}</span>
+                    <h2 className="mt-3 text-lg font-semibold text-zinc-200">
+                      {selectedAgent.name}
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {selectedAgent.role}
                     </p>
+                    <div className="mt-6 space-y-2">
+                      {(agentPrompts[selectedAgent.id] ?? []).slice(0, 3).map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => handleSendMessage(prompt)}
+                          className="block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-left text-sm text-zinc-400 hover:border-emerald-800 hover:text-zinc-200 transition-colors"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )
             ) : (
               <div className="flex h-full items-center justify-center">
-                <div className="max-w-md text-center px-6">
+                <div className="max-w-lg text-center px-6">
                   <h2 className="text-lg font-semibold text-zinc-300">
                     Welcome to Agenthood Studio
                   </h2>
-                  <p className="mt-2 flex items-center justify-center gap-1 text-sm text-zinc-500">
-                    Select a Society member from the left panel to start
-                    testing.
-                    <HelpTip
-                      text="Choose an agent from the sidebar or pick one from the dropdown below."
-                      side="bottom"
-                    />
+                  <p className="mt-2 text-sm text-zinc-500 mb-8">
+                    Select a Society member from the left panel to start testing.
                   </p>
+                  <WelcomeTerminal />
                 </div>
               </div>
             )}
