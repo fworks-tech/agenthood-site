@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 
 declare global {
   interface Window {
@@ -21,6 +21,7 @@ declare global {
 }
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+const MAX_RETRIES = 2;
 
 interface TurnstileProps {
   onToken: (token: string | null) => void;
@@ -31,6 +32,12 @@ interface TurnstileProps {
 export default function Turnstile({ onToken, onError, refreshKey }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const retryCountRef = useRef(0);
+
+  const handleToken = useCallback((token: string | null) => {
+    retryCountRef.current = 0;
+    onToken(token);
+  }, [onToken]);
 
   useEffect(() => {
     if (!SITE_KEY || !containerRef.current || typeof window === "undefined") return;
@@ -41,15 +48,29 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
       if (!window.turnstile || !containerRef.current) return;
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: SITE_KEY,
-        callback: (token: string) => onToken(token),
-        "expired-callback": () => onToken(null),
+        callback: (token: string) => handleToken(token),
+        "expired-callback": () => handleToken(null),
         "error-callback": () => {
-          onToken(null);
-          onError?.("CAPTCHA failed to load. Please refresh the page.");
+          if (retryCountRef.current < MAX_RETRIES) {
+            retryCountRef.current++;
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(widgetIdRef.current);
+            }
+          } else {
+            handleToken(null);
+            onError?.("CAPTCHA failed to load. Please refresh the page.");
+          }
         },
         "timeout-callback": () => {
-          onToken(null);
-          onError?.("CAPTCHA verification timed out. Please try again.");
+          if (retryCountRef.current < MAX_RETRIES) {
+            retryCountRef.current++;
+            if (widgetIdRef.current && window.turnstile) {
+              window.turnstile.reset(widgetIdRef.current);
+            }
+          } else {
+            handleToken(null);
+            onError?.("CAPTCHA verification timed out. Please refresh the page.");
+          }
         },
         theme: "dark",
       });
@@ -67,7 +88,7 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
         script.async = true;
         script.defer = true;
         script.onerror = () => {
-          onToken(null);
+          handleToken(null);
           onError?.("Failed to load CAPTCHA script. Please disable your ad blocker and refresh.");
         };
         document.head.appendChild(script);
@@ -79,11 +100,12 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
         window.turnstile.remove(widgetIdRef.current);
       }
     };
-  }, [onToken, onError]);
+  }, [handleToken, onError]);
 
   useEffect(() => {
     if (refreshKey === undefined || refreshKey === 0) return;
     if (!window.turnstile || !widgetIdRef.current) return;
+    retryCountRef.current = 0;
     window.turnstile.reset(widgetIdRef.current);
     onToken(null);
   }, [refreshKey, onToken]);
