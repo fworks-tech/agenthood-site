@@ -6,10 +6,12 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CopyButton, Code, Typography } from "@mantine/core";
 import type { Components } from "react-markdown";
+import FadeIn from "../_components/FadeIn";
 
 interface MarkdownRendererProps {
   children: string;
   basePath?: string;
+  animateSections?: boolean;
 }
 
 function joinPosix(...parts: string[]): string {
@@ -108,7 +110,7 @@ function slugify(text: string): string {
     .replace(/[^\w-]/g, "");
 }
 
-export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRendererProps) {
+export default function MarkdownRenderer({ children, basePath = "", animateSections = false }: MarkdownRendererProps) {
   const MarkdownLink: Components["a"] = ({ href, children }) => {
     if (!href) {
       return <a className="text-emerald-400 hover:text-emerald-300 transition-colors">{children}</a>;
@@ -141,11 +143,14 @@ export default function MarkdownRenderer({ children, basePath = "" }: MarkdownRe
         {children}
       </h1>
     ),
-    h2: ({ children }) => (
-      <h2 id={slugify(childrenToString(children))} className="text-2xl font-semibold text-white mb-3">
-        {children}
-      </h2>
-    ),
+    h2: ({ children }) => {
+      const heading = (
+        <h2 id={slugify(childrenToString(children))} className="text-2xl font-semibold text-white mb-3">
+          {children}
+        </h2>
+      );
+      return animateSections ? <FadeIn className="mb-6">{heading}</FadeIn> : heading;
+    },
     h3: ({ children }) => (
       <h3 id={slugify(childrenToString(children))} className="text-lg font-semibold text-white mt-8 mb-3">
         {children}

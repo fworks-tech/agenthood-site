@@ -19,7 +19,7 @@ export default function GettingStarted() {
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
 
       <div className="max-w-3xl mx-auto px-6 py-16">
-        <MarkdownRenderer basePath="academy">{markdown}</MarkdownRenderer>
+        <MarkdownRenderer basePath="academy" animateSections>{markdown}</MarkdownRenderer>
       </div>
     </main>
   );

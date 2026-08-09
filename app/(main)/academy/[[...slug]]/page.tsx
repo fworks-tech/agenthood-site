@@ -60,7 +60,7 @@ export default async function AcademyPage({ params }: AcademyPageProps) {
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Breadcrumbs segments={["academy", ...slug]} />
-        <MarkdownRenderer basePath={basePath}>{markdown}</MarkdownRenderer>
+        <MarkdownRenderer basePath={basePath} animateSections>{markdown}</MarkdownRenderer>
       </div>
     </main>
   );

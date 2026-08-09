@@ -3,6 +3,7 @@ import path from "node:path";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
+import FadeIn from "../../../_components/FadeIn";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "adr", "manifest.json");
 
@@ -53,15 +54,17 @@ function AdrIndex({ manifest }: { manifest: ManifestEntry[] }) {
       </p>
 
       <ul className="space-y-3">
-        {manifest.map((entry) => (
-          <li key={entry.slug.join("/")}>
-            <Link
-              href={`/adr/${entry.slug.join("/")}/`}
-              className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-4 hover:border-zinc-600 transition-colors"
-            >
-              <span className="text-white font-medium">{entry.title}</span>
-            </Link>
-          </li>
+        {manifest.map((entry, i) => (
+          <FadeIn key={entry.slug.join("/")} delay={i * 60}>
+            <li>
+              <Link
+                href={`/adr/${entry.slug.join("/")}/`}
+                className="block bg-zinc-900 border border-zinc-800 rounded-lg px-5 py-4 hover:border-zinc-600 transition-colors"
+              >
+                <span className="text-white font-medium">{entry.title}</span>
+              </Link>
+            </li>
+          </FadeIn>
         ))}
       </ul>
     </div>
@@ -92,7 +95,7 @@ export default async function AdrPage({ params }: AdrPageProps) {
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
 
       <div className="max-w-3xl mx-auto px-6 py-16">
-        <MarkdownRenderer basePath="adr">{markdown}</MarkdownRenderer>
+        <MarkdownRenderer basePath="adr" animateSections>{markdown}</MarkdownRenderer>
       </div>
     </main>
   );

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Link from "next/link";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import FadeIn from "../../_components/FadeIn";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
@@ -43,23 +44,24 @@ export default function NewsIndex() {
           Incident reports, release notes, and project updates.
         </p>
         <div className="space-y-6">
-          {sorted.map((entry) => (
-            <Link
-              key={entry.slug.join("/")}
-              href={`/news/${entry.slug.join("/")}`}
-              className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
-            >
-              <time className="text-sm text-zinc-500">{entry.date}</time>
-              <h2 className="text-lg font-semibold text-white mt-1">
-                {entry.title}
-              </h2>
-              {entry.summary && (
-                <p className="text-zinc-400 mt-1 text-sm">{entry.summary}</p>
-              )}
-              {entry.author && (
-                <p className="text-xs text-zinc-600 mt-2">{entry.author}</p>
-              )}
-            </Link>
+          {sorted.map((entry, i) => (
+            <FadeIn key={entry.slug.join("/")} delay={i * 60}>
+              <Link
+                href={`/news/${entry.slug.join("/")}`}
+                className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+              >
+                <time className="text-sm text-zinc-500">{entry.date}</time>
+                <h2 className="text-lg font-semibold text-white mt-1">
+                  {entry.title}
+                </h2>
+                {entry.summary && (
+                  <p className="text-zinc-400 mt-1 text-sm">{entry.summary}</p>
+                )}
+                {entry.author && (
+                  <p className="text-xs text-zinc-600 mt-2">{entry.author}</p>
+                )}
+              </Link>
+            </FadeIn>
           ))}
         </div>
       </div>

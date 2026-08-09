@@ -8,6 +8,7 @@ function stripFrontmatter(markdown: string): string {
   return markdown.replace(/^---[\s\S]*?---\n?/, "");
 }
 import Breadcrumbs from "../../../components/Breadcrumbs";
+import FadeIn from "../../../_components/FadeIn";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "docs", "manifest.json");
 
@@ -126,7 +127,7 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedSections.map((section) => {
+        {sortedSections.map((section, i) => {
           const all = grouped.get(section)!;
           const contentEntries = all.filter(
             (e) => e.slug.length > 1 && !e.slug[e.slug.length - 1].toUpperCase().includes("SKILL")
@@ -135,29 +136,30 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
           const sectionLabel = SECTION_LABELS[section] || displayName(section);
 
           return (
-            <Link
-              key={section}
-              href={sectionHref}
-              className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
-            >
-              <h2 className="text-lg font-semibold text-emerald-400 mb-3">
-                {sectionLabel}
-              </h2>
-              {contentEntries.length > 0 ? (
-                <ul className="space-y-1">
-                  {contentEntries.slice(0, 6).map((entry) => (
-                    <li key={entry.slug.join("/")} className="text-sm text-zinc-400 truncate">
-                      {entry.title || displayName(entry.slug[entry.slug.length - 1])}
-                    </li>
-                  ))}
-                  {contentEntries.length > 6 && (
-                    <li className="text-xs text-zinc-600">+{contentEntries.length - 6} more</li>
-                  )}
-                </ul>
-              ) : (
-                <p className="text-sm text-zinc-600">Overview</p>
-              )}
-            </Link>
+            <FadeIn key={section} delay={i * 60}>
+              <Link
+                href={sectionHref}
+                className="block bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors"
+              >
+                <h2 className="text-lg font-semibold text-emerald-400 mb-3">
+                  {sectionLabel}
+                </h2>
+                {contentEntries.length > 0 ? (
+                  <ul className="space-y-1">
+                    {contentEntries.slice(0, 6).map((entry) => (
+                      <li key={entry.slug.join("/")} className="text-sm text-zinc-400 truncate">
+                        {entry.title || displayName(entry.slug[entry.slug.length - 1])}
+                      </li>
+                    ))}
+                    {contentEntries.length > 6 && (
+                      <li className="text-xs text-zinc-600">+{contentEntries.length - 6} more</li>
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-zinc-600">Overview</p>
+                )}
+              </Link>
+            </FadeIn>
           );
         })}
       </div>
@@ -173,17 +175,19 @@ function SectionIndex({ slug, entries, title }: { slug: string[]; entries: Manif
         {title}
       </h1>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        {entries.map((entry) => {
+        {entries.map((entry, i) => {
           const href = `/docs/${entry.slug.join("/")}/`;
           return (
-            <li key={entry.slug.join("/")}>
-              <Link
-                href={href}
-                className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
-              >
-                {entry.title || displayName(entry.slug[entry.slug.length - 1])}
-              </Link>
-            </li>
+            <FadeIn key={entry.slug.join("/")} delay={i * 40}>
+              <li>
+                <Link
+                  href={href}
+                  className="text-emerald-400 hover:text-emerald-300 transition-colors font-medium"
+                >
+                  {entry.title || displayName(entry.slug[entry.slug.length - 1])}
+                </Link>
+              </li>
+            </FadeIn>
           );
         })}
       </ul>
@@ -217,7 +221,7 @@ export default async function DocsPage({ params }: DocsPageProps) {
       <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
         <div className="max-w-3xl mx-auto px-6 py-16">
           <Breadcrumbs segments={["docs", ...slug]} />
-          <MarkdownRenderer basePath={basePath}>{markdown}</MarkdownRenderer>
+          <MarkdownRenderer basePath={basePath} animateSections>{markdown}</MarkdownRenderer>
         </div>
       </main>
     );
