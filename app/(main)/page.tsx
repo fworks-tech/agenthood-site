@@ -1,28 +1,66 @@
 import Link from "next/link";
 import { Text, Group, Badge, SimpleGrid } from "@mantine/core";
-import { IconPlayerPlay, IconCode } from "@tabler/icons-react";
+import {
+  IconPlayerPlay,
+  IconCode,
+  IconUsers,
+  IconCloud,
+  IconServer,
+  IconKey,
+  IconShield,
+  IconClock,
+  IconBulb,
+} from "@tabler/icons-react";
 import HelpTip from "./studio/_components/HelpTip";
+import FadeIn from "../_components/FadeIn";
+import InstallBlock from "../_components/InstallBlock";
+import TypingTerminal from "../_components/TypingTerminal";
+import { ClientCTA } from "./_client-cta";
 
 const agents = [
-  { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs" },
-  { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions" },
-  { name: "The Builder", slug: "the-builder", icon: "🛠️", desc: "Coding, implementation, refactoring" },
-  { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement" },
-  { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases" },
-  { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis" },
-  { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit" },
-  { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs" },
-  { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references" },
-  { name: "The Mailman", slug: "the-mailman", icon: "📮", desc: "Message delivery, content scheduling, cross-posting" },
-  { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks" },
-  { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates" },
-  { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation" },
-  { name: "The Sentinel", slug: "the-sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection" },
-  { name: "The Warden", slug: "the-warden", icon: "⚖️", desc: "Code health, complexity enforcement" },
-  { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies" },
-  { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery" },
-  { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback" },
-  { name: "The Inspector", slug: "the-inspector", icon: "🔬", desc: "Visual reasoning, pixel-level analysis" },
+  // engineering
+  { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions", category: "engineering" },
+  { name: "The Builder", slug: "the-builder", icon: "🛠️", desc: "Coding, implementation, refactoring", category: "engineering" },
+  { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases", category: "engineering" },
+  { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis", category: "engineering" },
+  { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery", category: "engineering" },
+  // validation
+  { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement", category: "validation" },
+  { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit", category: "validation" },
+  { name: "The Inspector", slug: "the-inspector", icon: "🔬", desc: "Visual reasoning, pixel-level analysis", category: "validation" },
+  { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks", category: "validation" },
+  { name: "The Sentinel", slug: "the-sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection", category: "validation" },
+  { name: "The Warden", slug: "the-warden", icon: "⚖️", desc: "Code health, complexity enforcement", category: "validation" },
+  // lifecycle
+  { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs", category: "lifecycle" },
+  { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs", category: "lifecycle" },
+  { name: "The Mailman", slug: "the-mailman", icon: "📮", desc: "Message delivery, content scheduling, cross-posting", category: "lifecycle" },
+  { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation", category: "lifecycle" },
+  { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies", category: "lifecycle" },
+  { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback", category: "lifecycle" },
+  // knowledge
+  { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references", category: "knowledge" },
+  { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates", category: "knowledge" },
+];
+
+const categories = [
+  { id: "engineering", label: "Engineering", icon: IconCode, accent: "bg-emerald-500", desc: "Building things" },
+  { id: "validation", label: "Validation", icon: IconShield, accent: "bg-amber-500", desc: "Gatekeeping quality" },
+  { id: "lifecycle", label: "Lifecycle", icon: IconClock, accent: "bg-sky-500", desc: "Process & flow" },
+  { id: "knowledge", label: "Knowledge", icon: IconBulb, accent: "bg-violet-500", desc: "Research & docs" },
+];
+
+const features = [
+  { icon: IconUsers, label: "19 agents", desc: "architect, reviewer, tester, and more", color: "text-emerald-400", tip: "All 19 Society members available with their full system prompts from SKILL.md." },
+  { icon: IconCloud, label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode", color: "text-sky-400", tip: "Switch providers per conversation. Each offers different models and pricing." },
+  { icon: IconServer, label: "SSE streaming", desc: "real-time token-by-token responses", color: "text-cyan-400", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
+  { icon: IconKey, label: "BYOK", desc: "use your own API keys", color: "text-amber-400", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
+];
+
+const steps = [
+  { step: "01", title: "Install the Society", body: "npm install agenthood && npx agenthood init — interactive setup, hooks, and conventions in ~2 minutes." },
+  { step: "02", title: "Load into your runtime", body: "Skill files install automatically. Or run members autonomously: agenthood run the-scribe \"write a commit message\"." },
+  { step: "03", title: "Invoke any agent", body: "Ask the Reviewer to check your PR. Ask the Auditor to scan your auth flow. They know their role." },
 ];
 
 export default function Home() {
@@ -39,10 +77,8 @@ export default function Home() {
           <span className="text-zinc-500">as plain Markdown files.</span>
         </h1>
         <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          19 specialized AI agents — architect, reviewer, security expert, DevOps engineer, strategist, operator, and more —
-          each a single Markdown skill file any agent runtime can load into any project.
-          Features autonomous agents with memory, RAG, CI enforcement, and multi-member orchestration.
-          No lock-in. No configuration. Just drop them in.
+          19 specialized AI agents — each a single Markdown skill file that works with
+          Claude Code, Copilot, Gemini CLI, or any runtime. No lock-in. No configuration.
         </Text>
         <Group justify="center" gap="md">
           <a
@@ -60,15 +96,8 @@ export default function Home() {
             How it works
           </Link>
         </Group>
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
-            <span className="text-zinc-500">$</span>
-            <code className="text-zinc-200">npm install --save-dev agenthood</code>
-          </div>
-          <div className="inline-flex items-center gap-3 bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-xl px-5 py-2.5 font-mono text-sm shadow-inner">
-            <span className="text-zinc-500">$</span>
-            <code className="text-zinc-200">npx agenthood init</code>
-          </div>
+        <div className="mt-8 flex justify-center">
+          <InstallBlock />
         </div>
       </section>
 
@@ -100,115 +129,115 @@ export default function Home() {
       </section>
 
       {/* Studio preview */}
-      <section className="border-y border-zinc-800 bg-gradient-to-b from-zinc-900/30 to-zinc-950">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-          <Group justify="center" mb="md">
-            <Badge variant="outline" color="emerald" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
-              Agenthood Studio
-            </Badge>
-          </Group>
-          <h2 className="text-3xl font-semibold text-white mb-4">
-            Try the Society in your browser
-          </h2>
-          <Text c="dimmed" className="max-w-2xl mx-auto mb-8 leading-relaxed">
-            Pick any agent, choose your provider, and start a live conversation.
-            No install, no setup — just you and the agents.
-          </Text>
-          <Group justify="center" gap="md" className="mb-6">
-            <Link
-              href="/studio/playground"
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
-            >
-              <IconPlayerPlay size={16} />
-              Open Playground
-            </Link>
-            <Link
-              href="/studio"
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
-            >
-              About Studio
-            </Link>
-          </Group>
-          <SimpleGrid cols={{ base: 2, sm: 4 }} mt="xl" spacing="md">
-            {[
-              { label: "19 agents", desc: "architect, reviewer, tester, and more", tip: "All 19 Society members available with their full system prompts from SKILL.md." },
-              { label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode", tip: "Switch providers per conversation. Each offers different models and pricing." },
-              { label: "SSE streaming", desc: "real-time token-by-token responses", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
-              { label: "BYOK", desc: "use your own API keys", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
-            ].map((s) => (
-              <div key={s.label} className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-                <div className="flex items-center justify-center gap-1 text-sm font-semibold text-zinc-200">
-                  {s.label}
-                  <HelpTip text={s.tip} side="top" />
+      <FadeIn>
+        <section className="border-y border-zinc-800 bg-gradient-to-b from-zinc-900/30 to-zinc-950">
+          <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+            <Group justify="center" mb="md">
+              <Badge variant="outline" color="emerald" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
+                Agenthood Studio
+              </Badge>
+            </Group>
+            <h2 className="text-3xl font-semibold text-white mb-4">
+              Try the Society in your browser
+            </h2>
+            <Text c="dimmed" className="max-w-2xl mx-auto mb-8 leading-relaxed">
+              Pick any agent, choose your provider, and start a live conversation.
+              No install, no setup — just you and the agents.
+            </Text>
+            <Group justify="center" gap="md" className="mb-10">
+              <Link
+                href="/studio/playground"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
+              >
+                <IconPlayerPlay size={16} />
+                Open Playground
+              </Link>
+              <Link
+                href="/studio"
+                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
+              >
+                About Studio
+              </Link>
+            </Group>
+            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="lg">
+              {features.map((f) => (
+                <div key={f.label} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 text-center">
+                  <f.icon size={28} className={`mx-auto mb-3 ${f.color}`} />
+                  <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-200 mb-1.5">
+                    {f.label}
+                    <HelpTip text={f.tip} side="top" />
+                  </div>
+                  <div className="text-xs text-zinc-500 leading-relaxed">{f.desc}</div>
                 </div>
-                <div className="text-xs text-zinc-500 mt-2">{s.desc}</div>
-              </div>
-            ))}
-          </SimpleGrid>
-        </div>
-      </section>
+              ))}
+            </SimpleGrid>
+          </div>
+        </section>
+      </FadeIn>
 
-      {/* Agents grid */}
-      <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
-        <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
-        <Text c="dimmed" className="mb-12 max-w-2xl">
-          Every role a real software team needs — available as a skill file with impeccable standards.
-        </Text>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {agents.map((a) => (
-            <Link
-              key={a.name}
-              href={`/docs/members/${a.slug}/`}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors block"
-            >
-              <div className="text-2xl mb-3">{a.icon}</div>
-              <div className="text-white font-medium text-sm mb-1">{a.name}</div>
-              <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Agents grid — grouped by category */}
+      <FadeIn>
+        <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
+          <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
+          <Text c="dimmed" className="mb-12 max-w-2xl">
+            Every role a real software team needs — available as a skill file with impeccable standards.
+          </Text>
+          <div className="space-y-12">
+            {categories.map((cat) => {
+              const catAgents = agents.filter((a) => a.category === cat.id);
+              return (
+                <div key={cat.id}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-1 h-5 rounded-full ${cat.accent}`} />
+                    <cat.icon size={18} className="text-zinc-400" />
+                    <h3 className="text-lg font-semibold text-zinc-200">{cat.label}</h3>
+                    <span className="text-xs text-zinc-600">{catAgents.length}</span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {catAgents.map((a) => (
+                      <Link
+                        key={a.name}
+                        href={`/docs/members/${a.slug}/`}
+                        className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-colors block"
+                      >
+                        <div className="text-2xl mb-3">{a.icon}</div>
+                        <div className="text-white font-medium text-sm mb-1">{a.name}</div>
+                        <div className="text-zinc-500 text-xs leading-relaxed">{a.desc}</div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </FadeIn>
 
       {/* How it works */}
-      <section id="how" className="max-w-6xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
-        <Text c="dimmed" className="mb-12 w-full">
-          Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
-          that describes a role, its responsibilities, standards, and how it communicates.
-          Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
-          Or run them autonomously via the TypeScript CLI.
-        </Text>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { step: "01", title: "Install the Society", body: "npm install agenthood && npx agenthood init — interactive setup, hooks, and conventions in ~2 minutes." },
-            { step: "02", title: "Load into your runtime", body: "Skill files install automatically. Or run members autonomously: agenthood run the-scribe \"write a commit message\"." },
-            { step: "03", title: "Invoke any agent", body: "Ask the Reviewer to check your PR. Ask the Auditor to scan your auth flow. They know their role." },
-          ].map((s) => (
-            <div key={s.step} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-              <div className="text-zinc-600 text-sm font-mono mb-3">{s.step}</div>
-              <div className="text-white font-medium mb-2">{s.title}</div>
-              <div className="text-zinc-400 text-sm leading-relaxed">{s.body}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <FadeIn>
+        <section id="how" className="max-w-6xl mx-auto px-6 py-10">
+          <h2 className="text-3xl font-semibold text-white mb-4">How it works</h2>
+          <Text c="dimmed" className="mb-12 w-full">
+            Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
+            that describes a role, its responsibilities, standards, and how it communicates.
+            Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
+            Or run them autonomously via the TypeScript CLI.
+          </Text>
+          <div className="grid md:grid-cols-3 gap-6 relative">
+            <div className="hidden md:block absolute top-8 left-[17%] right-[17%] h-px bg-zinc-800" />
+            {steps.map((s) => (
+              <div key={s.step} className="bg-zinc-900 border border-zinc-800 border-l-2 border-l-emerald-500 rounded-xl p-6 relative">
+                <div className="text-emerald-400 text-xl font-bold font-mono mb-3">{s.step}</div>
+                <div className="text-white font-medium mb-2">{s.title}</div>
+                <div className="text-zinc-400 text-sm leading-relaxed">{s.body}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </FadeIn>
 
       {/* CTA */}
-      <section className="border-t border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-          <h2 className="text-3xl font-semibold text-white mb-4">Your project deserves a full team.</h2>
-          <Text c="dimmed" mb="lg">Open source. No sign-up. Works with any agent runtime.</Text>
-          <a
-            href="https://github.com/fworks-tech/agenthood"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-white text-zinc-950 font-medium px-8 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-flex items-center gap-2"
-          >
-            Get started on GitHub
-            <IconCode size={16} />
-          </a>
-        </div>
-      </section>
+      <ClientCTA />
 
     </main>
   );
