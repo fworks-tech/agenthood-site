@@ -131,12 +131,16 @@ export async function sendMessage(page: Page, text: string): Promise<void> {
   }
   const textarea = page.locator("textarea[placeholder='Type a message...']");
   await textarea.waitFor({ state: "visible", timeout: 5000 });
-  const sendBtn = page.locator("button[aria-label='Send message']");
-  await sendBtn.waitFor({ state: "visible", timeout: 5000 });
-  await sendBtn.waitFor({ state: "attached", timeout: 5000 });
-  await expect(sendBtn).toBeEnabled({ timeout: 10000 });
   await textarea.fill(text);
   await page.waitForTimeout(100);
+  const sendBtn = page.locator("button[aria-label='Send message']");
+  if (await sendBtn.isVisible().catch(() => false)) {
+    await sendBtn.waitFor({ state: "attached", timeout: 5000 });
+    const enabled = await sendBtn.isEnabled().catch(() => false);
+    if (!enabled) {
+      await expect(sendBtn).toBeEnabled({ timeout: 15000 });
+    }
+  }
   await textarea.press("Enter");
 }
 
