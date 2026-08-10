@@ -36,6 +36,8 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
   const onTokenRef = useRef(onToken);
   const onErrorRef = useRef(onError);
 
+  // Keep latest callbacks in refs so Turnstile's browser callbacks never read stale props,
+  // while the widget render effect below stays stable (runs once on mount).
   useEffect(() => {
     onTokenRef.current = onToken;
     onErrorRef.current = onError;
