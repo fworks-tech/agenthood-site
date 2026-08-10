@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { readSSEStream } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
 import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
@@ -94,6 +94,12 @@ function setActiveId(id: string | null) {
   } catch {}
 }
 
+// Hydrate from localStorage before the browser paints. Using the passive
+// useEffect here lets a fast user action (e.g. selecting an agent on mobile)
+// fire before hydration completes, so the action reads an empty conversation
+// list and its persist() call overwrites the stored conversations.
+const useHydrateOnClient = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 function updateMessage(convs: Conversation[], convId: string, msgId: string, content: string): Conversation[] {
   return convs.map((c) =>
     c.id === convId
@@ -113,15 +119,13 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const configRef = useRef<Partial<ChatConfig>>(options?.config);
   const turnstileRef = useRef<string | undefined>(options?.turnstileToken);
 
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
+  useHydrateOnClient(() => {
     const saved = loadConversations();
     const activeId = getActiveId();
     setConversations(saved);
     conversationsRef.current = saved;
     setActiveConversationId(activeId);
     setHydrated(true);
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {

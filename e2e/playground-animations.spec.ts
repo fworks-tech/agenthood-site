@@ -7,7 +7,6 @@ import {
   getMessages,
   waitForStreamComplete,
   waitForHydration,
-  closeConfigPanel,
   openConversationSidebar,
 } from "./helpers";
 
@@ -28,13 +27,13 @@ test.describe("Playground — Welcome Terminal", () => {
     await expect(terminalLabel).toBeVisible();
 
     await page.waitForTimeout(2000);
-    const monoText = page.locator(".font-mono").first();
+    const monoText = page.locator("[data-testid='welcome-terminal'] .font-mono").first();
     const text = await monoText.innerText();
     expect(text.length).toBeGreaterThan(5);
   });
 
   test("terminal cycles through sample prompts", async ({ page }) => {
-    const monoText = page.locator(".font-mono").first();
+    const monoText = page.locator("[data-testid='welcome-terminal'] .font-mono").first();
     await expect(monoText).toBeVisible();
 
     const text1 = await monoText.innerText();
@@ -562,7 +561,6 @@ test.describe("Playground — Edge Cases", () => {
       .last();
     await persisted.waitFor({ state: "visible", timeout: 15000 });
 
-    await closeConfigPanel(page);
     await selectAgent(page, "the-scribe");
     await openConversationSidebar(page);
     await persisted.click();

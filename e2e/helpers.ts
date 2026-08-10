@@ -172,24 +172,61 @@ export async function openConversationSidebar(page: Page): Promise<void> {
   const vs = page.viewportSize();
   const isMobile = vs !== null && vs.width < 768;
   if (isMobile) {
-    const sidebar = page.locator("[data-conversation-list='sidebar']");
-    if (await sidebar.count() === 0) {
-      const convBtn = page.locator("button").filter({ hasText: "Conversations" }).last();
-      await convBtn.click();
-      await page.waitForTimeout(400);
+    // Mantine Drawer unmounts its content while closed, so the drawer's
+    // conversation list is only attached while the drawer is open. Scope both
+    // the list and the toggle button so the desktop conversation list and the
+    // list's own collapse-toggle header cannot be matched.
+    const drawerList = page.locator(
+      ".mantine-Drawer-root [data-conversation-list='sidebar']",
+    );
+    const convBtn = page
+      .locator("div.fixed.bottom-0")
+      .locator("button")
+      .filter({ hasText: "Conversations" })
+      .last();
+
+    // While closing, Mantine keeps the content attached but slides it off-screen,
+    // so a plain visibility check would treat it as usable. Detect the closing
+    // state by the left edge being off-viewport, then wait for it to detach so
+    // the reopen cannot race the close transition.
+    const attached = await drawerList.count();
+    const onScreen =
+      attached > 0 &&
+      (await drawerList
+        .evaluate((el) => el.getBoundingClientRect().left >= 0)
+        .catch(() => false));
+    if (attached > 0 && !onScreen) {
+      await drawerList.waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
     }
-  } else {
-    const sidebar = page.locator("[data-conversation-list='sidebar']");
-    if (await sidebar.count() === 0) {
-      const openBtn = page.getByRole("button", { name: "Open config panel" });
-      if (await openBtn.isVisible().catch(() => false)) {
-        await openBtn.click();
-        await page.waitForTimeout(300);
-      }
+
+    if ((await drawerList.count()) === 0) {
+      await convBtn.click();
+    }
+
+    // Wait for the drawer to be fully open and settled (left edge at x=0) so
+    // callers can immediately click conversation entries.
+    await expect
+      .poll(
+        async () => {
+          if ((await drawerList.count()) === 0) return -1;
+          const box = await drawerList.boundingBox();
+          return box ? Math.round(box.x) : -1;
+        },
+        { timeout: 15000 },
+      )
+      .toBe(0);
+    return;
+  }
+  const sidebar = page.locator("[data-conversation-list='sidebar']");
+  if (await sidebar.count() === 0) {
+    const openBtn = page.getByRole("button", { name: "Open config panel" });
+    if (await openBtn.isVisible().catch(() => false)) {
+      await openBtn.click();
+      await page.waitForTimeout(300);
     }
   }
-  const sidebar = page.locator("[data-conversation-list='sidebar']").last();
-  await sidebar.waitFor({ state: "attached", timeout: 15000 });
+  const visibleSidebar = page.locator("[data-conversation-list='sidebar']").last();
+  await visibleSidebar.waitFor({ state: "attached", timeout: 15000 });
 }
 
 export async function getConversationEntries(page: Page): Promise<{ title: string; active: boolean }[]> {
