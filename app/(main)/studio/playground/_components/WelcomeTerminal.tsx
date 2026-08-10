@@ -76,7 +76,7 @@ export default function WelcomeTerminal() {
   }, [outputLines, phase]);
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div data-testid="welcome-terminal" className="w-full max-w-lg mx-auto">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-2xl">{current.icon}</span>
         <div>
