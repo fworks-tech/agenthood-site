@@ -201,7 +201,10 @@ export default function PlaygroundPage() {
         `Selected: ${agent.icon ?? ""} ${agent.name} · ${agent.role} · ${provider}/${model}`,
       );
       track("agent_selected", { agentId: agent.id, provider, model });
-      if (!configOpen) setConfigOpen(true);
+      // Only reveal the desktop config drawer on wide screens. On mobile the
+      // drawer (absolute z-20) and its backdrop cover the chat, blocking
+      // interaction with prompt suggestions after selecting an agent.
+      if (!configOpen && window.innerWidth >= 768) setConfigOpen(true);
     },
     [chat, addLog, configOpen],
   );
