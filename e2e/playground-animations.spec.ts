@@ -7,7 +7,6 @@ import {
   getMessages,
   waitForStreamComplete,
   waitForHydration,
-  closeConfigPanel,
   openConversationSidebar,
 } from "./helpers";
 
@@ -562,7 +561,6 @@ test.describe("Playground — Edge Cases", () => {
       .last();
     await persisted.waitFor({ state: "visible", timeout: 15000 });
 
-    await closeConfigPanel(page);
     await selectAgent(page, "the-scribe");
     await openConversationSidebar(page);
     await persisted.click();
