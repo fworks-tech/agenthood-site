@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, selectMantineOption, waitForHydration } from "./helpers";
+import { mockTurnstile, selectAgent, selectMantineOption, waitForHydration, openConfigPanel } from "./helpers";
 
 function skipOnMobile(page: { viewportSize: () => { width: number } | null }) {
   const vs = page.viewportSize();
@@ -114,11 +114,7 @@ test.describe("Playground — Configuration", () => {
   });
 
   test("api key input accepts text and shows placeholder", async ({ page }) => {
-    const openBtn = page.getByRole("button", { name: "Open config panel" });
-    if (await openBtn.isVisible().catch(() => false)) {
-      await openBtn.click();
-      await page.locator('[data-config-panel]').waitFor({ state: 'visible', timeout: 5000 });
-    }
+    await openConfigPanel(page);
     const keyInput = page.locator("input[type=password]");
     await expect(keyInput).toBeVisible();
     await keyInput.fill("sk-test-key-123");

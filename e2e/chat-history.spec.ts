@@ -8,7 +8,6 @@ import {
   getConversationEntries,
   waitForAssistantCount,
   openConversationSidebar,
-  closeConfigPanel,
   waitForHydration,
 } from "./helpers";
 
@@ -164,7 +163,6 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     expect(entries[0].title).toContain("persist one");
 
     await selectAgent(page, "the-scribe");
-    await closeConfigPanel(page);
     await openConversationSidebar(page);
     const persisted = page
       .locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']")
