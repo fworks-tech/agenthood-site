@@ -33,11 +33,18 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
+  const onTokenRef = useRef(onToken);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onTokenRef.current = onToken;
+    onErrorRef.current = onError;
+  });
 
   const handleToken = useCallback((token: string | null) => {
     retryCountRef.current = 0;
-    onToken(token);
-  }, [onToken]);
+    onTokenRef.current(token);
+  }, []);
 
   useEffect(() => {
     if (!SITE_KEY || !containerRef.current || typeof window === "undefined") return;
@@ -58,7 +65,7 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
             }
           } else {
             handleToken(null);
-            onError?.("CAPTCHA failed to load. Please refresh the page.");
+            onErrorRef.current?.("CAPTCHA failed to load. Please refresh the page.");
           }
         },
         "timeout-callback": () => {
@@ -69,7 +76,7 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
             }
           } else {
             handleToken(null);
-            onError?.("CAPTCHA verification timed out. Please refresh the page.");
+            onErrorRef.current?.("CAPTCHA verification timed out. Please refresh the page.");
           }
         },
         theme: "dark",
@@ -89,7 +96,7 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
         script.defer = true;
         script.onerror = () => {
           handleToken(null);
-          onError?.("Failed to load CAPTCHA script. Please disable your ad blocker and refresh.");
+          onErrorRef.current?.("Failed to load CAPTCHA script. Please disable your ad blocker and refresh.");
         };
         document.head.appendChild(script);
       }
@@ -100,15 +107,15 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
         window.turnstile.remove(widgetIdRef.current);
       }
     };
-  }, [handleToken, onError]);
+  }, [handleToken]);
 
   useEffect(() => {
     if (refreshKey === undefined || refreshKey === 0) return;
     if (!window.turnstile || !widgetIdRef.current) return;
     retryCountRef.current = 0;
     window.turnstile.reset(widgetIdRef.current);
-    onToken(null);
-  }, [refreshKey, onToken]);
+    onTokenRef.current(null);
+  }, [refreshKey]);
 
   if (!SITE_KEY) return null;
 
