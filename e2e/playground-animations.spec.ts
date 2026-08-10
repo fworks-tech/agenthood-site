@@ -8,7 +8,7 @@ import {
   waitForStreamComplete,
   waitForHydration,
   closeConfigPanel,
-  openConfigPanel,
+  openConversationSidebar,
 } from "./helpers";
 
 test.describe("Playground — Welcome Terminal", () => {
@@ -504,6 +504,7 @@ test.describe("Playground — Edge Cases", () => {
       const body =
         'data: {"type":"token","data":"Slow"}\n' +
         'data: {"type":"token","data":" response"}\n';
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       await route.fulfill({
         status: 200,
         headers: { "Content-Type": "text/event-stream" },
@@ -550,6 +551,22 @@ test.describe("Playground — Edge Cases", () => {
 
     await page.reload();
     await waitForHydration(page);
+
+    // Wait for the chat store to hydrate: the persisted conversation must show
+    // in the sidebar before selecting an agent, otherwise the selection can
+    // race hydration and clobber the stored conversations.
+    await openConversationSidebar(page);
+    const persisted = page
+      .locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']")
+      .filter({ hasText: "Persist test" })
+      .last();
+    await persisted.waitFor({ state: "visible", timeout: 15000 });
+
+    await closeConfigPanel(page);
+    await selectAgent(page, "the-scribe");
+    await openConversationSidebar(page);
+    await persisted.click();
+    await page.waitForTimeout(500);
 
     const messages = await getMessages(page);
     expect(messages.length).toBeGreaterThanOrEqual(1);
