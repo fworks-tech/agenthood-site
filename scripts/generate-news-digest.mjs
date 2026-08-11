@@ -253,7 +253,7 @@ export function buildArticle(postDate, valid) {
   ].join("\n");
 }
 
-async function generate({ postDate, dryRun = false, logger = console }) {
+async function generate({ postDate, dryRun = false, logger = { log: (m) => console.error(m) } }) {
   const cutoff = newestNewsDate();
   logger.log(`[news-digest] newest news date: ${cutoff ?? "none"}`);
 
