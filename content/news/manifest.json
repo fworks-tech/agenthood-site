@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-11"
+    ],
+    "path": "news/whats-new-2026-08-11.md",
+    "title": "Agenthood Release Digest: v3.13.0–v3.13.6",
+    "date": "2026-08-11",
+    "author": "Agenthood Team",
+    "summary": "Seven releases from Aug 5–8: a new builder member, CI and review hardening, LLM rate-limit fixes, and RAG caching."
+  },
+  {
+    "slug": [
       "automated-review-followup"
     ],
     "path": "news/automated-review-followup.md",
