@@ -42,21 +42,39 @@ const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SUMMARY_CHARS = 160;
 
-async function listReleases() {
-  const token = process.env.GITHUB_TOKEN;
-  const url = `${API_BASE}/releases?per_page=100`;
-  const res = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`GitHub API error ${res.status} for ${url}: ${text}`);
+async function fetchWithRetry(url, options, { retries = 3, baseDelayMs = 1000 } = {}) {
+  let res;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    res = await fetch(url, options);
+    if (res.ok || res.status < 500) return res;
+    if (attempt === retries) return res;
+    await new Promise((resolve) => setTimeout(resolve, baseDelayMs * 2 ** attempt));
   }
-  return res.json();
+  return res;
+}
+
+export async function listReleases(cutoffDate, { retries = 3, baseDelayMs = 1000 } = {}) {
+  const token = process.env.GITHUB_TOKEN;
+  const headers = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const releases = [];
+  for (let page = 1; page <= 10; page++) {
+    const url = `${API_BASE}/releases?per_page=100&page=${page}`;
+    const res = await fetchWithRetry(url, { headers }, { retries, baseDelayMs });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`GitHub API error ${res.status} for ${url}: ${text}`);
+    }
+    const batch = await res.json();
+    releases.push(...batch);
+    if (batch.length < 100) break;
+    if (cutoffDate && batch.some((release) => releaseDate(release) <= cutoffDate)) break;
+  }
+  return releases;
 }
 
 function newestNewsDate() {
@@ -128,7 +146,7 @@ async function draftArticle(postDate, releases, onError) {
     throw new Error("OPENCODE_API_KEY is not set. Add it to your environment (see .env.example).");
   }
 
-  const res = await fetch(`${OPENCODE_API_BASE}/chat/completions`, {
+  const res = await fetchWithRetry(`${OPENCODE_API_BASE}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -216,14 +234,18 @@ function normalizeSummary(summary) {
   return cleaned.length > MAX_SUMMARY_CHARS ? `${cleaned.slice(0, MAX_SUMMARY_CHARS - 1)}…` : cleaned;
 }
 
-function buildArticle(postDate, valid) {
+function escapeYaml(value) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+export function buildArticle(postDate, valid) {
   const summary = normalizeSummary(valid.data.summary);
   return [
     "---",
-    `title: "${valid.data.title.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+    `title: "${escapeYaml(valid.data.title)}"`,
     `date: ${postDate}`,
-    `author: ${valid.data.author}`,
-    `summary: "${summary.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`,
+    `author: "${escapeYaml(valid.data.author)}"`,
+    `summary: "${escapeYaml(summary)}"`,
     "---",
     "",
     valid.body.trim(),
@@ -235,7 +257,7 @@ async function generate({ postDate, dryRun = false, logger = console }) {
   const cutoff = newestNewsDate();
   logger.log(`[news-digest] newest news date: ${cutoff ?? "none"}`);
 
-  const releases = releasesAfterDate(await listReleases(), cutoff);
+  const releases = releasesAfterDate(await listReleases(cutoff), cutoff);
   if (releases.length === 0) {
     logger.log("[news-digest] no releases to report");
     return { status: "noop", reason: "no releases after the last news post" };

@@ -43,8 +43,11 @@ jobs:
           DATE=${SLUG##whats-new-}                    # 2026-08-08
           BRANCH="news-digest/$DATE"
 
-          if gh pr view "$BRANCH" --json number -q .number >/dev/null 2>&1; then
-            echo "::notice::PR for $DATE already exists"
+          # Skip if any news-digest PR is already open, so unmerged digests
+          # don't pile up overlapping PRs covering the same releases.
+          OPEN=$(gh pr list --state open --json headRefName,number -q '.[] | select(.headRefName | startswith("news-digest/")) | .number' 2>/dev/null | head -1)
+          if [ -n "$OPEN" ]; then
+            echo "::notice::A news digest PR (#$OPEN) is already open; skipping"
             exit 0
           fi
 

@@ -1,5 +1,15 @@
-import { describe, it, expect } from "vitest";
-import { releasesAfterDate, buildSlug, validateArticle } from "../scripts/generate-news-digest.mjs";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import {
+  releasesAfterDate,
+  buildSlug,
+  validateArticle,
+  listReleases,
+} from "../scripts/generate-news-digest.mjs";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("news digest — release window", () => {
   const releases = [
@@ -101,5 +111,112 @@ We've shipped several improvements across the v3.13 line.
     const result = validateArticle(bad, postDate);
     expect(result.ok).toBe(false);
     expect(result.errors.join(" ")).toContain("author");
+  });
+});
+
+describe("news digest — release fetching", () => {
+  function stubFetch() {
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+    return mock;
+  }
+
+  function releasePage(items) {
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return items;
+      },
+    };
+  }
+
+  function errorResponse(status) {
+    return {
+      ok: false,
+      status,
+      async text() {
+        return "mock error";
+      },
+    };
+  }
+
+  function makeReleases(count, publishedAt, startTag = 0) {
+    return Array.from({ length: count }, (_, i) => ({
+      tag_name: `v1.0.${startTag + i}`,
+      published_at: publishedAt,
+    }));
+  }
+
+  it("paginates until a page contains a release at or before the cutoff", async () => {
+    const fetchMock = stubFetch();
+    fetchMock
+      .mockResolvedValueOnce(releasePage(makeReleases(100, "2026-08-10T00:00:00Z")))
+      .mockResolvedValueOnce(releasePage([
+        { tag_name: "v3.13.6", published_at: "2026-08-08T22:40:45Z" },
+        { tag_name: "v3.12.0", published_at: "2026-07-09T12:00:00Z" },
+      ]));
+
+    const result = await listReleases("2026-08-08", { baseDelayMs: 1 });
+    expect(result).toHaveLength(102);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("fetches all releases when there is no cutoff", async () => {
+    const fetchMock = stubFetch();
+    fetchMock
+      .mockResolvedValueOnce(releasePage(makeReleases(100, "2026-01-01T00:00:00Z")))
+      .mockResolvedValueOnce(releasePage(makeReleases(10, "2025-01-01T00:00:00Z")));
+
+    const result = await listReleases(null, { baseDelayMs: 1 });
+    expect(result).toHaveLength(110);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries a transient 5xx from the API before succeeding", async () => {
+    const fetchMock = stubFetch();
+    fetchMock
+      .mockResolvedValueOnce(errorResponse(503))
+      .mockResolvedValueOnce(errorResponse(502))
+      .mockResolvedValueOnce(releasePage([{ tag_name: "v3.13.6", published_at: "2026-08-08T22:40:45Z" }]));
+
+    const result = await listReleases(null, { baseDelayMs: 1 });
+    expect(result.map((r) => r.tag_name)).toEqual(["v3.13.6"]);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("gives up after the retry budget and surfaces the last status", async () => {
+    const fetchMock = stubFetch();
+    for (let i = 0; i < 4; i++) {
+      fetchMock.mockResolvedValueOnce(errorResponse(503));
+    }
+
+    await expect(listReleases(null, { baseDelayMs: 1 })).rejects.toThrow(/503/);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe("news digest — article serialization", () => {
+  it("escapes quotes in the rebuilt front matter", async () => {
+    const { validateArticle, buildArticle } = await import("../scripts/generate-news-digest.mjs");
+    const article = [
+      '---',
+      'title: "Agenthood \\"v3.14\\" Launch"',
+      "date: 2026-08-08",
+      'author: "A \\"quoted\\" author"',
+      'summary: "Short summary"',
+      "---",
+      "",
+      '# Agenthood "v3.14" Launch',
+      "",
+      "Body text.",
+      "",
+    ].join("\n");
+    const valid = validateArticle(article, "2026-08-08");
+    expect(valid.ok).toBe(true);
+    const built = buildArticle("2026-08-08", valid);
+    expect(built).toContain('title: "Agenthood \\"v3.14\\" Launch"');
+    expect(built).toContain('author: "A \\"quoted\\" author"');
+    expect(built).toContain('summary: "Short summary"');
   });
 });
