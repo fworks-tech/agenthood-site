@@ -6,13 +6,17 @@
  *
  * Flow:
  *  1. Fetch releases from fworks-tech/agenthood via the GitHub API.
- *  2. Compute the window: releases published after the newest date in
- *     content/news/manifest.json.
+ *  2. Compute the window: releases published after the last covered release
+ *     timestamp (content/news/.digest-state.json). The state file records the
+ *     exact published_at of the newest covered release, so releases that ship
+ *     later on the same calendar day as a digest are still picked up by the
+ *     next run — comparing calendar dates alone would silently drop them.
  *  3. Ask OpenCode Go (deepseek-v4-flash, OPENCODE_API_KEY) to draft a full
  *     article in the house style (front matter + markdown body).
  *  4. Validate the draft against the same contract enforced by
  *     scripts/build-news-manifest.mjs; retry once on failure.
- *  5. Write content/news/<slug>.md and regenerate content/news/manifest.json.
+ *  5. Write content/news/<slug>.md, advance the digest state, and regenerate
+ *     content/news/manifest.json.
  *
  * Authoring/automation helper only — never runs during builds.
  *
@@ -36,6 +40,7 @@ const REPO = "fworks-tech/agenthood";
 const API_BASE = `https://api.github.com/repos/${REPO}`;
 const NEWS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "content", "news");
 const MANIFEST_PATH = path.join(NEWS_DIR, "manifest.json");
+const STATE_PATH = path.join(NEWS_DIR, ".digest-state.json");
 
 const OPENCODE_API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/go/v1";
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
@@ -53,7 +58,7 @@ async function fetchWithRetry(url, options, { retries = 3, baseDelayMs = 1000 } 
   return res;
 }
 
-export async function listReleases(cutoffDate, { retries = 3, baseDelayMs = 1000 } = {}) {
+export async function listReleases(cutoffAt, { retries = 3, baseDelayMs = 1000 } = {}) {
   const token = process.env.GITHUB_TOKEN;
   const headers = {
     Accept: "application/vnd.github+json",
@@ -72,7 +77,7 @@ export async function listReleases(cutoffDate, { retries = 3, baseDelayMs = 1000
     const batch = await res.json();
     releases.push(...batch);
     if (batch.length < 100) break;
-    if (cutoffDate && batch.some((release) => releaseDate(release) <= cutoffDate)) break;
+    if (cutoffAt && batch.some((release) => (release.published_at ?? "") <= cutoffAt)) break;
   }
   return releases;
 }
@@ -87,13 +92,30 @@ function newestNewsDate() {
   }
 }
 
+export function loadDigestState() {
+  try {
+    const state = JSON.parse(fs.readFileSync(STATE_PATH, "utf8"));
+    if (typeof state?.lastReleaseAt === "string" && state.lastReleaseAt) return state;
+  } catch {
+    // no state yet — fall back to the manifest date below
+  }
+  return null;
+}
+
+export function newestReleaseAt(releases) {
+  const timestamps = releases
+    .map((release) => release.published_at ?? "")
+    .filter((at) => typeof at === "string" && at.length > 0);
+  return timestamps.length ? timestamps.sort().at(-1) : null;
+}
+
 function releaseDate(release) {
   return (release.published_at ?? "").slice(0, 10);
 }
 
-export function releasesAfterDate(releases, cutoffDate) {
-  if (!cutoffDate) return releases;
-  return releases.filter((release) => releaseDate(release) > cutoffDate);
+export function releasesAfter(releases, cutoffAt) {
+  if (!cutoffAt) return releases;
+  return releases.filter((release) => (release.published_at ?? "") > cutoffAt);
 }
 
 export function buildSlug(date) {
@@ -254,10 +276,13 @@ export function buildArticle(postDate, valid) {
 }
 
 async function generate({ postDate, dryRun = false, logger = { log: (m) => console.error(m) } }) {
-  const cutoff = newestNewsDate();
-  logger.log(`[news-digest] newest news date: ${cutoff ?? "none"}`);
+  const state = loadDigestState();
+  const manifestCutoff = newestNewsDate();
+  const cutoff = state?.lastReleaseAt ?? (manifestCutoff ? `${manifestCutoff}T00:00:00Z` : null);
+  logger.log(`[news-digest] newest news date: ${manifestCutoff ?? "none"}`);
+  logger.log(`[news-digest] releases cutoff: ${cutoff ?? "none"}`);
 
-  const releases = releasesAfterDate(await listReleases(cutoff), cutoff);
+  const releases = releasesAfter(await listReleases(cutoff), cutoff);
   if (releases.length === 0) {
     logger.log("[news-digest] no releases to report");
     return { status: "noop", reason: "no releases after the last news post" };
@@ -295,6 +320,7 @@ async function generate({ postDate, dryRun = false, logger = { log: (m) => conso
   }
 
   fs.writeFileSync(targetPath, article, "utf8");
+  fs.writeFileSync(STATE_PATH, JSON.stringify({ lastReleaseAt: newestReleaseAt(releases) }, null, 2) + "\n", "utf8");
   const entries = buildNewsManifest();
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n", "utf8");
   logger.log(`[news-digest] wrote ${entries.length} entries to content/news/manifest.json`);

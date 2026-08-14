@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
-  releasesAfterDate,
+  releasesAfter,
+  newestReleaseAt,
+  loadDigestState,
   buildSlug,
   validateArticle,
   listReleases,
@@ -13,33 +15,59 @@ afterEach(() => {
 
 describe("news digest — release window", () => {
   const releases = [
+    { tag_name: "v3.16.0", published_at: "2026-08-12T15:24:38Z" },
+    { tag_name: "v3.15.0", published_at: "2026-08-12T08:28:07Z" },
+    { tag_name: "v3.14.2", published_at: "2026-08-12T04:16:47Z" },
     { tag_name: "v3.13.6", published_at: "2026-08-08T23:15:17Z" },
-    { tag_name: "v3.13.5", published_at: "2026-08-08T22:40:45Z" },
-    { tag_name: "v3.12.0", published_at: "2026-07-09T12:00:00Z" },
-    { tag_name: "v3.11.0", published_at: "2026-07-07T10:00:00Z" },
   ];
 
-  it("keeps releases published after the cutoff date", () => {
-    const result = releasesAfterDate(releases, "2026-07-09");
-    expect(result.map((r) => r.tag_name)).toEqual(["v3.13.6", "v3.13.5"]);
+  it("keeps releases published after the cutoff timestamp", () => {
+    const result = releasesAfter(releases, "2026-08-12T04:16:47Z");
+    expect(result.map((r) => r.tag_name)).toEqual(["v3.16.0", "v3.15.0"]);
   });
 
-  it("excludes releases published on the cutoff day (already covered)", () => {
-    const result = releasesAfterDate(releases, "2026-07-09");
-    expect(result.some((r) => r.tag_name === "v3.12.0")).toBe(false);
+  it("includes same-day releases published after the cutoff (the digest-loss bug)", () => {
+    const result = releasesAfter(releases, "2026-08-12T04:16:47Z");
+    expect(result.some((r) => r.tag_name === "v3.15.0")).toBe(true);
+  });
+
+  it("excludes releases at or before the cutoff timestamp", () => {
+    const result = releasesAfter(releases, "2026-08-12T04:16:47Z");
+    expect(result.some((r) => r.tag_name === "v3.14.2")).toBe(false);
   });
 
   it("returns all releases when there is no cutoff", () => {
-    expect(releasesAfterDate(releases, null)).toHaveLength(4);
+    expect(releasesAfter(releases, null)).toHaveLength(4);
   });
 
-  it("returns nothing when every release is older than the cutoff", () => {
-    expect(releasesAfterDate(releases, "2026-08-09")).toEqual([]);
+  it("returns nothing when every release predates the cutoff", () => {
+    expect(releasesAfter(releases, "2026-08-13T00:00:00Z")).toEqual([]);
   });
 
-  it("ignores releases without a published_at date", () => {
+  it("ignores releases without a published_at timestamp", () => {
     const dirty = [{ tag_name: "v3.14.0", published_at: null }];
-    expect(releasesAfterDate(dirty, "2026-07-09")).toEqual([]);
+    expect(releasesAfter(dirty, "2026-07-09T00:00:00Z")).toEqual([]);
+  });
+});
+
+describe("news digest — digest state", () => {
+  it("loads the committed lastReleaseAt state", () => {
+    const state = loadDigestState();
+    expect(state).toEqual({ lastReleaseAt: "2026-08-12T04:16:47Z" });
+  });
+
+  it("finds the newest release timestamp", () => {
+    expect(
+      newestReleaseAt([
+        { tag_name: "v3.16.0", published_at: "2026-08-12T15:24:38Z" },
+        { tag_name: "v3.15.0", published_at: "2026-08-12T08:28:07Z" },
+        { tag_name: "v3.14.2", published_at: null },
+      ]),
+    ).toBe("2026-08-12T15:24:38Z");
+  });
+
+  it("returns null when no release has a timestamp", () => {
+    expect(newestReleaseAt([{ tag_name: "v3.14.0", published_at: null }])).toBeNull();
   });
 });
 
@@ -157,7 +185,7 @@ describe("news digest — release fetching", () => {
         { tag_name: "v3.12.0", published_at: "2026-07-09T12:00:00Z" },
       ]));
 
-    const result = await listReleases("2026-08-08", { baseDelayMs: 1 });
+    const result = await listReleases("2026-08-08T22:40:45Z", { baseDelayMs: 1 });
     expect(result).toHaveLength(102);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
