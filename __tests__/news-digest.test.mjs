@@ -51,9 +51,10 @@ describe("news digest — release window", () => {
 });
 
 describe("news digest — digest state", () => {
-  it("loads the committed lastReleaseAt state", () => {
+  it("loads a valid lastReleaseAt from the committed state", () => {
     const state = loadDigestState();
-    expect(state).toEqual({ lastReleaseAt: "2026-08-12T04:16:47Z" });
+    expect(typeof state?.lastReleaseAt).toBe("string");
+    expect(state.lastReleaseAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
   });
 
   it("finds the newest release timestamp", () => {

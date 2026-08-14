@@ -279,6 +279,12 @@ async function generate({ postDate, dryRun = false, logger = { log: (m) => conso
   const state = loadDigestState();
   const manifestCutoff = newestNewsDate();
   const cutoff = state?.lastReleaseAt ?? (manifestCutoff ? `${manifestCutoff}T00:00:00Z` : null);
+  if (!state?.lastReleaseAt && manifestCutoff) {
+    logger.log(
+      `[news-digest] warning: no digest state, falling back to manifest date ${manifestCutoff} ` +
+        "(same-day releases after the last digest may be missed this run)",
+    );
+  }
   logger.log(`[news-digest] newest news date: ${manifestCutoff ?? "none"}`);
   logger.log(`[news-digest] releases cutoff: ${cutoff ?? "none"}`);
 
