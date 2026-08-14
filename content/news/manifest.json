@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-14"
+    ],
+    "path": "news/whats-new-2026-08-14.md",
+    "title": "What's new in Agenthood: evals, observability, and release hardening",
+    "date": "2026-08-14",
+    "author": "Agenthood Team",
+    "summary": "Agenthood adds eval suites, trace persistence, cost estimators, and a hardened CLI in the latest release train."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-12"
     ],
     "path": "news/whats-new-2026-08-12.md",
