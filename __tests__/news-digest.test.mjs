@@ -11,6 +11,7 @@ import {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("news digest — release window", () => {
