@@ -14,7 +14,8 @@
  *  3. Ask OpenCode Go (deepseek-v4-flash, OPENCODE_API_KEY) to draft a full
  *     article in the house style (front matter + markdown body).
  *  4. Validate the draft against the same contract enforced by
- *     scripts/build-news-manifest.mjs; retry once on failure.
+ *     scripts/build-news-manifest.mjs; retry once on any draft failure
+ *     (empty response, invalid front matter, etc.).
  *  5. Write content/news/<slug>.md, advance the digest state, and regenerate
  *     content/news/manifest.json.
  *
@@ -192,10 +193,12 @@ async function draftArticle(postDate, releases, onError) {
   }
 
   const data = await res.json();
-  const content = data?.choices?.[0]?.message?.content ?? "";
-  const trimmed = content.trim();
+  const raw = data?.choices?.[0]?.message?.content;
+  const trimmed = typeof raw === "string" ? raw.trim() : "";
   if (!trimmed) {
-    throw new Error("OpenCode Go returned an empty article.");
+    throw new Error(
+      `OpenCode Go returned an empty article (message.content type: ${typeof raw}); response: ${JSON.stringify(data).slice(0, 300)}`,
+    );
   }
   return trimmed.replace(/^```[a-z]*\n?/i, "").replace(/\n?```$/i, "");
 }
@@ -275,7 +278,7 @@ export function buildArticle(postDate, valid) {
   ].join("\n");
 }
 
-async function generate({ postDate, dryRun = false, logger = { log: (m) => console.error(m) } }) {
+export async function generate({ postDate, dryRun = false, logger = { log: (m) => console.error(m) } }) {
   const state = loadDigestState();
   const manifestCutoff = newestNewsDate();
   const cutoff = state?.lastReleaseAt ?? (manifestCutoff ? `${manifestCutoff}T00:00:00Z` : null);
@@ -305,7 +308,16 @@ async function generate({ postDate, dryRun = false, logger = { log: (m) => conso
   let article;
   let feedback;
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const draft = await draftArticle(postDate, releases, feedback);
+    let draft;
+    try {
+      draft = await draftArticle(postDate, releases, feedback);
+    } catch (err) {
+      if (attempt === 1) {
+        logger.log(`[news-digest] draft request failed (${err.message}); retrying once`);
+        continue;
+      }
+      throw err;
+    }
     const valid = validateArticle(draft, postDate);
     if (valid.ok) {
       article = buildArticle(postDate, valid);
