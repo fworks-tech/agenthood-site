@@ -14,8 +14,8 @@
  *  3. Ask OpenCode Go (deepseek-v4-flash, OPENCODE_API_KEY) to draft a full
  *     article in the house style (front matter + markdown body).
  *  4. Validate the draft against the same contract enforced by
- *     scripts/build-news-manifest.mjs; retry once on any draft failure
- *     (empty response, invalid front matter, etc.).
+ *     scripts/build-news-manifest.mjs; retry once on an empty LLM response
+ *     or invalid front matter; other draft failures fail fast.
  *  5. Write content/news/<slug>.md, advance the digest state, and regenerate
  *     content/news/manifest.json.
  *
@@ -47,6 +47,13 @@ const OPENCODE_API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencod
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SUMMARY_CHARS = 160;
+
+export class EmptyArticleError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "EmptyArticleError";
+  }
+}
 
 async function fetchWithRetry(url, options, { retries = 3, baseDelayMs = 1000 } = {}) {
   let res;
@@ -196,7 +203,7 @@ async function draftArticle(postDate, releases, onError) {
   const raw = data?.choices?.[0]?.message?.content;
   const trimmed = typeof raw === "string" ? raw.trim() : "";
   if (!trimmed) {
-    throw new Error(
+    throw new EmptyArticleError(
       `OpenCode Go returned an empty article (message.content type: ${typeof raw}); response: ${JSON.stringify(data).slice(0, 300)}`,
     );
   }
@@ -312,8 +319,9 @@ export async function generate({ postDate, dryRun = false, logger = { log: (m) =
     try {
       draft = await draftArticle(postDate, releases, feedback);
     } catch (err) {
+      if (!(err instanceof EmptyArticleError)) throw err;
       if (attempt === 1) {
-        logger.log(`[news-digest] draft request failed (${err.message}); retrying once`);
+        logger.log(`[news-digest] draft returned an empty article (${err.message}); retrying once`);
         continue;
       }
       throw err;
