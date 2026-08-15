@@ -5,6 +5,256 @@
 
 ---
 
+## v3.33.0 — August 14, 2026
+
+### 🐛 Bug Fixes
+
+- **Agents:** emit trace envelope from OracleAgent.run
+- **Commands:** match persisted pattern prefixes in status --learner
+- **Observability:** correct health tracer probe and add config-dependent checks
+- **Observability:** redact decision and provenance payloads and align envelope hashing
+
+### ✨ Features
+
+- **Cli:** add replay evaluation mode to eval command
+- **Cli:** surface anomaly alerts in status --alerts
+- **Config:** scaffold observability block in init config and make trace path configurable
+- **Core:** accumulate tool-level LLM usage into trace token counts
+- **Evals:** add EmbeddingIndex with ANN similarity search and upsert persistence
+- **Evals:** add versioned re-index migration for legacy zero-vector patterns
+- **Evals:** query embedding index before hash fallback in EpisodeLearner
+- **Observability:** allow source override through ExecutionContext
+- **Observability:** wire AnomalyDetector into trace flush with alert persistence
+- **Runtime:** inject EpisodeLearner with EmbeddingIndex into agent construction
+
+---
+
+## v3.32.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** add optional sentry error reporting
+- **Observability:** expose episode learner learning status
+
+---
+
+## v3.31.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** add health check command and API
+
+---
+
+## v3.30.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** stamp traces with eval baseline quality
+
+---
+
+## v3.29.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** add anomaly detection for cost and quality
+- **Observability:** add trace retention and export policy
+
+---
+
+## v3.28.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** add redaction filter for trace payloads
+
+---
+
+## v3.27.0 — August 14, 2026
+
+### ✨ Features
+
+- **Evals:** add replay evaluator for behavior drift
+
+---
+
+## v3.26.0 — August 14, 2026
+
+### ✨ Features
+
+- **Cli:** add eval command with baseline regression gating
+
+---
+
+## v3.25.0 — August 14, 2026
+
+### ✨ Features
+
+- **Evals:** add baseline comparison for eval reports
+
+---
+
+## v3.24.0 — August 14, 2026
+
+### ✨ Features
+
+- **Evals:** add eval runner with llm-as-judge scoring
+
+---
+
+## v3.23.0 — August 14, 2026
+
+### 🐛 Bug Fixes
+
+- **Observability:** address review findings on trace pipeline
+
+### ✨ Features
+
+- **Core:** add OpenCode Go model pricing to cost estimator
+- **Metrics:** per-member cost and quality summaries
+
+---
+
+## v3.22.0 — August 14, 2026
+
+### ✨ Features
+
+- **Cli:** add trace command — npx agenthood trace
+
+---
+
+## v3.21.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** add workflow and session correlation IDs
+
+---
+
+## v3.20.0 — August 14, 2026
+
+### ✨ Features
+
+- **Observability:** persist traces to a queryable store
+
+---
+
+## v3.19.0 — August 14, 2026
+
+### ✨ Features
+
+- **Evals:** define eval suite format with Ajv validation
+
+---
+
+## v3.18.0 — August 14, 2026
+
+### ✨ Features
+
+- **Core:** implement TokenCounter and CostEstimator #297
+
+---
+
+## v3.17.0 — August 14, 2026
+
+### 🐛 Bug Fixes
+
+- **Deps:** bump nanoid to 3.3.18 to clear auditor gate
+
+### ✨ Features
+
+- **Observability:** emit trace envelope and in-memory ring-buffer tracer #295
+
+---
+
+## v3.16.0 — August 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** harden doorman gate, extract audit check, and dedupe workflow boilerplate
+- **Ci:** run setup-env composite after checkout in pr.yml
+
+### ✨ Features
+
+- **Ci:** enforce PR descriptions link to an issue via doorman gate, closes [#N](https://github.com/fworks-tech/agenthood/issues/N) [#N](https://github.com/fworks-tech/agenthood/issues/N)
+
+---
+
+## v3.15.0 — August 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** drop flag-terminator in pr comment helper, reject reflog refnames
+- **Ci:** indent heredoc comment bodies to keep workflow YAML valid
+- **Ci:** make new check scripts executable, document heredoc safety
+- **Ci:** remove empty expression literal from workflow comment
+- **Cli:** allowlist --provider values, drop unused go import
+- **Cli:** component-level lock refname rule, case-insensitive per check-ref-format
+- **Cli:** execFileSync for all pr-sync git/gh calls
+- **Cli:** neutral skills-dir module, strict config parse, init failure exit
+- **Cli:** refname validation mirrors git check-ref-format
+- **Cli:** sanitize pr-sync marker shas and private temp files
+- **Cli:** strict --pr parsing, untrusted prompt marker, sanitized key echo, diff-failure gate
+- **Cli:** validate lockfile keys and use execFileSync in rollback
+- **Init:** eject removes only member subdirs, never foreign skills
+- **Llm:** friendly ollama connect errors and permanent 400 classification
+- **Llm:** groq fails fast on missing key, validate chain primary, setup key guidance
+- **Llm:** strip sampling extras for opencode-go to avoid upstream 400
+- **Verify:** run lane checks before lockfile write; harden CI scripts per review
+
+### ✨ Features
+
+- **Init:** dry-run flag and agenthood-aware eject of skills dirs
+- **Verify:** real lane-overlap checks for --strict
+
+---
+
+## v3.14.2 — August 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** severity-filter audit gate, three-dot diffs, revert pass-through, pin vsce
+
+---
+
+## v3.14.1 — August 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** anchor herald verdict updates to bot marker
+- **Ci:** drop eval from herald summary, add issues permission, escape names
+- **Ci:** grant actions read, dedupe herald concurrency, add script tests
+- **Ci:** herald checkout step, full markdown escaping, scoped trials, multi-PR
+- **Ci:** restore herald summary via inline github-script input
+
+---
+
+## v3.14.0 — August 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** exempt nested lockfiles from size limits, survive SIGPIPE in diff caps
+- **Ci:** reuse agent-analysis action and harden verdict parsing
+- **Hooks:** deduplicate doorman banner, POSIX-safe checks, lock vs extension deps
+- **Hooks:** support breaking changes and revert commits, make pre-push advisory
+
+### ✨ Features
+
+- **Agents:** record decision and provenance per member run
+- **Memory:** add causal chains and provenance store for member decisions
+- **Memory:** add precedent search and society graph snapshots
+
+---
+
+## v3.13.6 — August 8, 2026
+
+### 🐛 Bug Fixes
+
+- **Packaging:** ship scripts/ so postinstall resolves (#392)
+
+---
+
 ## v3.13.5 — August 8, 2026
 
 ### 🐛 Bug Fixes
