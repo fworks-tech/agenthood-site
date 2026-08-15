@@ -17,7 +17,7 @@ Issue fworks-tech/agenthood-site#70 (agenthood M7 remainder) asks for playground
 
 2. **Correlation via `X-Correlation-Id`.** `POST /api/studio/chat` accepts an optional `X-Correlation-Id` header (validated: trimmed, ≤128 chars, no control characters), falls back to a generated id, passes it to the adapter, and echoes it in the response headers. The playground client (`useStudioChat`) sends a fresh id per invocation so LiveLogs can link browser sessions to server traces.
 
-3. **Token counts are estimated from characters.** The adapter streams text without provider usage stats, so `tokenCount` is estimated at 4 chars/token, and `cost` follows from the pricing table lookup. `qualityScore` stays `null` — no baseline data exists in the site runtime.
+3. **Token counts are estimated from characters.** The adapter streams text without provider usage stats, so `tokenCount` is estimated at 4 chars/token — counting the system prompt (the full agent skill) plus all user/assistant message content for input, and streamed characters for output. `cost` follows from the pricing table lookup. `qualityScore` stays `null` — no baseline data exists in the site runtime. The envelope's `input`/`output` payloads are bounded to 8,000 chars each so Vercel log lines stay queryable and untruncated.
 
 ## Alternatives Considered
 

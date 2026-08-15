@@ -213,6 +213,7 @@ describe("LightweightAdapter", () => {
       yield { delta: "", done: true };
     });
 
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const controller = new AbortController();
     const stream = await adapter.chat({
       agentId: "the-scribe",
@@ -225,8 +226,13 @@ describe("LightweightAdapter", () => {
     }, 20);
 
     const events = await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
     expect(events).toHaveLength(1);
     expect(JSON.parse(events[0]).type).toBe("token");
+    expect(traces).toHaveLength(1);
+    expect(traces[0]).toMatchObject({ status: "error", source: "playground" });
   });
 
   it("gracefully handles provider stream errors", async () => {
@@ -278,7 +284,7 @@ describe("LightweightAdapter", () => {
       correlationId: "corr-123",
       model: "llama-3.3-70b-versatile",
     });
-    expect(traces[0].tokenCount).toMatchObject({ input: 3, output: 3, total: 6 });
+    expect(traces[0].tokenCount).toMatchObject({ input: 11, output: 3, total: 14 });
     expect(typeof traces[0].cost).toBe("number");
     expect(traces[0].qualityScore).toBeNull();
   });
@@ -318,5 +324,25 @@ describe("LightweightAdapter", () => {
 
     expect(traces).toHaveLength(1);
     expect(String(traces[0].input)).not.toContain("sk-abcdefghijklmnopqrstuvwxyz012345");
+  });
+
+  it("bounds the trace payload to 8000 chars", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "ok", done: false }, { delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "x".repeat(10000) }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(String(traces[0].input).length).toBe(8000);
   });
 });

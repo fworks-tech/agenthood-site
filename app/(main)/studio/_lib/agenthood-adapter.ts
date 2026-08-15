@@ -8,6 +8,8 @@ import type { ToolCall } from "./tools";
 
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
+const TRACE_PAYLOAD_MAX = 8000;
+
 export interface ChatRequest {
   agentId: string;
   messages: { role: string; content: string }[];
@@ -69,7 +71,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const startTime = performance.now();
     const correlationId = req.correlationId ?? crypto.randomUUID?.() ?? `pg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0);
+    const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0) + systemPrompt.length;
     logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER, tools: enabledTools, correlationId });
 
     const messages = buildLLMMessages(req, systemPrompt);
@@ -85,8 +87,8 @@ export class LightweightAdapter implements AgenthoodAdapter {
       const model = req.config?.model ?? "unknown";
       const envelope = createTraceEnvelope({
         member: req.agentId,
-        input: req.messages.map((m) => m.content).join("\n"),
-        output,
+        input: req.messages.map((m) => m.content).join("\n").slice(0, TRACE_PAYLOAD_MAX),
+        output: output.slice(0, TRACE_PAYLOAD_MAX),
         durationMs: Math.round(performance.now() - startTime),
         tokenCount: { input: inputTokens, output: outputTokens, total: inputTokens + outputTokens },
         cost: estimateCostFromTokens(model, inputTokens, outputTokens),
@@ -157,7 +159,12 @@ export class LightweightAdapter implements AgenthoodAdapter {
           }
 
           const duration = Math.round(performance.now() - startTime);
-          logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, chunks: outputChars, correlationId });
+          if (signal?.aborted) {
+            logger.info("chat.aborted", { agentId: req.agentId, correlationId });
+            emitTrace("error", output);
+            return;
+          }
+          logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, outputChars, correlationId });
           emitTrace("success", output);
         } catch (err) {
           if (signal?.aborted) {
