@@ -21,11 +21,14 @@ export async function sendChat(
   messages: { role: string; content: string }[],
   config: Partial<ChatConfig>,
   turnstileToken?: string,
+  correlationId?: string,
   signal?: AbortSignal,
 ): Promise<Response> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (correlationId) headers["X-Correlation-Id"] = correlationId;
   return fetch("/api/studio/chat/", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ agentId, messages, config, turnstileToken }),
     signal,
   });

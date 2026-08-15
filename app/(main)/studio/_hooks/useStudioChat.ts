@@ -240,6 +240,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
         configRef.current ?? {},
         turnstileRef.current,
+        generateId(),
         abortController.signal,
       );
 
