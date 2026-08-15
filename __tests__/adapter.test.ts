@@ -213,6 +213,7 @@ describe("LightweightAdapter", () => {
       yield { delta: "", done: true };
     });
 
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const controller = new AbortController();
     const stream = await adapter.chat({
       agentId: "the-scribe",
@@ -225,8 +226,13 @@ describe("LightweightAdapter", () => {
     }, 20);
 
     const events = await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
     expect(events).toHaveLength(1);
     expect(JSON.parse(events[0]).type).toBe("token");
+    expect(traces).toHaveLength(1);
+    expect(traces[0]).toMatchObject({ status: "error", source: "playground" });
   });
 
   it("gracefully handles provider stream errors", async () => {
@@ -242,5 +248,101 @@ describe("LightweightAdapter", () => {
     const parsed = JSON.parse(events[0]);
     expect(parsed.type).toBe("error");
     expect(parsed.data).toContain("Provider rate limited");
+  });
+
+  function traceLogs(spy: ReturnType<typeof vi.spyOn>): Record<string, unknown>[] {
+    return spy.mock.calls
+      .map((c) => JSON.parse(c[0] as string))
+      .filter((e) => e.event === "trace");
+  }
+
+  it("emits a success trace with source playground and correlationId", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([
+        { delta: "Hello world", done: false },
+        { delta: "", done: true },
+      ]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "test message" }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
+      correlationId: "corr-123",
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(traces[0]).toMatchObject({
+      source: "playground",
+      member: "the-scribe",
+      status: "success",
+      correlationId: "corr-123",
+      model: "llama-3.3-70b-versatile",
+    });
+    expect(traces[0].tokenCount).toMatchObject({ input: 11, output: 3, total: 14 });
+    expect(typeof traces[0].cost).toBe("number");
+    expect(traces[0].qualityScore).toBeNull();
+  });
+
+  it("emits an error trace when the provider fails", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockRejectedValue(new Error("Provider rate limited"));
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "test" }],
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(traces[0]).toMatchObject({ status: "error", source: "playground" });
+  });
+
+  it("redacts api key patterns inside the emitted trace payload", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "ok", done: false }, { delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "use key sk-abcdefghijklmnopqrstuvwxyz012345" }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(String(traces[0].input)).not.toContain("sk-abcdefghijklmnopqrstuvwxyz012345");
+  });
+
+  it("bounds the trace payload to 8000 chars", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "ok", done: false }, { delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "x".repeat(10000) }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(String(traces[0].input).length).toBe(8000);
   });
 });

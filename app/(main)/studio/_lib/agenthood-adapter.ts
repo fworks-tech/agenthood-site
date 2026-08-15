@@ -2,10 +2,13 @@ import { agentSkills } from "../_data/agents.generated";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm/types";
+import { createTraceEnvelope, estimateCostFromTokens } from "agenthood/dist/core";
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS } from "./tools";
 import type { ToolCall } from "./tools";
 
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
+
+const TRACE_PAYLOAD_MAX = 8000;
 
 export interface ChatRequest {
   agentId: string;
@@ -19,6 +22,7 @@ export interface ChatRequest {
     apiKey?: string;
     enabledTools?: string[];
   };
+  correlationId?: string;
 }
 
 export interface AgenthoodAdapter {
@@ -66,7 +70,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const enabledTools = req.config?.enabledTools ?? [];
 
     const startTime = performance.now();
-    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER, tools: enabledTools });
+    const correlationId = req.correlationId ?? crypto.randomUUID?.() ?? `pg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0) + systemPrompt.length;
+    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER, tools: enabledTools, correlationId });
 
     const messages = buildLLMMessages(req, systemPrompt);
 
@@ -75,9 +81,30 @@ export class LightweightAdapter implements AgenthoodAdapter {
       ? allSchemas.filter((s) => enabledTools.includes(s.name))
       : undefined;
 
+    function emitTrace(status: "success" | "error", output: string): void {
+      const inputTokens = Math.ceil(inputChars / 4);
+      const outputTokens = Math.ceil(output.length / 4);
+      const model = req.config?.model ?? "unknown";
+      const envelope = createTraceEnvelope({
+        member: req.agentId,
+        input: req.messages.map((m) => m.content).join("\n").slice(0, TRACE_PAYLOAD_MAX),
+        output: output.slice(0, TRACE_PAYLOAD_MAX),
+        durationMs: Math.round(performance.now() - startTime),
+        tokenCount: { input: inputTokens, output: outputTokens, total: inputTokens + outputTokens },
+        cost: estimateCostFromTokens(model, inputTokens, outputTokens),
+        qualityScore: null,
+        status,
+        correlationId,
+        source: "playground",
+        model,
+      });
+      logger.info("trace", { ...envelope });
+    }
+
     return new ReadableStream({
       async start(controller) {
-        let tokenCount = 0;
+        let outputChars = 0;
+        let output = "";
         try {
           const { LLMRouter } = await import("agenthood/dist/llm");
           const provider = await LLMRouter.fromConfig(llmConfig);
@@ -88,6 +115,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           if (toolSchemas && toolSchemas.length > 0) {
             const toolCallsRun: ToolCall[] = [];
             const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal);
+            output = finalText;
 
             for (const tc of toolCallsRun) {
               controller.enqueue(new TextEncoder().encode(
@@ -104,7 +132,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
             for (const char of finalText) {
               if (signal?.aborted) break;
-              tokenCount++;
+              outputChars++;
               controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: char }) + "\n"));
             }
             controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "done" }) + "\n"));
@@ -119,7 +147,8 @@ export class LightweightAdapter implements AgenthoodAdapter {
             for await (const chunk of asyncGen) {
               if (signal?.aborted) break;
               if (chunk.delta) {
-                tokenCount++;
+                outputChars += chunk.delta.length;
+                output += chunk.delta;
                 controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: chunk.delta }) + "\n"));
               }
               if (chunk.done) {
@@ -130,15 +159,23 @@ export class LightweightAdapter implements AgenthoodAdapter {
           }
 
           const duration = Math.round(performance.now() - startTime);
-          logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, chunks: tokenCount });
+          if (signal?.aborted) {
+            logger.info("chat.aborted", { agentId: req.agentId, correlationId });
+            emitTrace("error", output);
+            return;
+          }
+          logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, outputChars, correlationId });
+          emitTrace("success", output);
         } catch (err) {
           if (signal?.aborted) {
-            logger.info("chat.aborted", { agentId: req.agentId });
+            logger.info("chat.aborted", { agentId: req.agentId, correlationId });
+            emitTrace("error", output);
             controller.close();
             return;
           }
           const msg = err instanceof Error ? err.message : String(err);
-          logger.error("chat.error", { agentId: req.agentId, error: msg });
+          logger.error("chat.error", { agentId: req.agentId, error: msg, correlationId });
+          emitTrace("error", output);
 
           const isMissingKey = /(?:api[_-]?key|not set|auth)/i.test(msg) || msg.includes("MissingApiKeyError");
           const errorMessage = isMissingKey
