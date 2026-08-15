@@ -28,6 +28,19 @@ function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const CORRELATION_ID_MAX_LENGTH = 128;
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+function readCorrelationId(request: Request): string | undefined {
+  const raw = request.headers.get("X-Correlation-Id");
+  if (raw === null) return undefined;
+  const id = raw.trim();
+  if (id.length === 0 || id.length > CORRELATION_ID_MAX_LENGTH || CONTROL_CHARS.test(id)) {
+    throw new ValidationError("Invalid X-Correlation-Id header");
+  }
+  return id;
+}
+
 function validateMessages(messages: unknown): { role: string; content: string }[] {
   if (!Array.isArray(messages)) throw new ValidationError("messages must be an array");
   if (messages.length === 0) throw new ValidationError("messages must not be empty");
@@ -134,9 +147,12 @@ async function validateTurnstile(token: unknown): Promise<void> {
 
 export async function POST(request: Request) {
   const requestId = generateId();
+  let correlationId: string | undefined;
   try {
     const body = await request.json();
     if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
+
+    correlationId = readCorrelationId(request) ?? requestId;
 
     const { agentId, messages: rawMessages, config: rawConfig, turnstileToken } = body as Record<string, unknown>;
     await validateTurnstile(turnstileToken);
@@ -149,7 +165,7 @@ export async function POST(request: Request) {
     const config = validateConfig(rawConfig);
 
     const adapter = new LightweightAdapter();
-    const stream = await adapter.chat({ agentId, messages, config }, request.signal);
+    const stream = await adapter.chat({ agentId, messages, config, correlationId }, request.signal);
 
     const response = new Response(stream, {
       headers: {
@@ -157,20 +173,21 @@ export async function POST(request: Request) {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
         "X-Request-Id": requestId,
+        "X-Correlation-Id": correlationId,
       },
     });
 
-    logger.info("chat.request", { agentId, agentName: agent.name, provider: config.provider, model: config.model, messageCount: messages.length, requestId });
+    logger.info("chat.request", { agentId, agentName: agent.name, provider: config.provider, model: config.model, messageCount: messages.length, requestId, correlationId });
     return response;
   } catch (err) {
     if (err instanceof StudioError) {
-      logger.warn("chat.validation_failed", { code: err.code, message: err.message, requestId });
-      return Response.json({ error: err.message, code: err.code, requestId }, { status: err.statusCode });
+      logger.warn("chat.validation_failed", { code: err.code, message: err.message, requestId, correlationId });
+      return Response.json({ error: err.message, code: err.code, requestId, correlationId }, { status: err.statusCode });
     }
 
     const msg = err instanceof Error ? err.message : String(err);
-    logger.error("chat.error", { error: msg, requestId });
-    if (err instanceof Error) Sentry.captureException(err, { extra: { requestId } });
-    return Response.json({ error: "Internal server error", code: "INTERNAL_ERROR", requestId }, { status: 500 });
+    logger.error("chat.error", { error: msg, requestId, correlationId });
+    if (err instanceof Error) Sentry.captureException(err, { extra: { requestId, correlationId } });
+    return Response.json({ error: "Internal server error", code: "INTERNAL_ERROR", requestId, correlationId }, { status: 500 });
   }
 }
