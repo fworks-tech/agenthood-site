@@ -16,32 +16,15 @@ import FadeIn from "../_components/FadeIn";
 import InstallBlock from "../_components/InstallBlock";
 import TypingTerminal from "../_components/TypingTerminal";
 import { ClientCTA } from "./_client-cta";
+import { agents } from "./studio/_data/agents";
 
-const agents = [
-  // engineering
-  { name: "The Architect", slug: "the-architect", icon: "🏗️", desc: "System design, ADRs, tech decisions", category: "engineering" },
-  { name: "The Builder", slug: "the-builder", icon: "🛠️", desc: "Coding, implementation, refactoring", category: "engineering" },
-  { name: "The Tester", slug: "the-tester", icon: "🧪", desc: "TDD, coverage, edge cases", category: "engineering" },
-  { name: "The Debugger", slug: "the-debugger", icon: "🐛", desc: "Error triage, root cause analysis", category: "engineering" },
-  { name: "The Strategist", slug: "the-strategist", icon: "🎯", desc: "Goal refinement, requirement discovery", category: "engineering" },
-  // validation
-  { name: "The Reviewer", slug: "the-reviewer", icon: "🔍", desc: "Code review, standards enforcement", category: "validation" },
-  { name: "The Auditor", slug: "the-auditor", icon: "🔒", desc: "Security, vulnerability scanning, dependency audit", category: "validation" },
-  { name: "The Inspector", slug: "the-inspector", icon: "🔬", desc: "Visual reasoning, pixel-level analysis", category: "validation" },
-  { name: "The Doorman", slug: "the-doorman", icon: "🚪", desc: "Validation, branch protection, health checks", category: "validation" },
-  { name: "The Sentinel", slug: "the-sentinel", icon: "👁️", desc: "Integrity, cross-member contradiction detection", category: "validation" },
-  { name: "The Warden", slug: "the-warden", icon: "⚖️", desc: "Code health, complexity enforcement", category: "validation" },
-  // lifecycle
-  { name: "The Scribe", slug: "the-scribe", icon: "✍️", desc: "Commits, PRs, changelogs", category: "lifecycle" },
-  { name: "The Herald", slug: "the-herald", icon: "📦", desc: "Releases, versioning, changelogs", category: "lifecycle" },
-  { name: "The Mailman", slug: "the-mailman", icon: "📮", desc: "Message delivery, content scheduling, cross-posting", category: "lifecycle" },
-  { name: "The Envoy", slug: "the-envoy", icon: "🌐", desc: "Cross-provider translation, convention validation", category: "lifecycle" },
-  { name: "The Steward", slug: "the-steward", icon: "🧭", desc: "Context economy, provider cache strategies", category: "lifecycle" },
-  { name: "The Operator", slug: "the-operator", icon: "🩺", desc: "Runtime health, deployments, rollback", category: "lifecycle" },
-  // knowledge
-  { name: "The Librarian", slug: "the-librarian", icon: "📝", desc: "Documentation, API references", category: "knowledge" },
-  { name: "The Oracle", slug: "the-oracle", icon: "🔮", desc: "Institutional knowledge, authoring templates", category: "knowledge" },
-];
+const teamMembers = agents.map((a) => ({
+  name: a.name,
+  slug: a.id,
+  icon: a.icon ?? "🤖",
+  desc: a.shortDescription || a.role,
+  category: a.category,
+}));
 
 const categories = [
   { id: "engineering", label: "Engineering", icon: IconCode, accent: "bg-emerald-500", desc: "Building things" },
@@ -51,7 +34,7 @@ const categories = [
 ];
 
 const features = [
-  { icon: IconUsers, label: "19 agents", desc: "architect, reviewer, tester, and more", color: "text-emerald-400", tip: "All 19 Society members available with their full system prompts from SKILL.md." },
+  { icon: IconUsers, label: `${agents.length} agents`, desc: "architect, reviewer, tester, and more", color: "text-emerald-400", tip: `All ${agents.length} Society members available with their full system prompts from SKILL.md.` },
   { icon: IconCloud, label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode", color: "text-sky-400", tip: "Switch providers per conversation. Each offers different models and pricing." },
   { icon: IconServer, label: "SSE streaming", desc: "real-time token-by-token responses", color: "text-cyan-400", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
   { icon: IconKey, label: "BYOK", desc: "use your own API keys", color: "text-amber-400", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
@@ -77,7 +60,7 @@ export default function Home() {
           <span className="text-zinc-500">as plain Markdown files.</span>
         </h1>
         <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          19 specialized AI agents — each a single Markdown skill file that works with
+          {agents.length} specialized AI agents — each a single Markdown skill file that works with
           Claude Code, Copilot, Gemini CLI, or any runtime. No lock-in. No configuration.
         </Text>
         <Group justify="center" gap="md">
@@ -106,7 +89,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
           <div className="flex items-center justify-center gap-1 px-6">
             <div>
-              <div className="text-3xl font-semibold text-white">19</div>
+              <div className="text-3xl font-semibold text-white">{agents.length}</div>
               <div className="text-sm text-zinc-500 mt-1">Specialized agents</div>
             </div>
             <HelpTip text="Each agent has a unique role: architect, reviewer, tester, auditor, and more." side="right" />
@@ -184,7 +167,7 @@ export default function Home() {
           </Text>
           <div className="space-y-12">
             {categories.map((cat) => {
-              const catAgents = agents.filter((a) => a.category === cat.id);
+              const catAgents = teamMembers.filter((a) => a.category === cat.id);
               return (
                 <div key={cat.id}>
                   <div className="flex items-center gap-3 mb-4">

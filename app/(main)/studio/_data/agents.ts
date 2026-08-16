@@ -1,35 +1,78 @@
+import { agentRegistry } from "./registry.generated";
+
 export interface AgentEntry {
   id: string;
   name: string;
   role: string;
   shortDescription: string;
+  tagline: string;
+  stage: string[];
+  priority: number;
   category: string;
   preferredProvider: string;
   enabled: boolean;
   icon?: string;
 }
 
-export const agents: AgentEntry[] = [
-  { id: "the-scribe", name: "The Scribe", role: "Commits & Changelogs", shortDescription: "Writes commit messages, PR descriptions, and changelogs", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "✍️" },
-  { id: "the-architect", name: "The Architect", role: "Spec-First Development", shortDescription: "Drives spec-first development, task decomposition, and architecture decisions", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🏗️" },
-  { id: "the-builder", name: "The Builder", role: "Coding & Implementation", shortDescription: "Turns concrete requirements into the smallest verified code change", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🛠️" },
-  { id: "the-reviewer", name: "The Reviewer", role: "Code Review", shortDescription: "Conducts five-axis code review: correctness, security, performance, maintainability, test coverage", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔍" },
-  { id: "the-tester", name: "The Tester", role: "TDD & Test Generation", shortDescription: "Writes tests before implementation, maintains coverage targets, validates acceptance criteria", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🧪" },
-  { id: "the-debugger", name: "The Debugger", role: "Root Cause Analysis", shortDescription: "Five-step debugging protocol: reproduce, isolate, hypothesize, test, fix", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🐛" },
-  { id: "the-auditor", name: "The Auditor", role: "Security & Dependencies", shortDescription: "OWASP Top 10 security review, dependency audit, secrets scanning", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔒" },
-  { id: "the-herald", name: "The Herald", role: "Releases & Versioning", shortDescription: "Manages semver determination, changelog generation, and release publishing", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "📦" },
-  { id: "the-inspector", name: "The Inspector", role: "Visual Reasoning", shortDescription: "Solves and generates challenging visual-reasoning benchmarks: pixel ranking, cross-panel mapping, graph-cut classification", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔬" },
-  { id: "the-librarian", name: "The Librarian", role: "Documentation & ADRs", shortDescription: "Keeps documentation synchronized with code changes", category: "knowledge", preferredProvider: "anthropic", enabled: true, icon: "📝" },
-  { id: "the-mailman", name: "The Mailman", role: "Delivery & Cross-Posting", shortDescription: "Manages message delivery, content scheduling, notification dispatch, and cross-posting across channels", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "📮" },
-  { id: "the-doorman", name: "The Doorman", role: "Validation & Enforcement", shortDescription: "Validates commit messages against conventional commit rules. Gatekeeps every commit", category: "validation", preferredProvider: "ollama", enabled: true, icon: "🚪" },
-  { id: "the-oracle", name: "The Oracle", role: "Research & Knowledge", shortDescription: "Cross-session institutional memory. Retrieves past decisions, patterns, and context", category: "knowledge", preferredProvider: "anthropic", enabled: true, icon: "🔮" },
-  { id: "the-envoy", name: "The Envoy", role: "Communication & Handoffs", shortDescription: "Cross-runtime translator. Adapts skills for non-Anthropic providers", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "🌐" },
-  { id: "the-sentinel", name: "The Sentinel", role: "Member File Validation", shortDescription: "Guards quality standards: validates member schema, ADR presence, CI gate integrity", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "👁️" },
-  { id: "the-warden", name: "The Warden", role: "File Size Enforcement", shortDescription: "Enforces project conventions: file naming, directory structure, import rules", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "⚖️" },
-  { id: "the-steward", name: "The Steward", role: "Context & Routing", shortDescription: "Monitors context window capacity, routes tasks to the minimal required member set", category: "lifecycle", preferredProvider: "groq", enabled: true, icon: "🧭" },
-  { id: "the-strategist", name: "The Strategist", role: "Goal Refinement", shortDescription: "Translates ambiguous goals into structured problem statements, success criteria, and ranked priorities", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🎯" },
-  { id: "the-operator", name: "The Operator", role: "Deployment & Incidents", shortDescription: "Manages runtime health, deployment, incidents, rollback, and monitoring", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "🩺" },
+interface SiteAgentConfig {
+  role: string;
+  category: string;
+  preferredProvider: string;
+  enabled?: boolean;
+  icon?: string;
+}
+
+const SITE_CONFIG: Record<string, SiteAgentConfig> = {
+  "the-scribe": { role: "Commits & Changelogs", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "✍️" },
+  "the-architect": { role: "Spec-First Development", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🏗️" },
+  "the-builder": { role: "Coding & Implementation", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🛠️" },
+  "the-reviewer": { role: "Code Review", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔍" },
+  "the-tester": { role: "TDD & Test Generation", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🧪" },
+  "the-debugger": { role: "Root Cause Analysis", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🐛" },
+  "the-auditor": { role: "Security & Dependencies", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔒" },
+  "the-herald": { role: "Releases & Versioning", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "📦" },
+  "the-inspector": { role: "Visual Reasoning", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "🔬" },
+  "the-librarian": { role: "Documentation & ADRs", category: "knowledge", preferredProvider: "anthropic", enabled: true, icon: "📝" },
+  "the-mailman": { role: "Delivery & Cross-Posting", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "📮" },
+  "the-doorman": { role: "Validation & Enforcement", category: "validation", preferredProvider: "ollama", enabled: true, icon: "🚪" },
+  "the-oracle": { role: "Research & Knowledge", category: "knowledge", preferredProvider: "anthropic", enabled: true, icon: "🔮" },
+  "the-envoy": { role: "Communication & Handoffs", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "🌐" },
+  "the-sentinel": { role: "Member File Validation", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "👁️" },
+  "the-warden": { role: "Code Health Enforcement", category: "validation", preferredProvider: "anthropic", enabled: true, icon: "⚖️" },
+  "the-steward": { role: "Context & Routing", category: "lifecycle", preferredProvider: "groq", enabled: true, icon: "🧭" },
+  "the-strategist": { role: "Goal Refinement", category: "engineering", preferredProvider: "anthropic", enabled: true, icon: "🎯" },
+  "the-operator": { role: "Deployment & Incidents", category: "lifecycle", preferredProvider: "anthropic", enabled: true, icon: "🩺" },
+};
+
+const SITE_ORDER = [
+  "the-scribe", "the-architect", "the-builder", "the-reviewer", "the-tester",
+  "the-debugger", "the-auditor", "the-herald", "the-inspector", "the-librarian",
+  "the-mailman", "the-doorman", "the-oracle", "the-envoy", "the-sentinel",
+  "the-warden", "the-steward", "the-strategist", "the-operator",
 ];
+
+const registryById = new Map(agentRegistry.map((r) => [r.name, r]));
+
+export const agents: AgentEntry[] = SITE_ORDER.map((id) => {
+  const site = SITE_CONFIG[id];
+  if (!site) {
+    throw new Error(`Missing site config for agent "${id}"`);
+  }
+  const reg = registryById.get(id);
+  return {
+    id,
+    name: reg?.displayName ?? id,
+    role: site.role,
+    shortDescription: reg?.role ?? "",
+    tagline: reg?.tagline ?? "",
+    stage: reg?.stage ?? [],
+    priority: reg?.priority ?? 99,
+    category: site.category,
+    preferredProvider: site.preferredProvider,
+    enabled: site.enabled ?? true,
+    icon: site.icon,
+  };
+});
 
 export function getAgentById(id: string): AgentEntry | undefined {
   return agents.find((a) => a.id === id);
