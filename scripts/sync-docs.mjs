@@ -63,6 +63,15 @@ function buildSlug(relativePath) {
     .filter(Boolean);
 }
 
+// Upstream member READMEs link to ../../skills/<member>/SKILL.md, which does
+// not exist in the site mirror — point them at the rendered member page.
+function rewriteMemberSkillLinks(content) {
+  return content.replace(
+    /\]\(\.\.\/\.\.\/skills\/([^)/]+)\/SKILL\.md\)/g,
+    (_match, member) => `](/docs/members/${member}/)`,
+  );
+}
+
 async function syncDirectory(sourceDir, destDir) {
   const sourcePrefix = `${sourceDir}/`;
   const tree = await api(`${API_BASE}/git/trees/${BRANCH}?recursive=1`);
@@ -134,7 +143,7 @@ async function syncFullDocs(tree) {
 
   for (const file of files) {
     const relative = file.path.slice(sourcePrefix.length);
-    const content = await fetchRaw(file.path);
+    const content = rewriteMemberSkillLinks(await fetchRaw(file.path));
     const destPath = path.join(CONTENT_DIR, "docs", relative);
 
     fs.mkdirSync(path.dirname(destPath), { recursive: true });

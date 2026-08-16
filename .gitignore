@@ -24,6 +24,18 @@
 /content/adr
 /content/docs
 
+# agenthood runtime artifacts (mirrors upstream convention)
+.agenthood/memory/
+.agenthood/decisions/
+.agenthood/provenance/
+.agenthood/snapshots/
+.agenthood/metrics/
+.agenthood/residual.json
+.agenthood/society-graph.json
+.agenthood/preferences.json
+.agenthood/skills/
+!.agenthood/config.json
+
 # production
 /build
 

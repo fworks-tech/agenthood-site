@@ -37,7 +37,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 
 ## Studio Architecture
 
-The Studio is a browser-based proof-of-work for the agenthood runtime. It allows users to chat with any of the 19 Society members through a configurable provider backend.
+The Studio is a browser-based proof-of-work for the agenthood runtime (currently pinned to `agenthood@3.35.0`). It allows users to chat with any of the 19 Society members through a configurable provider backend.
 
 ### API Endpoints
 
@@ -55,9 +55,10 @@ The Studio API is protected by Cloudflare Turnstile CAPTCHA (chat), rate limitin
 
 All LLM requests are routed server-side through the agenthood `LLMRouter`. The provider chain is:
 
-1. User-selected provider (from the client config)
+1. User-selected provider (from the client config; defaults to OpenCode)
 2. Groq (fallback if primary fails)
-3. Ollama (local fallback)
+3. OpenAI (fallback)
+4. Ollama (local fallback)
 
 Ollama requests are proxied server-side — the browser never connects directly to localhost. This ensures consistent rate limiting, input validation, and logging across all providers.
 
@@ -99,9 +100,12 @@ Applied to all routes via `next.config.ts`:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| `OPENCODE_API_KEY` | Default provider | OpenCode API key (default server-side provider) |
 | `ANTHROPIC_API_KEY` | For Anthropic | Claude API key |
 | `OPENAI_API_KEY` | For OpenAI | GPT API key |
 | `GROQ_API_KEY` | For Groq | Groq API key |
+| `OPENROUTER_API_KEY` | For OpenRouter | OpenRouter API key |
+| `OLLAMA_HOST` | For Ollama | Self-hosted Ollama endpoint (default `http://localhost:11434`) |
 | `KV_REST_API_URL` | For Upstash | Redis REST API URL for distributed rate limiting |
 | `KV_REST_API_TOKEN` | For Upstash | Redis REST API token for distributed rate limiting |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | For CAPTCHA | Cloudflare Turnstile site key |
@@ -141,8 +145,10 @@ app/(main)/studio/
 │   ├── studio-api.ts               Client-side fetch wrappers
 │   └── tools.ts                    Tool definitions (web_fetch, code_execution)
 ├── _data/
-│   ├── agents.ts                   Static agent registry (19 members)
-│   └── agents.generated.ts         Auto-generated skill prompts
+│   ├── agents.ts                   Agent registry — canonical fields from upstream registry.json, site-only presentation config
+│   ├── registry.generated.ts       Auto-generated from upstream docs/members/registry.json
+│   ├── agents.generated.ts         Auto-generated skill prompts
+│   └── agentPrompts.generated.ts   Auto-generated When-to-Use prompt hints
 └── _types/
     └── studio.ts                   TypeScript types for providers, config
 ```
@@ -195,7 +201,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-The `predev` script runs `sync-docs.mjs` and `sync-skills.mjs` to fetch latest content from the agenthood repo. Requires network access to `raw.githubusercontent.com`.
+The `predev` script runs `sync-docs.mjs`, `sync-news.mjs`, and `sync-skills.mjs` to fetch latest content from the agenthood repo. Requires network access to `raw.githubusercontent.com`.
 
 ---
 

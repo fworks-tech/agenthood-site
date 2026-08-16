@@ -61,7 +61,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const providerName = req.config?.provider || "anthropic";
+    const providerName = req.config?.provider || "opencode";
     if (!isKnownProvider(providerName)) {
       throw new ValidationError(`Unknown provider: "${providerName}"`);
     }
