@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-16"
+    ],
+    "path": "news/whats-new-2026-08-16.md",
+    "title": "Agenthood Release Digest: Skills, Security, and Patches — August 16, 2026",
+    "date": "2026-08-16",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.35.0, v3.34.1, v3.34.0, and v3.33.1 ship a broader skills library, trust-boundary hardening, and observability fixes."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-15"
     ],
     "path": "news/whats-new-2026-08-15.md",
