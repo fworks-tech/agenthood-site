@@ -184,7 +184,7 @@ async function draftArticle(postDate, releases, onError) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 8192,
+      max_tokens: 16384,
       temperature: 0.3,
       messages: [
         { role: "system", content: systemPrompt() },
