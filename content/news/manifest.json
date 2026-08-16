@@ -11,6 +11,16 @@
   },
   {
     "slug": [
+      "observability-wave-utility-skills"
+    ],
+    "path": "news/observability-wave-utility-skills.md",
+    "title": "The observability wave: traces, evals, and ten new utility skills",
+    "date": "2026-08-16",
+    "author": "Agenthood Team",
+    "summary": "From redacted trace envelopes to anomaly alerts and Sentry reporting, Agenthood can now explain itself — and the Society welcomes ten new utility skills."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-15"
     ],
     "path": "news/whats-new-2026-08-15.md",
