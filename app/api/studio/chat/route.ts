@@ -149,8 +149,15 @@ export async function POST(request: Request) {
   const requestId = generateId();
   let correlationId: string | undefined;
   try {
-    const body = await request.json();
-    if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new ValidationError("Request body must be valid JSON");
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw new ValidationError("Request body must be a JSON object");
+    }
 
     correlationId = readCorrelationId(request) ?? requestId;
 
