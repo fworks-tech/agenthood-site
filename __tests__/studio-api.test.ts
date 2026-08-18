@@ -36,7 +36,7 @@ describe("sendChat", () => {
   it("omits X-Correlation-Id when none is provided", async () => {
     fetchMock.mockResolvedValue(new Response());
     await sendChat("the-scribe", messages, config, "tok-1");
-    expect(fetchMock.mock.calls[0][1]).not.toHaveProperty("X-Correlation-Id");
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty("X-Correlation-Id");
   });
 
   it("adds X-Correlation-Id when provided", async () => {

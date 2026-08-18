@@ -54,7 +54,11 @@ describe("executeTool", () => {
 
   it("forwards the abort signal to the tool", async () => {
     const controller = new AbortController();
-    fetchMock.mockRejectedValue(new Error("aborted"));
+    fetchMock.mockImplementation((_url, init) => {
+      controller.abort();
+      if (!init.signal.aborted) return Promise.resolve(okResponse("not aborted"));
+      return Promise.reject(new Error("aborted"));
+    });
     await expect(
       executeTool("web_fetch", { url: "https://github.com/foo" }, controller.signal),
     ).resolves.toContain("aborted");
@@ -176,9 +180,9 @@ describe("code_execution sandbox", () => {
   });
 
   it("surfaces syntax errors", async () => {
-    await expect(executeTool("code_execution", { code: "function (" })).resolves.toContain(
-      "require a function name",
-    );
+    const result = await executeTool("code_execution", { code: "function (" });
+    expect(result).toMatch(/^Error: /);
+    expect(result).not.toContain("Executed successfully");
   });
 
   it("surfaces runtime errors", async () => {
@@ -190,6 +194,9 @@ describe("code_execution sandbox", () => {
   it("denies access to Node globals outside the sandbox", async () => {
     await expect(executeTool("code_execution", { code: "process.version" })).resolves.toContain(
       "process is not defined",
+    );
+    await expect(executeTool("code_execution", { code: "typeof require" })).resolves.toBe(
+      "undefined",
     );
   });
 });
