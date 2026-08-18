@@ -92,8 +92,9 @@ function validateConfig(config: unknown): ChatRequestConfig {
   }
 
   if (validated.provider && validated.model) {
-    const knownModels = PROVIDER_MODELS[validated.provider]?.models.map((m) => m.id) ?? [];
-    if (!knownModels.includes(validated.model)) {
+    const providerModels =
+      PROVIDER_MODELS[validated.provider as keyof typeof PROVIDER_MODELS]?.models ?? [];
+    if (!providerModels.some((m) => m.id === validated.model)) {
       throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
     }
   }
