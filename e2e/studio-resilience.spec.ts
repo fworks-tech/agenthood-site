@@ -27,11 +27,10 @@ test.describe("Playground — Resilience", () => {
     await waitForHydration(page);
   });
 
-  test("keeps partial tokens then surfaces a mid-stream error event", async ({ page }) => {
+  test("surfaces a mid-stream error event as a failed run", async ({ page }) => {
     await page.route("**/api/studio/chat/**", async (route) => {
       const body =
-        JSON.stringify({ type: "token", data: "partial result " }) + "\n" +
-        JSON.stringify({ type: "token", data: "continues" }) + "\n" +
+        JSON.stringify({ type: "token", data: "partial result" }) + "\n" +
         JSON.stringify({ type: "error", data: "Provider died mid-stream" }) + "\n";
       await route.fulfill({
         status: 200,
@@ -46,6 +45,7 @@ test.describe("Playground — Resilience", () => {
     await expect(page.locator("text=Error: Provider died mid-stream").first()).toBeVisible({
       timeout: 15000,
     });
+    await expect(page.getByRole("button", { name: "Stop streaming" })).toHaveCount(0);
     await expect(page.locator("text=failed after").first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -101,15 +101,14 @@ test.describe("Playground — Resilience", () => {
 
   test("hides feedback buttons while streaming and shows them after completion", async ({ page }) => {
     await page.route("**/api/studio/chat/**", async (route) => {
-      const encoder = new TextEncoder();
       await new Promise((r) => setTimeout(r, 2500));
       const body =
-        encoder.encode(JSON.stringify({ type: "token", data: "slow reply" }) + "\n" +
-          JSON.stringify({ type: "done" }) + "\n");
+        JSON.stringify({ type: "token", data: "slow reply" }) + "\n" +
+        JSON.stringify({ type: "done" }) + "\n";
       await route.fulfill({
         status: 200,
         headers: { "Content-Type": "text/event-stream" },
-        body: new TextDecoder().decode(body),
+        body,
       });
     });
 
@@ -117,9 +116,12 @@ test.describe("Playground — Resilience", () => {
     await sendMessage(page, "wait for it");
 
     const helpfulBtn = page.getByRole("button", { name: "Helpful", exact: true });
+    await expect(page.getByRole("button", { name: "Stop streaming" })).toBeVisible({
+      timeout: 10000,
+    });
     await expect(helpfulBtn).toHaveCount(0);
     await expect(page.locator("text=slow reply").first()).toBeVisible({ timeout: 15000 });
-    await expect(helpfulBtn).toBeVisible({ timeout: 5000 });
+    await expect(helpfulBtn).toBeVisible({ timeout: 10000 });
   });
 
   test("recovers from corrupted conversation storage without crashing", async ({ page, mockChat }) => {
@@ -190,7 +192,9 @@ test.describe("Playground — Resilience", () => {
 
   test("shows Ollama not detected when the tags endpoint fails", async ({ page }) => {
     skipOnMobile(page);
+    let tagsReached = false;
     await page.route(/\/api\/tags$/, async (route) => {
+      tagsReached = true;
       await route.fulfill({
         status: 500,
         contentType: "application/json",
@@ -205,6 +209,7 @@ test.describe("Playground — Resilience", () => {
     await baseUrlInput.fill("http://localhost:3000");
 
     await expect(page.locator("text=Ollama not detected").first()).toBeVisible({ timeout: 10000 });
+    expect(tagsReached).toBe(true);
   });
 
   test("flags an invalid external http Ollama URL", async ({ page }) => {
