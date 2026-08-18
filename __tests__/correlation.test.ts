@@ -1,4 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ReadableStream } from "node:stream/web";
+
+const { chatStub } = vi.hoisted(() => ({ chatStub: vi.fn() }));
+
+vi.mock("@/app/(main)/studio/_lib/agenthood-adapter", () => ({
+  LightweightAdapter: class {
+    chat = chatStub;
+  },
+}));
+
+function doneStream(): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"type":"done"}\n'));
+      controller.close();
+    },
+  });
+}
 
 describe("X-Correlation-Id propagation on chat route", () => {
   const originalEnv = process.env;
@@ -6,6 +24,8 @@ describe("X-Correlation-Id propagation on chat route", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
+    chatStub.mockReset();
+    chatStub.mockResolvedValue(doneStream());
   });
 
   afterEach(() => {
