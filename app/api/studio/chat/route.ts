@@ -61,9 +61,6 @@ function validateMessages(messages: unknown): { role: string; content: string }[
 
 const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq"]);
 const VALID_PROVIDERS = new Set(Object.keys(PROVIDER_MODELS));
-const KNOWN_MODELS = new Set(
-  Object.values(PROVIDER_MODELS).flatMap((meta) => meta.models.map((m) => m.id)),
-);
 
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
@@ -94,8 +91,12 @@ function validateConfig(config: unknown): ChatRequestConfig {
     validated.apiKey = c.apiKey;
   }
 
-  if (validated.provider && validated.model && !KNOWN_MODELS.has(validated.model)) {
-    throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
+  if (validated.provider && validated.model) {
+    const providerModels =
+      PROVIDER_MODELS[validated.provider as keyof typeof PROVIDER_MODELS]?.models ?? [];
+    if (!providerModels.some((m) => m.id === validated.model)) {
+      throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
+    }
   }
 
   return validated;
@@ -149,8 +150,15 @@ export async function POST(request: Request) {
   const requestId = generateId();
   let correlationId: string | undefined;
   try {
-    const body = await request.json();
-    if (!body || typeof body !== "object") throw new ValidationError("Request body must be a JSON object");
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new ValidationError("Request body must be valid JSON");
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      throw new ValidationError("Request body must be a JSON object");
+    }
 
     correlationId = readCorrelationId(request) ?? requestId;
 
