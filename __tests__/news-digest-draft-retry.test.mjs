@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { writeFileSync } from "node:fs";
 import { generate } from "../scripts/generate-news-digest.mjs";
 
@@ -21,7 +21,12 @@ vi.mock("node:fs", () => {
   };
 });
 
+beforeEach(() => {
+  process.env.OPENCODE_API_KEY = "test-key";
+});
+
 afterEach(() => {
+  delete process.env.OPENCODE_API_KEY;
   vi.unstubAllGlobals();
   vi.clearAllMocks();
 });

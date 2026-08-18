@@ -1,4 +1,22 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { ReadableStream } from "node:stream/web";
+
+const { chatStub } = vi.hoisted(() => ({ chatStub: vi.fn() }));
+
+vi.mock("@/app/(main)/studio/_lib/agenthood-adapter", () => ({
+  LightweightAdapter: class {
+    chat = chatStub;
+  },
+}));
+
+function doneStream(): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"type":"done"}\n'));
+      controller.close();
+    },
+  });
+}
 
 describe("Turnstile CAPTCHA validation", () => {
   const originalEnv = process.env;
@@ -8,6 +26,8 @@ describe("Turnstile CAPTCHA validation", () => {
     vi.resetModules();
     process.env = { ...originalEnv };
     vi.stubGlobal("fetch", fetchSpy);
+    chatStub.mockReset();
+    chatStub.mockResolvedValue(doneStream());
   });
 
   afterEach(() => {
