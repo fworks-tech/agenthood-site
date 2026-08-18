@@ -58,19 +58,19 @@ describe("middleware origin validation", () => {
     const res = await callMiddleware(
       makeRequest("/api/studio/chat", { origin: "https://agenthood.flabs.tech" }),
     );
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("allows requests without an origin or referer", async () => {
     const res = await callMiddleware(makeRequest("/api/studio/chat"));
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("allows requests whose referer matches the allowed origin", async () => {
     const res = await callMiddleware(
       makeRequest("/api/studio/chat", { referer: "https://agenthood.flabs.tech/studio/playground" }),
     );
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("rejects foreign origins with 403", async () => {
@@ -93,7 +93,7 @@ describe("middleware origin validation", () => {
     const res = await callMiddleware(
       makeRequest("/api/studio/agents", { origin: "https://evil.example" }),
     );
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("allows localhost origins in development mode", async () => {
@@ -101,7 +101,7 @@ describe("middleware origin validation", () => {
     const res = await callMiddleware(
       makeRequest("http://localhost:3000/api/studio/chat", { origin: "http://localhost:3000" }),
     );
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(200);
   });
 
   it("rejects the production origin in development mode", async () => {
@@ -134,7 +134,7 @@ describe("middleware in-memory rate limiting", () => {
     const otherIp = await callMiddleware(
       makeRequest("/api/studio/chat", { "x-forwarded-for": "5.6.7.8" }),
     );
-    expect(otherIp.status).not.toBe(429);
+    expect(otherIp.status).toBe(200);
   });
 
   it("adds rate-limit headers on subsequent allowed requests", async () => {
@@ -144,25 +144,38 @@ describe("middleware in-memory rate limiting", () => {
     expect(second.headers.get("RateLimit-Remaining")).toBe("18");
   });
 
-  it("applies the agents limit independently", async () => {
-    const res = await callMiddleware(makeRequest("/api/studio/agents"));
-    expect(res.status).not.toBe(429);
+  it("applies the agents limit independently of the chat limit", async () => {
+    for (let i = 0; i < 20; i += 1) {
+      const res = await callMiddleware(makeRequest("/api/studio/chat"));
+      expect(res.status).not.toBe(429);
+    }
+    const throttled = await callMiddleware(makeRequest("/api/studio/chat"));
+    expect(throttled.status).toBe(429);
+
+    const agents = await callMiddleware(makeRequest("/api/studio/agents"));
+    expect(agents.status).toBe(200);
+    const agentsAgain = await callMiddleware(makeRequest("/api/studio/agents"));
+    expect(agentsAgain.status).toBe(200);
+    expect(agentsAgain.headers.get("RateLimit-Limit")).toBe("60");
+  });
+
+  it("keys rate limits by x-real-ip when no forwarded header is present", async () => {
+    const request = new NextRequest("https://agenthood.flabs.tech/api/studio/chat", {
+      method: "GET",
+      headers: { "x-real-ip": "9.9.9.9" },
+    });
+    for (let i = 0; i < 20; i += 1) {
+      const res = await callMiddleware(request);
+      expect(res.status).not.toBe(429);
+    }
+    const throttled = await callMiddleware(request);
+    expect(throttled.status).toBe(429);
   });
 
   it("leaves unknown studio paths unthrottled", async () => {
     const res = await callMiddleware(makeRequest("/api/studio/auth"));
     expect(res.status).toBe(200);
     expect(res.headers.get("RateLimit-Limit")).toBeNull();
-  });
-
-  it("uses the x-real-ip fallback when no forwarded header is present", async () => {
-    const res = await callMiddleware(
-      new NextRequest("https://agenthood.flabs.tech/api/studio/chat", {
-        method: "GET",
-        headers: { "x-real-ip": "9.9.9.9" },
-      }),
-    );
-    expect(res.status).not.toBe(429);
   });
 });
 
@@ -203,5 +216,53 @@ describe("middleware Upstash rate limiting", () => {
     expect(res.headers.get("Retry-After")).toBeTruthy();
     const body = await res.json();
     expect(body.code).toBe("RATE_LIMITED");
+  });
+
+  it("routes /api/studio/status to its own Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const status = ratelimitInstances.find((r) => r.prefix === "ratelimit:status");
+    const chat = ratelimitInstances.find((r) => r.prefix === "ratelimit:chat");
+    expect(status).toBeDefined();
+    status!.limit.mockResolvedValueOnce({
+      success: true,
+      limit: 30,
+      remaining: 29,
+      reset: Date.now() + 60_000,
+    });
+    const res = await middleware(makeRequest("/api/studio/status"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("RateLimit-Limit")).toBe("30");
+    expect(status!.limit).toHaveBeenCalledTimes(1);
+    expect(chat!.limit).not.toHaveBeenCalled();
+  });
+
+  it("routes /api/studio/feedback to the feedback Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const feedback = ratelimitInstances.find((r) => r.prefix === "ratelimit:feedback");
+    expect(feedback).toBeDefined();
+    feedback!.limit.mockResolvedValueOnce({
+      success: true,
+      limit: 60,
+      remaining: 58,
+      reset: Date.now() + 60_000,
+    });
+    const res = await middleware(makeRequest("/api/studio/feedback"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("RateLimit-Limit")).toBe("60");
+  });
+
+  it("maps other rate-limited paths to the feedback Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const feedback = ratelimitInstances.find((r) => r.prefix === "ratelimit:feedback");
+    expect(feedback).toBeDefined();
+    feedback!.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 60,
+      remaining: 0,
+      reset: Date.now() + 10_000,
+    });
+    const res = await middleware(makeRequest("/api/news/comments"));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("RateLimit-Limit")).toBe("60");
   });
 });

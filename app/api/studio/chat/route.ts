@@ -61,9 +61,6 @@ function validateMessages(messages: unknown): { role: string; content: string }[
 
 const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq"]);
 const VALID_PROVIDERS = new Set(Object.keys(PROVIDER_MODELS));
-const KNOWN_MODELS = new Set(
-  Object.values(PROVIDER_MODELS).flatMap((meta) => meta.models.map((m) => m.id)),
-);
 
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
@@ -94,8 +91,11 @@ function validateConfig(config: unknown): ChatRequestConfig {
     validated.apiKey = c.apiKey;
   }
 
-  if (validated.provider && validated.model && !KNOWN_MODELS.has(validated.model)) {
-    throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
+  if (validated.provider && validated.model) {
+    const knownModels = PROVIDER_MODELS[validated.provider]?.models.map((m) => m.id) ?? [];
+    if (!knownModels.includes(validated.model)) {
+      throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
+    }
   }
 
   return validated;

@@ -161,6 +161,20 @@ describe("chat route validation", () => {
     );
   });
 
+  it("rejects a model that does not belong to the selected provider", async () => {
+    await expectValidationError(
+      { ...VALID_BODY, config: { provider: "openai", model: "claude-sonnet-4-20250514" } },
+      'Unknown model "claude-sonnet-4-20250514" for provider "openai"',
+    );
+  });
+
+  it("rejects any model for a provider with no listed models", async () => {
+    await expectValidationError(
+      { ...VALID_BODY, config: { provider: "openrouter", model: "claude-sonnet-4-20250514" } },
+      'Unknown model "claude-sonnet-4-20250514"',
+    );
+  });
+
   it("rejects temperature outside the 0-2 range by dropping it silently", async () => {
     chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
     const res = await postRoute({
