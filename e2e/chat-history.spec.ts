@@ -81,7 +81,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     expect(assistantReplies[1].text).toContain("reply-3");
   });
 
-  test("each message uses a fresh turnstile token", async ({ page }) => {
+  test("each message uses the same turnstile token until it expires", async ({ page }) => {
     const tokens: Array<string | undefined> = [];
     await page.route("**/api/studio/chat/**", async (route) => {
       const reqBody = route.request().postDataJSON();
@@ -103,7 +103,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     expect(tokens.length).toBe(2);
     expect(tokens[0]).toBeTruthy();
     expect(tokens[1]).toBeTruthy();
-    expect(tokens[1]).not.toBe(tokens[0]);
+    expect(tokens[1]).toBe(tokens[0]);
   });
 
   test("switching conversations restores messages and saved config", async ({ page, mockChatSequence }) => {
