@@ -9,6 +9,34 @@ import { STORAGE_KEYS } from "../_lib/constants";
 const MAX_CONVERSATIONS = 50;
 const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
+const MAX_SEND_HISTORY = 20;
+const MAX_SEND_MESSAGE_LENGTH = 3500;
+const TRUNCATED_SUMMARY_LENGTH = 500;
+
+function truncateMessages(
+  messages: { role: string; content: string }[],
+): { role: string; content: string }[] {
+  if (messages.length <= MAX_SEND_HISTORY) {
+    return messages.map((m) => ({
+      ...m,
+      content:
+        m.content.length > MAX_SEND_MESSAGE_LENGTH
+          ? m.content.slice(0, MAX_SEND_MESSAGE_LENGTH) + "\n\n[truncated]"
+          : m.content,
+    }));
+  }
+  const cutoff = messages.length - MAX_SEND_HISTORY;
+  return messages.map((m, i) => ({
+    ...m,
+    content:
+      i < cutoff
+        ? m.content.length > TRUNCATED_SUMMARY_LENGTH
+          ? m.content.slice(0, TRUNCATED_SUMMARY_LENGTH) + "\n\n[truncated]"
+          : m.content
+        : m.content,
+  }));
+}
+
 export interface Conversation {
   id: string;
   agentId: string;
@@ -243,7 +271,9 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     try {
       const res = await sendChat(
         conv.agentId,
-        updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        truncateMessages(
+          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        ),
         configRef.current ?? {},
         turnstileRef.current,
         generateId(),
