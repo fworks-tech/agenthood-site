@@ -6,7 +6,7 @@ import { useStudioChat } from "../_hooks/useStudioChat";
 import AgentConfigPanel from "../_components/AgentConfigPanel";
 import MessageList from "../_components/MessageList";
 import ChatComposer from "../_components/ChatComposer";
-import LiveLogs from "../_components/LiveLogs";
+import LiveLogs, { type LogCategoryFilter } from "../_components/LiveLogs";
 import ConversationList from "../_components/ConversationList";
 import DragHandle from "../_components/DragHandle";
 import MobileDrawer from "../_components/MobileDrawer";
@@ -62,6 +62,8 @@ export default function PlaygroundPage() {
   }, []);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
+  const [debugVisible, setDebugVisible] = useState(false);
+  const [logCategoryFilter, setLogCategoryFilter] = useState<LogCategoryFilter>("all");
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
   const [leftColWidth, setLeftColWidth] = useState(288);
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
@@ -72,6 +74,16 @@ export default function PlaygroundPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfigOpen(window.innerWidth >= 768);
   }, []);
+
+  const prevLastLogIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const last = logs[logs.length - 1];
+    const prevId = prevLastLogIdRef.current;
+    prevLastLogIdRef.current = last?.id;
+    if (last && last.id !== prevId && last.level === "error" && !logsOpen) {
+      setLogsOpen(true);
+    }
+  }, [logs, logsOpen]);
 
   const addLog = useCallback(
     (level: LogLevel, message: string, opts?: { category?: LogCategory; detail?: string }) => {
@@ -597,6 +609,10 @@ export default function PlaygroundPage() {
               logs={logs}
               open={logsOpen}
               onToggle={() => setLogsOpen(!logsOpen)}
+              debugVisible={debugVisible}
+              onToggleDebug={() => setDebugVisible((v) => !v)}
+              categoryFilter={logCategoryFilter}
+              onCategoryFilter={setLogCategoryFilter}
             />
           </div>
         </div>
