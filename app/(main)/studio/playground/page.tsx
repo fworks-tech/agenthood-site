@@ -19,7 +19,8 @@ import { getDefaultModel } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
 import { agentPrompts } from "../_data/agentPrompts.generated";
 import WelcomeTerminal from "./_components/WelcomeTerminal";
-import type { LogEntry } from "../_components/LiveLogs";
+import type { LogCategory, LogEntry, LogLevel } from "../_lib/log-types";
+import { appendLog, createLogEntry, loadLogs } from "../_lib/log-store";
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
 
@@ -49,6 +50,15 @@ export default function PlaygroundPage() {
   const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  useEffect(() => {
+    const saved = loadLogs();
+    if (saved.length > 0) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setLogs(saved);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, []);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
@@ -62,10 +72,12 @@ export default function PlaygroundPage() {
     setConfigOpen(window.innerWidth >= 768);
   }, []);
 
-  const addLog = useCallback((level: LogEntry["level"], message: string) => {
-    const time = new Date().toLocaleTimeString("en-US", { hour12: false });
-    setLogs((prev) => [...prev.slice(-99), { time, level, message }]);
-  }, []);
+  const addLog = useCallback(
+    (level: LogLevel, message: string, opts?: { category?: LogCategory; detail?: string }) => {
+      setLogs((prev) => appendLog(prev, createLogEntry(level, opts?.category ?? "system", message, opts?.detail)));
+    },
+    [],
+  );
 
   const chat = useStudioChat({
     config,

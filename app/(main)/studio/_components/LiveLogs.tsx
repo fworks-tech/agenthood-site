@@ -4,12 +4,9 @@ import { useRef, useEffect } from "react";
 import { Group, Text, Badge, Collapse, UnstyledButton } from "@mantine/core";
 import { IconChevronDown } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
+import type { LogEntry, LogLevel } from "../_lib/log-types";
 
-export interface LogEntry {
-  time: string;
-  level: "info" | "warn" | "error";
-  message: string;
-}
+export type { LogEntry, LogLevel };
 
 interface LiveLogsProps {
   logs: LogEntry[];
@@ -17,18 +14,20 @@ interface LiveLogsProps {
   onToggle?: () => void;
 }
 
-function getLevelColor(level: string) {
+function getLevelColor(level: LogLevel) {
   switch (level) {
     case "error": return "red.4";
     case "warn": return "yellow.4";
+    case "debug": return "zinc.6";
     default: return "emerald.4";
   }
 }
 
-function getBadgeColor(level: string) {
+function getBadgeColor(level: LogLevel) {
   switch (level) {
     case "error": return "red";
     case "warn": return "yellow";
+    case "debug": return "gray";
     default: return "emerald";
   }
 }
@@ -75,8 +74,8 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
                 <HelpTip text="Log entries appear here once you send a message or interact with an agent." />
               </Group>
             ) : (
-              logs.map((log, i) => (
-                <Group key={i} gap="sm" wrap="nowrap" align="flex-start" className="animate-[slide-up_0.2s_ease-out_forwards]">
+              logs.map((log) => (
+                <Group key={log.id} gap="sm" wrap="nowrap" align="flex-start" className="animate-[slide-up_0.2s_ease-out_forwards]">
                   <Text size="xs" c="zinc.6" className="shrink-0">{log.time}</Text>
                   <Badge
                     size="xs"
