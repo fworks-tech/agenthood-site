@@ -69,10 +69,12 @@ export default function PlaygroundPage() {
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfigOpen(window.innerWidth >= 768);
+    setIsMobile(window.innerWidth < 768);
   }, []);
 
   const prevLastLogIdRef = useRef<string | undefined>(undefined);
@@ -533,7 +535,7 @@ export default function PlaygroundPage() {
               addLog("error", msg, { category: "captcha" });
             }}
             refreshKey={turnstileRefreshKey}
-            visible
+            visible={!isMobile}
           />
 
           {/* Mobile agent selector */}
