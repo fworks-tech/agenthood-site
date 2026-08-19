@@ -718,7 +718,8 @@ test.describe("Playground — LiveLogs UI", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
-  test("copy button copies formatted logs to the clipboard", async ({ page, clearStorage }) => {
+  test("copy button copies formatted logs to the clipboard", async ({ page, clearStorage, browserName }) => {
+    test.skip(browserName === "webkit", "clipboard-write permission is unsupported on WebKit");
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/studio/playground");
     await clearStorage();
