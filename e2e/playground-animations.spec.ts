@@ -630,7 +630,7 @@ test.describe("Playground — CAPTCHA Edge Cases", () => {
     // The info-level "CAPTCHA ready" is the observable lifecycle result; the
     // debug-level phases (script loaded, widget rendered) are hidden by default
     // once the debug toggle exists.
-    await expect(page.locator("text=CAPTCHA ready")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible({ timeout: 10000 });
 
     // Send enables once text exists and a token was received (captchaReady true)
     const textarea = page.locator("textarea[placeholder='Type a message...']");
