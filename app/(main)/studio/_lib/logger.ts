@@ -27,6 +27,42 @@ const VALUE_PATTERNS = [
   /https?:\/\/[^\s]+/,
 ];
 
+// Field allowlist for metadata bridged to the client over SSE. Depth-0 children
+// outside this set (e.g. trace input/output payloads) are dropped, so chat content
+// and prompts never leave the server. Nested children of an allowed key are kept.
+const SAFE_LOG_KEYS = new Set([
+  "agentId",
+  "primary",
+  "fallbacks",
+  "tools",
+  "correlationId",
+  "durationMs",
+  "outputChars",
+  "provider",
+  "model",
+  "tokenCount",
+  "cost",
+  "qualityScore",
+  "status",
+  "member",
+  "source",
+]);
+
+export function pickSafeLogMeta(meta: Record<string, unknown> = {}, depth = 0): Record<string, unknown> {
+  const safe: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(meta)) {
+    if (depth === 0 && !SAFE_LOG_KEYS.has(key)) continue;
+    if (Array.isArray(value)) {
+      safe[key] = value;
+    } else if (typeof value === "object" && value !== null) {
+      safe[key] = pickSafeLogMeta(value as Record<string, unknown>, depth + 1);
+    } else {
+      safe[key] = value;
+    }
+  }
+  return safe;
+}
+
 function redactValue(value: unknown): unknown {
   if (typeof value === "string") {
     let v = value;

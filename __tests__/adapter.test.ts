@@ -37,6 +37,18 @@ function collectStream(stream: ReadableStream): Promise<string[]> {
   return read();
 }
 
+// SSE payload events only — the bridge's `log` events are orthogonal to the
+// application payload and are filtered out for payload-shape assertions.
+async function collectDataEvents(stream: ReadableStream): Promise<Record<string, unknown>[]> {
+  const raw = await collectStream(stream);
+  return raw.map((line) => JSON.parse(line)).filter((e) => (e as { type?: string }).type !== "log");
+}
+
+async function collectLogEvents(stream: ReadableStream): Promise<Record<string, unknown>[]> {
+  const raw = await collectStream(stream);
+  return raw.map((line) => JSON.parse(line)).filter((e) => (e as { type?: string }).type === "log");
+}
+
 async function makeStreamGen(chunks: { delta: string; done: boolean }[]) {
   async function* gen() {
     for (const c of chunks) {
@@ -77,11 +89,11 @@ describe("LightweightAdapter", () => {
       config: { provider: "opencode-go", model: "deepseek-v4-flash" },
     });
 
-    const events = await collectStream(stream);
+    const events = await collectDataEvents(stream);
     expect(events).toHaveLength(3);
-    expect(JSON.parse(events[0])).toEqual({ type: "token", data: "Hello" });
-    expect(JSON.parse(events[1])).toEqual({ type: "token", data: " world" });
-    expect(JSON.parse(events[2])).toEqual({ type: "done" });
+    expect(events[0]).toEqual({ type: "token", data: "Hello" });
+    expect(events[1]).toEqual({ type: "token", data: " world" });
+    expect(events[2]).toEqual({ type: "done" });
   });
 
   it("passes opencode-go config to LLMRouter", async () => {
@@ -124,8 +136,8 @@ describe("LightweightAdapter", () => {
       config: { provider: "openrouter", model: "openai/gpt-4o-mini", apiKey: "test-key" },
     });
 
-    const events = await collectStream(stream);
-    expect(JSON.parse(events[0])).toEqual({ type: "token", data: "Hello" });
+    const events = await collectDataEvents(stream);
+    expect(events[0]).toEqual({ type: "token", data: "Hello" });
 
     const llmConfig = mockFromConfig.mock.calls[0][0];
     expect(llmConfig.providers[0]).toMatchObject({
@@ -196,9 +208,9 @@ describe("LightweightAdapter", () => {
       config: { provider: "anthropic" },
     });
 
-    const events = await collectStream(stream);
+    const events = await collectDataEvents(stream);
     expect(events).toHaveLength(1);
-    const parsed = JSON.parse(events[0]);
+    const parsed = events[0];
     expect(parsed.type).toBe("error");
     expect(parsed.data).toContain("No API key configured");
   });
@@ -225,12 +237,12 @@ describe("LightweightAdapter", () => {
       controller.abort();
     }, 20);
 
-    const events = await collectStream(stream);
+    const events = await collectDataEvents(stream);
     const traces = traceLogs(consoleSpy);
     consoleSpy.mockRestore();
 
     expect(events).toHaveLength(1);
-    expect(JSON.parse(events[0]).type).toBe("token");
+    expect(events[0].type).toBe("token");
     expect(traces).toHaveLength(1);
     expect(traces[0]).toMatchObject({ status: "error", source: "playground" });
   });
@@ -243,9 +255,9 @@ describe("LightweightAdapter", () => {
       messages: [{ role: "user", content: "test" }],
     });
 
-    const events = await collectStream(stream);
+    const events = await collectDataEvents(stream);
     expect(events).toHaveLength(1);
-    const parsed = JSON.parse(events[0]);
+    const parsed = events[0];
     expect(parsed.type).toBe("error");
     expect(parsed.data).toContain("Provider rate limited");
   });
@@ -344,5 +356,58 @@ describe("LightweightAdapter", () => {
 
     expect(traces).toHaveLength(1);
     expect(String(traces[0].input).length).toBe(8000);
+  });
+
+  it("bridges sanitized log events into the SSE stream", async () => {
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([
+        { delta: "Hello world", done: false },
+        { delta: "", done: true },
+      ]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "secret content sk-abcdefghijklmnopqrstuvwxyz012345" }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
+      correlationId: "corr-logtest",
+    });
+
+    const logs = await collectLogEvents(stream);
+    const events = logs.map((l) => l.event);
+    expect(events).toEqual(expect.arrayContaining(["chat.routing", "chat.complete", "trace"]));
+
+    expect(logs[0]).toMatchObject({
+      type: "log",
+      level: "info",
+      event: "chat.routing",
+      primary: "groq",
+      correlationId: "corr-logtest",
+    });
+
+    const traceLog = logs.find((l) => l.event === "trace");
+    expect(traceLog).toMatchObject({
+      type: "log",
+      level: "info",
+      event: "trace",
+      source: "playground",
+      member: "the-scribe",
+      status: "success",
+      model: "llama-3.3-70b-versatile",
+    });
+    expect(traceLog?.tokenCount).toMatchObject({
+      input: expect.any(Number),
+      output: expect.any(Number),
+      total: expect.any(Number),
+    });
+
+    // Client-safe allowlist: no chat content, prompts, or api keys cross the bridge.
+    const serialized = JSON.stringify(logs);
+    expect(serialized).not.toContain("secret content");
+    expect(serialized).not.toContain("sk-abcdefghijklmnopqrstuvwxyz012345");
+    // The trace payload fields are dropped entirely (only tokenCount's numeric
+    // input/output counters survive).
+    expect(traceLog).not.toHaveProperty("input");
+    expect(traceLog).not.toHaveProperty("output");
   });
 });
