@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import Turnstile from './Turnstile'
 
-const CAPTCHA_REQUIRED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+const CAPTCHA_REQUIRED =
+  process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false" &&
+  !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 interface GuestComment {
   id: string

@@ -17,6 +17,7 @@ const MAX_TOKENS = 100_000;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
 const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
@@ -121,9 +122,9 @@ function validateBaseUrl(baseUrl: string): void {
 }
 
 async function validateTurnstile(token: unknown): Promise<void> {
-  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
-    if (TURNSTILE_REQUIRED) {
-      logger.error("turnstile.config_missing", { message: "TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set. CAPTCHA bypassed." });
+  if (!TURNSTILE_ENABLED || !TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
+    if (TURNSTILE_ENABLED && TURNSTILE_REQUIRED) {
+      logger.error("turnstile.config_missing", { message: "Turnstile enabled but TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set. CAPTCHA bypassed." });
     }
     return;
   }
