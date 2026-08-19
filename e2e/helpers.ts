@@ -1,7 +1,8 @@
 import type { Page, Locator } from "@playwright/test";
 import { expect } from "@playwright/test";
 
-export async function mockTurnstile(page: Page): Promise<void> {
+export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } = {}): Promise<void> {
+  const { autoVerify = true } = opts;
   await page.route("**/challenges.cloudflare.com/turnstile/**", async (route) => {
     await route.fulfill({
       contentType: "application/javascript",
@@ -12,7 +13,16 @@ export async function mockTurnstile(page: Page): Promise<void> {
           function issue(options) {
             counter += 1;
             var token = "TEST_TOKEN_" + counter;
-            setTimeout(function () { options.callback(token); }, 50);
+            if (${autoVerify}) {
+              setTimeout(function () { options.callback(token); }, 50);
+            } else {
+              window.__turnstileIssueResolvers = (window.__turnstileIssueResolvers || []).concat([
+                function () { options.callback(token); }
+              ]);
+              if (window.__turnstileIssue) {
+                window.__turnstileIssue();
+              }
+            }
             return "widget-" + counter;
           }
           return {

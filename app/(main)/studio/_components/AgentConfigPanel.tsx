@@ -13,6 +13,10 @@ import {
 } from "../_types/studio";
 import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 import HelpTip from "./HelpTip";
+import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
+import { TURNSTILE_REQUIRED } from "../_lib/env";
+
+type CaptchaMode = "visible" | "invisible" | "hidden";
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
@@ -25,6 +29,13 @@ interface AgentConfigPanelProps {
   onSave?: (config: ChatConfig) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  captchaToken?: string | null;
+  captchaRefreshKey?: number;
+  onCaptchaToken?: (token: string | null) => void;
+  onCaptchaError?: (error: string) => void;
+  onCaptchaStatus?: (status: TurnstileStatus) => void;
+  /** How the Turnstile widget is presented: interactive, silent (badges/invisible, tokens still flow), or not rendered. */
+  captchaMode?: CaptchaMode;
 }
 
 function SectionHeader({
@@ -68,6 +79,12 @@ export default function AgentConfigPanel({
   onChangeConfig,
   onChangeAgent,
   onSave,
+  captchaToken,
+  captchaRefreshKey,
+  onCaptchaToken,
+  onCaptchaError,
+  onCaptchaStatus,
+  captchaMode = "visible",
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -441,11 +458,23 @@ export default function AgentConfigPanel({
           </Collapse>
         </div>
 
+        {/* Captcha — above save button */}
+        {captchaMode !== "hidden" && (
+          <Turnstile
+            onToken={onCaptchaToken ?? (() => {})}
+            onError={onCaptchaError}
+            onStatus={onCaptchaStatus}
+            refreshKey={captchaRefreshKey}
+            visible={captchaMode === "visible"}
+          />
+        )}
+
         {/* Save */}
         {onSave && (
           <Button
             fullWidth
             onClick={handleSave}
+            disabled={TURNSTILE_REQUIRED && !captchaToken}
             className={`transition-all duration-200 ${saved ? "bg-emerald-600" : ""}`}
           >
             {saved ? (
@@ -453,6 +482,8 @@ export default function AgentConfigPanel({
                 <IconCheck size={14} />
                 Saved
               </Group>
+            ) : TURNSTILE_REQUIRED && !captchaToken ? (
+              "Verify to save"
             ) : (
               "Save configuration"
             )}

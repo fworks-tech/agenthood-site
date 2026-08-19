@@ -79,7 +79,8 @@ test.describe("Playground — Configuration", () => {
     await selectMantineOption(page, "Provider", "OpenAI");
     await page.waitForTimeout(200);
 
-    await page.locator("button:has-text('Save configuration')").click();
+    const saveBtn = page.locator("button:has-text('Save configuration')");
+    await saveBtn.click();
     await page.waitForTimeout(300);
 
     const saved = await page.evaluate(() => sessionStorage.getItem("agenthood-studio-config"));
