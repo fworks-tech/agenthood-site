@@ -14,7 +14,6 @@ import {
 import HelpTip from "./studio/_components/HelpTip";
 import FadeIn from "../_components/FadeIn";
 import InstallBlock from "../_components/InstallBlock";
-import TypingTerminal from "../_components/TypingTerminal";
 import { ClientCTA } from "./_client-cta";
 import { agents } from "./studio/_data/agents";
 
