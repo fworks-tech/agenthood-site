@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Turnstile from './Turnstile'
 
 const CAPTCHA_REQUIRED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -78,6 +78,8 @@ export default function GuestCommentForm() {
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Guest comments ({comments.length})</h3>
           {comments.map((c) => (
             <div key={c.id} className="flex gap-3">
+              {/* next/image would need remotePatterns for the seed-based dicebear URL on a decorative 32px avatar */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={avatarUrl(c.name)}
                 alt=""
