@@ -663,8 +663,8 @@ test.describe("Playground — Network Logs", () => {
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "network probe");
 
-    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
-    await expect(page.locator("text=chat.error")).toBeVisible();
+    await expect(page.getByText("chat.routing · primary=groq", { exact: true })).toBeVisible();
+    await expect(page.getByText("chat.error", { exact: true })).toBeVisible();
     await waitForStreamComplete(page);
   });
 });
@@ -680,12 +680,12 @@ test.describe("Playground — LiveLogs UI", () => {
     await selectAgent(page, "the-scribe");
 
     // debug-level captcha lifecycle entries exist but are filtered out
-    await expect(page.locator("text=CAPTCHA widget rendered")).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText("CAPTCHA widget rendered", { exact: true })).toBeHidden({ timeout: 10000 });
     // info-level entries remain visible
-    await expect(page.locator("text=CAPTCHA ready")).toBeVisible();
+    await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible();
 
     await page.getByLabel("Show debug logs").click();
-    await expect(page.locator("text=CAPTCHA widget rendered")).toBeVisible();
+    await expect(page.getByText("CAPTCHA widget rendered", { exact: true })).toBeVisible();
   });
 
   test("panel auto-expands when a new error arrives while collapsed", async ({ page, clearStorage }) => {
@@ -712,7 +712,9 @@ test.describe("Playground — LiveLogs UI", () => {
     await sendMessage(page, "boom");
 
     // the failure log renders only once the collapsed panel auto-expands
-    await expect(page.locator("text=/✗ .+ failed after/")).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.locator("div.mantine-Group-root").filter({ hasText: /✗ .+ failed after/ }).first(),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("copy button copies formatted logs to the clipboard", async ({ page, clearStorage }) => {
@@ -724,7 +726,7 @@ test.describe("Playground — LiveLogs UI", () => {
     await waitForHydration(page);
 
     await selectAgent(page, "the-scribe");
-    await expect(page.locator("text=CAPTCHA ready")).toBeVisible();
+    await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible();
 
     await page.getByLabel("Copy logs").click();
     await expect
@@ -748,7 +750,7 @@ test.describe("Playground — LiveLogs UI", () => {
 
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "filter probe");
-    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
+    await expect(page.getByText("chat.routing · primary=groq", { exact: true })).toBeVisible();
     await expect(page.locator("text=Agents loaded").first()).toBeVisible();
 
     const filter = page.getByRole("combobox", { name: "Filter logs by category" });
@@ -759,7 +761,7 @@ test.describe("Playground — LiveLogs UI", () => {
       .filter({ hasText: "Network" })
       .click();
 
-    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
+    await expect(page.getByText("chat.routing · primary=groq", { exact: true })).toBeVisible();
     await expect(page.locator("text=Agents loaded").first()).toBeHidden();
   });
 });
