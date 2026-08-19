@@ -470,6 +470,7 @@ export default function PlaygroundPage() {
               addLog("error", msg);
             }}
             refreshKey={turnstileRefreshKey}
+            visible
           />
 
           {/* Mobile agent selector */}
