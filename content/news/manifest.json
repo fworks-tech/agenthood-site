@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-19"
+    ],
+    "path": "news/whats-new-2026-08-19.md",
+    "title": "Agenthood v3.35.1",
+    "date": "2026-08-19",
+    "author": "Agenthood Team",
+    "summary": "Milestones plugin no longer edits CHANGELOG.md or release notes; semantic-release handles them."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-16"
     ],
     "path": "news/whats-new-2026-08-16.md",
