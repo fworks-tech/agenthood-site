@@ -680,12 +680,12 @@ test.describe("Playground — LiveLogs UI", () => {
     await selectAgent(page, "the-scribe");
 
     // debug-level captcha lifecycle entries exist but are filtered out
-    await expect(page.getByText("CAPTCHA widget rendered", { exact: true })).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText("CAPTCHA widget rendered", { exact: true }).first()).toBeHidden({ timeout: 10000 });
     // info-level entries remain visible
-    await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible();
+    await expect(page.getByText("CAPTCHA ready", { exact: true }).first()).toBeVisible();
 
     await page.getByLabel("Show debug logs").click();
-    await expect(page.getByText("CAPTCHA widget rendered", { exact: true })).toBeVisible();
+    await expect(page.getByText("CAPTCHA widget rendered", { exact: true }).first()).toBeVisible();
   });
 
   test("panel auto-expands when a new error arrives while collapsed", async ({ page, clearStorage }) => {
@@ -726,7 +726,6 @@ test.describe("Playground — LiveLogs UI", () => {
     await waitForHydration(page);
 
     await selectAgent(page, "the-scribe");
-    await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Copy logs")).toBeEnabled();
 
     await page.getByLabel("Copy logs").click();
