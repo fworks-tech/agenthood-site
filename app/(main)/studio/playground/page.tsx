@@ -48,7 +48,7 @@ export default function PlaygroundPage() {
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
+  const [turnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
@@ -224,9 +224,8 @@ export default function PlaygroundPage() {
           provider: config.provider,
           error: err instanceof Error ? err.message : String(err),
         });
-      } finally {
-        setTurnstileRefreshKey((k) => k + 1);
       }
+
     },
     [
       chat,
