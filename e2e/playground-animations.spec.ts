@@ -3,6 +3,7 @@ import { test } from "./fixtures";
 import {
   mockTurnstile,
   selectAgent,
+  selectMantineOption,
   sendMessage,
   getMessages,
   waitForStreamComplete,
@@ -666,5 +667,94 @@ test.describe("Playground — Network Logs", () => {
     await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
     await expect(page.locator("text=chat.error")).toBeVisible();
     await waitForStreamComplete(page);
+  });
+});
+
+test.describe("Playground — LiveLogs UI", () => {
+  test("debug entries are hidden by default and revealed by the Debug toggle", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+
+    // debug-level captcha lifecycle entries exist but are filtered out
+    await expect(page.locator("text=CAPTCHA widget rendered")).toBeHidden({ timeout: 10000 });
+    // info-level entries remain visible
+    await expect(page.locator("text=CAPTCHA ready")).toBeVisible();
+
+    await page.getByLabel("Show debug logs").click();
+    await expect(page.locator("text=CAPTCHA widget rendered")).toBeVisible();
+  });
+
+  test("panel auto-expands when a new error arrives while collapsed", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.route("**/api/studio/chat/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: JSON.stringify({ type: "error", data: "Provider unavailable" }) + "\n",
+      });
+    });
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+
+    // collapse the Live Logs panel via its header
+    const header = page.locator("text=Live Logs").first();
+    await header.click();
+    await expect(page.locator("text=Agents loaded").first()).toBeHidden();
+
+    await sendMessage(page, "boom");
+
+    // the failure log renders only once the collapsed panel auto-expands
+    await expect(page.locator("text=/✗ .+ failed after/")).toBeVisible({ timeout: 15000 });
+  });
+
+  test("copy button copies formatted logs to the clipboard", async ({ page, clearStorage }) => {
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+    await expect(page.locator("text=CAPTCHA ready")).toBeVisible();
+
+    await page.getByLabel("Copy logs").click();
+    await expect
+      .poll(async () => await page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
+      .toContain("[INFO] [CAPTCHA] CAPTCHA ready");
+  });
+
+  test("category filter narrows the visible logs", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.route("**/api/studio/chat/**", async (route) => {
+      const body =
+        JSON.stringify({ type: "log", level: "info", event: "chat.routing", primary: "groq", correlationId: "e2e-corr-1" }) + "\n" +
+        JSON.stringify({ type: "token", data: "Hello" }) + "\n" +
+        JSON.stringify({ type: "done" }) + "\n";
+      await route.fulfill({ status: 200, headers: { "Content-Type": "text/event-stream" }, body });
+    });
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+    await sendMessage(page, "filter probe");
+    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
+    await expect(page.locator("text=Agents loaded").first()).toBeVisible();
+
+    await selectMantineOption(page, "Filter logs by category", "Network");
+
+    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
+    await expect(page.locator("text=Agents loaded").first()).toBeHidden();
   });
 });

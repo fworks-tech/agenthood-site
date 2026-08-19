@@ -1,18 +1,33 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Group, Text, Badge, Collapse, UnstyledButton } from "@mantine/core";
-import { IconChevronDown } from "@tabler/icons-react";
+import { Group, Text, Badge, Collapse, UnstyledButton, ActionIcon, Switch, Select } from "@mantine/core";
+import { IconChevronDown, IconCopy } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
-import type { LogEntry, LogLevel } from "../_lib/log-types";
+import type { LogCategory, LogEntry, LogLevel } from "../_lib/log-types";
+import { LOG_CATEGORIES } from "../_lib/log-types";
 
 export type { LogEntry, LogLevel };
+
+export type LogCategoryFilter = LogCategory | "all";
 
 interface LiveLogsProps {
   logs: LogEntry[];
   open?: boolean;
   onToggle?: () => void;
+  debugVisible?: boolean;
+  onToggleDebug?: () => void;
+  categoryFilter?: LogCategoryFilter;
+  onCategoryFilter?: (category: LogCategoryFilter) => void;
 }
+
+const CATEGORY_OPTIONS: { value: LogCategoryFilter; label: string }[] = [
+  { value: "all", label: "All categories" },
+  ...LOG_CATEGORIES.map((c) => ({
+    value: c,
+    label: c.charAt(0).toUpperCase() + c.slice(1),
+  })),
+];
 
 function getLevelColor(level: LogLevel) {
   switch (level) {
@@ -32,7 +47,21 @@ function getBadgeColor(level: LogLevel) {
   }
 }
 
-export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps) {
+function formatForCopy(entry: LogEntry): string {
+  const category = entry.category.toUpperCase();
+  const detail = entry.detail ? ` — ${entry.detail}` : "";
+  return `[${entry.time}] ${entry.level.toUpperCase()} [${category}] ${entry.message}${detail}`;
+}
+
+export default function LiveLogs({
+  logs,
+  open = true,
+  onToggle,
+  debugVisible = false,
+  onToggleDebug,
+  categoryFilter = "all",
+  onCategoryFilter,
+}: LiveLogsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,6 +69,22 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [logs, open]);
+
+  const renderedLogs = logs.filter(
+    (log) =>
+      (debugVisible || log.level !== "debug") &&
+      (categoryFilter === "all" || log.category === categoryFilter),
+  );
+
+  const handleCopy = async () => {
+    const text = renderedLogs.map(formatForCopy).join("\n");
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      /* clipboard unavailable (e.g. http) */
+    }
+  };
 
   return (
     <div className="border border-zinc-800 bg-zinc-950">
@@ -58,24 +103,56 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
             <HelpTip text="Real-time event log showing request routing, provider calls, errors, and system messages." />
           </Text>
         </Group>
-        <Text size="xs" c="zinc.6">{logs.length} events</Text>
+        <Text size="xs" c="zinc.6">
+          {renderedLogs.length}/{logs.length} events
+        </Text>
       </UnstyledButton>
+      <div className="flex items-center gap-2 border-t border-zinc-800/50 px-3 py-1">
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          color="gray"
+          onClick={handleCopy}
+          disabled={renderedLogs.length === 0}
+          aria-label="Copy logs"
+          title="Copy logs to clipboard"
+        >
+          <IconCopy size={14} />
+        </ActionIcon>
+        <Switch
+          size="xs"
+          label="Debug"
+          checked={debugVisible}
+          onChange={onToggleDebug}
+          aria-label="Show debug logs"
+        />
+        <div className="ml-auto w-36">
+          <Select
+            size="xs"
+            data={CATEGORY_OPTIONS}
+            value={categoryFilter}
+            onChange={(v) => onCategoryFilter?.((v as LogCategoryFilter) ?? "all")}
+            aria-label="Filter logs by category"
+            allowDeselect={false}
+          />
+        </div>
+      </div>
       <Collapse expanded={open}>
         <div
           ref={scrollRef}
           className="h-20 md:h-28 overflow-y-auto border-t border-zinc-800/50"
         >
           <div className="px-3 py-2 font-mono text-[11px] leading-relaxed">
-            {logs.length === 0 ? (
+            {renderedLogs.length === 0 ? (
               <Group gap="xs">
                 <Text size="xs" c="zinc.6" fs="italic">
-                  Waiting for events...
+                  {logs.length === 0 ? "Waiting for events..." : "No logs match the current filter."}
                 </Text>
                 <HelpTip text="Log entries appear here once you send a message or interact with an agent." />
               </Group>
             ) : (
-              logs.map((log) => (
-                <Group key={log.id} gap="sm" wrap="nowrap" align="flex-start" className="animate-[slide-up_0.2s_ease-out_forwards]">
+              renderedLogs.map((log) => (
+                <Group key={log.id} gap="sm" align="flex-start" className="animate-[slide-up_0.2s_ease-out_forwards]">
                   <Text size="xs" c="zinc.6" className="shrink-0">{log.time}</Text>
                   <Badge
                     size="xs"
@@ -85,6 +162,11 @@ export default function LiveLogs({ logs, open = true, onToggle }: LiveLogsProps)
                     {log.level.toUpperCase()}
                   </Badge>
                   <Text size="xs" c={getLevelColor(log.level)}>{log.message}</Text>
+                  {log.detail && (
+                    <Text size="xs" c="zinc.6" className="truncate max-w-[180px] shrink-0" title={log.detail}>
+                      {log.detail}
+                    </Text>
+                  )}
                 </Group>
               ))
             )}
