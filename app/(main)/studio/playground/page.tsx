@@ -48,7 +48,7 @@ export default function PlaygroundPage() {
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileRefreshKey] = useState(0);
+  const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
@@ -177,6 +177,13 @@ export default function PlaygroundPage() {
     },
     [addLog],
   );
+
+  const retryCaptcha = useCallback(() => {
+    setTurnstileError(null);
+    setTurnstileToken(null);
+    setTurnstileRefreshKey((k) => k + 1);
+    addLog("info", "CAPTCHA retry requested", { category: "captcha" });
+  }, [addLog]);
 
   const handleSendMessage = useCallback(
     async (content: string) => {
@@ -522,6 +529,7 @@ export default function PlaygroundPage() {
                 !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || !!turnstileToken
               }
               captchaError={turnstileError}
+              onRetryCaptcha={retryCaptcha}
             />
           )}
 

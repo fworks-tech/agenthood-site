@@ -12,9 +12,10 @@ interface ChatComposerProps {
   disabled?: boolean;
   captchaReady?: boolean;
   captchaError?: string | null;
+  onRetryCaptcha?: () => void;
 }
 
-export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true, captchaError }: ChatComposerProps) {
+export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true, captchaError, onRetryCaptcha }: ChatComposerProps) {
   const [input, setInput] = useState("");
   const [imageWarning, setImageWarning] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -119,17 +120,21 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
           </Group>
         ) : (
           <Group gap={4}>
-            {!captchaReady && (
-              <span
-                className={`text-[10px] whitespace-nowrap ${
-                  captchaError
-                    ? "text-red-400"
-                    : "text-zinc-600 animate-pulse"
-                }`}
-              >
-                {captchaError ?? "Verifying..."}
-              </span>
-            )}
+            {!captchaReady &&
+              (captchaError ? (
+                <Group gap="xs">
+                  <span className="text-[10px] whitespace-nowrap text-red-400">{captchaError}</span>
+                  <button
+                    type="button"
+                    onClick={onRetryCaptcha}
+                    className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300 hover:bg-zinc-800 transition-colors"
+                  >
+                    Retry CAPTCHA
+                  </button>
+                </Group>
+              ) : (
+                <span className="text-[10px] whitespace-nowrap text-zinc-600 animate-pulse">Verifying...</span>
+              ))}
             <ActionIcon
               onClick={handleSend}
               disabled={!input.trim() || disabled || !captchaReady}
