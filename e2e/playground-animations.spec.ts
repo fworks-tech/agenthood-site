@@ -766,5 +766,10 @@ test.describe("Playground — LiveLogs UI", () => {
 
     await expect(page.getByText("chat.routing · primary=groq", { exact: true })).toBeVisible();
     await expect(page.locator("text=Agents loaded").first()).toBeHidden();
+
+    await page.reload();
+    await waitForHydration(page);
+    await expect(page.getByText("chat.routing · primary=groq", { exact: true })).toBeVisible();
+    await expect(page.locator("text=Agents loaded").first()).toBeHidden();
   });
 });

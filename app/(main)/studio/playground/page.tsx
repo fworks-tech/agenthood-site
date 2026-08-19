@@ -19,7 +19,7 @@ import { getDefaultModel } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
 import { agentPrompts } from "../_data/agentPrompts.generated";
 import WelcomeTerminal from "./_components/WelcomeTerminal";
-import type { LogCategory, LogEntry, LogLevel } from "../_lib/log-types";
+import { isLogCategory, type LogCategory, type LogEntry, type LogLevel } from "../_lib/log-types";
 import type { StreamLogEvent } from "../_lib/stream";
 import { appendLog, createLogEntry, loadLogs } from "../_lib/log-store";
 import { track } from "@vercel/analytics";
@@ -34,6 +34,19 @@ function loadSavedConfig(): Partial<ChatConfig> {
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
+  }
+}
+
+function loadLogsViewState(): { debug: boolean; category: LogCategoryFilter } {
+  if (typeof window === "undefined") return { debug: false, category: "all" };
+  try {
+    const category = sessionStorage.getItem(STORAGE_KEYS.LOGS_CATEGORY);
+    return {
+      debug: sessionStorage.getItem(STORAGE_KEYS.LOGS_DEBUG) === "1",
+      category: category && isLogCategory(category) ? (category as LogCategoryFilter) : "all",
+    };
+  } catch {
+    return { debug: false, category: "all" };
   }
 }
 
@@ -69,6 +82,24 @@ export default function PlaygroundPage() {
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+
+  useEffect(() => {
+    const state = loadLogsViewState();
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setDebugVisible(state.debug);
+    setLogCategoryFilter(state.category);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(STORAGE_KEYS.LOGS_DEBUG, debugVisible ? "1" : "0");
+  }, [debugVisible]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(STORAGE_KEYS.LOGS_CATEGORY, logCategoryFilter);
+  }, [logCategoryFilter]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
