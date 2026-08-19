@@ -58,3 +58,8 @@ export function appendLog(current: LogEntry[], entry: LogEntry): LogEntry[] {
   persistLogs(next);
   return next;
 }
+
+export function hasNewError(logs: LogEntry[], prevCount: number): boolean {
+  if (prevCount >= logs.length) return false;
+  return logs.slice(prevCount).some((log) => log.level === "error");
+}
