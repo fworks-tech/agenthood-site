@@ -36,6 +36,8 @@ interface AgentConfigPanelProps {
   onCaptchaError?: (error: string) => void;
   onCaptchaStatus?: (status: TurnstileStatus) => void;
   showCaptcha?: boolean;
+  /** Render the widget interactively vs. invisible-but-active (mobile sheet uses invisible so tokens still flow). */
+  captchaVisible?: boolean;
 }
 
 function SectionHeader({
@@ -85,6 +87,7 @@ export default function AgentConfigPanel({
   onCaptchaError,
   onCaptchaStatus,
   showCaptcha = true,
+  captchaVisible = true,
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -465,7 +468,7 @@ export default function AgentConfigPanel({
             onError={onCaptchaError}
             onStatus={onCaptchaStatus}
             refreshKey={captchaRefreshKey}
-            visible
+            visible={captchaVisible}
           />
         )}
 

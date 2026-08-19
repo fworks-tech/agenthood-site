@@ -221,6 +221,14 @@ export default function PlaygroundPage() {
     addLog("info", "CAPTCHA retry requested", { category: "captcha" });
   }, [addLog]);
 
+  const handleTurnstileError = useCallback(
+    (msg: string) => {
+      setTurnstileError(msg);
+      addLog("error", msg, { category: "captcha" });
+    },
+    [addLog],
+  );
+
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!selectedAgent) return;
@@ -424,10 +432,7 @@ export default function PlaygroundPage() {
                   captchaToken={turnstileToken}
                   captchaRefreshKey={turnstileRefreshKey}
                   onCaptchaToken={setTurnstileToken}
-                  onCaptchaError={(msg) => {
-                    setTurnstileError(msg);
-                    addLog("error", msg, { category: "captcha" });
-                  }}
+                  onCaptchaError={handleTurnstileError}
                   onCaptchaStatus={handleTurnstileStatus}
                   showCaptcha={!isMobile}
                 />
@@ -785,12 +790,10 @@ export default function PlaygroundPage() {
           captchaToken={turnstileToken}
           captchaRefreshKey={turnstileRefreshKey}
           onCaptchaToken={setTurnstileToken}
-          onCaptchaError={(msg) => {
-            setTurnstileError(msg);
-            addLog("error", msg, { category: "captcha" });
-          }}
+          onCaptchaError={handleTurnstileError}
           onCaptchaStatus={handleTurnstileStatus}
-          showCaptcha={false}
+          showCaptcha={isMobile}
+          captchaVisible={false}
         />
       </MobileBottomSheet>
     </div>
