@@ -731,6 +731,7 @@ test.describe("Playground — LiveLogs UI", () => {
     await expect(page.getByLabel("Copy logs")).toBeEnabled();
 
     await page.getByLabel("Copy logs").click();
+    await expect(page.getByText("Copied", { exact: true })).toBeVisible();
     await expect
       .poll(async () => await page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
       .toContain("INFO [CAPTCHA] CAPTCHA ready");

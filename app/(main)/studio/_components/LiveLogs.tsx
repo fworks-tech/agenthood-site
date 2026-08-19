@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Group, Text, Badge, Collapse, UnstyledButton, ActionIcon, Switch, Select } from "@mantine/core";
 import { IconChevronDown, IconCopy } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
@@ -65,6 +65,14 @@ export default function LiveLogs({
   onCategoryFilter,
 }: LiveLogsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -83,9 +91,12 @@ export default function LiveLogs({
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
+      setCopyState("copied");
     } catch {
-      /* clipboard unavailable (e.g. http) */
+      setCopyState("error");
     }
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopyState("idle"), 1500);
   };
 
   return (
@@ -121,6 +132,12 @@ export default function LiveLogs({
         >
           <IconCopy size={14} />
         </ActionIcon>
+        {copyState === "copied" && (
+          <Text size="xs" c="emerald.5" aria-live="polite">Copied</Text>
+        )}
+        {copyState === "error" && (
+          <Text size="xs" c="red.5" aria-live="polite">Copy failed — clipboard unavailable</Text>
+        )}
         <Switch
           size="xs"
           label="Debug"
