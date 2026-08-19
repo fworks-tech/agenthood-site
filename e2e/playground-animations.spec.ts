@@ -727,6 +727,7 @@ test.describe("Playground — LiveLogs UI", () => {
 
     await selectAgent(page, "the-scribe");
     await expect(page.getByText("CAPTCHA ready", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Copy logs")).toBeEnabled();
 
     await page.getByLabel("Copy logs").click();
     await expect
