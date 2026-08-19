@@ -25,7 +25,9 @@ const CATEGORY_OPTIONS: { value: LogCategoryFilter; label: string }[] = [
   { value: "all", label: "All categories" },
   ...LOG_CATEGORIES.map((c) => ({
     value: c,
-    label: c.charAt(0).toUpperCase() + c.slice(1),
+    // "Config" would collide with the mobile bottom-bar Config button in DOM
+    // text queries, whose dropdown stays mounted (hidden) via Mantine combobox.
+    label: c === "config" ? "Configuration" : c.charAt(0).toUpperCase() + c.slice(1),
   })),
 ];
 
