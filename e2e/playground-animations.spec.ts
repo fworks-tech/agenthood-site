@@ -423,9 +423,10 @@ test.describe("Playground — Responsive Layout", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
 
-    await expect(page.locator("text=Conversations").last()).toBeVisible();
-    await expect(page.locator("text=Config").last()).toBeVisible();
-    await expect(page.locator("text=Logs").last()).toBeVisible();
+    const bottomBar = page.locator("div.fixed.bottom-0");
+    await expect(bottomBar.getByText("Conversations", { exact: true })).toBeVisible();
+    await expect(bottomBar.getByText("Config", { exact: true })).toBeVisible();
+    await expect(bottomBar.getByText("Logs", { exact: true })).toBeVisible();
   });
 
   test("mobile shows agent selector when no agent selected", async ({ page }) => {
