@@ -7,6 +7,7 @@ const KV = process.env.KV_URL && process.env.KV_TOKEN
   : null;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 interface Comment {
@@ -17,9 +18,9 @@ interface Comment {
 }
 
 async function verifyTurnstile(token: string): Promise<boolean> {
-  if (!TURNSTILE_SECRET) {
+  if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
     if (TURNSTILE_REQUIRED) {
-      console.error("comments.turnstile_secret_missing");
+      console.error("comments.turnstile_config_missing");
     }
     return true;
   }
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name and comment are required" }, { status: 400 });
   }
 
-  if (!token || !(await verifyTurnstile(token))) {
+  if (TURNSTILE_SECRET && TURNSTILE_SITE_KEY && (!token || !(await verifyTurnstile(token)))) {
     return NextResponse.json({ error: "Captcha verification failed" }, { status: 400 });
   }
 

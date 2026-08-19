@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import Turnstile from './Turnstile'
 
+const CAPTCHA_REQUIRED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+
 interface GuestComment {
   id: string
   name: string
@@ -34,7 +36,7 @@ export default function GuestCommentForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !text.trim() || !token) return
+    if (!name.trim() || !text.trim() || (CAPTCHA_REQUIRED && !token)) return
     setSending(true)
     setError('')
     try {
@@ -119,7 +121,7 @@ export default function GuestCommentForm() {
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           type="submit"
-          disabled={sending || !name.trim() || !text.trim() || !token}
+          disabled={sending || !name.trim() || !text.trim() || (CAPTCHA_REQUIRED && !token)}
           className="px-4 py-1.5 text-sm font-medium bg-zinc-200 text-zinc-900 rounded hover:bg-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {sending ? 'Posting...' : 'Post comment'}
