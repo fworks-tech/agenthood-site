@@ -30,6 +30,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
 
   useEffect(() => {
     if (!startTyping || phase !== "idle") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhase("command");
   }, [startTyping, phase]);
 
@@ -48,6 +49,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
   useEffect(() => {
     if (phase !== "output") return;
     if (outIdx >= OUTPUT_LINES.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("done");
       return;
     }

@@ -45,6 +45,7 @@ export default function WelcomeTerminal() {
   useEffect(() => {
     if (phase !== "typing") return;
     if (typedText.length >= current.prompt.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("pausing");
       return;
     }
@@ -66,6 +67,7 @@ export default function WelcomeTerminal() {
   useEffect(() => {
     if (phase !== "output") return;
     if (outputLines >= OUTPUT_LINES.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("waiting");
       return;
     }
