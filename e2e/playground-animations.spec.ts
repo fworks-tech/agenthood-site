@@ -3,7 +3,6 @@ import { test } from "./fixtures";
 import {
   mockTurnstile,
   selectAgent,
-  selectMantineOption,
   sendMessage,
   getMessages,
   waitForStreamComplete,
@@ -730,7 +729,7 @@ test.describe("Playground — LiveLogs UI", () => {
     await page.getByLabel("Copy logs").click();
     await expect
       .poll(async () => await page.evaluate(() => navigator.clipboard.readText()), { timeout: 5000 })
-      .toContain("[INFO] [CAPTCHA] CAPTCHA ready");
+      .toContain("INFO [CAPTCHA] CAPTCHA ready");
   });
 
   test("category filter narrows the visible logs", async ({ page, clearStorage }) => {
@@ -752,7 +751,13 @@ test.describe("Playground — LiveLogs UI", () => {
     await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
     await expect(page.locator("text=Agents loaded").first()).toBeVisible();
 
-    await selectMantineOption(page, "Filter logs by category", "Network");
+    const filter = page.getByRole("combobox", { name: "Filter logs by category" });
+    await filter.click();
+    await page
+      .getByRole("listbox", { name: "Filter logs by category" })
+      .getByRole("option")
+      .filter({ hasText: "Network" })
+      .click();
 
     await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
     await expect(page.locator("text=Agents loaded").first()).toBeHidden();
