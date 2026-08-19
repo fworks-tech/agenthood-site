@@ -13,6 +13,11 @@ import {
 } from "../_types/studio";
 import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 import HelpTip from "./HelpTip";
+import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
+
+const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
+const TURNSTILE_REQUIRED =
+  TURNSTILE_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
@@ -25,6 +30,12 @@ interface AgentConfigPanelProps {
   onSave?: (config: ChatConfig) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  captchaToken?: string | null;
+  captchaRefreshKey?: number;
+  onCaptchaToken?: (token: string | null) => void;
+  onCaptchaError?: (error: string) => void;
+  onCaptchaStatus?: (status: TurnstileStatus) => void;
+  showCaptcha?: boolean;
 }
 
 function SectionHeader({
@@ -68,6 +79,12 @@ export default function AgentConfigPanel({
   onChangeConfig,
   onChangeAgent,
   onSave,
+  captchaToken,
+  captchaRefreshKey,
+  onCaptchaToken,
+  onCaptchaError,
+  onCaptchaStatus,
+  showCaptcha = true,
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -441,11 +458,23 @@ export default function AgentConfigPanel({
           </Collapse>
         </div>
 
+        {/* Captcha — above save button */}
+        {showCaptcha && (
+          <Turnstile
+            onToken={onCaptchaToken ?? (() => {})}
+            onError={onCaptchaError}
+            onStatus={onCaptchaStatus}
+            refreshKey={captchaRefreshKey}
+            visible
+          />
+        )}
+
         {/* Save */}
         {onSave && (
           <Button
             fullWidth
             onClick={handleSave}
+            disabled={TURNSTILE_REQUIRED && !captchaToken}
             className={`transition-all duration-200 ${saved ? "bg-emerald-600" : ""}`}
           >
             {saved ? (
@@ -453,6 +482,8 @@ export default function AgentConfigPanel({
                 <IconCheck size={14} />
                 Saved
               </Group>
+            ) : TURNSTILE_REQUIRED && !captchaToken ? (
+              "Verify to save"
             ) : (
               "Save configuration"
             )}

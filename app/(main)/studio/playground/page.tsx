@@ -12,7 +12,7 @@ import DragHandle from "../_components/DragHandle";
 import MobileDrawer from "../_components/MobileDrawer";
 import MobileBottomSheet from "../_components/MobileBottomSheet";
 import HelpTip from "../_components/HelpTip";
-import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
+import { type TurnstileStatus } from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
@@ -421,6 +421,15 @@ export default function PlaygroundPage() {
                   onSave={handleSaveConfig}
                   collapsed={!configPanelOpen}
                   onToggleCollapse={() => setConfigPanelOpen((p) => !p)}
+                  captchaToken={turnstileToken}
+                  captchaRefreshKey={turnstileRefreshKey}
+                  onCaptchaToken={setTurnstileToken}
+                  onCaptchaError={(msg) => {
+                    setTurnstileError(msg);
+                    addLog("error", msg, { category: "captcha" });
+                  }}
+                  onCaptchaStatus={handleTurnstileStatus}
+                  showCaptcha={!isMobile}
                 />
               </div>
             </>
@@ -568,17 +577,6 @@ export default function PlaygroundPage() {
               onRetryCaptcha={retryCaptcha}
             />
           )}
-
-          <Turnstile
-            onToken={setTurnstileToken}
-            onStatus={handleTurnstileStatus}
-            onError={(msg) => {
-              setTurnstileError(msg);
-              addLog("error", msg, { category: "captcha" });
-            }}
-            refreshKey={turnstileRefreshKey}
-            visible={!isMobile}
-          />
 
           {/* Mobile agent selector */}
           {!selectedAgent && (
@@ -784,6 +782,15 @@ export default function PlaygroundPage() {
           onChangeConfig={handleConfigChange}
           onChangeAgent={handleSelectAgent}
           onSave={handleSaveConfig}
+          captchaToken={turnstileToken}
+          captchaRefreshKey={turnstileRefreshKey}
+          onCaptchaToken={setTurnstileToken}
+          onCaptchaError={(msg) => {
+            setTurnstileError(msg);
+            addLog("error", msg, { category: "captcha" });
+          }}
+          onCaptchaStatus={handleTurnstileStatus}
+          showCaptcha={false}
         />
       </MobileBottomSheet>
     </div>

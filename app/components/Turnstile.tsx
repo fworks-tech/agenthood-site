@@ -151,16 +151,10 @@ export default function Turnstile({ onToken, onError, onStatus, refreshKey, visi
   return (
     <div
       ref={containerRef}
-      className={
-        visible
-          ? // Bottom-left clears the composer's send control and the mobile bottom bar;
-            // z-40 stays above page content but below Mantine overlays (drawers/sheets).
-            "turnstile-widget fixed bottom-16 left-3 z-40 md:bottom-4 md:left-4"
-          : "turnstile-widget"
-      }
+      className="turnstile-widget"
       style={
         visible
-          ? { opacity: 1, pointerEvents: "auto" }
+          ? undefined
           : { position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }
       }
     />
