@@ -5,6 +5,7 @@ import {
   persistLogs,
   appendLog,
   formatLogTime,
+  hasNewError,
 } from "../app/(main)/studio/_lib/log-store";
 import { isLogCategory, isLogLevel, LOG_CATEGORIES } from "../app/(main)/studio/_lib/log-types";
 
@@ -105,5 +106,27 @@ describe("log-store", () => {
     const storage = (globalThis as { window: { sessionStorage: Storage } }).window.sessionStorage;
     storage.setItem("agenthood-studio-logs", "{not-json");
     expect(loadLogs()).toEqual([]);
+  });
+
+  it("hasNewError is false when no new logs arrived", () => {
+    const logs = [createLogEntry("info", "system", "a")];
+    expect(hasNewError(logs, 1)).toBe(false);
+  });
+
+  it("hasNewError detects an error anywhere in the new slice, not only the tail", () => {
+    const logs = [
+      createLogEntry("info", "system", "loaded"),
+      createLogEntry("warn", "network", "retrying"),
+      createLogEntry("error", "network", "boom", "req-1"),
+    ];
+    expect(hasNewError(logs, 1)).toBe(true);
+  });
+
+  it("hasNewError ignores errors from before the window", () => {
+    const logs = [
+      createLogEntry("error", "network", "old failure"),
+      createLogEntry("info", "system", "recovered"),
+    ];
+    expect(hasNewError(logs, 2)).toBe(false);
   });
 });

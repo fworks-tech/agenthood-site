@@ -718,6 +718,36 @@ test.describe("Playground — LiveLogs UI", () => {
     ).toBeVisible({ timeout: 15000 });
   });
 
+  test("panel auto-expands on an error that arrives mid-batch, not at the tail", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.route("**/api/studio/chat/**", async (route) => {
+      const body =
+        JSON.stringify({ type: "log", level: "error", event: "chat.error", correlationId: "e2e-corr-2" }) + "\n" +
+        JSON.stringify({ type: "token", data: "Hello" }) + "\n" +
+        JSON.stringify({ type: "done" }) + "\n";
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body,
+      });
+    });
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+
+    const header = page.locator("text=Live Logs").first();
+    await header.click();
+    await expect(page.locator("text=Agents loaded").first()).toBeHidden();
+
+    await sendMessage(page, "mid-batch boom");
+
+    // the mid-batch chat.error log renders only once the collapsed panel auto-expands
+    await expect(page.getByText("chat.error", { exact: true }).first()).toBeVisible({ timeout: 15000 });
+  });
+
   test("copy button copies formatted logs to the clipboard", async ({ page, clearStorage, browserName }) => {
     test.skip(browserName === "webkit", "clipboard-write permission is unsupported on WebKit");
     await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);

@@ -21,7 +21,7 @@ import { agentPrompts } from "../_data/agentPrompts.generated";
 import WelcomeTerminal from "./_components/WelcomeTerminal";
 import { isLogCategory, type LogCategory, type LogEntry, type LogLevel } from "../_lib/log-types";
 import type { StreamLogEvent } from "../_lib/stream";
-import { appendLog, createLogEntry, loadLogs } from "../_lib/log-store";
+import { appendLog, createLogEntry, hasNewError, loadLogs } from "../_lib/log-store";
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
 
@@ -106,12 +106,11 @@ export default function PlaygroundPage() {
     setConfigOpen(window.innerWidth >= 768);
   }, []);
 
-  const prevLastLogIdRef = useRef<string | undefined>(undefined);
+  const prevLogCountRef = useRef(0);
   useEffect(() => {
-    const last = logs[logs.length - 1];
-    const prevId = prevLastLogIdRef.current;
-    prevLastLogIdRef.current = last?.id;
-    if (last && last.id !== prevId && last.level === "error" && !logsOpen) {
+    const prevCount = prevLogCountRef.current;
+    prevLogCountRef.current = logs.length;
+    if (!logsOpen && hasNewError(logs, prevCount)) {
       setLogsOpen(true);
     }
   }, [logs, logsOpen]);
