@@ -617,4 +617,24 @@ test.describe("Playground — CAPTCHA Edge Cases", () => {
     const textarea = page.locator("textarea[placeholder='Type a message...']");
     await expect(textarea).toBeVisible();
   });
+
+  test("captcha lifecycle phases appear in LiveLogs and enable send", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+
+    await expect(page.locator("text=CAPTCHA script loaded")).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=CAPTCHA widget rendered")).toBeVisible();
+    await expect(page.locator("text=CAPTCHA ready")).toBeVisible();
+
+    // Send enables once text exists and a token was received (captchaReady true)
+    const textarea = page.locator("textarea[placeholder='Type a message...']");
+    await textarea.fill("hello");
+    const sendBtn = page.locator("button[aria-label='Send message']");
+    await expect(sendBtn).toBeEnabled({ timeout: 15000 });
+  });
 });
