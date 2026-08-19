@@ -47,6 +47,7 @@ export default function PlaygroundPage() {
   });
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
@@ -108,6 +109,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (turnstileToken) {
       /* eslint-disable react-hooks/set-state-in-effect */
+      setTurnstileError(null);
       addLog("info", "CAPTCHA ready");
       /* eslint-enable react-hooks/set-state-in-effect */
     }
@@ -116,7 +118,10 @@ export default function PlaygroundPage() {
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!selectedAgent) return;
-      if (!turnstileToken) {
+      if (
+        process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
+        !turnstileToken
+      ) {
         addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.");
         return;
       }
@@ -451,14 +456,21 @@ export default function PlaygroundPage() {
               onStop={handleAbortStream}
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
-              captchaReady={!!turnstileToken}
+              captchaReady={
+                !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || !!turnstileToken
+              }
+              captchaError={turnstileError}
             />
           )}
 
           <Turnstile
             onToken={setTurnstileToken}
-            onError={(msg) => addLog("error", msg)}
+            onError={(msg) => {
+              setTurnstileError(msg);
+              addLog("error", msg);
+            }}
             refreshKey={turnstileRefreshKey}
+            visible
           />
 
           {/* Mobile agent selector */}

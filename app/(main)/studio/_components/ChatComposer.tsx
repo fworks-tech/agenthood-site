@@ -11,9 +11,10 @@ interface ChatComposerProps {
   isStreaming: boolean;
   disabled?: boolean;
   captchaReady?: boolean;
+  captchaError?: string | null;
 }
 
-export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true }: ChatComposerProps) {
+export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true, captchaError }: ChatComposerProps) {
   const [input, setInput] = useState("");
   const [imageWarning, setImageWarning] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -119,8 +120,14 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
         ) : (
           <Group gap={4}>
             {!captchaReady && (
-              <span className="text-[10px] text-zinc-600 animate-pulse whitespace-nowrap">
-                Verifying...
+              <span
+                className={`text-[10px] whitespace-nowrap ${
+                  captchaError
+                    ? "text-red-400"
+                    : "text-zinc-600 animate-pulse"
+                }`}
+              >
+                {captchaError ?? "Verifying..."}
               </span>
             )}
             <ActionIcon

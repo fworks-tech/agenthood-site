@@ -27,9 +27,12 @@ interface TurnstileProps {
   onToken: (token: string | null) => void;
   onError?: (error: string) => void;
   refreshKey?: number;
+  /** Render the widget as an interactive element (playground). Defaults to the
+   * original invisible placement so shared consumers (news comment form) are unaffected. */
+  visible?: boolean;
 }
 
-export default function Turnstile({ onToken, onError, refreshKey }: TurnstileProps) {
+export default function Turnstile({ onToken, onError, refreshKey, visible = false }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
@@ -121,5 +124,21 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
 
   if (!SITE_KEY) return null;
 
-  return <div ref={containerRef} className="turnstile-widget" style={{ position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }} />;
+  return (
+    <div
+      ref={containerRef}
+      className={
+        visible
+          ? // Bottom-left clears the composer's send control and the mobile bottom bar;
+            // z-40 stays above page content but below Mantine overlays (drawers/sheets).
+            "turnstile-widget fixed bottom-16 left-3 z-40 md:bottom-4 md:left-4"
+          : "turnstile-widget"
+      }
+      style={
+        visible
+          ? { opacity: 1, pointerEvents: "auto" }
+          : { position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }
+      }
+    />
+  );
 }
