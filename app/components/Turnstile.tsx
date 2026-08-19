@@ -21,6 +21,7 @@ declare global {
 }
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+const ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
 const MAX_RETRIES = 2;
 
 // Cloudflare's widget API does not expose a "challenge shown" callback, so the
@@ -145,7 +146,7 @@ export default function Turnstile({ onToken, onError, onStatus, refreshKey, visi
     onTokenRef.current(null);
   }, [refreshKey]);
 
-  if (!SITE_KEY) return null;
+  if (!SITE_KEY || !ENABLED) return null;
 
   return (
     <div

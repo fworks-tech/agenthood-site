@@ -110,6 +110,7 @@ Applied to all routes via `next.config.ts`:
 | `KV_REST_API_TOKEN` | For Upstash | Redis REST API token for distributed rate limiting |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | For CAPTCHA | Cloudflare Turnstile site key |
 | `TURNSTILE_SECRET_KEY` | For CAPTCHA | Cloudflare Turnstile secret key |
+| `NEXT_PUBLIC_TURNSTILE_ENABLED` | For CAPTCHA | Single source of truth; set `false` to disable CAPTCHA client+server (default enabled) |
 | `NEXT_PUBLIC_SENTRY_DSN` | For Sentry | Sentry Data Source Name for error tracking |
 | `SENTRY_ORG` | Optional | Sentry organization slug (defaults to `fworks`) |
 | `SENTRY_PROJECT` | Optional | Sentry project slug (defaults to `agenthood-site`) |

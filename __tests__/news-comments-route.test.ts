@@ -7,6 +7,7 @@ beforeEach(() => {
   process.env = { ...originalEnv };
   delete process.env.TURNSTILE_SECRET_KEY;
   delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  delete process.env.NEXT_PUBLIC_TURNSTILE_ENABLED;
   delete process.env.KV_URL;
   delete process.env.KV_TOKEN;
 });
@@ -48,6 +49,16 @@ describe("news comments route captcha gating", () => {
 
   it("bypasses the captcha gate when only the site key is set", async () => {
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+    const res = await post(VALID_BODY);
+    expect(res.status).toBe(503);
+    const json = await res.json();
+    expect(json.error).toBe("Storage unavailable");
+  });
+
+  it("bypasses the captcha gate when explicitly disabled even with both keys set", async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_ENABLED = "false";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+    process.env.TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA";
     const res = await post(VALID_BODY);
     expect(res.status).toBe(503);
     const json = await res.json();

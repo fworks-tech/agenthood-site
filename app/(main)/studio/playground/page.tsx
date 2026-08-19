@@ -27,6 +27,10 @@ import { STORAGE_KEYS } from "../_lib/constants";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
 
+const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
+const TURNSTILE_REQUIRED =
+  TURNSTILE_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
 function loadSavedConfig(): Partial<ChatConfig> {
   if (typeof window === "undefined") return {};
   try {
@@ -182,7 +186,7 @@ export default function PlaygroundPage() {
     async (content: string) => {
       if (!selectedAgent) return;
       if (
-        process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
+        TURNSTILE_REQUIRED &&
         !turnstileToken
       ) {
         addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.", { category: "captcha" });
@@ -519,7 +523,7 @@ export default function PlaygroundPage() {
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
               captchaReady={
-                !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || !!turnstileToken
+                !TURNSTILE_REQUIRED || !!turnstileToken
               }
               captchaError={turnstileError}
             />
