@@ -6,3 +6,10 @@ export function getMaxTokens(): number {
   }
   return 4096;
 }
+
+export const TURNSTILE_ENABLED =
+  process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
+
+export const TURNSTILE_REQUIRED =
+  TURNSTILE_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+

@@ -24,12 +24,9 @@ import type { StreamLogEvent } from "../_lib/stream";
 import { appendLog, createLogEntry, hasNewError, loadLogs } from "../_lib/log-store";
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
+import { TURNSTILE_REQUIRED } from "../_lib/env";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
-
-const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
-const TURNSTILE_REQUIRED =
-  TURNSTILE_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 function loadSavedConfig(): Partial<ChatConfig> {
   if (typeof window === "undefined") return {};
@@ -434,7 +431,7 @@ export default function PlaygroundPage() {
                   onCaptchaToken={setTurnstileToken}
                   onCaptchaError={handleTurnstileError}
                   onCaptchaStatus={handleTurnstileStatus}
-                  showCaptcha={!isMobile}
+                  captchaMode={isMobile ? "hidden" : "visible"}
                 />
               </div>
             </>
@@ -792,8 +789,7 @@ export default function PlaygroundPage() {
           onCaptchaToken={setTurnstileToken}
           onCaptchaError={handleTurnstileError}
           onCaptchaStatus={handleTurnstileStatus}
-          showCaptcha={isMobile}
-          captchaVisible={false}
+          captchaMode={isMobile ? "invisible" : "hidden"}
         />
       </MobileBottomSheet>
     </div>
