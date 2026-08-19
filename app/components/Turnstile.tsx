@@ -121,5 +121,18 @@ export default function Turnstile({ onToken, onError, refreshKey }: TurnstilePro
 
   if (!SITE_KEY) return null;
 
-  return <div ref={containerRef} className="turnstile-widget" style={{ position: "fixed", opacity: 0, pointerEvents: "none", zIndex: -1 }} />;
+  return (
+    <div
+      ref={containerRef}
+      className="turnstile-widget"
+      style={{
+        position: "fixed",
+        bottom: "16px",
+        right: "16px",
+        zIndex: 2147483647,
+        opacity: 1,
+        pointerEvents: "auto",
+      }}
+    />
+  );
 }
