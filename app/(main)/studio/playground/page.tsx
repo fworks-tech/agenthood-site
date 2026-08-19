@@ -49,7 +49,16 @@ export default function PlaygroundPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
-  const [logs, setLogs] = useState<LogEntry[]>(() => loadLogs());
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  useEffect(() => {
+    const saved = loadLogs();
+    if (saved.length > 0) {
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setLogs(saved);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, []);
   const [configOpen, setConfigOpen] = useState(true);
   const [logsOpen, setLogsOpen] = useState(true);
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
