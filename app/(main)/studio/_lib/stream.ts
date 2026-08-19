@@ -1,9 +1,16 @@
+export interface StreamLogEvent {
+  level: "info" | "warn" | "error";
+  event: string;
+  [key: string]: unknown;
+}
+
 export interface StreamCallbacks {
   onToken: (token: string) => void;
   onDone: () => void;
   onError: (error: Error) => void;
   onToolCall?: (toolCall: { id: string; name: string; args: Record<string, unknown> }) => void;
   onToolResult?: (toolResult: { id: string; name: string; result: string; error?: string }) => void;
+  onLog?: (log: StreamLogEvent) => void;
 }
 
 export async function readSSEStream(
@@ -66,6 +73,11 @@ export async function readSSEStream(
           case "error":
             callbacks.onError(new Error(event.data as string));
             return;
+          case "log": {
+            const { level, event: ev, ...meta } = event;
+            callbacks.onLog?.({ level: level as StreamLogEvent["level"], event: ev as string, ...meta } as StreamLogEvent);
+            break;
+          }
         }
       }
     }

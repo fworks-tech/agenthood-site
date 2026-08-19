@@ -20,6 +20,7 @@ import { agentSkills } from "../_data/agents.generated";
 import { agentPrompts } from "../_data/agentPrompts.generated";
 import WelcomeTerminal from "./_components/WelcomeTerminal";
 import type { LogCategory, LogEntry, LogLevel } from "../_lib/log-types";
+import type { StreamLogEvent } from "../_lib/stream";
 import { appendLog, createLogEntry, loadLogs } from "../_lib/log-store";
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
@@ -79,9 +80,22 @@ export default function PlaygroundPage() {
     [],
   );
 
+  const handleNetworkLog = useCallback(
+    (log: StreamLogEvent) => {
+      const detail = typeof log.correlationId === "string" ? log.correlationId : undefined;
+      const parts: string[] = [log.event];
+      if (typeof log.primary === "string") parts.push(`primary=${log.primary}`);
+      if (typeof log.status === "number") parts.push(`status=${log.status}`);
+      if (typeof log.durationMs === "number") parts.push(`${log.durationMs}ms`);
+      addLog(log.level, parts.join(" · "), { category: "network", detail });
+    },
+    [addLog],
+  );
+
   const chat = useStudioChat({
     config,
     turnstileToken: turnstileToken ?? undefined,
+    onLog: handleNetworkLog,
   });
   const { conversations, activeConversationId, totalTokens, hydrated: chatHydrated } = chat;
 

@@ -639,3 +639,32 @@ test.describe("Playground — CAPTCHA Edge Cases", () => {
     await expect(sendBtn).toBeEnabled({ timeout: 15000 });
   });
 });
+
+test.describe("Playground — Network Logs", () => {
+  test("server log events surface in LiveLogs", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.route("**/api/studio/chat/**", async (route) => {
+      const body =
+        JSON.stringify({ type: "log", level: "info", event: "chat.routing", primary: "groq", correlationId: "e2e-corr-1" }) + "\n" +
+        JSON.stringify({ type: "log", level: "error", event: "chat.error", correlationId: "e2e-corr-1" }) + "\n" +
+        JSON.stringify({ type: "token", data: "Hello" }) + "\n" +
+        JSON.stringify({ type: "done" }) + "\n";
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body,
+      });
+    });
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+    await sendMessage(page, "network probe");
+
+    await expect(page.locator("text=chat.routing · primary=groq")).toBeVisible();
+    await expect(page.locator("text=chat.error")).toBeVisible();
+    await waitForStreamComplete(page);
+  });
+});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
-import { readSSEStream } from "../_lib/stream";
+import { readSSEStream, type StreamLogEvent } from "../_lib/stream";
 import { sendChat } from "../_lib/studio-api";
 import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
 import type { ChatConfig } from "../_types/studio";
@@ -22,6 +22,7 @@ export interface Conversation {
 interface UseStudioChatOptions {
   config: Partial<ChatConfig>;
   turnstileToken?: string;
+  onLog?: (log: StreamLogEvent) => void;
 }
 
 interface UseStudioChatReturn {
@@ -118,6 +119,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const conversationsRef = useRef<Conversation[]>([]);
   const configRef = useRef<Partial<ChatConfig>>(options?.config);
   const turnstileRef = useRef<string | undefined>(options?.turnstileToken);
+  const onLogRef = useRef<UseStudioChatOptions["onLog"]>(options?.onLog);
 
   useHydrateOnClient(() => {
     const saved = loadConversations();
@@ -135,6 +137,10 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   useEffect(() => {
     turnstileRef.current = options?.turnstileToken;
   }, [options?.turnstileToken]);
+
+  useEffect(() => {
+    onLogRef.current = options?.onLog;
+  }, [options?.onLog]);
 
   useEffect(() => {
     conversationsRef.current = conversations;
@@ -244,6 +250,16 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         abortController.signal,
       );
 
+      const requestId = res.headers.get("x-request-id") ?? undefined;
+      const correlationId = res.headers.get("x-correlation-id") ?? undefined;
+      onLogRef.current?.({
+        level: res.ok ? "info" : "error",
+        event: "chat.response",
+        status: res.status,
+        requestId,
+        correlationId,
+      });
+
       if (!res.ok) {
         throw new Error(`Server error: ${res.status}`);
       }
@@ -297,6 +313,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             });
             setIsStreaming(false);
           },
+          onLog: (log) => onLogRef.current?.(log),
           onError: (err) => {
             streamError = err;
             const errorMsg = `Error: ${err.message}`;

@@ -1,6 +1,6 @@
 import { agentSkills } from "../_data/agents.generated";
 import { ValidationError } from "./errors";
-import { logger } from "./logger";
+import { logger, pickSafeLogMeta } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm/types";
 import { createTraceEnvelope, estimateCostFromTokens } from "agenthood/dist/core";
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS } from "./tools";
@@ -9,6 +9,21 @@ import type { ToolCall } from "./tools";
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
 const TRACE_PAYLOAD_MAX = 8000;
+
+type LogLevel = "info" | "warn" | "error";
+
+function emitLogEvent(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  level: LogLevel,
+  event: string,
+  meta: Record<string, unknown> = {},
+): void {
+  // Duplicates the server-side structured log into the SSE stream so the client
+  // LiveLogs can correlate. Only pickSafeLogMeta's allowlist is forwarded.
+  controller.enqueue(
+    new TextEncoder().encode(JSON.stringify({ type: "log", level, event, ...pickSafeLogMeta(meta) }) + "\n"),
+  );
+}
 
 export interface ChatRequest {
   agentId: string;
@@ -81,7 +96,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
       ? allSchemas.filter((s) => enabledTools.includes(s.name))
       : undefined;
 
-    function emitTrace(status: "success" | "error", output: string): void {
+    function emitTrace(controller: ReadableStreamDefaultController<Uint8Array>, status: "success" | "error", output: string): void {
       const inputTokens = Math.ceil(inputChars / 4);
       const outputTokens = Math.ceil(output.length / 4);
       const model = req.config?.model ?? "unknown";
@@ -99,12 +114,20 @@ export class LightweightAdapter implements AgenthoodAdapter {
         model,
       });
       logger.info("trace", { ...envelope });
+      emitLogEvent(controller, "info", "trace", envelope as unknown as Record<string, unknown>);
     }
 
     return new ReadableStream({
       async start(controller) {
         let outputChars = 0;
         let output = "";
+        emitLogEvent(controller, "info", "chat.routing", {
+          agentId: req.agentId,
+          primary: providerName,
+          fallbacks: FALLBACK_ORDER,
+          tools: enabledTools,
+          correlationId,
+        });
         try {
           const { LLMRouter } = await import("agenthood/dist/llm");
           const provider = await LLMRouter.fromConfig(llmConfig);
@@ -161,21 +184,25 @@ export class LightweightAdapter implements AgenthoodAdapter {
           const duration = Math.round(performance.now() - startTime);
           if (signal?.aborted) {
             logger.info("chat.aborted", { agentId: req.agentId, correlationId });
-            emitTrace("error", output);
+            emitLogEvent(controller, "warn", "chat.aborted", { agentId: req.agentId, correlationId });
+            emitTrace(controller, "error", output);
             return;
           }
           logger.info("chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, outputChars, correlationId });
-          emitTrace("success", output);
+          emitLogEvent(controller, "info", "chat.complete", { agentId: req.agentId, primary: providerName, durationMs: duration, outputChars, correlationId });
+          emitTrace(controller, "success", output);
         } catch (err) {
           if (signal?.aborted) {
             logger.info("chat.aborted", { agentId: req.agentId, correlationId });
-            emitTrace("error", output);
+            emitLogEvent(controller, "warn", "chat.aborted", { agentId: req.agentId, correlationId });
+            emitTrace(controller, "error", output);
             controller.close();
             return;
           }
           const msg = err instanceof Error ? err.message : String(err);
           logger.error("chat.error", { agentId: req.agentId, error: msg, correlationId });
-          emitTrace("error", output);
+          emitLogEvent(controller, "error", "chat.error", { agentId: req.agentId, provider: providerName, correlationId });
+          emitTrace(controller, "error", output);
 
           const isMissingKey = /(?:api[_-]?key|not set|auth)/i.test(msg) || msg.includes("MissingApiKeyError");
           const errorMessage = isMissingKey
