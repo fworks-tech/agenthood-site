@@ -23,30 +23,45 @@ declare global {
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 const MAX_RETRIES = 2;
 
+// Cloudflare's widget API does not expose a "challenge shown" callback, so the
+// observable lifecycle ends at these phases — everything between render and token
+// is opaque and represented only by retrying/timeout.
+export type TurnstileStatus =
+  | "script-loading"
+  | "script-loaded"
+  | "widget-rendered"
+  | "retrying"
+  | "token-received"
+  | "token-expired";
+
 interface TurnstileProps {
   onToken: (token: string | null) => void;
   onError?: (error: string) => void;
+  onStatus?: (status: TurnstileStatus) => void;
   refreshKey?: number;
   /** Render the widget as an interactive element (playground). Defaults to the
    * original invisible placement so shared consumers (news comment form) are unaffected. */
   visible?: boolean;
 }
 
-export default function Turnstile({ onToken, onError, refreshKey, visible = false }: TurnstileProps) {
+export default function Turnstile({ onToken, onError, onStatus, refreshKey, visible = false }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const retryCountRef = useRef(0);
   const onTokenRef = useRef(onToken);
   const onErrorRef = useRef(onError);
+  const onStatusRef = useRef(onStatus);
 
   // Keep latest callbacks in refs so Turnstile's browser callbacks never read stale props,
   // while the widget render effect below stays stable (runs once on mount).
   useEffect(() => {
     onTokenRef.current = onToken;
     onErrorRef.current = onError;
+    onStatusRef.current = onStatus;
   });
 
   const handleToken = useCallback((token: string | null) => {
+    if (token) onStatusRef.current?.("token-received");
     retryCountRef.current = 0;
     onTokenRef.current(token);
   }, []);
@@ -55,16 +70,22 @@ export default function Turnstile({ onToken, onError, refreshKey, visible = fals
     if (!SITE_KEY || !containerRef.current || typeof window === "undefined") return;
 
     const id = "turnstile-" + Math.random().toString(36).slice(2, 9);
+    onStatusRef.current?.("script-loading");
 
     function render() {
       if (!window.turnstile || !containerRef.current) return;
+      onStatusRef.current?.("script-loaded");
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: SITE_KEY,
         callback: (token: string) => handleToken(token),
-        "expired-callback": () => handleToken(null),
+        "expired-callback": () => {
+          onStatusRef.current?.("token-expired");
+          handleToken(null);
+        },
         "error-callback": () => {
           if (retryCountRef.current < MAX_RETRIES) {
             retryCountRef.current++;
+            onStatusRef.current?.("retrying");
             if (widgetIdRef.current && window.turnstile) {
               window.turnstile.reset(widgetIdRef.current);
             }
@@ -76,6 +97,7 @@ export default function Turnstile({ onToken, onError, refreshKey, visible = fals
         "timeout-callback": () => {
           if (retryCountRef.current < MAX_RETRIES) {
             retryCountRef.current++;
+            onStatusRef.current?.("retrying");
             if (widgetIdRef.current && window.turnstile) {
               window.turnstile.reset(widgetIdRef.current);
             }
@@ -86,6 +108,7 @@ export default function Turnstile({ onToken, onError, refreshKey, visible = fals
         },
         theme: "dark",
       });
+      onStatusRef.current?.("widget-rendered");
     }
 
     containerRef.current.id = id;

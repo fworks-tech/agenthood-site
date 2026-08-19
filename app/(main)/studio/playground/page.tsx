@@ -12,7 +12,7 @@ import DragHandle from "../_components/DragHandle";
 import MobileDrawer from "../_components/MobileDrawer";
 import MobileBottomSheet from "../_components/MobileBottomSheet";
 import HelpTip from "../_components/HelpTip";
-import Turnstile from "../../../components/Turnstile";
+import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel } from "../_types/studio";
@@ -122,10 +122,35 @@ export default function PlaygroundPage() {
     if (turnstileToken) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setTurnstileError(null);
-      addLog("info", "CAPTCHA ready");
       /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [turnstileToken, addLog]);
+  }, [turnstileToken]);
+
+  const handleTurnstileStatus = useCallback(
+    (status: TurnstileStatus) => {
+      switch (status) {
+        case "script-loading":
+          addLog("debug", "CAPTCHA script loading", { category: "captcha" });
+          break;
+        case "script-loaded":
+          addLog("debug", "CAPTCHA script loaded", { category: "captcha" });
+          break;
+        case "widget-rendered":
+          addLog("debug", "CAPTCHA widget rendered", { category: "captcha" });
+          break;
+        case "retrying":
+          addLog("warn", "CAPTCHA verification failed. Retrying...", { category: "captcha" });
+          break;
+        case "token-received":
+          addLog("info", "CAPTCHA ready", { category: "captcha" });
+          break;
+        case "token-expired":
+          addLog("warn", "CAPTCHA token expired. Re-verifying...", { category: "captcha" });
+          break;
+      }
+    },
+    [addLog],
+  );
 
   const handleSendMessage = useCallback(
     async (content: string) => {
@@ -134,7 +159,7 @@ export default function PlaygroundPage() {
         process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
         !turnstileToken
       ) {
-        addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.");
+        addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.", { category: "captcha" });
         return;
       }
       const ts = Date.now();
@@ -477,9 +502,10 @@ export default function PlaygroundPage() {
 
           <Turnstile
             onToken={setTurnstileToken}
+            onStatus={handleTurnstileStatus}
             onError={(msg) => {
               setTurnstileError(msg);
-              addLog("error", msg);
+              addLog("error", msg, { category: "captcha" });
             }}
             refreshKey={turnstileRefreshKey}
             visible

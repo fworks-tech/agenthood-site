@@ -617,4 +617,25 @@ test.describe("Playground — CAPTCHA Edge Cases", () => {
     const textarea = page.locator("textarea[placeholder='Type a message...']");
     await expect(textarea).toBeVisible();
   });
+
+  test("captcha lifecycle phases appear in LiveLogs and enable send", async ({ page, clearStorage }) => {
+    await page.goto("/studio/playground");
+    await clearStorage();
+    await mockTurnstile(page);
+    await page.reload();
+    await waitForHydration(page);
+
+    await selectAgent(page, "the-scribe");
+
+    // The info-level "CAPTCHA ready" is the observable lifecycle result; the
+    // debug-level phases (script loaded, widget rendered) are hidden by default
+    // once the debug toggle exists.
+    await expect(page.getByText("CAPTCHA ready", { exact: true }).first()).toBeVisible({ timeout: 10000 });
+
+    // Send enables once text exists and a token was received (captchaReady true)
+    const textarea = page.locator("textarea[placeholder='Type a message...']");
+    await textarea.fill("hello");
+    const sendBtn = page.locator("button[aria-label='Send message']");
+    await expect(sendBtn).toBeEnabled({ timeout: 15000 });
+  });
 });
