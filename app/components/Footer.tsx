@@ -1,3 +1,5 @@
+"use client";
+
 import { Group, Text, Anchor, Badge } from "@mantine/core";
 import { IconBrandGithub } from "@tabler/icons-react";
 import HelpTip from "../(main)/studio/_components/HelpTip";
