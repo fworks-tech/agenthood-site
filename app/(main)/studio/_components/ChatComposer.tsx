@@ -13,9 +13,10 @@ interface ChatComposerProps {
   captchaReady?: boolean;
   captchaError?: string | null;
   onRetryCaptcha?: () => void;
+  captchaWidget?: React.ReactNode;
 }
 
-export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true, captchaError, onRetryCaptcha }: ChatComposerProps) {
+export default function ChatComposer({ onSend, onStop, isStreaming, disabled, captchaReady = true, captchaError, onRetryCaptcha, captchaWidget }: ChatComposerProps) {
   const [input, setInput] = useState("");
   const [imageWarning, setImageWarning] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -86,6 +87,9 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
             </Group>
           </Alert>
         </div>
+      )}
+      {captchaWidget && (
+        <div className="mx-auto mb-2 max-w-3xl">{captchaWidget}</div>
       )}
       <div className="mx-auto flex max-w-3xl items-end gap-2">
         <Textarea

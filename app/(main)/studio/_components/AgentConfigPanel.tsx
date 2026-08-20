@@ -13,10 +13,7 @@ import {
 } from "../_types/studio";
 import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 import HelpTip from "./HelpTip";
-import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
 import { TURNSTILE_REQUIRED } from "../_lib/env";
-
-type CaptchaMode = "visible" | "invisible" | "hidden";
 
 interface AgentConfigPanelProps {
   agents: AgentEntry[];
@@ -30,12 +27,6 @@ interface AgentConfigPanelProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   captchaToken?: string | null;
-  captchaRefreshKey?: number;
-  onCaptchaToken?: (token: string | null) => void;
-  onCaptchaError?: (error: string) => void;
-  onCaptchaStatus?: (status: TurnstileStatus) => void;
-  /** How the Turnstile widget is presented: interactive, silent (badges/invisible, tokens still flow), or not rendered. */
-  captchaMode?: CaptchaMode;
 }
 
 function SectionHeader({
@@ -80,11 +71,6 @@ export default function AgentConfigPanel({
   onChangeAgent,
   onSave,
   captchaToken,
-  captchaRefreshKey,
-  onCaptchaToken,
-  onCaptchaError,
-  onCaptchaStatus,
-  captchaMode = "visible",
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
@@ -458,17 +444,6 @@ export default function AgentConfigPanel({
             </Paper>
           </Collapse>
         </div>
-
-        {/* Captcha — above save button */}
-        {captchaMode !== "hidden" && (
-          <Turnstile
-            onToken={onCaptchaToken ?? (() => {})}
-            onError={onCaptchaError}
-            onStatus={onCaptchaStatus}
-            refreshKey={captchaRefreshKey}
-            visible={captchaMode === "visible"}
-          />
-        )}
 
         {/* Save */}
         {onSave && (

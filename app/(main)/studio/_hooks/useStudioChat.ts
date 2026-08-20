@@ -381,7 +381,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
               ? { ...c, messages: c.messages.filter((m) => m.id !== userMsg.id && m.id !== assistantMsg.id) }
               : c,
           )
-          return persistTokens(cleaned)
+          saveConversations(cleaned)
+          return cleaned
         })
       } else {
         const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`

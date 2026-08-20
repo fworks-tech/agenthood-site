@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { StudioError, AgentNotFoundError, ValidationError } from "../app/(main)/studio/_lib/errors";
+import { StudioError, AgentNotFoundError, ValidationError, CaptchaError } from "../app/(main)/studio/_lib/errors";
 
 describe("StudioError", () => {
   it("sets message, code, and statusCode", () => {
@@ -39,5 +39,18 @@ describe("ValidationError", () => {
 
   it("is instance of StudioError", () => {
     expect(new ValidationError("x")).toBeInstanceOf(StudioError);
+  });
+});
+
+describe("CaptchaError", () => {
+  it("has status 400 and CAPTCHA_FAILED code", () => {
+    const err = new CaptchaError("token expired");
+    expect(err.statusCode).toBe(400);
+    expect(err.code).toBe("CAPTCHA_FAILED");
+    expect(err.message).toContain("token expired");
+  });
+
+  it("is instance of StudioError", () => {
+    expect(new CaptchaError("x")).toBeInstanceOf(StudioError);
   });
 });

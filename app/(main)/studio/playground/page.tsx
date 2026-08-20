@@ -230,6 +230,16 @@ export default function PlaygroundPage() {
     [addLog],
   );
 
+  const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
+    setTurnstileToken(null)
+    setTurnstileRefreshKey((k) => k + 1)
+    const deadline = Date.now() + 5000
+    while (!turnstileTokenRef.current && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    return !!turnstileTokenRef.current
+  }, [])
+
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!selectedAgent) return
@@ -269,13 +279,8 @@ export default function PlaygroundPage() {
         const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
         if (code === 'CAPTCHA_FAILED') {
           addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' })
-          setTurnstileToken(null)
-          setTurnstileRefreshKey((k) => k + 1)
-          const deadline = Date.now() + 5000
-          while (!turnstileTokenRef.current && Date.now() < deadline) {
-            await new Promise((r) => setTimeout(r, 100))
-          }
-          if (turnstileTokenRef.current) {
+          const ready = await refreshCaptchaAndWait()
+          if (ready) {
             try {
               await chat.sendMessage(content)
               const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
@@ -330,6 +335,7 @@ export default function PlaygroundPage() {
       totalTokens,
       addLog,
       turnstileToken,
+      refreshCaptchaAndWait,
     ],
   )
 
