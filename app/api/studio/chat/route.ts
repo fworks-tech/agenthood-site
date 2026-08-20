@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/(main)/studio/_data/agents";
-import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
+import { ValidationError, CaptchaError, StudioError } from "@/app/(main)/studio/_lib/errors";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
 import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
@@ -129,7 +129,7 @@ async function validateTurnstile(token: unknown): Promise<void> {
     return;
   }
   if (typeof token !== "string" || !token) {
-    throw new ValidationError("Missing CAPTCHA token. Please refresh and try again.");
+    throw new CaptchaError("Missing CAPTCHA token. Please refresh and try again.");
   }
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -139,11 +139,11 @@ async function validateTurnstile(token: unknown): Promise<void> {
     });
     const data = await res.json() as { success?: boolean };
     if (!data.success) {
-      throw new ValidationError("CAPTCHA verification failed. Please refresh and try again.");
+      throw new CaptchaError("Token expired or invalid. Retrying...");
     }
   } catch (err) {
-    if (err instanceof ValidationError) throw err;
-    throw new ValidationError("CAPTCHA service unavailable. Please try again.");
+    if (err instanceof CaptchaError) throw err;
+    throw new CaptchaError("CAPTCHA service unavailable. Please try again.");
   }
 }
 

@@ -22,3 +22,10 @@ export class ValidationError extends StudioError {
     this.name = "ValidationError";
   }
 }
+
+export class CaptchaError extends StudioError {
+  constructor(detail: string) {
+    super(`CAPTCHA verification failed: ${detail}`, "CAPTCHA_FAILED", 400);
+    this.name = "CaptchaError";
+  }
+}
