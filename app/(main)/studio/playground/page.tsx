@@ -12,7 +12,7 @@ import DragHandle from "../_components/DragHandle";
 import MobileDrawer from "../_components/MobileDrawer";
 import MobileBottomSheet from "../_components/MobileBottomSheet";
 import HelpTip from "../_components/HelpTip";
-import { type TurnstileStatus } from "../../../components/Turnstile";
+import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
 import { getDefaultModel, getProviderMeta } from "../_types/studio";
@@ -65,6 +65,7 @@ export default function PlaygroundPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
   useEffect(() => {
@@ -84,7 +85,6 @@ export default function PlaygroundPage() {
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
     const state = loadLogsViewState();
@@ -107,7 +107,6 @@ export default function PlaygroundPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfigOpen(window.innerWidth >= 768);
-    setIsMobile(window.innerWidth < 768);
   }, []);
 
   const prevLogCountRef = useRef(0);
@@ -186,6 +185,10 @@ export default function PlaygroundPage() {
     }
   }, [turnstileToken]);
 
+  useEffect(() => {
+    turnstileTokenRef.current = turnstileToken;
+  }, [turnstileToken]);
+
   const handleTurnstileStatus = useCallback(
     (status: TurnstileStatus) => {
       switch (status) {
@@ -229,50 +232,92 @@ export default function PlaygroundPage() {
 
   const handleSendMessage = useCallback(
     async (content: string) => {
-      if (!selectedAgent) return;
+      if (!selectedAgent) return
       if (
         TURNSTILE_REQUIRED &&
         !turnstileToken
       ) {
-        addLog("warn", "CAPTCHA token not ready yet. Please wait a moment.", { category: "captcha" });
-        return;
+        addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' })
+        return
       }
-      const ts = Date.now();
+      const ts = Date.now()
       addLog(
-        "info",
-        `→ ${selectedAgent.icon ?? ""} ${selectedAgent.name} · ${config.provider} · ${config.model}`,
-      );
-      track("message_sent", {
+        'info',
+        `→ ${selectedAgent.icon ?? ''} ${selectedAgent.name} · ${config.provider} · ${config.model}`,
+      )
+      track('message_sent', {
         agentId: selectedAgent.id,
         provider: config.provider,
         model: config.model,
         conversationId: activeConversationId ?? undefined,
-      });
+      })
       try {
-        await chat.sendMessage(content);
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+        await chat.sendMessage(content)
+        const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
         addLog(
-          "info",
-          `✓ ${selectedAgent.icon ?? ""} ${selectedAgent.name} completed in ${elapsed}s`,
-        );
-        track("message_completed", {
+          'info',
+          `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`,
+        )
+        track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
           model: config.model,
           durationMs: Date.now() - ts,
           tokenCount: totalTokens,
-        });
+        })
       } catch (err) {
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+        const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+        if (code === 'CAPTCHA_FAILED') {
+          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' })
+          setTurnstileToken(null)
+          setTurnstileRefreshKey((k) => k + 1)
+          const deadline = Date.now() + 5000
+          while (!turnstileTokenRef.current && Date.now() < deadline) {
+            await new Promise((r) => setTimeout(r, 100))
+          }
+          if (turnstileTokenRef.current) {
+            try {
+              await chat.sendMessage(content)
+              const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
+              addLog(
+                'info',
+                `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s (retry)`,
+              )
+              track('message_completed', {
+                agentId: selectedAgent.id,
+                provider: config.provider,
+                model: config.model,
+                durationMs: Date.now() - ts,
+                tokenCount: totalTokens,
+              })
+              return
+            } catch (retryErr) {
+              const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1)
+              addLog(
+                'error',
+                `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`,
+              )
+              track('message_error', {
+                agentId: selectedAgent.id,
+                provider: config.provider,
+                error: retryErr instanceof Error ? retryErr.message : String(retryErr),
+              })
+              return
+            }
+          }
+          addLog('error', 'CAPTCHA refresh timed out. Please verify manually.', { category: 'captcha' })
+          return
+        }
+        const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
         addLog(
-          "error",
-          `✗ ${selectedAgent.icon ?? ""} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        track("message_error", {
+          'error',
+          `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`,
+        )
+        track('message_error', {
           agentId: selectedAgent.id,
           provider: config.provider,
           error: err instanceof Error ? err.message : String(err),
-        });
+        })
       }
 
     },
@@ -286,7 +331,7 @@ export default function PlaygroundPage() {
       addLog,
       turnstileToken,
     ],
-  );
+  )
 
   const handleSaveConfig = useCallback(
     (cfg: ChatConfig) => {
@@ -436,11 +481,6 @@ export default function PlaygroundPage() {
                   collapsed={!configPanelOpen}
                   onToggleCollapse={() => setConfigPanelOpen((p) => !p)}
                   captchaToken={turnstileToken}
-                  captchaRefreshKey={turnstileRefreshKey}
-                  onCaptchaToken={setTurnstileToken}
-                  onCaptchaError={handleTurnstileError}
-                  onCaptchaStatus={handleTurnstileStatus}
-                  captchaMode={isMobile ? "hidden" : "visible"}
                 />
               </div>
             </>
@@ -586,6 +626,17 @@ export default function PlaygroundPage() {
               }
               captchaError={turnstileError}
               onRetryCaptcha={retryCaptcha}
+              captchaWidget={
+                TURNSTILE_REQUIRED ? (
+                  <Turnstile
+                    onToken={setTurnstileToken}
+                    onError={handleTurnstileError}
+                    onStatus={handleTurnstileStatus}
+                    refreshKey={turnstileRefreshKey}
+                    visible
+                  />
+                ) : undefined
+              }
             />
           )}
 
@@ -794,11 +845,6 @@ export default function PlaygroundPage() {
           onChangeAgent={handleSelectAgent}
           onSave={handleSaveConfig}
           captchaToken={turnstileToken}
-          captchaRefreshKey={turnstileRefreshKey}
-          onCaptchaToken={setTurnstileToken}
-          onCaptchaError={handleTurnstileError}
-          onCaptchaStatus={handleTurnstileStatus}
-          captchaMode={isMobile ? "invisible" : "hidden"}
         />
       </MobileBottomSheet>
     </div>

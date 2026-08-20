@@ -291,7 +291,16 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       });
 
       if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
+        let errorBody: { error?: string; code?: string } | null = null
+        try {
+          errorBody = await res.json()
+        } catch {
+          /* non-JSON error body */
+        }
+        const msg = errorBody?.error ?? `Server error: ${res.status}`
+        const err = new Error(msg)
+        ;(err as Error & { code?: string }).code = errorBody?.code
+        throw err
       }
 
       let streamedContent = "";
@@ -360,16 +369,29 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       if (streamError) throw streamError;
     } catch (err) {
       if (abortController.signal.aborted) {
-        setIsStreaming(false);
-        return;
+        setIsStreaming(false)
+        return
       }
-      const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`;
-      setConversations((prev) => {
-        const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
-        return withError;
-      });
-      setIsStreaming(false);
-      throw err;
+      const isCaptchaFailed =
+        err instanceof Error && (err as Error & { code?: string }).code === 'CAPTCHA_FAILED'
+      if (isCaptchaFailed) {
+        setConversations((prev) => {
+          const cleaned = prev.map((c) =>
+            c.id === activeConversationId
+              ? { ...c, messages: c.messages.filter((m) => m.id !== userMsg.id && m.id !== assistantMsg.id) }
+              : c,
+          )
+          return persistTokens(cleaned)
+        })
+      } else {
+        const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`
+        setConversations((prev) => {
+          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg))
+          return withError
+        })
+      }
+      setIsStreaming(false)
+      throw err
     }
   }, [activeConversationId, isStreaming, persist, generateTitle]);
 
