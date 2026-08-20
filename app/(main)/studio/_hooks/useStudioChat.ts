@@ -375,15 +375,14 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       const isCaptchaFailed =
         err instanceof Error && (err as Error & { code?: string }).code === 'CAPTCHA_FAILED'
       if (isCaptchaFailed) {
-        setConversations((prev) => {
-          const cleaned = prev.map((c) =>
-            c.id === activeConversationId
-              ? { ...c, messages: c.messages.filter((m) => m.id !== userMsg.id && m.id !== assistantMsg.id) }
-              : c,
-          )
-          saveConversations(cleaned)
-          return cleaned
-        })
+        const cleaned = conversationsRef.current.map((c) =>
+          c.id === activeConversationId
+            ? { ...c, messages: c.messages.filter((m) => m.id !== userMsg.id && m.id !== assistantMsg.id) }
+            : c,
+        )
+        saveConversations(cleaned)
+        setConversations(cleaned)
+        conversationsRef.current = cleaned
       } else {
         const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`
         setConversations((prev) => {
