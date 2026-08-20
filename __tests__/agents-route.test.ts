@@ -13,6 +13,7 @@ describe("GET /api/studio/agents", () => {
       expect(agent.id.length).toBeGreaterThan(0);
       expect(agent).not.toHaveProperty("apiKey");
       expect(agent).not.toHaveProperty("secret");
+      expect(agent).not.toHaveProperty("preferredProvider");
     }
   });
 });
