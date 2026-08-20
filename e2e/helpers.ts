@@ -10,6 +10,7 @@ export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } =
         window.turnstile = (function () {
           var counter = 0;
           var active = {};
+          window.__turnstileResetCount = 0;
           function issue(options) {
             counter += 1;
             var token = "TEST_TOKEN_" + counter;
@@ -32,8 +33,16 @@ export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } =
               return id;
             },
             reset: function(id) {
+              window.__turnstileResetCount += 1;
               var options = active[id];
               if (options) issue(options);
+            },
+            expireAndReissue: function() {
+              Object.keys(active).forEach(function (id) {
+                var options = active[id];
+                if (options['expired-callback']) options['expired-callback']();
+                issue(options);
+              });
             },
             remove: function() {}
           };

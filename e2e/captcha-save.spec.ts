@@ -46,6 +46,27 @@ test.describe("Playground — Captcha-gated Save", () => {
     await expect(gated).toHaveCount(0);
   });
 
+  test("save stays enabled when the verified captcha token expires and re-verifies", async ({ page }) => {
+    await mockTurnstile(page, { autoVerify: false });
+    await page.reload();
+    await waitForHydration(page);
+    await selectAgent(page, "the-scribe");
+
+    const panel = page.locator("[data-config-panel]");
+    await waitForSaveEnabled(page, panel.getByRole("button", { name: "Save configuration" }));
+
+    // Expiry + background re-verification must not invalidate the verified token:
+    // the save button stays enabled and is never replaced by "Verify to save".
+    await page.evaluate(() => {
+      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
+    });
+
+    await expect(panel.getByRole("button", { name: "Save configuration" })).toBeEnabled({ timeout: 5000 });
+    expect(
+      await page.evaluate(() => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0),
+    ).toBe(0);
+  });
+
   test("mobile config sheet receives a captcha token so save becomes enabled", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await mockTurnstile(page, { autoVerify: false });

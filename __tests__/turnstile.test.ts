@@ -75,6 +75,7 @@ describe("Turnstile CAPTCHA validation", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain("Missing CAPTCHA token");
+    expect(body.code).toBe("CAPTCHA_FAILED");
   });
 
   it("rejects empty string token when env vars are set", async () => {
@@ -123,6 +124,7 @@ describe("Turnstile CAPTCHA validation", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain("CAPTCHA verification failed");
+    expect(body.code).toBe("CAPTCHA_FAILED");
   });
 
   it("handles Cloudflare API unreachable gracefully", async () => {
