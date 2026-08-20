@@ -57,7 +57,7 @@ export default function PlaygroundPage() {
   const [config, setConfig] = useState<ChatConfig>({
     provider: "opencode-go",
     model: getDefaultModel("opencode-go"),
-    baseUrl: "https://opencode.ai/zen/go/v1",
+    baseUrl: getProviderMeta("opencode-go").defaultBaseUrl,
     temperature: 0.7,
     maxTokens: 4096,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
