@@ -49,7 +49,6 @@ export interface Conversation {
 
 interface UseStudioChatOptions {
   config: Partial<ChatConfig>;
-  turnstileToken?: string;
   onLog?: (log: StreamLogEvent) => void;
 }
 
@@ -60,7 +59,7 @@ interface UseStudioChatReturn {
   messages: ChatMessage[];
   totalTokens: number;
   hydrated: boolean;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, turnstileToken?: string) => Promise<void>;
   abortStream: () => void;
   clearMessages: () => void;
   newConversation: (agentId: string, config?: Partial<ChatConfig>) => void;
@@ -146,7 +145,6 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   const abortRef = useRef<AbortController | null>(null);
   const conversationsRef = useRef<Conversation[]>([]);
   const configRef = useRef<Partial<ChatConfig>>(options?.config);
-  const turnstileRef = useRef<string | undefined>(options?.turnstileToken);
   const onLogRef = useRef<UseStudioChatOptions["onLog"]>(options?.onLog);
 
   useHydrateOnClient(() => {
@@ -161,10 +159,6 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
   useEffect(() => {
     configRef.current = options?.config;
   }, [options?.config]);
-
-  useEffect(() => {
-    turnstileRef.current = options?.turnstileToken;
-  }, [options?.turnstileToken]);
 
   useEffect(() => {
     onLogRef.current = options?.onLog;
@@ -237,7 +231,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     setTotalTokens(0);
   }, [activeConversationId, persist]);
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, turnstileToken?: string) => {
     const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
     if (!conv || isStreaming || !content.trim()) return;
 
@@ -275,7 +269,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
           updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
         ),
         configRef.current ?? {},
-        turnstileRef.current,
+        turnstileToken,
         generateId(),
         abortController.signal,
       );

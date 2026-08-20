@@ -80,8 +80,10 @@ export default function Turnstile({ onToken, onError, onStatus, refreshKey, visi
         sitekey: SITE_KEY,
         callback: (token: string) => handleToken(token),
         "expired-callback": () => {
+          // Keep the last token: the widget re-verifies in the background and
+          // delivers a fresh one via callback, so nulling here would disable the
+          // UI while the checkbox is still checked.
           onStatusRef.current?.("token-expired");
-          handleToken(null);
         },
         "error-callback": () => {
           if (retryCountRef.current < MAX_RETRIES) {

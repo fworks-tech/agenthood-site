@@ -139,7 +139,6 @@ export default function PlaygroundPage() {
 
   const chat = useStudioChat({
     config,
-    turnstileToken: turnstileToken ?? undefined,
     onLog: handleNetworkLog,
   });
   const { conversations, activeConversationId, totalTokens, hydrated: chatHydrated } = chat;
@@ -231,7 +230,19 @@ export default function PlaygroundPage() {
   );
 
   const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
-    setTurnstileToken(null)
+    // A verified token is never invalidated here: the widget re-verifies in the
+    // background and fires callback with a fresh token, so we keep the current
+    // token (and the checkbox stays checked) instead of resetting the widget.
+    if (turnstileTokenRef.current) {
+      const staleToken = turnstileTokenRef.current
+      const deadline = Date.now() + 1000
+      while (Date.now() < deadline) {
+        if (turnstileTokenRef.current !== staleToken) return true
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      return true
+    }
+    // No verified token exists yet — force a fresh challenge.
     setTurnstileRefreshKey((k) => k + 1)
     const deadline = Date.now() + 5000
     while (!turnstileTokenRef.current && Date.now() < deadline) {
@@ -262,7 +273,7 @@ export default function PlaygroundPage() {
         conversationId: activeConversationId ?? undefined,
       })
       try {
-        await chat.sendMessage(content)
+        await chat.sendMessage(content, turnstileTokenRef.current ?? undefined)
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
         addLog(
           'info',
@@ -282,7 +293,7 @@ export default function PlaygroundPage() {
           const ready = await refreshCaptchaAndWait()
           if (ready) {
             try {
-              await chat.sendMessage(content)
+              await chat.sendMessage(content, turnstileTokenRef.current ?? undefined)
               const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
               addLog(
                 'info',
