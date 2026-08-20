@@ -74,7 +74,7 @@ export default function StudioHubPage() {
               </div>
               <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
                 Choose your provider
-                <HelpTip text="Switch between 6 providers. A free OpenCode provider is preconfigured out of the box. Adjust temperature, max tokens, and model per conversation." />
+                <HelpTip text="Switch between 7 providers. A free OpenCode provider is preconfigured out of the box. Adjust temperature, max tokens, and model per conversation." />
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
                 Chat instantly on the preconfigured OpenCode provider, or switch to Anthropic,
