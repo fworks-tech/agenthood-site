@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, openConfigPanel, waitForHydration } from "./helpers";
+import { mockTurnstile, selectAgent, waitForHydration, openConfigPanel } from "./helpers";
 
 async function resolveAllCaptchas(page: import("@playwright/test").Page) {
   await page.evaluate(() => {
@@ -35,6 +35,7 @@ test.describe("Playground — Captcha-gated Save", () => {
     await mockTurnstile(page, { autoVerify: false });
     await page.reload();
     await waitForHydration(page);
+    await selectAgent(page, "the-scribe");
 
     const panel = page.locator("[data-config-panel]");
     const gated = panel.getByRole("button", { name: "Verify to save" });
@@ -50,6 +51,7 @@ test.describe("Playground — Captcha-gated Save", () => {
     await mockTurnstile(page, { autoVerify: false });
     await page.reload();
     await waitForHydration(page);
+    await selectAgent(page, "the-scribe");
     await openConfigPanel(page);
 
     const sheet = page.locator(".mantine-Drawer-body");

@@ -61,7 +61,7 @@ test.describe("Playground — Resilience", () => {
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "too fast");
 
-    await expect(page.locator("text=Error: Server error: 429").first()).toBeVisible({
+    await expect(page.locator("text=Error: Too many requests. Please slow down.").first()).toBeVisible({
       timeout: 15000,
     });
   });

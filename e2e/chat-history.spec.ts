@@ -197,7 +197,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
 
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "boom");
-    await expect(page.locator("text=Error: Server error: 401").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Error: Unauthorized").first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator("text=failed after").first()).toBeVisible();
   });
 
@@ -212,7 +212,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
 
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "invalid");
-    await expect(page.locator("text=Error: Server error: 400").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Error: Validation error: bad request").first()).toBeVisible({ timeout: 15000 });
     await expect(page.locator("text=failed after").first()).toBeVisible();
   });
 });
