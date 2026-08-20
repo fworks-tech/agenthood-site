@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
+import { mockTurnstile, selectAgent, selectMantineOption, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
 
 test.describe("Playground — Core UI", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -81,9 +81,17 @@ test.describe("Playground — Core UI", () => {
     expect(counter).toBeNull();
   });
 
-  test("code agent shows opencode affinity hint", async ({ page }) => {
+  test("code agent defaults to opencode-go with no setup", async ({ page }) => {
     await selectAgent(page, "the-architect");
     await openConfigPanel(page);
+    await expect(page.getByLabel("Provider", { exact: true }).first()).toHaveValue("OpenCode Go");
+  });
+
+  test("code agent shows opencode affinity hint when on a non-opencode provider", async ({ page }) => {
+    await selectAgent(page, "the-architect");
+    await openConfigPanel(page);
+    await selectMantineOption(page, "Provider", "Anthropic");
+    await page.waitForTimeout(200);
     await expect(page.locator("text=Code-optimized provider available").first()).toBeVisible();
     const configDialog = page
       .getByRole("dialog")

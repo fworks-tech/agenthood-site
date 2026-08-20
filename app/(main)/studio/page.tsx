@@ -25,8 +25,9 @@ export default function StudioHubPage() {
               Try the Society live
             </h1>
             <Text className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" c="dimmed">
-              Select any of the 19 AI agent members, pick your provider, and start a conversation.
-              All requests are routed server-side through the agenthood runtime.
+              Select any of the 19 AI agent members and start a conversation right away —
+              no API key or setup required. All requests are routed server-side through the
+              agenthood runtime.
             </Text>
             <Group justify="center" mt="lg" gap="md">
               <Link
@@ -73,10 +74,11 @@ export default function StudioHubPage() {
               </div>
               <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
                 Choose your provider
-                <HelpTip text="Switch between 6 providers. Adjust temperature, max tokens, and model per conversation." />
+                <HelpTip text="Switch between 6 providers. A free OpenCode provider is preconfigured out of the box. Adjust temperature, max tokens, and model per conversation." />
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                Switch between Anthropic, OpenAI, Groq, Ollama, or your own OpenCode server.
+                Chat instantly on the preconfigured OpenCode provider, or switch to Anthropic,
+                OpenAI, Groq, Ollama, or your own OpenCode server.
                 Adjust temperature, max tokens, and model per conversation.
               </p>
             </div>

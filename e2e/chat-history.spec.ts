@@ -117,7 +117,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     await sendMessage(page, "route my task");
     await waitForAssistantCount(page, 1);
 
-    await expect(page.locator("text=· groq ·").first()).toBeVisible();
+    await expect(page.locator("text=· opencode-go ·").first()).toBeVisible();
 
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(2);
@@ -133,7 +133,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     expect(messages.some((m) => m.role === "user" && m.text.includes("route my task"))).toBeFalsy();
     expect(messages.some((m) => m.role === "assistant" && m.text.includes("scribe reply"))).toBeTruthy();
 
-    await expect(page.locator("text=· anthropic ·").first()).toBeVisible();
+    await expect(page.locator("text=· opencode-go ·").first()).toBeVisible();
   });
 
   test("full history survives page reload and chat continues with context", async ({ page }) => {

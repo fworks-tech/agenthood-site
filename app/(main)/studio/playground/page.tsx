@@ -15,7 +15,7 @@ import HelpTip from "../_components/HelpTip";
 import { type TurnstileStatus } from "../../../components/Turnstile";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
-import { getDefaultModel } from "../_types/studio";
+import { getDefaultModel, getProviderMeta } from "../_types/studio";
 import { agentSkills } from "../_data/agents.generated";
 import { agentPrompts } from "../_data/agentPrompts.generated";
 import WelcomeTerminal from "./_components/WelcomeTerminal";
@@ -55,8 +55,9 @@ export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
   const [config, setConfig] = useState<ChatConfig>({
-    provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    provider: "opencode-go",
+    model: getDefaultModel("opencode-go"),
+    baseUrl: "https://opencode.ai/zen/go/v1",
     temperature: 0.7,
     maxTokens: 4096,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
@@ -304,11 +305,19 @@ export default function PlaygroundPage() {
 
   const handleSelectAgent = useCallback(
     (agent: AgentEntry) => {
-      const provider = agent.preferredProvider as Provider;
+      // Default every visitor to the server-backed opencode-go provider so they
+      // can chat immediately without configuring an API key. Advanced users can
+      // still switch providers per conversation in the config panel.
+      const provider: Provider = "opencode-go";
       const model = getDefaultModel(provider);
       const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
       setSelectedAgent(agent);
-      const agentConfig = { provider, model, systemPrompt: prompt };
+      const agentConfig = {
+        provider,
+        model,
+        baseUrl: getProviderMeta(provider).defaultBaseUrl,
+        systemPrompt: prompt,
+      };
       setConfig((prev) => ({ ...prev, ...agentConfig }));
       chat.newConversation(agent.id, agentConfig);
       addLog(

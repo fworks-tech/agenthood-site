@@ -166,7 +166,7 @@ export default function AgentConfigPanel({
             />
           </Group>
           <Text size="xs" c="dimmed" mt={2}>
-            Select a Society member and tune behavior
+            Select a Society member and start chatting — no setup required
           </Text>
         </div>
       </Group>
@@ -193,7 +193,6 @@ export default function AgentConfigPanel({
               const agent = agents.find((a) => a.id === value);
               if (agent) {
                 onChangeAgent(agent);
-                handleProviderChange(agent.preferredProvider);
               }
             }}
             searchable
@@ -322,7 +321,9 @@ export default function AgentConfigPanel({
                   }
                 />
                 <Text size="xs" c="dimmed" mt={4}>
-                  Sent server-side for this request only. Never logged or stored.
+                  {config.provider === "opencode" || config.provider === "opencode-go"
+                    ? "No setup needed — this provider uses the server's OpenCode key. Add your own only if you prefer."
+                    : "Sent server-side for this request only. Never logged or stored."}
                 </Text>
               </div>
 

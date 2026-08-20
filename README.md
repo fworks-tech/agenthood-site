@@ -100,7 +100,7 @@ Applied to all routes via `next.config.ts`:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `OPENCODE_API_KEY` | Default provider | OpenCode API key (default server-side provider) |
+| `OPENCODE_API_KEY` | Default provider | OpenCode API key — powers the zero-setup default (opencode-go) visitors use to chat in the Studio without configuring a key |
 | `ANTHROPIC_API_KEY` | For Anthropic | Claude API key |
 | `OPENAI_API_KEY` | For OpenAI | GPT API key |
 | `GROQ_API_KEY` | For Groq | Groq API key |
