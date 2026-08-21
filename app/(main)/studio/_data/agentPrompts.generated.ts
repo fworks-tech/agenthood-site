@@ -72,7 +72,6 @@ export const agentPrompts: Record<string, string[]> = {
   "the-mailman": [
     "Before publishing any scheduled content — to verify delivery pipeline integrity",
     "When configuring notification systems (email, push, webhook, Slack)",
-    "When setting up cross-posting workflows (blog → Dev.to, PR → Slack, release → Twitter)",
     "When a scheduled task failed to execute or a notification wasn't delivered",
     "When auditing delivery logs for reliability metrics"
   ],
@@ -142,5 +141,13 @@ export const agentPrompts: Record<string, string[]> = {
     "After a large refactor — verify the refactor did not introduce new coupling",
     "On demand — full codebase scan to establish or revisit a health baseline",
     "When the codebase feels slow or brittle — before attributing it to something else"
+  ],
+  "the-mediator": [
+    "At the start of any interaction — to classify what the user is actually asking for",
+    "When a prompt is ambiguous — before any member is loaded, so no specialist guesses",
+    "When a session is context-heavy or near capacity — to route to The Steward before loading more",
+    "When an entry needs format validation — to route to The Doorman before the work begins",
+    "When the intent is clear — to hand the prompt to the correct specialist without detour",
+    "When a handoff needs sequencing across multiple members — to determine the order of engagement"
   ]
 };

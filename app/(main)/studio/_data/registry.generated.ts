@@ -200,5 +200,15 @@ export const agentRegistry: RegistryEntry[] = [
       "test"
     ],
     "priority": 17
+  },
+  {
+    "name": "the-mediator",
+    "displayName": "The Mediator",
+    "tagline": "First in line — intent routing",
+    "role": "intent classification, first-line handoff, orchestration entry",
+    "stage": [
+      "spec"
+    ],
+    "priority": 19
   }
 ];
