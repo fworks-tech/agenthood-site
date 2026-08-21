@@ -21,7 +21,7 @@ export default function Footer({ className = "" }: FooterProps) {
         const data = await res.json();
         setVersion(data?.version || null);
       } catch {
-        setVersion("3.35.0");
+        setVersion("3.36.0");
       } finally {
         setLoading(false);
       }
@@ -90,7 +90,7 @@ export default function Footer({ className = "" }: FooterProps) {
               <HelpTip text="The currently installed version of Agenthood. See the Releases page for history." side="top" />
             }
             >
-              {version ? `v${version}` : "v3.35.0"}
+              {version ? `v${version}` : "v3.36.0"}
             </Badge>
         </Group>
         <Anchor

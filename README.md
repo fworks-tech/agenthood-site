@@ -37,7 +37,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 
 ## Studio Architecture
 
-The Studio is a browser-based proof-of-work for the agenthood runtime (currently pinned to `agenthood@3.35.0`). It allows users to chat with any of the 19 Society members through a configurable provider backend.
+The Studio is a browser-based proof-of-work for the agenthood runtime (currently pinned to `agenthood@3.36.0`). It allows users to chat with any of the 19 Society members through a configurable provider backend.
 
 ### API Endpoints
 
