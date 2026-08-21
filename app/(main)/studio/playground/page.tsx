@@ -239,8 +239,8 @@ export default function PlaygroundPage() {
       }
       // Token didn't refresh in background — force a fresh challenge.
       setTurnstileRefreshKey((k) => k + 1)
-      const deadline = Date.now() + 5000
-      while (!turnstileTokenRef.current && Date.now() < deadline) {
+      const newDeadline = Date.now() + 5000
+      while (!turnstileTokenRef.current && Date.now() < newDeadline) {
         await new Promise((r) => setTimeout(r, 100))
       }
       return !!turnstileTokenRef.current
