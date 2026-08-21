@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import { Paper, Text, ActionIcon, Group, Typography, Title } from "@mantine/core";
 import { IconThumbUp, IconThumbDown } from "@tabler/icons-react";
 import type { ChatMessage } from "../_lib/studio-api";
@@ -77,14 +78,14 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
     );
   }
 
-  const mdComponents = {
-    h1: ({ children }: { children: React.ReactNode }) => (
+  const mdComponents: Components = {
+    h1: ({ children }) => (
       <Title order={3} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
     ),
-    h2: ({ children }: { children: React.ReactNode }) => (
+    h2: ({ children }) => (
       <Title order={4} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
     ),
-    h3: ({ children }: { children: React.ReactNode }) => (
+    h3: ({ children }) => (
       <Title order={5} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
     ),
   };
