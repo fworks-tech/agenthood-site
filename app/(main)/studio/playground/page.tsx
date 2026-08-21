@@ -181,6 +181,7 @@ export default function PlaygroundPage() {
     if (turnstileToken) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setTurnstileError(null);
+      setCaptchaVerified(true);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [turnstileToken]);
@@ -209,6 +210,7 @@ export default function PlaygroundPage() {
           break;
         case "token-expired":
           addLog("warn", "CAPTCHA token expired. Re-verifying...", { category: "captcha" });
+          setCaptchaVerified(false);
           break;
       }
     },
@@ -286,7 +288,9 @@ export default function PlaygroundPage() {
         )
         // After first successful verification, let the widget auto-refresh
         // silently via the expired-callback instead of forcing a reset.
-        setCaptchaVerified(true)
+        if (turnstileTokenRef.current) {
+          setCaptchaVerified(true)
+        }
         track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
@@ -329,6 +333,7 @@ export default function PlaygroundPage() {
               return
             }
           }
+          setCaptchaVerified(false)
           addLog('error', 'CAPTCHA refresh timed out. Please verify manually.', { category: 'captcha' })
           return
         }
