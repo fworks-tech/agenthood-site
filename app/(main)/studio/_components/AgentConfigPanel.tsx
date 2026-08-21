@@ -331,10 +331,6 @@ export default function AgentConfigPanel({
                   value={config.temperature}
                   onChange={(val) => onChangeConfig({ ...config, temperature: val })}
                   label={(val) => val.toFixed(1)}
-                  marks={[
-                    { value: 0, label: "Precise" },
-                    { value: 2, label: "Creative" },
-                  ]}
                 />
               </div>
 
@@ -356,10 +352,6 @@ export default function AgentConfigPanel({
                   value={config.maxTokens}
                   onChange={(val) => onChangeConfig({ ...config, maxTokens: val })}
                   label={(val) => val.toLocaleString()}
-                  marks={[
-                    { value: 256, label: "256" },
-                    { value: 16384, label: "16K" },
-                  ]}
                 />
               </div>
             </Stack>
@@ -421,7 +413,7 @@ export default function AgentConfigPanel({
           />
           <Collapse expanded={limitsOpen}>
             <Paper p="sm" className="border border-zinc-800 bg-zinc-900/50 mt-sm">
-              <Stack gap={4}>
+              <Stack gap={6}>
                 <Group justify="space-between">
                   <Text size="xs" c="dimmed">Rate limit (chat)</Text>
                   <Text size="xs" className="font-mono" c="gray.5">20 req/min</Text>
@@ -440,6 +432,9 @@ export default function AgentConfigPanel({
                     {config.maxTokens.toLocaleString()}
                   </Text>
                 </Group>
+                <Text size="xs" c="dimmed" className="italic">
+                  Rate limits and message caps are server-enforced.
+                </Text>
               </Stack>
             </Paper>
           </Collapse>
