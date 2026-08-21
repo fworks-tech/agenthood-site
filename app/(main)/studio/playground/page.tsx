@@ -230,9 +230,6 @@ export default function PlaygroundPage() {
   );
 
   const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
-    // A verified token is never invalidated here: the widget re-verifies in the
-    // background and fires callback with a fresh token, so we keep the current
-    // token (and the checkbox stays checked) instead of resetting the widget.
     if (turnstileTokenRef.current) {
       const staleToken = turnstileTokenRef.current
       const deadline = Date.now() + 1000
@@ -240,7 +237,13 @@ export default function PlaygroundPage() {
         if (turnstileTokenRef.current !== staleToken) return true
         await new Promise((r) => setTimeout(r, 50))
       }
-      return true
+      // Token didn't refresh in background — force a fresh challenge.
+      setTurnstileRefreshKey((k) => k + 1)
+      const deadline = Date.now() + 5000
+      while (!turnstileTokenRef.current && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 100))
+      }
+      return !!turnstileTokenRef.current
     }
     // No verified token exists yet — force a fresh challenge.
     setTurnstileRefreshKey((k) => k + 1)
@@ -279,6 +282,8 @@ export default function PlaygroundPage() {
           'info',
           `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`,
         )
+        // Proactively refresh the consumed token so the next message has a fresh one.
+        setTurnstileRefreshKey((k) => k + 1)
         track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
