@@ -15,7 +15,10 @@ export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } =
             counter += 1;
             var token = "TEST_TOKEN_" + counter;
             if (${autoVerify}) {
-              setTimeout(function () { options.callback(token); }, 50);
+              setTimeout(function () {
+                if (window.__turnstileDisableAutoRenew) return;
+                options.callback(token);
+              }, 50);
             } else {
               window.__turnstileIssueResolvers = (window.__turnstileIssueResolvers || []).concat([
                 function () { options.callback(token); }
@@ -30,12 +33,19 @@ export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } =
             render: function(container, options) {
               var id = issue(options);
               active[id] = options;
+              var child = document.createElement("div");
+              child.style.width = "300px";
+              child.style.height = "65px";
+              container.appendChild(child);
               return id;
             },
             reset: function(id) {
               window.__turnstileResetCount += 1;
               var options = active[id];
-              if (options) issue(options);
+              if (options) {
+                if (options['expired-callback']) options['expired-callback']();
+                issue(options);
+              }
             },
             expireAndReissue: function() {
               Object.keys(active).forEach(function (id) {

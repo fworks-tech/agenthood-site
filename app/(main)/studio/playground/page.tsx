@@ -243,6 +243,13 @@ export default function PlaygroundPage() {
       }
       // Token didn't refresh in background — force a fresh challenge.
       setTurnstileRefreshKey((k) => k + 1)
+      // Wait for the refresh-key useEffect to null the current token before
+      // polling for a fresh one. Without this pause the ref still holds the
+      // stale value and the loop below would exit immediately returning true.
+      const clearDeadline = Date.now() + 2000
+      while (turnstileTokenRef.current === staleToken && Date.now() < clearDeadline) {
+        await new Promise((r) => setTimeout(r, 50))
+      }
       const newDeadline = Date.now() + 5000
       while (!turnstileTokenRef.current && Date.now() < newDeadline) {
         await new Promise((r) => setTimeout(r, 100))
@@ -302,6 +309,7 @@ export default function PlaygroundPage() {
         const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
         if (code === 'CAPTCHA_FAILED') {
           addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' })
+          setCaptchaVerified(false)
           const ready = await refreshCaptchaAndWait()
           if (ready) {
             try {
@@ -334,6 +342,7 @@ export default function PlaygroundPage() {
             }
           }
           setCaptchaVerified(false)
+          setTurnstileError('CAPTCHA refresh timed out. Please verify manually.')
           addLog('error', 'CAPTCHA refresh timed out. Please verify manually.', { category: 'captcha' })
           return
         }

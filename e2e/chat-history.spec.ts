@@ -96,7 +96,14 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "one");
     await waitForAssistantCount(page, 1);
-    await page.waitForTimeout(300);
+
+    // Simulate the widget's background re-verification issuing a fresh token.
+    // In production Cloudflare re-verifies automatically; the mock needs a nudge.
+    await page.evaluate(() => {
+      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
+    });
+    await page.waitForTimeout(200);
+
     await sendMessage(page, "two");
     await waitForAssistantCount(page, 2);
 
