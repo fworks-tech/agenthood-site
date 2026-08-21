@@ -72,9 +72,13 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
 
     expect(requestCount()).toBe(3);
 
-    // The verified token was never invalidated: the widget was not reset during
-    // the auto-retry (the checkbox stays checked for the whole conversation).
-    expect(await page.evaluate(() => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0)).toBe(0);
+    // The CAPTCHA_FAILED response means the previous token was consumed by the
+    // server, so the auto-retry must reset the widget to obtain a fresh token
+    // rather than silently reusing the spent one.
+    const resets = await page.evaluate(
+      () => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0,
+    );
+    expect(resets).toBeGreaterThan(0);
   });
 
   test("keeps the verified token usable when the widget expires and re-verifies", async ({ page }) => {
