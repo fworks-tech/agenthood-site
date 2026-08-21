@@ -3,9 +3,9 @@ import { agents } from "../app/(main)/studio/_data/agents";
 import { agentRegistry } from "../app/(main)/studio/_data/registry.generated";
 
 describe("agent registry alignment", () => {
-  it("has 19 members matching the upstream registry count", () => {
-    expect(agents.length).toBe(19);
-    expect(agentRegistry.length).toBe(19);
+  it("has 20 members matching the upstream registry count", () => {
+    expect(agents.length).toBe(20);
+    expect(agentRegistry.length).toBe(20);
   });
 
   it("has unique agent ids", () => {

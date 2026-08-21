@@ -14,6 +14,7 @@ const MEMBERS = [
   "the-envoy", "the-herald", "the-inspector", "the-librarian", "the-mailman",
   "the-operator", "the-oracle", "the-reviewer", "the-scribe", "the-sentinel",
   "the-steward", "the-strategist", "the-tester", "the-warden",
+  "the-mediator",
 ];
 
 const RAW_BASE = "https://raw.githubusercontent.com/fworks-tech/agenthood/main";

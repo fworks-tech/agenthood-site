@@ -40,6 +40,7 @@ const SITE_CONFIG: Record<string, SiteAgentConfig> = {
   "the-steward": { role: "Context & Routing", category: "lifecycle", enabled: true, icon: "🧭" },
   "the-strategist": { role: "Goal Refinement", category: "engineering", enabled: true, icon: "🎯" },
   "the-operator": { role: "Deployment & Incidents", category: "lifecycle", enabled: true, icon: "🩺" },
+  "the-mediator": { role: "Intent Routing & Handoff", category: "lifecycle", enabled: true, icon: "🔀" },
 };
 
 const SITE_ORDER = [
@@ -47,6 +48,7 @@ const SITE_ORDER = [
   "the-debugger", "the-auditor", "the-herald", "the-inspector", "the-librarian",
   "the-mailman", "the-doorman", "the-oracle", "the-envoy", "the-sentinel",
   "the-warden", "the-steward", "the-strategist", "the-operator",
+  "the-mediator",
 ];
 
 const registryById = new Map(agentRegistry.map((r) => [r.name, r]));
