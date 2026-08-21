@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Paper, Text, ActionIcon, Group, Typography } from "@mantine/core";
+import { Paper, Text, ActionIcon, Group, Typography, Title } from "@mantine/core";
 import { IconThumbUp, IconThumbDown } from "@tabler/icons-react";
 import type { ChatMessage } from "../_lib/studio-api";
 import { STORAGE_KEYS } from "../_lib/constants";
@@ -77,6 +77,18 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
     );
   }
 
+  const mdComponents = {
+    h1: ({ children }: { children: React.ReactNode }) => (
+      <Title order={3} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
+    ),
+    h2: ({ children }: { children: React.ReactNode }) => (
+      <Title order={4} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
+    ),
+    h3: ({ children }: { children: React.ReactNode }) => (
+      <Title order={5} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
+    ),
+  };
+
   return (
     <div className="flex justify-start">
       <Paper bg="zinc.9" px="xl" py={10} className="max-w-[85%] md:max-w-[75%]">
@@ -118,7 +130,7 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
           </div>
         )}
         <Typography>
-          <ReactMarkdown>{message.content}</ReactMarkdown>
+          <ReactMarkdown components={mdComponents}>{message.content}</ReactMarkdown>
           {isStreaming && (
             <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-text-bottom" />
           )}
