@@ -105,4 +105,153 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     const messages1 = await getMessages(page);
     expect(messages1.some((m) => m.role === "user" && m.text.includes("first message"))).toBeTruthy();
   });
+
+  test("expiry makes the captcha widget visible during re-verification", async ({ page }) => {
+    await mockChat(page);
+
+    await selectAgent(page, "the-scribe");
+    await closeConfigPanel(page);
+
+    await sendMessage(page, "first message");
+    await waitForStreamComplete(page);
+
+    // Widget is hidden after successful message (captchaVerified=true).
+    const widget = page.locator(".turnstile-widget");
+    await expect(widget).not.toBeVisible();
+
+    // Simulate token expiry: expired-callback sets captchaVerified=false,
+    // then the mock re-issues a token after 50ms which sets it back to true.
+    await page.evaluate(() => {
+      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
+    });
+
+    // After re-verification completes, the widget must be hidden again.
+    await expect.poll(async () => {
+      const style = await widget.getAttribute("style");
+      return style ?? "";
+    }, { timeout: 5000 }).toContain("opacity: 0");
+
+    // Sending still works after re-verification.
+    await sendMessage(page, "second message");
+    await waitForStreamComplete(page);
+    const messages = await getMessages(page);
+    expect(messages.some((m) => m.role === "user" && m.text.includes("second message"))).toBeTruthy();
+  });
+
+  test("CAPTCHA_FAILED refresh timeout shows the widget and error", async ({ page }) => {
+    let requestCount = 0;
+    await page.route("**/api/studio/chat/**", async (route) => {
+      const reqBody = route.request().postDataJSON();
+      if (!reqBody?.agentId || !reqBody?.messages) {
+        await route.fulfill({ status: 400, body: JSON.stringify({ error: "Invalid request" }) });
+        return;
+      }
+      requestCount++;
+      if (requestCount === 2) {
+        await route.fulfill({
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ error: "CAPTCHA verification failed. Please refresh and try again.", code: "CAPTCHA_FAILED" }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: [
+          JSON.stringify({ type: "token", data: "Hello" }) + "\n",
+          JSON.stringify({ type: "token", data: " world" }) + "\n",
+          JSON.stringify({ type: "done" }) + "\n",
+        ].join(""),
+      });
+    });
+
+    await selectAgent(page, "the-scribe");
+    await closeConfigPanel(page);
+
+    await sendMessage(page, "first message");
+    await waitForStreamComplete(page);
+
+    // Override the mock's reset to not issue a new token, simulating an
+    // invisible widget that cannot complete the Cloudflare challenge.
+    await page.evaluate(() => {
+      const t = (window as unknown as { turnstile?: { reset?: (id: string) => void } }).turnstile;
+      if (t && t.reset) {
+        t.reset = () => {
+          (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount =
+            ((window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0) + 1;
+          // Intentionally do not issue a new token.
+        };
+      }
+    });
+
+    // Second message triggers CAPTCHA_FAILED; refreshCaptchaAndWait will
+    // timeout because the mock no longer issues tokens on reset.
+    await sendMessage(page, "second message");
+
+    // The widget becomes visible so the user can re-verify.
+    const widget = page.locator(".turnstile-widget");
+    await expect(widget).toBeVisible({ timeout: 15000 });
+
+    // Error message appears.
+    await expect(page.getByText("CAPTCHA refresh timed out")).toBeVisible({ timeout: 15000 });
+  });
+
+  test("Retry CAPTCHA button re-renders the widget after refresh failure", async ({ page }) => {
+    let requestCount = 0;
+    await page.route("**/api/studio/chat/**", async (route) => {
+      const reqBody = route.request().postDataJSON();
+      if (!reqBody?.agentId || !reqBody?.messages) {
+        await route.fulfill({ status: 400, body: JSON.stringify({ error: "Invalid request" }) });
+        return;
+      }
+      requestCount++;
+      if (requestCount === 2) {
+        await route.fulfill({
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ error: "CAPTCHA verification failed. Please refresh and try again.", code: "CAPTCHA_FAILED" }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: [
+          JSON.stringify({ type: "token", data: "Hello" }) + "\n",
+          JSON.stringify({ type: "token", data: " world" }) + "\n",
+          JSON.stringify({ type: "done" }) + "\n",
+        ].join(""),
+      });
+    });
+
+    await selectAgent(page, "the-scribe");
+    await closeConfigPanel(page);
+
+    await sendMessage(page, "first message");
+    await waitForStreamComplete(page);
+
+    // Override mock to fail on reset (simulates invisible widget).
+    await page.evaluate(() => {
+      const t = (window as unknown as { turnstile?: { reset?: (id: string) => void } }).turnstile;
+      if (t && t.reset) {
+        t.reset = () => {
+          (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount =
+            ((window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0) + 1;
+        };
+      }
+    });
+
+    await sendMessage(page, "second message");
+    await expect(page.getByText("CAPTCHA refresh timed out")).toBeVisible({ timeout: 15000 });
+
+    // Click Retry CAPTCHA — this resets the widget and nulls the token.
+    await page.getByRole("button", { name: "Retry CAPTCHA" }).click();
+
+    // The widget should become visible and re-issue a token.
+    // The mock's render function still works (autoVerify), so the token
+    // arrives and the send button re-enables.
+    const sendBtn = page.locator("button[aria-label='Send message']");
+    await expect(sendBtn).toBeEnabled({ timeout: 10000 });
+  });
 });
