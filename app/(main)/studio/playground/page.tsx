@@ -66,6 +66,7 @@ export default function PlaygroundPage() {
   const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileTokenRef = useRef<string | null>(null);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
   useEffect(() => {
@@ -217,6 +218,7 @@ export default function PlaygroundPage() {
   const retryCaptcha = useCallback(() => {
     setTurnstileError(null);
     setTurnstileToken(null);
+    setCaptchaVerified(false);
     setTurnstileRefreshKey((k) => k + 1);
     addLog("info", "CAPTCHA retry requested", { category: "captcha" });
   }, [addLog]);
@@ -282,8 +284,9 @@ export default function PlaygroundPage() {
           'info',
           `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`,
         )
-        // Proactively refresh the consumed token so the next message has a fresh one.
-        setTurnstileRefreshKey((k) => k + 1)
+        // After first successful verification, let the widget auto-refresh
+        // silently via the expired-callback instead of forcing a reset.
+        setCaptchaVerified(true)
         track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
@@ -655,7 +658,7 @@ export default function PlaygroundPage() {
                     onError={handleTurnstileError}
                     onStatus={handleTurnstileStatus}
                     refreshKey={turnstileRefreshKey}
-                    visible
+                    visible={!captchaVerified}
                   />
                 ) : undefined
               }
