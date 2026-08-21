@@ -23,6 +23,7 @@ const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
   provider?: string;
   apiKey?: string;
+  enabledTools?: string[];
 };
 
 function generateId(): string {
@@ -90,6 +91,12 @@ function validateConfig(config: unknown): ChatRequestConfig {
   }
   if (typeof c.apiKey === "string") {
     validated.apiKey = c.apiKey;
+  }
+  if (Array.isArray(c.enabledTools)) {
+    const validToolNames = new Set(["web_fetch", "code_execution"]);
+    validated.enabledTools = (c.enabledTools as unknown[]).filter(
+      (t): t is string => typeof t === "string" && validToolNames.has(t),
+    );
   }
 
   if (validated.provider && validated.model) {
