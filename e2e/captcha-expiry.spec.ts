@@ -115,9 +115,11 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await sendMessage(page, "first message");
     await waitForStreamComplete(page);
 
-    // Widget is hidden after successful message (captchaVerified=true).
+    // Widget is hidden after successful message (captchaVerified=true):
+    // the mock gives the widget a fixed-size child, so assert the hidden style
+    // rather than visibility (opacity:0 still has a bounding box).
     const widget = page.locator(".turnstile-widget");
-    await expect(widget).not.toBeVisible();
+    await expect(widget).toHaveAttribute("style", /opacity: 0/);
 
     // Simulate token expiry: expired-callback sets captchaVerified=false,
     // then the mock re-issues a token after 50ms which sets it back to true.
@@ -172,17 +174,10 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await sendMessage(page, "first message");
     await waitForStreamComplete(page);
 
-    // Override the mock's reset to not issue a new token, simulating an
+    // Prevent the mock from issuing a new token on reset, simulating an
     // invisible widget that cannot complete the Cloudflare challenge.
     await page.evaluate(() => {
-      const t = (window as unknown as { turnstile?: { reset?: (id: string) => void } }).turnstile;
-      if (t && t.reset) {
-        t.reset = () => {
-          (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount =
-            ((window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0) + 1;
-          // Intentionally do not issue a new token.
-        };
-      }
+      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = true;
     });
 
     // Second message triggers CAPTCHA_FAILED; refreshCaptchaAndWait will
@@ -193,8 +188,10 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     const widget = page.locator(".turnstile-widget");
     await expect(widget).toBeVisible({ timeout: 15000 });
 
-    // Error message appears.
-    await expect(page.getByText("CAPTCHA refresh timed out")).toBeVisible({ timeout: 15000 });
+    // Error message appears in the composer.
+    await expect(
+      page.locator("span.text-red-400").filter({ hasText: "CAPTCHA refresh timed out" }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("Retry CAPTCHA button re-renders the widget after refresh failure", async ({ page }) => {
@@ -231,26 +228,28 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await sendMessage(page, "first message");
     await waitForStreamComplete(page);
 
-    // Override mock to fail on reset (simulates invisible widget).
+    // Prevent the mock from issuing a new token on reset (simulates invisible widget).
     await page.evaluate(() => {
-      const t = (window as unknown as { turnstile?: { reset?: (id: string) => void } }).turnstile;
-      if (t && t.reset) {
-        t.reset = () => {
-          (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount =
-            ((window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0) + 1;
-        };
-      }
+      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = true;
     });
 
     await sendMessage(page, "second message");
-    await expect(page.getByText("CAPTCHA refresh timed out")).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.locator("span.text-red-400").filter({ hasText: "CAPTCHA refresh timed out" }),
+    ).toBeVisible({ timeout: 15000 });
+
+    // Re-enable token issuance so the retry can succeed.
+    await page.evaluate(() => {
+      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = false;
+    });
 
     // Click Retry CAPTCHA — this resets the widget and nulls the token.
     await page.getByRole("button", { name: "Retry CAPTCHA" }).click();
 
-    // The widget should become visible and re-issue a token.
-    // The mock's render function still works (autoVerify), so the token
-    // arrives and the send button re-enables.
+    // Type a message and wait for the reset widget to deliver a fresh token,
+    // then the send button re-enables.
+    const textarea = page.locator("textarea[placeholder='Type a message...']");
+    await textarea.fill("third message");
     const sendBtn = page.locator("button[aria-label='Send message']");
     await expect(sendBtn).toBeEnabled({ timeout: 10000 });
   });
