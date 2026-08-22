@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-22"
+    ],
+    "path": "news/whats-new-2026-08-22.md",
+    "title": "Agenthood v3.38.0: Steward Load Routing and CI Fix",
+    "date": "2026-08-22",
+    "author": "Agenthood Team",
+    "summary": "v3.38.0 reframes steward load routing, adds the-mediator, and fixes a CI checkout issue."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-21"
     ],
     "path": "news/whats-new-2026-08-21.md",
