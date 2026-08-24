@@ -389,6 +389,150 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     }
   }, [activeConversationId, isStreaming, persist, generateTitle]);
 
+  const retrySendMessage = useCallback(async (content: string, turnstileToken?: string) => {
+    const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
+    if (!conv || isStreaming || !content.trim()) return;
+
+    const lastUserMsg = conv.messages.filter((m) => m.role === "user").pop();
+    if (!lastUserMsg || lastUserMsg.content !== content.trim()) return;
+
+    const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId(), toolCalls: [] };
+
+    const updatedMessages = [...conv.messages, assistantMsg];
+    const withMessages = conversationsRef.current.map((c) =>
+      c.id === activeConversationId ? { ...c, messages: updatedMessages } : c,
+    );
+    persist(withMessages, activeConversationId);
+    setIsStreaming(true);
+
+    const abortController = new AbortController();
+    abortRef.current = abortController;
+
+    const baseTokens = conv.tokenCount ?? 0;
+    const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+    let estimatedTokens = 0;
+    const persistTokens = (convs: Conversation[]): Conversation[] => {
+      const withTokens = convs.map((c) =>
+        c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
+      );
+      saveConversations(withTokens);
+      return withTokens;
+    };
+
+    try {
+      const res = await sendChat(
+        conv.agentId,
+        truncateMessages(
+          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
+        ),
+        configRef.current ?? {},
+        turnstileToken,
+        generateId(),
+        abortController.signal,
+      );
+
+      const requestId = res.headers.get("x-request-id") ?? undefined;
+      const correlationId = res.headers.get("x-correlation-id") ?? undefined;
+      onLogRef.current?.({
+        level: res.ok ? "info" : "error",
+        event: "chat.response",
+        status: res.status,
+        requestId,
+        correlationId,
+      });
+
+      if (!res.ok) {
+        let errorBody: { error?: string; code?: string } | null = null
+        try {
+          errorBody = await res.json()
+        } catch {
+          /* non-JSON error body */
+        }
+        const msg = errorBody?.error ?? `Server error: ${res.status}`
+        const err = new Error(msg)
+        ;(err as Error & { code?: string }).code = errorBody?.code
+        throw err
+      }
+
+      let streamedContent = "";
+      let streamError: Error | null = null;
+      const pendingToolCalls: ToolCallInfo[] = [];
+
+      await readSSEStream(
+        res,
+        {
+          onToken: (token) => {
+            streamedContent += token;
+            estimatedTokens = estimateTokens(streamedContent);
+            setTotalTokens(baseTokens + estimatedTokens);
+            setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
+          },
+          onToolCall: (tc) => {
+            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending" });
+            setConversations((prev) => {
+              const conv = prev.find((c) => c.id === activeConversationId);
+              if (!conv) return prev;
+              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
+              if (!msg) return prev;
+              return updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
+            });
+          },
+          onToolResult: (tr) => {
+            const existing = pendingToolCalls.find((t) => t.id === tr.id);
+            if (existing) {
+              existing.status = tr.error ? "error" : "complete";
+              existing.result = tr.result;
+              existing.error = tr.error;
+            }
+            setConversations((prev) => {
+              const conv = prev.find((c) => c.id === activeConversationId);
+              if (!conv) return prev;
+              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
+              if (!msg) return prev;
+              return prev.map((c) =>
+                c.id === activeConversationId
+                  ? { ...c, messages: c.messages.map((m) => m.id === assistantMsg.id ? { ...m, toolCalls: [...pendingToolCalls] } : m) }
+                  : c,
+              );
+            });
+          },
+          onDone: () => {
+            setConversations((prev) => {
+              const final = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
+              return final;
+            });
+            setIsStreaming(false);
+          },
+          onLog: (log) => onLogRef.current?.(log),
+          onError: (err) => {
+            streamError = err;
+            const errorMsg = `Error: ${err.message}`;
+            setConversations((prev) => {
+              const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
+              return withError;
+            });
+            setIsStreaming(false);
+          },
+        },
+        abortController.signal,
+      );
+
+      if (streamError) throw streamError;
+    } catch (err) {
+      if (abortController.signal.aborted) {
+        setIsStreaming(false)
+        return
+      }
+      const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`
+      setConversations((prev) => {
+        const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg))
+        return withError
+      })
+      setIsStreaming(false)
+      throw err
+    }
+  }, [activeConversationId, isStreaming, persist]);
+
   const abortStream = useCallback(() => {
     abortRef.current?.abort();
     setIsStreaming(false);
@@ -402,6 +546,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     totalTokens,
     hydrated,
     sendMessage,
+    retrySendMessage,
     abortStream,
     clearMessages,
     newConversation,
