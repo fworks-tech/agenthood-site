@@ -314,7 +314,7 @@ export default function PlaygroundPage() {
           const ready = await refreshCaptchaAndWait()
           if (ready) {
             try {
-              await chat.sendMessage(content, turnstileTokenRef.current ?? undefined)
+              await chat.retrySendMessage(content, turnstileTokenRef.current ?? undefined)
               const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
               addLog(
                 'info',
