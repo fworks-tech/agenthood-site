@@ -60,6 +60,7 @@ interface UseStudioChatReturn {
   totalTokens: number;
   hydrated: boolean;
   sendMessage: (content: string, turnstileToken?: string) => Promise<void>;
+  retrySendMessage: (content: string, turnstileToken?: string) => Promise<void>;
   abortStream: () => void;
   clearMessages: () => void;
   newConversation: (agentId: string, config?: Partial<ChatConfig>) => void;

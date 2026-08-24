@@ -237,7 +237,7 @@ export default function PlaygroundPage() {
   const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
     if (turnstileTokenRef.current) {
       const staleToken = turnstileTokenRef.current
-      const deadline = Date.now() + 1000
+      const deadline = Date.now() + 2000
       while (Date.now() < deadline) {
         if (turnstileTokenRef.current !== staleToken) return true
         await new Promise((r) => setTimeout(r, 50))
@@ -247,11 +247,11 @@ export default function PlaygroundPage() {
       // Wait for the refresh-key useEffect to null the current token before
       // polling for a fresh one. Without this pause the ref still holds the
       // stale value and the loop below would exit immediately returning true.
-      const clearDeadline = Date.now() + 2000
+      const clearDeadline = Date.now() + 3000
       while (turnstileTokenRef.current === staleToken && Date.now() < clearDeadline) {
         await new Promise((r) => setTimeout(r, 50))
       }
-      const newDeadline = Date.now() + 5000
+      const newDeadline = Date.now() + 10000
       while (!turnstileTokenRef.current && Date.now() < newDeadline) {
         await new Promise((r) => setTimeout(r, 100))
       }
@@ -259,7 +259,7 @@ export default function PlaygroundPage() {
     }
     // No verified token exists yet — force a fresh challenge.
     setTurnstileRefreshKey((k) => k + 1)
-    const deadline = Date.now() + 5000
+    const deadline = Date.now() + 10000
     while (!turnstileTokenRef.current && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 100))
     }
