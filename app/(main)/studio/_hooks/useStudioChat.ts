@@ -371,7 +371,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       if (isCaptchaFailed) {
         const cleaned = conversationsRef.current.map((c) =>
           c.id === activeConversationId
-            ? { ...c, messages: c.messages.filter((m) => m.id !== userMsg.id && m.id !== assistantMsg.id) }
+            ? { ...c, messages: c.messages.filter((m) => m.id !== assistantMsg.id) }
             : c,
         )
         saveConversations(cleaned)

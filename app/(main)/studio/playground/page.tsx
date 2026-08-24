@@ -211,6 +211,7 @@ export default function PlaygroundPage() {
         case "token-expired":
           addLog("warn", "CAPTCHA token expired. Re-verifying...", { category: "captcha" });
           setCaptchaVerified(false);
+          setTurnstileToken(null);
           break;
       }
     },
