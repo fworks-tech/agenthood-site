@@ -1,7 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/(main)/studio/_data/agents";
-import { ValidationError, CaptchaError, StudioError } from "@/app/(main)/studio/_lib/errors";
+import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
+import { validateTurnstile } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
 import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
@@ -14,11 +15,6 @@ const MAX_MESSAGES = 50;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
 const MAX_TOKENS = 100_000;
-
-const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
-const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
   provider?: string;
@@ -125,32 +121,6 @@ function validateBaseUrl(baseUrl: string): void {
     if (!["localhost", "127.0.0.1", "host.docker.internal"].includes(hostname)) {
       throw new ValidationError("http baseUrl is only allowed for localhost");
     }
-  }
-}
-
-async function validateTurnstile(token: unknown): Promise<void> {
-  if (!TURNSTILE_ENABLED || !TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
-    if (TURNSTILE_ENABLED && TURNSTILE_REQUIRED) {
-      logger.error("turnstile.config_missing", { message: "Turnstile enabled but TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set. CAPTCHA bypassed." });
-    }
-    return;
-  }
-  if (typeof token !== "string" || !token) {
-    throw new CaptchaError("Missing CAPTCHA token. Please refresh and try again.");
-  }
-  try {
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret: TURNSTILE_SECRET, response: token }),
-    });
-    const data = await res.json() as { success?: boolean };
-    if (!data.success) {
-      throw new CaptchaError("Token expired or invalid. Retrying...");
-    }
-  } catch (err) {
-    if (err instanceof CaptchaError) throw err;
-    throw new CaptchaError("CAPTCHA service unavailable. Please try again.");
   }
 }
 
