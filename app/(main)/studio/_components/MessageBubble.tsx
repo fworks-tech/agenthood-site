@@ -81,24 +81,24 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
   }
 
   function renderToolStatusIcon(status: string) {
-  if (status === "complete") {
+    if (status === "complete") {
+      return (
+        <svg className="h-3 w-3 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    }
+    if (status === "error") {
+      return (
+        <svg className="h-3 w-3 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      );
+    }
     return (
-      <svg className="h-3 w-3 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-      </svg>
+      <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
     );
   }
-  if (status === "error") {
-    return (
-      <svg className="h-3 w-3 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    );
-  }
-  return (
-    <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
-  );
-}
 
   const mdComponents: Components = {
     pre: ({ children }) => (
