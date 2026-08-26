@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { sendChat } from "../app/(main)/studio/_lib/studio-api";
+import { sendChat, replayToolExecution } from "../app/(main)/studio/_lib/studio-api";
 
 const fetchMock = vi.fn();
 
@@ -56,5 +56,49 @@ describe("sendChat", () => {
     const response = new Response();
     fetchMock.mockResolvedValue(response);
     await expect(sendChat("the-scribe", messages, config)).resolves.toBe(response);
+  });
+});
+
+describe("replayToolExecution", () => {
+  it("posts the tool and args to the execute route and returns the outcome", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ result: "fixed", requestId: "r1" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const outcome = await replayToolExecution(
+      "code_execution",
+      { code: "1 + 1" },
+      "tok-2",
+      "corr-1",
+    );
+    expect(outcome.result).toBe("fixed");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/studio/tools/execute/");
+    expect(init.method).toBe("POST");
+    expect(init.headers["X-Correlation-Id"]).toBe("corr-1");
+    expect(JSON.parse(init.body)).toEqual({
+      tool: "code_execution",
+      args: { code: "1 + 1" },
+      turnstileToken: "tok-2",
+    });
+  });
+
+  it("throws with the server error code on a non-ok response", async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ error: "Unknown tool", code: "VALIDATION_ERROR" }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+    await expect(replayToolExecution("nope", {})).rejects.toThrow("Unknown tool");
+    await expect(replayToolExecution("nope", {})).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
   });
 });
