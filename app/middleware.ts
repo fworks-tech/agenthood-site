@@ -116,8 +116,17 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limitKey) return null;
   const limits = RATE_LIMITS[limitKey];
 
+  // Unknown matching keys (e.g. /api/news/comments) fall back to the feedback bucket.
+  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "status" | "feedback"> = {
+    "/api/studio/chat": "chat",
+    "/api/studio/tools": "tools",
+    "/api/studio/agents": "agents",
+    "/api/studio/status": "status",
+    "/api/studio/feedback": "feedback",
+  };
+
   if (upstash) {
-    const limiter = upstash[limitKey === "/api/studio/chat" ? "chat" : limitKey.startsWith("/api/studio/tools") ? "tools" : limitKey === "/api/studio/agents" ? "agents" : limitKey === "/api/studio/status" ? "status" : "feedback"];
+    const limiter = upstash[LIMITER_BY_KEY[limitKey] ?? "feedback"];
     const { success, limit, remaining, reset } = await limiter.limit(ip);
 
     if (!success) {
