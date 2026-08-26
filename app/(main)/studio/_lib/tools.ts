@@ -154,3 +154,16 @@ export async function executeTool(
   if (!tool) return `Error: unknown tool "${name}"`;
   return tool.execute(args, signal);
 }
+
+/**
+ * Tool handlers encode failures as `Error: …` strings in the result, so the
+ * transport can split them into a structured `error` field. This keeps the
+ * emitted `tool_result.error` truthful (and enables "replay" targeting) while
+ * the LLM-visible `role: "tool"` content stays unchanged.
+ */
+export function classifyToolResult(result: string): { result?: string; error?: string } {
+  if (/^Error: /.test(result)) {
+    return { error: result };
+  }
+  return { result };
+}
