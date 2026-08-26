@@ -9,6 +9,7 @@ import {
   waitForAssistantCount,
   openConversationSidebar,
   waitForHydration,
+  expireAndReissue,
 } from "./helpers";
 
 test.describe("Playground — Chat History & Multi-Turn Context", () => {
@@ -99,9 +100,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
 
     // Simulate the widget's background re-verification issuing a fresh token.
     // In production Cloudflare re-verifies automatically; the mock needs a nudge.
-    await page.evaluate(() => {
-      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
-    });
+    await expireAndReissue(page);
     await page.waitForTimeout(200);
 
     await sendMessage(page, "two");
