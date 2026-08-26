@@ -96,6 +96,15 @@ describe("middleware origin validation", () => {
     expect(res.status).toBe(200);
   });
 
+  it("rejects foreign origins for the tools endpoint", async () => {
+    const res = await callMiddleware(
+      makeRequest("/api/studio/tools/execute/", { origin: "https://evil.example" }),
+    );
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.code).toBe("FORBIDDEN");
+  });
+
   it("allows localhost origins in development mode", async () => {
     process.env.NODE_ENV = "development";
     const res = await callMiddleware(
@@ -177,6 +186,29 @@ describe("middleware in-memory rate limiting", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("RateLimit-Limit")).toBeNull();
   });
+
+  it("applies the tools limit independently of the chat limit", async () => {
+    for (let i = 0; i < 30; i += 1) {
+      const res = await callMiddleware(makeRequest("/api/studio/tools/execute"));
+      expect(res.status).not.toBe(429);
+    }
+    const throttled = await callMiddleware(makeRequest("/api/studio/tools/execute"));
+    expect(throttled.status).toBe(429);
+
+    const chatRes = await callMiddleware(makeRequest("/api/studio/chat"));
+    expect(chatRes.status).toBe(200);
+    const chatAgain = await callMiddleware(makeRequest("/api/studio/chat"));
+    expect(chatAgain.headers.get("RateLimit-Limit")).toBe("20");
+  });
+
+  it("normalizes trailing slashes into the same rate-limit bucket", async () => {
+    for (let i = 0; i < 30; i += 1) {
+      const res = await callMiddleware(makeRequest("/api/studio/tools/execute/"));
+      expect(res.status).not.toBe(429);
+    }
+    const throttled = await callMiddleware(makeRequest("/api/studio/tools/execute/"));
+    expect(throttled.status).toBe(429);
+  });
 });
 
 describe("middleware Upstash rate limiting", () => {
@@ -233,6 +265,24 @@ describe("middleware Upstash rate limiting", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("RateLimit-Limit")).toBe("30");
     expect(status!.limit).toHaveBeenCalledTimes(1);
+    expect(chat!.limit).not.toHaveBeenCalled();
+  });
+
+  it("routes /api/studio/tools/execute to the tools Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const tools = ratelimitInstances.find((r) => r.prefix === "ratelimit:tools");
+    const chat = ratelimitInstances.find((r) => r.prefix === "ratelimit:chat");
+    expect(tools).toBeDefined();
+    tools!.limit.mockResolvedValueOnce({
+      success: true,
+      limit: 30,
+      remaining: 29,
+      reset: Date.now() + 60_000,
+    });
+    const res = await middleware(makeRequest("/api/studio/tools/execute"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("RateLimit-Limit")).toBe("30");
+    expect(tools!.limit).toHaveBeenCalledTimes(1);
     expect(chat!.limit).not.toHaveBeenCalled();
   });
 
