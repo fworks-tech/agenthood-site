@@ -235,27 +235,38 @@ export default function PlaygroundPage() {
   );
 
   const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
-    if (turnstileTokenRef.current) {
-      const staleToken = turnstileTokenRef.current
+    const staleToken = turnstileTokenRef.current
+    // Re-sending the exact token the server just rejected would only produce a
+    // second CAPTCHA_FAILED, so a value only counts as usable if it is strictly
+    // different from the stale one (Turnstile tokens are unique per challenge).
+    const hasFreshToken = (): boolean =>
+      !!turnstileTokenRef.current && turnstileTokenRef.current !== staleToken
+
+    if (staleToken) {
+      // Give the widget's background re-verification a short window to swap in
+      // a fresh token before forcing a reset.
       const deadline = Date.now() + 2000
       while (Date.now() < deadline) {
-        if (turnstileTokenRef.current !== staleToken) return true
+        if (hasFreshToken()) return true
         await new Promise((r) => setTimeout(r, 50))
       }
-      // Token didn't refresh in background — force a fresh challenge.
+      // No background refresh — force a fresh challenge.
       setTurnstileRefreshKey((k) => k + 1)
       // Wait for the refresh-key useEffect to null the current token before
       // polling for a fresh one. Without this pause the ref still holds the
-      // stale value and the loop below would exit immediately returning true.
+      // stale value and the poll below would never observe a change. The 3s cap
+      // guarantees we do not wedge if the widget never clears it (e.g. the
+      // script failed to load), which is exactly the case where the stale token
+      // must NOT be treated as ready.
       const clearDeadline = Date.now() + 3000
       while (turnstileTokenRef.current === staleToken && Date.now() < clearDeadline) {
         await new Promise((r) => setTimeout(r, 50))
       }
       const newDeadline = Date.now() + 10000
-      while (!turnstileTokenRef.current && Date.now() < newDeadline) {
+      while (!hasFreshToken() && Date.now() < newDeadline) {
         await new Promise((r) => setTimeout(r, 100))
       }
-      return !!turnstileTokenRef.current
+      return hasFreshToken()
     }
     // No verified token exists yet — force a fresh challenge.
     setTurnstileRefreshKey((k) => k + 1)
