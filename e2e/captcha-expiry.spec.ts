@@ -8,6 +8,10 @@ import {
   waitForStreamComplete,
   waitForHydration,
   closeConfigPanel,
+  readTurnstileResetCount,
+  resetTurnstileCounter,
+  expireAndReissue,
+  setTurnstileAutoRenew,
 } from "./helpers";
 
 test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
@@ -47,6 +51,9 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await mockTurnstile(page);
     await page.reload();
     await waitForHydration(page);
+    // The mock seeds __turnstileResetCount on injection; zero it explicitly so
+    // the toBe(0)/toBeGreaterThan(0) assertions never inherit a prior count.
+    await resetTurnstileCounter(page);
   });
 
   test("auto-retries when CAPTCHA token expires mid-conversation", async ({ page }) => {
@@ -75,9 +82,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     // The CAPTCHA_FAILED response means the previous token was consumed by the
     // server, so the auto-retry must reset the widget to obtain a fresh token
     // rather than silently reusing the spent one.
-    const resets = await page.evaluate(
-      () => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0,
-    );
+    const resets = await readTurnstileResetCount(page);
     expect(resets).toBeGreaterThan(0);
   });
 
@@ -89,16 +94,14 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
 
     // The first token is issued on render (autoVerify). Simulate expiry plus the
     // widget's background re-verification issuing a fresh token.
-    await page.evaluate(() => {
-      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
-    });
+    await expireAndReissue(page);
 
     // Expiry must not invalidate the verified token: the widget is not
     // reset/unchecked, and sending a message still works.
     const textarea = page.locator("textarea[placeholder='Type a message...']");
     await textarea.fill("first message");
     await expect(page.locator("button[aria-label='Send message']")).toBeEnabled();
-    expect(await page.evaluate(() => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0)).toBe(0);
+    expect(await readTurnstileResetCount(page)).toBe(0);
 
     await sendMessage(page, "first message");
     await waitForStreamComplete(page);
@@ -123,9 +126,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
 
     // Simulate token expiry: expired-callback sets captchaVerified=false,
     // then the mock re-issues a token after 50ms which sets it back to true.
-    await page.evaluate(() => {
-      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
-    });
+    await expireAndReissue(page);
 
     // After re-verification completes, the widget must be hidden again.
     await expect.poll(async () => {
@@ -176,9 +177,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
 
     // Prevent the mock from issuing a new token on reset, simulating an
     // invisible widget that cannot complete the Cloudflare challenge.
-    await page.evaluate(() => {
-      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = true;
-    });
+    await setTurnstileAutoRenew(page, true);
 
     // Second message triggers CAPTCHA_FAILED; refreshCaptchaAndWait will
     // timeout because the mock no longer issues tokens on reset.
@@ -229,9 +228,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await waitForStreamComplete(page);
 
     // Prevent the mock from issuing a new token on reset (simulates invisible widget).
-    await page.evaluate(() => {
-      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = true;
-    });
+    await setTurnstileAutoRenew(page, true);
 
     await sendMessage(page, "second message");
     await expect(
@@ -239,9 +236,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     ).toBeVisible({ timeout: 15000 });
 
     // Re-enable token issuance so the retry can succeed.
-    await page.evaluate(() => {
-      (window as unknown as { __turnstileDisableAutoRenew?: boolean }).__turnstileDisableAutoRenew = false;
-    });
+    await setTurnstileAutoRenew(page, false);
 
     // Click Retry CAPTCHA — this resets the widget and nulls the token.
     await page.getByRole("button", { name: "Retry CAPTCHA" }).click();
