@@ -481,18 +481,11 @@ export default function PlaygroundPage() {
 
   return (
     <div className="h-screen bg-zinc-950 py-12">
-      {configOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-10 md:hidden"
-          onClick={() => setConfigOpen(false)}
-        />
-      )}
       <div className="relative flex h-full max-w-7xl mx-auto">
-        {/* Left Column — Conversations + Agent Configuration */}
+        {/* Left Column — Conversations + Agent Configuration (desktop only; mobile uses MobileDrawer/MobileBottomSheet) */}
         <div
           style={{ width: configOpen ? leftColWidth : 0 }}
-          className={`shrink-0 transition-all duration-200 overflow-hidden
-        absolute inset-y-0 left-0 z-20 md:relative md:inset-auto flex flex-col`}
+          className={`hidden shrink-0 transition-all duration-200 overflow-hidden flex-col md:relative md:flex`}
         >
           {configOpen && (
             <>
@@ -545,17 +538,18 @@ export default function PlaygroundPage() {
             onDrag={(delta) =>
               setLeftColWidth((w) => Math.min(500, Math.max(200, w + delta)))
             }
+            className="hidden md:flex"
           />
         )}
 
         {/* Right Column — Chat + Logs */}
         <div
           data-right-col
-          className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2 mr-2"
+          className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2.5">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-800 px-4 py-2.5">
+            <div className="flex min-w-0 items-center gap-3">
               <div>
                 <h1 className="text-sm font-semibold text-zinc-200">
                   Playground
@@ -564,7 +558,7 @@ export default function PlaygroundPage() {
                   Test agents, prompts, and controls in a live chat UI.
                 </p>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setConfigOpen((prev) => !prev)}
@@ -583,24 +577,24 @@ export default function PlaygroundPage() {
               </div>
             </div>
             {selectedAgent && (
-              <div key={selectedAgent.id} className="flex items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
+              <div key={selectedAgent.id} className="flex min-w-0 items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
                 {selectedAgent.icon && (
-                  <span className="text-base">{selectedAgent.icon}</span>
+                  <span className="shrink-0 text-base">{selectedAgent.icon}</span>
                 )}
-                <span className="text-sm font-medium text-zinc-300">
+                <span className="truncate text-sm font-medium text-zinc-300">
                   {selectedAgent.name}
                 </span>
-                <span className="text-xs text-zinc-600">
+                <span className="hidden truncate text-xs text-zinc-600 sm:inline">
                   · {config.provider} · {config.model}
                 </span>
                 {chat.totalTokens > 0 && (
-                  <span className="flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[11px] font-mono text-zinc-400">
+                  <span className="flex shrink-0 items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[11px] font-mono text-zinc-400">
                     ~{chat.totalTokens} tok
                     <HelpTip text="Approximate total tokens consumed in this conversation." />
                   </span>
                 )}
                 {chat.messages.length > 0 && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <button
                       type="button"
                       onClick={chat.clearMessages}

@@ -79,6 +79,11 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
   }
 
   const mdComponents: Components = {
+    pre: ({ children }) => (
+      <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-950/70 p-2 text-xs leading-relaxed">
+        {children}
+      </pre>
+    ),
     h1: ({ children }) => (
       <Title order={3} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
     ),
@@ -130,7 +135,7 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
             ))}
           </div>
         )}
-        <Typography>
+        <Typography className="break-words">
           <ReactMarkdown components={mdComponents}>{message.content}</ReactMarkdown>
           {isStreaming && (
             <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-text-bottom" />
