@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
-import { Paper, Text, ActionIcon, Group, Typography, Title } from "@mantine/core";
+import { Paper, Text, ActionIcon, Group, Typography, Title, Collapse } from "@mantine/core";
 import { IconThumbUp, IconThumbDown } from "@tabler/icons-react";
 import type { ChatMessage } from "../_lib/studio-api";
 import { STORAGE_KEYS } from "../_lib/constants";
@@ -41,11 +41,13 @@ interface MessageBubbleProps {
   message: ChatMessage;
   isStreaming?: boolean;
   conversationId?: string;
+  onReplayTool?: (messageId: string, toolCallId: string) => void;
 }
 
-export default function MessageBubble({ message, isStreaming, conversationId }: MessageBubbleProps) {
+export default function MessageBubble({ message, isStreaming, conversationId, onReplayTool }: MessageBubbleProps) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -78,6 +80,26 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
     );
   }
 
+  function renderToolStatusIcon(status: string) {
+    if (status === "complete") {
+      return (
+        <svg className="h-3 w-3 shrink-0 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      );
+    }
+    if (status === "error") {
+      return (
+        <svg className="h-3 w-3 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      );
+    }
+    return (
+      <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
+    );
+  }
+
   const mdComponents: Components = {
     pre: ({ children }) => (
       <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-950/70 p-2 text-xs leading-relaxed">
@@ -100,39 +122,84 @@ export default function MessageBubble({ message, isStreaming, conversationId }: 
       <Paper bg="zinc.9" px="xl" py={10} className="max-w-[85%] md:max-w-[75%]">
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="mb-2 space-y-1">
-            {message.toolCalls.map((tc) => (
-              <div
-                key={tc.id}
-                className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition-all duration-200 ${
-                  tc.status === "complete"
-                    ? "bg-emerald-950/40 text-emerald-400"
-                    : tc.status === "error"
-                      ? "bg-red-950/40 text-red-400"
-                      : "bg-zinc-800 text-zinc-400"
-                }`}
-              >
-                <span className={`inline-block transition-all duration-200 ${
-                  tc.status !== "pending" ? "scale-110" : ""
-                }`}>
-                  {tc.status === "complete" ? (
-                    <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : tc.status === "error" ? (
-                    <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <span className="inline-block h-3 w-3 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
-                  )}
-                </span>
-                <span className="font-medium">{tc.name}</span>
-                {tc.result && (
-                  <span className="text-zinc-500 truncate max-w-[200px] transition-opacity duration-200">{tc.result.slice(0, 80)}{tc.result.length > 80 ? "..." : ""}</span>
-                )}
-                {tc.error && <span className="text-red-400 truncate">{tc.error.slice(0, 80)}</span>}
-              </div>
-            ))}
+            {message.toolCalls.map((tc) => {
+              const isOpen = !!expandedTools[tc.id];
+              return (
+                <div
+                  key={tc.id}
+                  className={`rounded border px-2 py-1 text-xs transition-colors duration-200 ${
+                    tc.status === "complete"
+                      ? "border-emerald-800/40 bg-emerald-950/20"
+                      : tc.status === "error"
+                        ? "border-red-800/40 bg-red-950/20"
+                        : "border-zinc-700 bg-zinc-800/40"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedTools((s) => ({ ...s, [tc.id]: !isOpen }))}
+                    aria-expanded={isOpen}
+                    className="flex w-full items-center gap-2 text-left"
+                  >
+                    {renderToolStatusIcon(tc.status)}
+                    <span className="font-medium text-zinc-200">{tc.name}</span>
+                    {tc.durationMs !== undefined && (
+                      <span className="shrink-0 font-mono text-[10px] text-zinc-500">
+                        {(tc.durationMs / 1000).toFixed(1)}s
+                      </span>
+                    )}
+                    {tc.status === "complete" && tc.result && (
+                      <span className="truncate text-zinc-500">{tc.result.slice(0, 60)}</span>
+                    )}
+                    {tc.status === "error" && (
+                      <span className="truncate text-red-400">{tc.error?.slice(0, 60)}</span>
+                    )}
+                    <span
+                      className={`ml-auto shrink-0 text-zinc-500 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    >
+                      ▾
+                    </span>
+                  </button>
+                  <Collapse expanded={isOpen}>
+                    <div className="mt-2 space-y-2 border-t border-zinc-800 pt-2">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wide text-zinc-500">args</div>
+                        <pre className="mt-1 overflow-x-auto rounded bg-zinc-950/70 p-2 text-[11px] leading-relaxed">
+                          {JSON.stringify(tc.args, null, 2)}
+                        </pre>
+                      </div>
+                      {tc.result && (
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-emerald-400">result</div>
+                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-zinc-300">
+                            {tc.result}
+                          </pre>
+                        </div>
+                      )}
+                      {tc.error && (
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide text-red-400">error</div>
+                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-red-300">
+                            {tc.error}
+                          </pre>
+                        </div>
+                      )}
+                      {tc.status === "error" && onReplayTool && (
+                        <button
+                          type="button"
+                          onClick={() => onReplayTool(message.id, tc.id)}
+                          className="rounded border border-red-800/50 bg-red-950/30 px-2 py-1 text-[11px] text-red-300 transition-colors hover:bg-red-950/60"
+                        >
+                          Retry tool
+                        </button>
+                      )}
+                    </div>
+                  </Collapse>
+                </div>
+              );
+            })}
           </div>
         )}
         <Typography className="break-words">

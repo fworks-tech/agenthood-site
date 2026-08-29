@@ -30,6 +30,7 @@ type RateLimits = Record<string, { max: number; windowMs: number }>;
 
 const RATE_LIMITS: RateLimits = {
   "/api/studio/chat": { max: 20, windowMs: 60_000 },
+  "/api/studio/tools": { max: 30, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/status": { max: 30, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },
@@ -73,6 +74,11 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/chat"].max, `${RATE_LIMITS["/api/studio/chat"].windowMs}ms`),
     prefix: "ratelimit:chat",
   });
+  const tools = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/tools"].max, `${RATE_LIMITS["/api/studio/tools"].windowMs}ms`),
+    prefix: "ratelimit:tools",
+  });
   const agents = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/agents"].max, `${RATE_LIMITS["/api/studio/agents"].windowMs}ms`),
@@ -89,7 +95,7 @@ function createUpstashRatelimiter() {
     prefix: "ratelimit:feedback",
   });
 
-  return { chat, agents, status, feedback };
+  return { chat, tools, agents, status, feedback };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -102,11 +108,25 @@ function getClientIp(request: NextRequest): string {
 }
 
 async function checkRateLimit(pathname: string, ip: string): Promise<NextResponse | null> {
-  const limits = RATE_LIMITS[pathname];
-  if (!limits) return null;
+  // Match the longest configured prefix so sub-routes (e.g. /api/studio/tools/execute)
+  // and trailing-slash pathnames land in the same bucket as their parent.
+  const limitKey = Object.keys(RATE_LIMITS)
+    .filter((key) => pathname.startsWith(key))
+    .sort((a, b) => b.length - a.length)[0];
+  if (!limitKey) return null;
+  const limits = RATE_LIMITS[limitKey];
+
+  // Unknown matching keys (e.g. /api/news/comments) fall back to the feedback bucket.
+  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "status" | "feedback"> = {
+    "/api/studio/chat": "chat",
+    "/api/studio/tools": "tools",
+    "/api/studio/agents": "agents",
+    "/api/studio/status": "status",
+    "/api/studio/feedback": "feedback",
+  };
 
   if (upstash) {
-    const limiter = upstash[pathname === "/api/studio/chat" ? "chat" : pathname === "/api/studio/agents" ? "agents" : pathname === "/api/studio/status" ? "status" : "feedback"];
+    const limiter = upstash[LIMITER_BY_KEY[limitKey] ?? "feedback"];
     const { success, limit, remaining, reset } = await limiter.limit(ip);
 
     if (!success) {
@@ -136,7 +156,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
 
   memStore!.cleanup();
 
-  const key = `${pathname}:${ip}`;
+  const key = `${limitKey}:${ip}`;
   const now = Date.now();
   const entry = memStore!.store.get(key);
 
@@ -175,7 +195,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/api/studio/chat")) {
+  if (pathname.startsWith("/api/studio/chat") || pathname.startsWith("/api/studio/tools")) {
     try {
       validateOrigin(request);
     } catch {

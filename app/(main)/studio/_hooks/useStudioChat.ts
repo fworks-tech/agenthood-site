@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
 import { readSSEStream, type StreamLogEvent } from "../_lib/stream";
-import { sendChat } from "../_lib/studio-api";
+import { sendChat, replayToolExecution } from "../_lib/studio-api";
 import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
+import { applyToolReplayOutcome } from "../_lib/tool-outcome";
 import type { ChatConfig } from "../_types/studio";
 import { STORAGE_KEYS } from "../_lib/constants";
 const MAX_CONVERSATIONS = 50;
@@ -61,6 +62,11 @@ interface UseStudioChatReturn {
   hydrated: boolean;
   sendMessage: (content: string, turnstileToken?: string) => Promise<void>;
   retrySendMessage: (content: string, turnstileToken?: string) => Promise<void>;
+  replayToolCall: (
+    messageId: string,
+    toolCallId: string,
+    turnstileToken?: string,
+  ) => Promise<{ ok: boolean; outcome: { error?: string } }>;
   abortStream: () => void;
   clearMessages: () => void;
   newConversation: (agentId: string, config?: Partial<ChatConfig>) => void;
@@ -133,6 +139,19 @@ function updateMessage(convs: Conversation[], convId: string, msgId: string, con
   return convs.map((c) =>
     c.id === convId
       ? { ...c, messages: c.messages.map((m) => (m.id === msgId ? { ...m, content } : m)) }
+      : c,
+  );
+}
+
+function withToolResults(
+  convs: Conversation[],
+  convId: string,
+  msgId: string,
+  toolCalls: ToolCallInfo[],
+): Conversation[] {
+  return convs.map((c) =>
+    c.id === convId
+      ? { ...c, messages: c.messages.map((m) => (m.id === msgId ? { ...m, toolCalls: [...toolCalls] } : m)) }
       : c,
   );
 }
@@ -312,7 +331,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
           },
           onToolCall: (tc) => {
-            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending" });
+            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending", startedAt: Date.now() });
             setConversations((prev) => {
               const conv = prev.find((c) => c.id === activeConversationId);
               if (!conv) return prev;
@@ -327,18 +346,18 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
               existing.status = tr.error ? "error" : "complete";
               existing.result = tr.result;
               existing.error = tr.error;
+              existing.completedAt = Date.now();
+              existing.durationMs = existing.startedAt ? Date.now() - existing.startedAt : undefined;
             }
-            setConversations((prev) => {
-              const conv = prev.find((c) => c.id === activeConversationId);
-              if (!conv) return prev;
-              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
-              if (!msg) return prev;
-              return prev.map((c) =>
-                c.id === activeConversationId
-                  ? { ...c, messages: c.messages.map((m) => m.id === assistantMsg.id ? { ...m, toolCalls: [...pendingToolCalls] } : m) }
-                  : c,
-              );
-            });
+            // Persist tool history as it lands so a tab closed mid-stream does
+            // not lose the executed calls. Persisting reads the ref and can
+            // trail the batched state by one commit; onDone persists the final
+            // canonical row, so the snapshot lag is bounded to the stream tail.
+            saveConversations(withToolResults(conversationsRef.current, activeConversationId!, assistantMsg.id, pendingToolCalls));
+            // Functional update so streamed content from a queued onToken/
+            // onToolCall update is preserved instead of being clobbered by a
+            // concrete ref snapshot.
+            setConversations((prev) => withToolResults(prev, activeConversationId!, assistantMsg.id, pendingToolCalls));
           },
           onDone: () => {
             setConversations((prev) => {
@@ -469,7 +488,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
           },
           onToolCall: (tc) => {
-            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending" });
+            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending", startedAt: Date.now() });
             setConversations((prev) => {
               const conv = prev.find((c) => c.id === activeConversationId);
               if (!conv) return prev;
@@ -484,18 +503,18 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
               existing.status = tr.error ? "error" : "complete";
               existing.result = tr.result;
               existing.error = tr.error;
+              existing.completedAt = Date.now();
+              existing.durationMs = existing.startedAt ? Date.now() - existing.startedAt : undefined;
             }
-            setConversations((prev) => {
-              const conv = prev.find((c) => c.id === activeConversationId);
-              if (!conv) return prev;
-              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
-              if (!msg) return prev;
-              return prev.map((c) =>
-                c.id === activeConversationId
-                  ? { ...c, messages: c.messages.map((m) => m.id === assistantMsg.id ? { ...m, toolCalls: [...pendingToolCalls] } : m) }
-                  : c,
-              );
-            });
+            // Persist tool history as it lands so a tab closed mid-stream does
+            // not lose the executed calls. Persisting reads the ref and can
+            // trail the batched state by one commit; onDone persists the final
+            // canonical row, so the snapshot lag is bounded to the stream tail.
+            saveConversations(withToolResults(conversationsRef.current, activeConversationId!, assistantMsg.id, pendingToolCalls));
+            // Functional update so streamed content from a queued onToken/
+            // onToolCall update is preserved instead of being clobbered by a
+            // concrete ref snapshot.
+            setConversations((prev) => withToolResults(prev, activeConversationId!, assistantMsg.id, pendingToolCalls));
           },
           onDone: () => {
             setConversations((prev) => {
@@ -539,6 +558,29 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     setIsStreaming(false);
   }, []);
 
+  const replayToolCall = useCallback(
+    async (
+      messageId: string,
+      toolCallId: string,
+      turnstileToken?: string,
+    ): Promise<{ ok: boolean; outcome: { error?: string } }> => {
+      const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
+      if (!conv) return { ok: false, outcome: {} };
+      const message = conv.messages.find((m) => m.id === messageId);
+      const toolCall = message?.toolCalls?.find((t) => t.id === toolCallId);
+      if (!message || !toolCall) return { ok: false, outcome: {} };
+      const startedAt = Date.now();
+      const outcome = await replayToolExecution(toolCall.name, toolCall.args, turnstileToken);
+      const next = applyToolReplayOutcome(conv, messageId, toolCallId, outcome, Date.now(), startedAt);
+      const updated = conversationsRef.current.map((c) => (c.id === conv.id ? next : c));
+      conversationsRef.current = updated;
+      setConversations(updated);
+      saveConversations(updated);
+      return { ok: !outcome.error, outcome };
+    },
+    [activeConversationId],
+  );
+
   return {
     conversations,
     activeConversationId,
@@ -548,6 +590,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     hydrated,
     sendMessage,
     retrySendMessage,
+    replayToolCall,
     abortStream,
     clearMessages,
     newConversation,

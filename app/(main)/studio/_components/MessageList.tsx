@@ -11,9 +11,10 @@ interface MessageListProps {
   messages: ChatMessage[];
   isStreaming: boolean;
   conversationId?: string;
+  onReplayTool?: (messageId: string, toolCallId: string) => void;
 }
 
-export default function MessageList({ messages, isStreaming, conversationId }: MessageListProps) {
+export default function MessageList({ messages, isStreaming, conversationId, onReplayTool }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function MessageList({ messages, isStreaming, conversationId }: M
               message={msg}
               isStreaming={isStreaming && i === streamingIndex}
               conversationId={conversationId}
+              onReplayTool={onReplayTool}
             />
           </AnimatedMessage>
         ))}

@@ -3,7 +3,7 @@ import { ValidationError } from "./errors";
 import { logger, pickSafeLogMeta } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm/types";
 import { createTraceEnvelope, estimateCostFromTokens } from "agenthood/dist/core";
-import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS } from "./tools";
+import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
 import type { ToolCall } from "./tools";
 
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
@@ -247,7 +247,8 @@ async function runToolLoop(
       if (signal?.aborted) return "";
       const args = tc.args as Record<string, unknown>;
       const result = await executeTool(tc.name, args, signal);
-      toolCallsRun.push({ id: tc.id, name: tc.name, args, result, error: undefined });
+      const outcome = classifyToolResult(result);
+      toolCallsRun.push({ id: tc.id, name: tc.name, args, result: outcome.result, error: outcome.error });
       messages.push({ role: "tool", content: result, tool_call_id: tc.id, name: tc.name });
     }
   }

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   executeTool,
   getToolSchemas,
+  classifyToolResult,
   MAX_FETCH_SIZE,
   MAX_TOOL_ITERATIONS,
 } from "../app/(main)/studio/_lib/tools";
@@ -62,6 +63,21 @@ describe("executeTool", () => {
     await expect(
       executeTool("web_fetch", { url: "https://github.com/foo" }, controller.signal),
     ).resolves.toContain("aborted");
+  });
+});
+
+describe("classifyToolResult", () => {
+  it("keeps success results as-is", () => {
+    expect(classifyToolResult("plain content")).toEqual({ result: "plain content" });
+  });
+
+  it("splits error-prefixed results into a structured error", () => {
+    expect(classifyToolResult("Error: boom")).toEqual({ error: "Error: boom" });
+  });
+
+  it("classifies the unknown-tool guard as an error", async () => {
+    const result = await executeTool("nope", {});
+    expect(classifyToolResult(result)).toEqual({ error: result });
   });
 });
 
