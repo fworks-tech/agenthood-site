@@ -25,6 +25,14 @@ import { appendLog, createLogEntry, hasNewError, loadLogs } from "../_lib/log-st
 import { track } from "@vercel/analytics";
 import { STORAGE_KEYS } from "../_lib/constants";
 import { TURNSTILE_REQUIRED } from "../_lib/env";
+import { Menu } from "@mantine/core";
+import { IconDownload } from "@tabler/icons-react";
+import {
+  conversationFilename,
+  downloadBlob,
+  serializeConversationJson,
+  serializeConversationMarkdown,
+} from "../_lib/export-conversation";
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
 
@@ -471,6 +479,20 @@ export default function PlaygroundPage() {
     chat.abortStream();
   }, [chat, selectedAgent, addLog]);
 
+  const handleExportConversation = useCallback((format: "json" | "md") => {
+    const active = conversations.find((c) => c.id === activeConversationId);
+    if (!active) return;
+    const filename = conversationFilename(active, format);
+    const mime = format === "json" ? "application/json" : "text/markdown";
+    const content =
+      format === "json"
+        ? serializeConversationJson(active)
+        : serializeConversationMarkdown(active);
+    downloadBlob(filename, mime, content);
+    addLog("info", `Exported conversation as ${format.toUpperCase()}`);
+    track("conversation_exported", { format, conversationId: active.id });
+  }, [conversations, activeConversationId, addLog]);
+
   useEffect(() => {
     if (chat.isStreaming && selectedAgent) {
       /* eslint-disable react-hooks/set-state-in-effect */
@@ -595,6 +617,27 @@ export default function PlaygroundPage() {
                 )}
                 {chat.messages.length > 0 && (
                   <div className="flex shrink-0 items-center gap-1">
+                    <Menu shadow="md" width={200} position="bottom-end" withinPortal>
+                      <Menu.Target>
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+                          title="Export conversation"
+                          aria-label="Export conversation"
+                        >
+                          <IconDownload size={14} />
+                          Export
+                        </button>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item onClick={() => handleExportConversation("json")}>
+                          Export JSON
+                        </Menu.Item>
+                        <Menu.Item onClick={() => handleExportConversation("md")}>
+                          Export Markdown
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
                     <button
                       type="button"
                       onClick={chat.clearMessages}
