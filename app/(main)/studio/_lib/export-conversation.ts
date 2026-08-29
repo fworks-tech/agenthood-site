@@ -20,10 +20,26 @@ export interface ConversationExport {
   };
 }
 
+// Allow-list of config fields that are safe to export. Anything not listed
+// (apiKey, baseUrl with possible embedded credentials, future secrets) is
+// withheld by default instead of being scrubbed one field at a time.
+const EXPORTABLE_CONFIG_FIELDS = [
+  "provider",
+  "model",
+  "temperature",
+  "maxTokens",
+  "systemPrompt",
+  "enabledTools",
+] as const satisfies readonly (keyof ChatConfig)[];
+
 function redactConfig(config: Partial<ChatConfig>): Partial<ChatConfig> {
-  const { apiKey, ...rest } = config;
-  if (!apiKey) return rest;
-  return { ...rest, apiKey: "[redacted]" };
+  const out: Partial<ChatConfig> = {};
+  for (const field of EXPORTABLE_CONFIG_FIELDS) {
+    const value = config[field];
+    if (value === undefined) continue;
+    (out as Record<string, unknown>)[field] = value;
+  }
+  return out;
 }
 
 export function serializeConversationJson(conversation: Conversation): string {

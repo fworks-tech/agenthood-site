@@ -16,7 +16,11 @@ to save, back up, or share a chat transcript outside the browser.
     exported date, token count, then per message a `## User` / `## Assistant` block with tool
     call details (args as JSON, result, error).
   - `conversationFilename` / `downloadBlob` — safe filenames and browser download helper.
-- **Security:** `config.apiKey` is always replaced with `"[redacted]"` in both formats.
+- **Security:** the exported `config` is an allow-list of portable, non-secret fields
+  (`provider`, `model`, `temperature`, `maxTokens`, `systemPrompt`, `enabledTools`). `apiKey`
+  and `baseUrl` (which can embed credentials) are withheld entirely — never written, even
+  scrubbed, since a scrubbed token still leaks that a key existed. Unknown future config
+  fields are excluded by default rather than scrubbed one field at a time.
 - **UI:** an Export menu in the playground header (JSON / Markdown), visible only when the active
   conversation has messages; reaches the full active conversation from the in-memory store.
 
@@ -28,8 +32,8 @@ to save, back up, or share a chat transcript outside the browser.
 
 ## Acceptance Criteria
 
-- [ ] JSON export is valid, versioned, contains full messages + toolCalls + config; `apiKey`
-      redacted
+- [ ] JSON export is valid, versioned, contains full messages + toolCalls + allow-listed config;
+      `apiKey`/`baseUrl` withheld
 - [ ] Markdown export is a readable transcript with per-message roles and tool details; no
       `apiKey`
 - [ ] Export menu visible in the header only when the conversation has messages
