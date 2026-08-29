@@ -1,13 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, waitForHydration, openConfigPanel } from "./helpers";
-
-async function resolveAllCaptchas(page: import("@playwright/test").Page) {
-  await page.evaluate(() => {
-    ((window as unknown as { __turnstileIssueResolvers?: Array<() => void> })
-      .__turnstileIssueResolvers ?? []).forEach((fn: () => void) => fn());
-  });
-}
+import { mockTurnstile, selectAgent, waitForHydration, openConfigPanel, readTurnstileResetCount, resetTurnstileCounter, expireAndReissue, runTurnstileIssueResolvers } from "./helpers";
 
 async function waitForSaveEnabled(
   page: import("@playwright/test").Page,
@@ -16,7 +9,7 @@ async function waitForSaveEnabled(
   await expect
     .poll(
       async () => {
-        await resolveAllCaptchas(page);
+        await runTurnstileIssueResolvers(page);
         return saveBtn.count();
       },
       { timeout: 5000 },
@@ -29,6 +22,7 @@ test.describe("Playground — Captcha-gated Save", () => {
   test.beforeEach(async ({ page, clearStorage }) => {
     await page.goto("/studio/playground");
     await clearStorage();
+    await resetTurnstileCounter(page);
   });
 
   test("desktop save shows Verify to save and stays disabled until captcha verifies", async ({ page }) => {
@@ -57,14 +51,13 @@ test.describe("Playground — Captcha-gated Save", () => {
 
     // Expiry + background re-verification must not invalidate the verified token:
     // the save button stays enabled and is never replaced by "Verify to save".
-    await page.evaluate(() => {
-      (window as unknown as { turnstile?: { expireAndReissue?: () => void } }).turnstile?.expireAndReissue?.();
-    });
+    await expireAndReissue(page);
+    // The mock runs autoVerify off, so the re-issued token is queued rather than
+    // delivered — flush it to stand in for Cloudflare's background re-verification.
+    await runTurnstileIssueResolvers(page);
 
     await expect(panel.getByRole("button", { name: "Save configuration" })).toBeEnabled({ timeout: 5000 });
-    expect(
-      await page.evaluate(() => (window as unknown as { __turnstileResetCount?: number }).__turnstileResetCount ?? 0),
-    ).toBe(0);
+    expect(await readTurnstileResetCount(page)).toBe(0);
   });
 
   test("mobile config sheet receives a captcha token so save becomes enabled", async ({ page }) => {

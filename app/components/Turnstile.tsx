@@ -86,6 +86,11 @@ export default function Turnstile({ onToken, onError, onStatus, refreshKey, visi
           onStatusRef.current?.("token-expired");
         },
         "error-callback": () => {
+          // On error/timeout the widget is genuinely broken (network or widget
+          // failure) — unlike `expired-callback`, there is no background renewal
+          // to rely on, so after retries we intentionally null the token to force
+          // the UI into a re-verify/reload state. Do NOT "unify" this with the
+          // expired path (which keeps the token); they are opposite by design.
           if (retryCountRef.current < MAX_RETRIES) {
             retryCountRef.current++;
             onStatusRef.current?.("retrying");
@@ -98,6 +103,9 @@ export default function Turnstile({ onToken, onError, onStatus, refreshKey, visi
           }
         },
         "timeout-callback": () => {
+          // Same rationale as error-callback: timeout means the challenge never
+          // completed, so the token must be cleared to avoid re-sending a dead
+          // value after the retry budget is exhausted.
           if (retryCountRef.current < MAX_RETRIES) {
             retryCountRef.current++;
             onStatusRef.current?.("retrying");

@@ -346,3 +346,54 @@ export async function sendCompanionMessage(page: Page, text: string): Promise<vo
   await textarea.press("Enter");
   await page.waitForTimeout(300);
 }
+
+/** Turnstile mock state helpers */
+
+type TurnstileTestWindow = {
+  __turnstileResetCount?: number;
+  __turnstileDisableAutoRenew?: boolean;
+  __turnstileIssueResolvers?: Array<() => void>;
+  turnstile?: { expireAndReissue?: () => void };
+};
+
+/**
+ * Reads the number of times the mocked widget was explicitly reset. The mock
+ * seeds this counter to 0 when its script is injected, which only happens on a
+ * page (re)load — so call `resetTurnstileCounter` at test start rather than
+ * relying on sidebar reload timing.
+ */
+export async function readTurnstileResetCount(page: Page): Promise<number> {
+  return page.evaluate(() => (window as unknown as TurnstileTestWindow).__turnstileResetCount ?? 0);
+}
+
+/** Explicitly zero the reset counter for tests whose `toBe(0)` assertions must
+ * not inherit state from the previous navigation's mock injection. */
+export async function resetTurnstileCounter(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (window as unknown as TurnstileTestWindow).__turnstileResetCount = 0;
+  });
+}
+
+/** Simulate the widget expiring and re-verifying in the background without an
+ * explicit app-initiated reset (does not increment the reset counter). */
+export async function expireAndReissue(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (window as unknown as TurnstileTestWindow).turnstile?.expireAndReissue?.();
+  });
+}
+
+/** Toggle whether the mocked widget keeps issuing fresh tokens on reset. */
+export async function setTurnstileAutoRenew(page: Page, disabled: boolean): Promise<void> {
+  await page.evaluate((value) => {
+    (window as unknown as TurnstileTestWindow).__turnstileDisableAutoRenew = value;
+  }, disabled);
+}
+
+/** Manually flush pending captcha resolutions when the mock runs autoVerify off. */
+export async function runTurnstileIssueResolvers(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    (
+      (window as unknown as TurnstileTestWindow).__turnstileIssueResolvers ?? []
+    ).forEach((fn: () => void) => fn());
+  });
+}
