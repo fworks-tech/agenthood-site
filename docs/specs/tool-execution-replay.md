@@ -18,7 +18,10 @@ view, failed tools could not be re-run, and history was lost if a tab closed mid
 4. **Replay:** `POST /api/studio/tools/execute` re-executes only the tool with its recorded
    args (same handlers as the chat tool loop) and returns `{ result }`/`{ error }`. A pure
    reducer (`applyToolReplayOutcome`) patches the message. `useStudioChat.replayToolCall`
-   drives it; the page wires the UI.
+   drives it; the page wires the UI. The replayed row records its own `startedAt`/`durationMs`
+   from the replay invocation time (not the original call), so its duration is its own latency.
+   Replay first awaits a fresh Turnstile challenge via `refreshCaptchaAndWait` — the original
+   token was consumed by the first execution and the route would reject it as `CAPTCHA_FAILED`.
 5. **Security:** the shared `validateTurnstile` (extracted to `_lib/captcha.ts`) gates the new
    route; the middleware adds a 30/min rate-limit bucket and origin validation for
    `/api/studio/tools`, with trailing-slash-normalized bucket keys (fixing the same gap for the

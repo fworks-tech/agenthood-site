@@ -499,10 +499,14 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
       if (replayingToolRef.current) return;
       replayingToolRef.current = true;
       try {
+        // The original token was already consumed by the first execution; a
+        // replay must submit a fresh challenge or the execute route rejects it
+        // as CAPTCHA_FAILED. Only wait when Turnstile is actually required.
+        const fresh = TURNSTILE_REQUIRED ? await refreshCaptchaAndWait() : false
         const result = await chat.replayToolCall(
           messageId,
           toolCallId,
-          turnstileTokenRef.current ?? undefined,
+          fresh ? turnstileTokenRef.current ?? undefined : undefined,
         );
         if (result.ok) {
           addLog("info", "↻ Tool re-executed successfully");
@@ -516,7 +520,7 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
         replayingToolRef.current = false;
       }
     },
-    [chat, addLog],
+    [chat, addLog, refreshCaptchaAndWait],
   );
 
   useEffect(() => {

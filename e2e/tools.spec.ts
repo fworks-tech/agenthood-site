@@ -40,6 +40,15 @@ test.describe("Playground — Tool Execution History & Replay", () => {
   });
 
   test("replays a failed tool execution and updates the entry", async ({ page }) => {
+    const chatBodies: Array<Record<string, unknown>> = [];
+    await page.route("**/api/studio/chat/**", async (route) => {
+      chatBodies.push((route.request().postDataJSON() ?? {}) as Record<string, unknown>);
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: FAILING_TOOL_SSE,
+      });
+    });
     const replayBodies: Array<Record<string, unknown>> = [];
     await page.route("**/api/studio/tools/execute/**", async (route) => {
       replayBodies.push((route.request().postDataJSON() ?? {}) as Record<string, unknown>);
@@ -63,9 +72,12 @@ test.describe("Playground — Tool Execution History & Replay", () => {
     await expect(page.locator("button", { hasText: "Retry tool" })).toHaveCount(0);
     await expect(toolRow).not.toContainText("boom");
 
-    // The replay request re-used the recorded tool args and carried the token.
+    // The replay request re-used the recorded tool args and submitted a *fresh*
+    // token: the one consumed by the original chat request must not be reused.
     expect(replayBodies[0]?.tool).toBe("code_execution");
     expect(replayBodies[0]?.args).toEqual({ code: "fail()" });
+    expect(chatBodies[0]?.turnstileToken).toBeTruthy();
     expect(replayBodies[0]?.turnstileToken).toBeTruthy();
+    expect(replayBodies[0]?.turnstileToken).not.toBe(chatBodies[0]?.turnstileToken);
   });
 });

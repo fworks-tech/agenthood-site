@@ -26,9 +26,12 @@ Studio tool calls were captured in the conversation model but were not truthful 
    validates against the same allow-list/sandbox handlers (`executeTool`), and returns
    `{ result }` or `{ error }`. It reuses the captcha gate extracted to `_lib/captcha.ts`, and
    the middleware now rate-limits (`/api/studio/tools`, 30/min) and origin-checks it, matching
-   the chat route's posture.
+   the chat route's posture. Replay obtains a **fresh** Turnstile challenge before dispatch —
+   the token from the original execution is single-use and would fail the gate.
 4. **History:** `ToolCallInfo` gains `startedAt`/`completedAt`/`durationMs`; tool results are
-   persisted incrementally (on `tool_result`, not only at stream end).
+   persisted incrementally (on `tool_result`, not only at stream end). A replayed row reports
+   its own duration measured from the replay invocation time, not the original call's
+   `startedAt`.
 
 ## Alternatives Considered
 
