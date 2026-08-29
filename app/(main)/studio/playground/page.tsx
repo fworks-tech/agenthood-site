@@ -479,7 +479,7 @@ export default function PlaygroundPage() {
     chat.abortStream();
   }, [chat, selectedAgent, addLog]);
 
-  const handleExportConversation = useCallback((format: "json" | "md") => {
+const handleExportConversation = useCallback((format: "json" | "md") => {
     const active = conversations.find((c) => c.id === activeConversationId);
     if (!active) return;
     const filename = conversationFilename(active, format);
@@ -492,6 +492,32 @@ export default function PlaygroundPage() {
     addLog("info", `Exported conversation as ${format.toUpperCase()}`);
     track("conversation_exported", { format, conversationId: active.id });
   }, [conversations, activeConversationId, addLog]);
+
+  const replayingToolRef = useRef(false);
+  const handleReplayTool = useCallback(
+    async (messageId: string, toolCallId: string) => {
+      if (replayingToolRef.current) return;
+      replayingToolRef.current = true;
+      try {
+        const result = await chat.replayToolCall(
+          messageId,
+          toolCallId,
+          turnstileTokenRef.current ?? undefined,
+        );
+        if (result.ok) {
+          addLog("info", "↻ Tool re-executed successfully");
+        } else {
+          addLog("error", `↻ Tool re-execution failed: ${result.outcome.error ?? "unknown error"}`);
+        }
+        track("tool_replayed", { ok: result.ok, toolCallId });
+      } catch (err) {
+        addLog("error", `↻ Tool re-execution error: ${err instanceof Error ? err.message : String(err)}`);
+      } finally {
+        replayingToolRef.current = false;
+      }
+    },
+    [chat, addLog],
+  );
 
   useEffect(() => {
     if (chat.isStreaming && selectedAgent) {
@@ -661,6 +687,7 @@ export default function PlaygroundPage() {
                   messages={chat.messages}
                   isStreaming={chat.isStreaming}
                   conversationId={chat.activeConversationId ?? undefined}
+                  onReplayTool={handleReplayTool}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
