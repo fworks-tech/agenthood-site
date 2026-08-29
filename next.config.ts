@@ -15,7 +15,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://opencode.ai https://api.anthropic.com https://api.openai.com https://api.groq.com https://openrouter.ai/api https://registry.npmjs.org https://o4508931134267392.ingest.us.sentry.io",
+      "connect-src 'self' https://opencode.ai https://api.anthropic.com https://api.openai.com https://api.groq.com https://openrouter.ai/api https://o4508931134267392.ingest.us.sentry.io",
       "frame-src https://challenges.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",
