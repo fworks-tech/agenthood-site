@@ -65,6 +65,10 @@ export function serializeConversationJson(conversation: Conversation): string {
   return JSON.stringify(exportData, null, 2);
 }
 
+function sanitizeForCodeBlock(text: string): string {
+  return text.replaceAll('```', '\\`\\`\\`');
+}
+
 export function serializeConversationMarkdown(conversation: Conversation): string {
   const provider = conversation.config?.provider ?? "unknown";
   const model = conversation.config?.model ?? "unknown";
@@ -95,13 +99,13 @@ export function serializeConversationMarkdown(conversation: Conversation): strin
         if (toolCall.result) {
           lines.push("", "  Result:", "");
           lines.push("```text");
-          lines.push(toolCall.result);
+          lines.push(sanitizeForCodeBlock(toolCall.result));
           lines.push("```");
         }
         if (toolCall.error) {
           lines.push("", "  Error:", "");
           lines.push("```text");
-          lines.push(toolCall.error);
+          lines.push(sanitizeForCodeBlock(toolCall.error));
           lines.push("```");
         }
       }

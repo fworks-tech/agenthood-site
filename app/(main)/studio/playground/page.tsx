@@ -1,61 +1,42 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useAgentDirectory } from "../_hooks/useAgentDirectory";
-import { useStudioChat } from "../_hooks/useStudioChat";
-import AgentConfigPanel from "../_components/AgentConfigPanel";
-import MessageList from "../_components/MessageList";
-import ChatComposer from "../_components/ChatComposer";
-import LiveLogs, { type LogCategoryFilter } from "../_components/LiveLogs";
-import ConversationList from "../_components/ConversationList";
-import DragHandle from "../_components/DragHandle";
-import MobileDrawer from "../_components/MobileDrawer";
-import MobileBottomSheet from "../_components/MobileBottomSheet";
-import HelpTip from "../_components/HelpTip";
-import Turnstile, { type TurnstileStatus } from "../../../components/Turnstile";
-import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig, Provider } from "../_types/studio";
-import { getDefaultModel, getProviderMeta } from "../_types/studio";
-import { agentSkills } from "../_data/agents.generated";
-import { agentPrompts } from "../_data/agentPrompts.generated";
-import WelcomeTerminal from "./_components/WelcomeTerminal";
-import { isLogCategory, type LogCategory, type LogEntry, type LogLevel } from "../_lib/log-types";
-import type { StreamLogEvent } from "../_lib/stream";
-import { appendLog, createLogEntry, hasNewError, loadLogs } from "../_lib/log-store";
-import { track } from "@vercel/analytics";
-import { STORAGE_KEYS } from "../_lib/constants";
-import { TURNSTILE_REQUIRED } from "../_lib/env";
-import { Menu } from "@mantine/core";
-import { IconDownload } from "@tabler/icons-react";
-import {
-  conversationFilename,
-  downloadBlob,
-  serializeConversationJson,
-  serializeConversationMarkdown,
-} from "../_lib/export-conversation";
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useAgentDirectory } from '../_hooks/useAgentDirectory';
+import { useStudioChat } from '../_hooks/useStudioChat';
+import { useCaptcha } from '../_hooks/useCaptcha';
+import { useConversationExport } from '../_hooks/useConversationExport';
+import { useToolReplay } from '../_hooks/useToolReplay';
+import AgentConfigPanel from '../_components/AgentConfigPanel';
+import ChatComposer from '../_components/ChatComposer';
+import LiveLogs from '../_components/LiveLogs';
+import ConversationList from '../_components/ConversationList';
+import DragHandle from '../_components/DragHandle';
+import MobileDrawer from '../_components/MobileDrawer';
+import MobileBottomSheet from '../_components/MobileBottomSheet';
+import HelpTip from '../_components/HelpTip';
+import Turnstile from '../../../components/Turnstile';
+import type { AgentEntry } from '../_data/agents';
+import type { ChatConfig, Provider } from '../_types/studio';
+import { getDefaultModel, getProviderMeta } from '../_types/studio';
+import { agentSkills } from '../_data/agents.generated';
+import { track } from '@vercel/analytics';
+import PlaygroundHeader from './_components/PlaygroundHeader';
+import PlaygroundSidebar from './_components/PlaygroundSidebar';
+import PlaygroundChatArea from './_components/PlaygroundChatArea';
+import MobileNavBar from './_components/MobileNavBar';
+import { useLogs } from '../_hooks/useLogs';
 
-const DEFAULT_SYSTEM_PROMPT = "You are a helpful AI assistant.";
+const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant.';
+
+const CONFIG_STORAGE_KEY = 'agenthood-studio-config';
 
 function loadSavedConfig(): Partial<ChatConfig> {
-  if (typeof window === "undefined") return {};
+  if (typeof window === 'undefined') return {};
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEYS.CONFIG);
+    const raw = sessionStorage.getItem(CONFIG_STORAGE_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
-  }
-}
-
-function loadLogsViewState(): { debug: boolean; category: LogCategoryFilter } {
-  if (typeof window === "undefined") return { debug: false, category: "all" };
-  try {
-    const category = sessionStorage.getItem(STORAGE_KEYS.LOGS_CATEGORY);
-    return {
-      debug: sessionStorage.getItem(STORAGE_KEYS.LOGS_DEBUG) === "1",
-      category: category && isLogCategory(category) ? (category as LogCategoryFilter) : "all",
-    };
-  } catch {
-    return { debug: false, category: "all" };
   }
 }
 
@@ -63,104 +44,51 @@ export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
   const [config, setConfig] = useState<ChatConfig>({
-    provider: "opencode-go",
-    model: getDefaultModel("opencode-go"),
-    baseUrl: getProviderMeta("opencode-go").defaultBaseUrl,
+    provider: 'opencode-go',
+    model: getDefaultModel('opencode-go'),
+    baseUrl: getProviderMeta('opencode-go').defaultBaseUrl,
     temperature: 0.7,
     maxTokens: 4096,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
   });
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileRefreshKey, setTurnstileRefreshKey] = useState(0);
-  const [turnstileError, setTurnstileError] = useState<string | null>(null);
-  const turnstileTokenRef = useRef<string | null>(null);
-  const [captchaVerified, setCaptchaVerified] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-
-  useEffect(() => {
-    const saved = loadLogs();
-    if (saved.length > 0) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setLogs(saved);
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, []);
   const [configOpen, setConfigOpen] = useState(true);
-  const [logsOpen, setLogsOpen] = useState(true);
-  const [debugVisible, setDebugVisible] = useState(false);
-  const [logCategoryFilter, setLogCategoryFilter] = useState<LogCategoryFilter>("all");
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
   const [leftColWidth, setLeftColWidth] = useState(288);
-  const [liveLogsHeight, setLiveLogsHeight] = useState(120);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-
-  useEffect(() => {
-    const state = loadLogsViewState();
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setDebugVisible(state.debug);
-    setLogCategoryFilter(state.category);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    sessionStorage.setItem(STORAGE_KEYS.LOGS_DEBUG, debugVisible ? "1" : "0");
-  }, [debugVisible]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    sessionStorage.setItem(STORAGE_KEYS.LOGS_CATEGORY, logCategoryFilter);
-  }, [logCategoryFilter]);
+  const {
+    logs,
+    addLog,
+    handleNetworkLog,
+    logsOpen,
+    setLogsOpen,
+    debugVisible,
+    setDebugVisible,
+    logCategoryFilter,
+    setLogCategoryFilter,
+    liveLogsHeight,
+    setLiveLogsHeight,
+  } = useLogs();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfigOpen(window.innerWidth >= 768);
   }, []);
 
-  const prevLogCountRef = useRef(0);
-  useEffect(() => {
-    const prevCount = prevLogCountRef.current;
-    prevLogCountRef.current = logs.length;
-    if (!logsOpen && hasNewError(logs, prevCount)) {
-      setLogsOpen(true);
-    }
-  }, [logs, logsOpen]);
-
-  const addLog = useCallback(
-    (level: LogLevel, message: string, opts?: { category?: LogCategory; detail?: string }) => {
-      setLogs((prev) => appendLog(prev, createLogEntry(level, opts?.category ?? "system", message, opts?.detail)));
-    },
-    [],
-  );
-
-  const handleNetworkLog = useCallback(
-    (log: StreamLogEvent) => {
-      const detail = typeof log.correlationId === "string" ? log.correlationId : undefined;
-      const parts: string[] = [log.event];
-      if (typeof log.primary === "string") parts.push(`primary=${log.primary}`);
-      if (typeof log.status === "number") parts.push(`status=${log.status}`);
-      if (typeof log.durationMs === "number") parts.push(`${log.durationMs}ms`);
-      addLog(log.level, parts.join(" · "), { category: "network", detail });
-    },
-    [addLog],
-  );
-
-  const chat = useStudioChat({
-    config,
-    onLog: handleNetworkLog,
-  });
-  const { conversations, activeConversationId, totalTokens, hydrated: chatHydrated } = chat;
+  const chat = useStudioChat({ config, onLog: handleNetworkLog });
+  const { conversations, activeConversationId, hydrated: chatHydrated } = chat;
+  const captcha = useCaptcha({ addLog });
+  const exportConv = useConversationExport({ conversations, activeConversationId, addLog });
+  const toolReplay = useToolReplay({ chat, captcha, addLog });
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     const saved = loadSavedConfig();
     if (saved.provider) {
+      /* eslint-disable react-hooks/set-state-in-effect */
       setConfig((prev) => ({ ...prev, ...saved }));
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
-
   const lastConfigConvIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (activeConversationId === lastConfigConvIdRef.current) return;
@@ -169,250 +97,113 @@ export default function PlaygroundPage() {
     if (saved.provider) return;
     const conv = conversations.find((c) => c.id === activeConversationId);
     if (!conv?.config || Object.keys(conv.config).length === 0) return;
-    /* eslint-disable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfig((prev) => ({ ...prev, ...conv.config, apiKey: prev.apiKey }));
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [activeConversationId, conversations]);
-
   useEffect(() => {
     if (!isLoading && !error) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      addLog("info", `Agents loaded: ${agents.length} available`);
+      addLog('info', `Agents loaded: ${agents.length} available`);
       if (config.provider) {
-        addLog("info", `Config: ${config.provider} · ${config.model}`);
+        addLog('info', `Config: ${config.provider} · ${config.model}`);
       }
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [isLoading, error, agents.length, addLog, config.model, config.provider]);
 
-  useEffect(() => {
-    if (turnstileToken) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setTurnstileError(null);
-      setCaptchaVerified(true);
-      /* eslint-enable react-hooks/set-state-in-effect */
-    }
-  }, [turnstileToken]);
-
-  useEffect(() => {
-    turnstileTokenRef.current = turnstileToken;
-  }, [turnstileToken]);
-
-  const handleTurnstileStatus = useCallback(
-    (status: TurnstileStatus) => {
-      switch (status) {
-        case "script-loading":
-          addLog("debug", "CAPTCHA script loading", { category: "captcha" });
-          break;
-        case "script-loaded":
-          addLog("debug", "CAPTCHA script loaded", { category: "captcha" });
-          break;
-        case "widget-rendered":
-          addLog("debug", "CAPTCHA widget rendered", { category: "captcha" });
-          break;
-        case "retrying":
-          addLog("warn", "CAPTCHA verification failed. Retrying...", { category: "captcha" });
-          break;
-        case "token-received":
-          addLog("info", "CAPTCHA ready", { category: "captcha" });
-          break;
-        case "token-expired":
-          addLog("warn", "CAPTCHA token expired. Re-verifying...", { category: "captcha" });
-          setCaptchaVerified(false);
-          setTurnstileToken(null);
-          break;
-      }
-    },
-    [addLog],
-  );
-
-  const retryCaptcha = useCallback(() => {
-    setTurnstileError(null);
-    setTurnstileToken(null);
-    setCaptchaVerified(false);
-    setTurnstileRefreshKey((k) => k + 1);
-    addLog("info", "CAPTCHA retry requested", { category: "captcha" });
-  }, [addLog]);
-
-  const handleTurnstileError = useCallback(
-    (msg: string) => {
-      setTurnstileError(msg);
-      addLog("error", msg, { category: "captcha" });
-    },
-    [addLog],
-  );
-
-  const refreshCaptchaAndWait = useCallback(async (): Promise<boolean> => {
-    const staleToken = turnstileTokenRef.current
-    // Re-sending the exact token the server just rejected would only produce a
-    // second CAPTCHA_FAILED, so a value only counts as usable if it is strictly
-    // different from the stale one (Turnstile tokens are unique per challenge).
-    const hasFreshToken = (): boolean =>
-      !!turnstileTokenRef.current && turnstileTokenRef.current !== staleToken
-
-    if (staleToken) {
-      // Give the widget's background re-verification a short window to swap in
-      // a fresh token before forcing a reset.
-      const deadline = Date.now() + 2000
-      while (Date.now() < deadline) {
-        if (hasFreshToken()) return true
-        await new Promise((r) => setTimeout(r, 50))
-      }
-      // No background refresh — force a fresh challenge.
-      setTurnstileRefreshKey((k) => k + 1)
-      // Wait for the refresh-key useEffect to null the current token before
-      // polling for a fresh one. Without this pause the ref still holds the
-      // stale value and the poll below would never observe a change. The 3s cap
-      // guarantees we do not wedge if the widget never clears it (e.g. the
-      // script failed to load), which is exactly the case where the stale token
-      // must NOT be treated as ready.
-      const clearDeadline = Date.now() + 3000
-      while (turnstileTokenRef.current === staleToken && Date.now() < clearDeadline) {
-        await new Promise((r) => setTimeout(r, 50))
-      }
-      const newDeadline = Date.now() + 10000
-      while (!hasFreshToken() && Date.now() < newDeadline) {
-        await new Promise((r) => setTimeout(r, 100))
-      }
-      return hasFreshToken()
-    }
-    // No verified token exists yet — force a fresh challenge.
-    setTurnstileRefreshKey((k) => k + 1)
-    const deadline = Date.now() + 10000
-    while (!turnstileTokenRef.current && Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 100))
-    }
-    return !!turnstileTokenRef.current
-  }, [])
-
   const handleSendMessage = useCallback(
     async (content: string) => {
-      if (!selectedAgent) return
-      if (
-        TURNSTILE_REQUIRED &&
-        !turnstileToken
-      ) {
-        addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' })
-        return
+      if (!selectedAgent) return;
+      if (captcha.isRequired && !captcha.token) {
+        addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' });
+        return;
       }
-      const ts = Date.now()
-      addLog(
-        'info',
-        `→ ${selectedAgent.icon ?? ''} ${selectedAgent.name} · ${config.provider} · ${config.model}`,
-      )
+      const ts = Date.now();
+      addLog('info', `→ ${selectedAgent.icon ?? ''} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
       track('message_sent', {
         agentId: selectedAgent.id,
         provider: config.provider,
         model: config.model,
         conversationId: activeConversationId ?? undefined,
-      })
+      });
       try {
-        await chat.sendMessage(content, turnstileTokenRef.current ?? undefined)
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
-        addLog(
-          'info',
-          `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`,
-        )
-        // After first successful verification, let the widget auto-refresh
-        // silently via the expired-callback instead of forcing a reset.
-        if (turnstileTokenRef.current) {
-          setCaptchaVerified(true)
+        await chat.sendMessage(content, captcha.tokenRef.current ?? undefined);
+        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+        addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`);
+        if (captcha.tokenRef.current) {
+          captcha.setVerified(true);
         }
         track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
           model: config.model,
           durationMs: Date.now() - ts,
-          tokenCount: totalTokens,
-        })
+          tokenCount: chat.totalTokens,
+        });
       } catch (err) {
-        const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined
+        const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
         if (code === 'CAPTCHA_FAILED') {
-          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' })
-          setCaptchaVerified(false)
-          const ready = await refreshCaptchaAndWait()
+          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' });
+          captcha.setVerified(false);
+          const ready = await captcha.refreshAndWait();
           if (ready) {
             try {
-              await chat.retrySendMessage(content, turnstileTokenRef.current ?? undefined)
-              const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
-              addLog(
-                'info',
-                `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s (retry)`,
-              )
+              await chat.retrySendMessage(content, captcha.tokenRef.current ?? undefined);
+              const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
+              addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s (retry)`);
               track('message_completed', {
                 agentId: selectedAgent.id,
                 provider: config.provider,
                 model: config.model,
                 durationMs: Date.now() - ts,
-                tokenCount: totalTokens,
-              })
-              return
+                tokenCount: chat.totalTokens,
+              });
+              return;
             } catch (retryErr) {
-              const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1)
+              const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
               addLog(
                 'error',
                 `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`,
-              )
+              );
               track('message_error', {
                 agentId: selectedAgent.id,
                 provider: config.provider,
                 error: retryErr instanceof Error ? retryErr.message : String(retryErr),
-              })
-              return
+              });
+              return;
             }
           }
-          setCaptchaVerified(false)
-          setTurnstileError('CAPTCHA refresh timed out. Please verify manually.')
-          addLog('error', 'CAPTCHA refresh timed out. Please verify manually.', { category: 'captcha' })
-          return
+          captcha.setVerified(false);
+          captcha.onError('CAPTCHA refresh timed out. Please verify manually.');
+          return;
         }
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1)
+        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
         addLog(
           'error',
           `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-        )
+        );
         track('message_error', {
           agentId: selectedAgent.id,
           provider: config.provider,
           error: err instanceof Error ? err.message : String(err),
-        })
+        });
       }
-
     },
-    [
-      chat,
-      selectedAgent,
-      config.provider,
-      config.model,
-      activeConversationId,
-      totalTokens,
-      addLog,
-      turnstileToken,
-      refreshCaptchaAndWait,
-    ],
-  )
+    [chat, selectedAgent, config.provider, config.model, activeConversationId, addLog, captcha],
+  );
 
   const handleSaveConfig = useCallback(
     (cfg: ChatConfig) => {
       try {
-        sessionStorage.setItem(
-          STORAGE_KEYS.CONFIG,
-          JSON.stringify({ ...cfg, apiKey: undefined }),
-        );
-        addLog("info", "Configuration saved locally");
+        sessionStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ ...cfg, apiKey: undefined }));
+        addLog('info', 'Configuration saved locally');
       } catch {
-        addLog("error", "Failed to save configuration");
+        addLog('error', 'Failed to save configuration');
       }
     },
     [addLog],
   );
-
   const handleSelectAgent = useCallback(
     (agent: AgentEntry) => {
-      // Default every visitor to the server-backed opencode-go provider so they
-      // can chat immediately without configuring an API key. Advanced users can
-      // still switch providers per conversation in the config panel.
-      const provider: Provider = "opencode-go";
+      const provider: Provider = 'opencode-go';
       const model = getDefaultModel(provider);
       const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
       setSelectedAgent(agent);
@@ -424,43 +215,31 @@ export default function PlaygroundPage() {
       };
       setConfig((prev) => ({ ...prev, ...agentConfig }));
       chat.newConversation(agent.id, agentConfig);
-      addLog(
-        "info",
-        `Selected: ${agent.icon ?? ""} ${agent.name} · ${agent.role} · ${provider}/${model}`,
-      );
-      track("agent_selected", { agentId: agent.id, provider, model });
-      // Only reveal the desktop config drawer on wide screens. On mobile the
-      // drawer (absolute z-20) and its backdrop cover the chat, blocking
-      // interaction with prompt suggestions after selecting an agent.
+      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${provider}/${model}`);
+      track('agent_selected', { agentId: agent.id, provider, model });
       if (!configOpen && window.innerWidth >= 768) setConfigOpen(true);
     },
     [chat, addLog, configOpen],
   );
-
   const handleNewConversation = useCallback(() => {
     if (selectedAgent) {
       chat.newConversation(selectedAgent.id);
-      addLog("info", `New conversation with ${selectedAgent.name}`);
-      track("conversation_created", { agentId: selectedAgent.id });
+      addLog('info', `New conversation with ${selectedAgent.name}`);
+      track('conversation_created', { agentId: selectedAgent.id });
     }
   }, [chat, selectedAgent, addLog]);
-
-  const handleDeleteConversation = useCallback((id: string) => {
-    track("conversation_deleted", {
-      agentId: selectedAgent?.id ?? "unknown",
-      conversationId: id,
-    });
-    chat.deleteConversation(id);
-  }, [chat, selectedAgent?.id]);
-
+  const handleDeleteConversation = useCallback(
+    (id: string) => {
+      track('conversation_deleted', { agentId: selectedAgent?.id ?? 'unknown', conversationId: id });
+      chat.deleteConversation(id);
+    },
+    [chat, selectedAgent?.id],
+  );
   const handleConfigChange = useCallback(
     (newConfig: ChatConfig) => {
-      if (
-        newConfig.provider !== config.provider ||
-        newConfig.model !== config.model
-      ) {
-        addLog("info", `Config: ${newConfig.provider} · ${newConfig.model}`);
-        track("config_changed", {
+      if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
+        addLog('info', `Config: ${newConfig.provider} · ${newConfig.model}`);
+        track('config_changed', {
           provider: newConfig.provider,
           model: newConfig.model,
           temperature: newConfig.temperature,
@@ -471,317 +250,100 @@ export default function PlaygroundPage() {
     },
     [config.provider, config.model, addLog],
   );
-
   const handleAbortStream = useCallback(() => {
     if (chat.isStreaming && selectedAgent) {
-      addLog("warn", "⏹ Streaming cancelled by user");
+      addLog('warn', '⏹ Streaming cancelled by user');
     }
     chat.abortStream();
   }, [chat, selectedAgent, addLog]);
 
-const handleExportConversation = useCallback((format: "json" | "md") => {
-    const active = conversations.find((c) => c.id === activeConversationId);
-    if (!active) return;
-    const filename = conversationFilename(active, format);
-    const mime = format === "json" ? "application/json" : "text/markdown";
-    const content =
-      format === "json"
-        ? serializeConversationJson(active)
-        : serializeConversationMarkdown(active);
-    downloadBlob(filename, mime, content);
-    addLog("info", `Exported conversation as ${format.toUpperCase()}`);
-    track("conversation_exported", { format, conversationId: active.id });
-  }, [conversations, activeConversationId, addLog]);
-
-  const replayingToolRef = useRef(false);
-  const handleReplayTool = useCallback(
-    async (messageId: string, toolCallId: string) => {
-      if (replayingToolRef.current) return;
-      replayingToolRef.current = true;
-      try {
-        // The original token was already consumed by the first execution; a
-        // replay must submit a fresh challenge or the execute route rejects it
-        // as CAPTCHA_FAILED. Only wait when Turnstile is actually required.
-        const fresh = TURNSTILE_REQUIRED ? await refreshCaptchaAndWait() : false
-        const result = await chat.replayToolCall(
-          messageId,
-          toolCallId,
-          fresh ? turnstileTokenRef.current ?? undefined : undefined,
-        );
-        if (result.ok) {
-          addLog("info", "↻ Tool re-executed successfully");
-        } else {
-          addLog("error", `↻ Tool re-execution failed: ${result.outcome.error ?? "unknown error"}`);
-        }
-        track("tool_replayed", { ok: result.ok, toolCallId });
-      } catch (err) {
-        addLog("error", `↻ Tool re-execution error: ${err instanceof Error ? err.message : String(err)}`);
-      } finally {
-        replayingToolRef.current = false;
-      }
-    },
-    [chat, addLog, refreshCaptchaAndWait],
-  );
-
   useEffect(() => {
     if (chat.isStreaming && selectedAgent) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      addLog("info", `↻ Streaming response from ${selectedAgent.name}...`);
-      /* eslint-enable react-hooks/set-state-in-effect */
+      addLog('info', `↻ Streaming response from ${selectedAgent.name}...`);
     }
   }, [chat.isStreaming, selectedAgent, addLog]);
 
   return (
     <div className="h-screen bg-zinc-950 py-12">
       <div className="relative flex h-full max-w-7xl mx-auto">
-        {/* Left Column — Conversations + Agent Configuration (desktop only; mobile uses MobileDrawer/MobileBottomSheet) */}
-        <div
-          style={{ width: configOpen ? leftColWidth : 0 }}
-          className={`hidden shrink-0 transition-all duration-200 overflow-hidden flex-col md:relative md:flex`}
-        >
-          {configOpen && (
-            <>
-              <div
-                style={{ flex: configPanelOpen ? "0 0 auto" : "1 1 0%" }}
-                className="overflow-hidden flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2"
-              >
-                {chatHydrated && (
-                  <div data-conversation-list="sidebar">
-                    <ConversationList
-                      conversations={conversations}
-                      activeConversationId={activeConversationId}
-                      onSelect={chat.switchConversation}
-                      onNewConversation={handleNewConversation}
-                      onDelete={handleDeleteConversation}
-                    />
-                  </div>
-                )}
-              </div>
-              {/* DragHandle for config panel resize was removed — gesture conflicts with mobile drawer */}
-              <div
-                data-config-panel
-                style={{
-                  flex: configPanelOpen ? `1 1 auto` : "0 0 10px",
-                }}
-                className="overflow-auto"
-              >
-                <AgentConfigPanel
-                  agents={agents}
-                  isLoading={isLoading}
-                  error={error}
-                  selectedAgent={selectedAgent}
-                  config={config}
-                  onChangeConfig={handleConfigChange}
-                  onChangeAgent={handleSelectAgent}
-                  onSave={handleSaveConfig}
-                  collapsed={!configPanelOpen}
-                  onToggleCollapse={() => setConfigPanelOpen((p) => !p)}
-                  captchaToken={turnstileToken}
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* DragHandle for left column width */}
+        <PlaygroundSidebar
+          configOpen={configOpen}
+          leftColWidth={leftColWidth}
+          configPanelOpen={configPanelOpen}
+          onToggleConfigPanel={() => setConfigPanelOpen((p) => !p)}
+          chatHydrated={chatHydrated}
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onSwitchConversation={chat.switchConversation}
+          onNewConversation={handleNewConversation}
+          onDeleteConversation={handleDeleteConversation}
+          agents={agents}
+          isLoading={isLoading}
+          error={error}
+          selectedAgent={selectedAgent}
+          config={config}
+          onChangeConfig={handleConfigChange}
+          onChangeAgent={handleSelectAgent}
+          onSave={handleSaveConfig}
+          captchaToken={captcha.token}
+        />
         {configOpen && (
           <DragHandle
             direction="horizontal"
-            onDrag={(delta) =>
-              setLeftColWidth((w) => Math.min(500, Math.max(200, w + delta)))
-            }
+            onDrag={(delta) => setLeftColWidth((w) => Math.min(500, Math.max(200, w + delta)))}
             className="hidden md:flex"
           />
         )}
-
-        {/* Right Column — Chat + Logs */}
-        <div
-          data-right-col
-          className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2"
-        >
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-800 px-4 py-2.5">
-            <div className="flex min-w-0 items-center gap-3">
-              <div>
-                <h1 className="text-sm font-semibold text-zinc-200">
-                  Playground
-                </h1>
-                <p className="text-xs text-zinc-500">
-                  Test agents, prompts, and controls in a live chat UI.
-                </p>
-              </div>
-              <div className="hidden md:flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setConfigOpen((prev) => !prev)}
-                  className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors border border-zinc-800"
-                  title={configOpen ? "Hide config panel" : "Show config panel"}
-                  aria-label={
-                    configOpen ? "Close config panel" : "Open config panel"
-                  }
-                >
-                  {configOpen ? "← Hide Panel" : "→ Show Panel"}
-                </button>
-                <HelpTip
-                  text="Toggles the left configuration sidebar with agent selection and conversation history."
-                  side="right"
-                />
-              </div>
-            </div>
-            {selectedAgent && (
-              <div key={selectedAgent.id} className="flex min-w-0 items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
-                {selectedAgent.icon && (
-                  <span className="shrink-0 text-base">{selectedAgent.icon}</span>
-                )}
-                <span className="truncate text-sm font-medium text-zinc-300">
-                  {selectedAgent.name}
-                </span>
-                <span className="hidden truncate text-xs text-zinc-600 sm:inline">
-                  · {config.provider} · {config.model}
-                </span>
-                {chat.totalTokens > 0 && (
-                  <span className="flex shrink-0 items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[11px] font-mono text-zinc-400">
-                    ~{chat.totalTokens} tok
-                    <HelpTip text="Approximate total tokens consumed in this conversation." />
-                  </span>
-                )}
-                {chat.messages.length > 0 && (
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Menu shadow="md" width={200} position="bottom-end" withinPortal>
-                      <Menu.Target>
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
-                          title="Export conversation"
-                          aria-label="Export conversation"
-                        >
-                          <IconDownload size={14} />
-                          Export
-                        </button>
-                      </Menu.Target>
-                      <Menu.Dropdown>
-                        <Menu.Item onClick={() => handleExportConversation("json")}>
-                          Export JSON
-                        </Menu.Item>
-                        <Menu.Item onClick={() => handleExportConversation("md")}>
-                          Export Markdown
-                        </Menu.Item>
-                      </Menu.Dropdown>
-                    </Menu>
-                    <button
-                      type="button"
-                      onClick={chat.clearMessages}
-                      className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors"
-                      title="Clear conversation"
-                    >
-                      Clear
-                    </button>
-                    <HelpTip text="Removes all messages in the current conversation. This cannot be undone." />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Chat Area */}
+        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2">
+          <PlaygroundHeader
+            selectedAgent={selectedAgent}
+            config={config}
+            totalTokens={chat.totalTokens}
+            messagesLength={chat.messages.length}
+            configOpen={configOpen}
+            onToggleConfig={() => setConfigOpen((prev) => !prev)}
+            onExport={exportConv.handleExport}
+            onClear={chat.clearMessages}
+          />
           <div className="flex-1 overflow-y-auto">
-            {selectedAgent ? (
-              chat.messages.length > 0 ? (
-                <MessageList
-                  messages={chat.messages}
-                  isStreaming={chat.isStreaming}
-                  conversationId={chat.activeConversationId ?? undefined}
-                  onReplayTool={handleReplayTool}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="max-w-md text-center px-6">
-                    <span className="text-4xl">{selectedAgent.icon}</span>
-                    <h2 className="mt-3 text-lg font-semibold text-zinc-200">
-                      {selectedAgent.name}
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      {selectedAgent.role}
-                    </p>
-                    <div className="mt-6 space-y-2">
-                      {(agentPrompts[selectedAgent.id] ?? []).slice(0, 3).map((prompt) => (
-                        <button
-                          key={prompt}
-                          type="button"
-                          onClick={() => handleSendMessage(prompt)}
-                          className="block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-left text-sm text-zinc-400 hover:border-emerald-800 hover:text-zinc-200 transition-colors"
-                        >
-                          {prompt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <div className="max-w-lg text-center px-6">
-                  <h2 className="text-lg font-semibold text-zinc-300">
-                    Welcome to Agenthood Studio
-                  </h2>
-                  <p className="mt-2 text-sm text-zinc-500 mb-8">
-                    Select a Society member from the left panel to start testing.
-                  </p>
-                  <WelcomeTerminal />
-                </div>
-              </div>
-            )}
+            <PlaygroundChatArea
+              selectedAgent={selectedAgent}
+              messages={chat.messages}
+              isStreaming={chat.isStreaming}
+              conversationId={chat.activeConversationId}
+              onReplayTool={toolReplay.handleReplay}
+              onSendMessage={handleSendMessage}
+            />
           </div>
-
-          {/* Composer */}
           {selectedAgent && (
             <ChatComposer
               onSend={handleSendMessage}
               onStop={handleAbortStream}
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
-              captchaReady={
-                !TURNSTILE_REQUIRED || !!turnstileToken
-              }
-              captchaError={turnstileError}
-              onRetryCaptcha={retryCaptcha}
+              captchaReady={!captcha.isRequired || !!captcha.token}
+              captchaError={captcha.error}
+              onRetryCaptcha={captcha.retry}
               captchaWidget={
-                TURNSTILE_REQUIRED ? (
+                captcha.isRequired ? (
                   <Turnstile
-                    onToken={setTurnstileToken}
-                    onError={handleTurnstileError}
-                    onStatus={handleTurnstileStatus}
-                    refreshKey={turnstileRefreshKey}
-                    visible={!captchaVerified}
+                    onToken={captcha.setToken}
+                    onError={captcha.onError}
+                    onStatus={captcha.onStatus}
+                    refreshKey={captcha.refreshKey}
+                    visible={!captcha.verified}
                   />
                 ) : undefined
               }
             />
           )}
-
-          {/* Mobile agent selector */}
           {!selectedAgent && (
             <div className="block border-t border-zinc-800 p-4 md:hidden">
               {isLoading ? (
                 <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
                   Loading agents...
                   <HelpTip text="Fetching the agent directory from the server. This should take a moment." />
@@ -806,15 +368,13 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
                   </option>
                   {agents.map((agent) => (
                     <option key={agent.id} value={agent.id}>
-                      {agent.icon ?? ""} {agent.name} — {agent.role}
+                      {agent.icon ?? ''} {agent.name} — {agent.role}
                     </option>
                   ))}
                 </select>
               )}
             </div>
           )}
-
-          {/* Logs */}
           <DragHandle
             direction="vertical"
             onDrag={(delta) => {
@@ -823,10 +383,7 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
               if (!logsOpen) setLogsOpen(true);
             }}
           />
-          <div
-            style={{ height: logsOpen ? liveLogsHeight : undefined }}
-            className="shrink-0"
-          >
+          <div style={{ height: logsOpen ? liveLogsHeight : undefined }} className="shrink-0">
             <LiveLogs
               logs={logs}
               open={logsOpen}
@@ -839,102 +396,12 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
           </div>
         </div>
       </div>
-
-      {/* Mobile Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden border-t border-zinc-800 bg-zinc-950">
-        <div className="flex items-center justify-around py-2">
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setMobileDrawerOpen((p) => !p)}
-              className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
-              </svg>
-              <span className="text-[10px]">Conversations</span>
-            </button>
-            <HelpTip
-              text="Opens the conversation history drawer to switch between or create new chats."
-              side="top"
-            />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setMobileSheetOpen((p) => !p)}
-              className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              <span className="text-[10px]">Config</span>
-            </button>
-            <HelpTip
-              text="Opens the agent configuration panel to change provider, model, temperature, and other settings."
-              side="top"
-            />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setLogsOpen((p) => !p)}
-              className="flex flex-col items-center gap-1 px-4 py-1 text-zinc-400 hover:text-zinc-200"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                />
-              </svg>
-              <span className="text-[10px]">Logs</span>
-            </button>
-            <HelpTip
-              text="Toggles the live event log panel to view request routing and system messages."
-              side="top"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Drawer for Conversations */}
-      <MobileDrawer
-        open={mobileDrawerOpen}
-        onClose={() => setMobileDrawerOpen(false)}
-        onOpen={() => setMobileDrawerOpen(true)}
-      >
+      <MobileNavBar
+        onOpenConversations={() => setMobileDrawerOpen((p) => !p)}
+        onOpenConfig={() => setMobileSheetOpen((p) => !p)}
+        onToggleLogs={() => setLogsOpen((p) => !p)}
+      />
+      <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} onOpen={() => setMobileDrawerOpen(true)}>
         <div data-conversation-list="sidebar">
           <ConversationList
             conversations={conversations}
@@ -948,12 +415,7 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
           />
         </div>
       </MobileDrawer>
-
-      {/* Mobile Bottom Sheet for Config */}
-      <MobileBottomSheet
-        open={mobileSheetOpen}
-        onClose={() => setMobileSheetOpen(false)}
-      >
+      <MobileBottomSheet open={mobileSheetOpen} onClose={() => setMobileSheetOpen(false)}>
         <AgentConfigPanel
           agents={agents}
           isLoading={isLoading}
@@ -963,7 +425,7 @@ const handleExportConversation = useCallback((format: "json" | "md") => {
           onChangeConfig={handleConfigChange}
           onChangeAgent={handleSelectAgent}
           onSave={handleSaveConfig}
-          captchaToken={turnstileToken}
+          captchaToken={captcha.token}
         />
       </MobileBottomSheet>
     </div>

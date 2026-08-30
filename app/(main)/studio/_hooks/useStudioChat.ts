@@ -7,9 +7,9 @@ import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
 import { applyToolReplayOutcome } from "../_lib/tool-outcome";
 import type { ChatConfig } from "../_types/studio";
 import { STORAGE_KEYS } from "../_lib/constants";
+
 const MAX_CONVERSATIONS = 50;
 const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
-
 const MAX_SEND_HISTORY = 20;
 const MAX_SEND_MESSAGE_LENGTH = 3500;
 const TRUNCATED_SUMMARY_LENGTH = 500;
@@ -129,10 +129,6 @@ function setActiveId(id: string | null) {
   } catch {}
 }
 
-// Hydrate from localStorage before the browser paints. Using the passive
-// useEffect here lets a fast user action (e.g. selecting an agent on mobile)
-// fire before hydration completes, so the action reads an empty conversation
-// list and its persist() call overwrites the stored conversations.
 const useHydrateOnClient = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function updateMessage(convs: Conversation[], convId: string, msgId: string, content: string): Conversation[] {
@@ -201,8 +197,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     }
   }, []);
 
-  const generateTitle = useCallback((messages: ChatMessage[]): string => {
-    const firstUser = messages.find((m) => m.role === "user");
+  const generateTitle = useCallback((msgs: ChatMessage[]): string => {
+    const firstUser = msgs.find((m) => m.role === "user");
     if (firstUser) {
       const text = firstUser.content.replace(/\n/g, " ").trim();
       return text.length > 60 ? text.slice(0, 60) + "…" : text;
@@ -251,32 +247,24 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     setTotalTokens(0);
   }, [activeConversationId, persist]);
 
-  const sendMessage = useCallback(async (content: string, turnstileToken?: string) => {
-    const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
-    if (!conv || isStreaming || !content.trim()) return;
-
-    const userMsg: ChatMessage = { role: "user", content: content.trim(), id: generateId() };
-    const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId(), toolCalls: [] };
-
-    const updatedMessages = [...conv.messages, userMsg, assistantMsg];
-    const autoTitle = conv.title === "New conversation"
-      ? generateTitle(updatedMessages)
-      : conv.title;
-    const withMessages = conversationsRef.current.map((c) =>
-      c.id === activeConversationId ? { ...c, messages: updatedMessages, title: autoTitle } : c,
-    );
-    persist(withMessages, activeConversationId);
-    setIsStreaming(true);
-
+  const runStreamingFlow = useCallback(async (
+    agentId: string,
+    messagesToSend: { role: string; content: string }[],
+    assistantMsgId: string,
+    convId: string,
+    baseTokens: number,
+    turnstileToken: string | undefined,
+    handleCaptchaFailed: () => void,
+    handleGenericError: (errorMsg: string) => void,
+  ) => {
     const abortController = new AbortController();
     abortRef.current = abortController;
-
-    const baseTokens = conv.tokenCount ?? 0;
-    const estimateTokens = (text: string) => Math.ceil(text.length / 4);
     let estimatedTokens = 0;
+    const estimate = (text: string) => Math.ceil(text.length / 4);
+
     const persistTokens = (convs: Conversation[]): Conversation[] => {
       const withTokens = convs.map((c) =>
-        c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
+        c.id === convId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
       );
       saveConversations(withTokens);
       return withTokens;
@@ -284,37 +272,33 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
 
     try {
       const res = await sendChat(
-        conv.agentId,
-        truncateMessages(
-          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-        ),
+        agentId,
+        truncateMessages(messagesToSend),
         configRef.current ?? {},
         turnstileToken,
         generateId(),
         abortController.signal,
       );
 
-      const requestId = res.headers.get("x-request-id") ?? undefined;
-      const correlationId = res.headers.get("x-correlation-id") ?? undefined;
       onLogRef.current?.({
         level: res.ok ? "info" : "error",
         event: "chat.response",
         status: res.status,
-        requestId,
-        correlationId,
+        requestId: res.headers.get("x-request-id") ?? undefined,
+        correlationId: res.headers.get("x-correlation-id") ?? undefined,
       });
 
       if (!res.ok) {
-        let errorBody: { error?: string; code?: string } | null = null
+        let errorBody: { error?: string; code?: string } | null = null;
         try {
-          errorBody = await res.json()
+          errorBody = await res.json();
         } catch {
           /* non-JSON error body */
         }
-        const msg = errorBody?.error ?? `Server error: ${res.status}`
-        const err = new Error(msg)
-        ;(err as Error & { code?: string }).code = errorBody?.code
-        throw err
+        const msg = errorBody?.error ?? `Server error: ${res.status}`;
+        const err = new Error(msg);
+        (err as Error & { code?: string }).code = errorBody?.code;
+        throw err;
       }
 
       let streamedContent = "";
@@ -326,18 +310,18 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         {
           onToken: (token) => {
             streamedContent += token;
-            estimatedTokens = estimateTokens(streamedContent);
+            estimatedTokens = estimate(streamedContent);
             setTotalTokens(baseTokens + estimatedTokens);
-            setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
+            setConversations((prev) => updateMessage(prev, convId, assistantMsgId, streamedContent));
           },
           onToolCall: (tc) => {
             pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending", startedAt: Date.now() });
             setConversations((prev) => {
-              const conv = prev.find((c) => c.id === activeConversationId);
+              const conv = prev.find((c) => c.id === convId);
               if (!conv) return prev;
-              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
+              const msg = conv.messages.find((m) => m.id === assistantMsgId);
               if (!msg) return prev;
-              return updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
+              return updateMessage(prev, convId, assistantMsgId, streamedContent);
             });
           },
           onToolResult: (tr) => {
@@ -349,19 +333,15 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
               existing.completedAt = Date.now();
               existing.durationMs = existing.startedAt ? Date.now() - existing.startedAt : undefined;
             }
-            // Persist tool history as it lands so a tab closed mid-stream does
-            // not lose the executed calls. Persisting reads the ref and can
-            // trail the batched state by one commit; onDone persists the final
-            // canonical row, so the snapshot lag is bounded to the stream tail.
-            saveConversations(withToolResults(conversationsRef.current, activeConversationId!, assistantMsg.id, pendingToolCalls));
-            // Functional update so streamed content from a queued onToken/
-            // onToolCall update is preserved instead of being clobbered by a
-            // concrete ref snapshot.
-            setConversations((prev) => withToolResults(prev, activeConversationId!, assistantMsg.id, pendingToolCalls));
+            setConversations((prev) => {
+              const next = withToolResults(prev, convId, assistantMsgId, pendingToolCalls);
+              saveConversations(next);
+              return next;
+            });
           },
           onDone: () => {
             setConversations((prev) => {
-              const final = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
+              const final = persistTokens(updateMessage(prev, convId, assistantMsgId, streamedContent));
               return final;
             });
             setIsStreaming(false);
@@ -371,7 +351,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             streamError = err;
             const errorMsg = `Error: ${err.message}`;
             setConversations((prev) => {
-              const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
+              const withError = persistTokens(updateMessage(prev, convId, assistantMsgId, errorMsg));
               return withError;
             });
             setIsStreaming(false);
@@ -383,41 +363,81 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       if (streamError) throw streamError;
     } catch (err) {
       if (abortController.signal.aborted) {
-        setIsStreaming(false)
-        return
+        setIsStreaming(false);
+        return;
       }
       const isCaptchaFailed =
-        err instanceof Error && (err as Error & { code?: string }).code === 'CAPTCHA_FAILED'
+        err instanceof Error && (err as Error & { code?: string }).code === "CAPTCHA_FAILED";
       if (isCaptchaFailed) {
+        handleCaptchaFailed();
+      } else {
+        const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`;
+        handleGenericError(errorMsg);
+      }
+      setIsStreaming(false);
+      throw err;
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (content: string, turnstileToken?: string) => {
+    const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
+    if (!conv || isStreaming || !content.trim()) return;
+
+    const userMsg: ChatMessage = { role: "user", content: content.trim(), id: generateId() };
+    const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId(), toolCalls: [] };
+    const updatedMessages = [...conv.messages, userMsg, assistantMsg];
+    const autoTitle = conv.title === "New conversation" ? generateTitle(updatedMessages) : conv.title;
+    const withMessages = conversationsRef.current.map((c) =>
+      c.id === activeConversationId ? { ...c, messages: updatedMessages, title: autoTitle } : c,
+    );
+    persist(withMessages, activeConversationId);
+    setIsStreaming(true);
+
+    const baseTokens = conv.tokenCount ?? 0;
+    const messagesToSend = updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }));
+
+    await runStreamingFlow(
+      conv.agentId,
+      messagesToSend,
+      assistantMsg.id,
+      activeConversationId!,
+      baseTokens,
+      turnstileToken,
+      () => {
         const cleaned = conversationsRef.current.map((c) =>
           c.id === activeConversationId
             ? { ...c, messages: c.messages.filter((m) => m.id !== assistantMsg.id) }
             : c,
-        )
-        saveConversations(cleaned)
-        setConversations(cleaned)
-        conversationsRef.current = cleaned
-      } else {
-        const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`
+        );
+        saveConversations(cleaned);
+        setConversations(cleaned);
+        conversationsRef.current = cleaned;
+      },
+      (errorMsg) => {
+        const estimatedTokens = 0;
+        const base = baseTokens;
+        const persistTokens = (convs: Conversation[]): Conversation[] => {
+          const withTokens = convs.map((c) =>
+            c.id === activeConversationId ? { ...c, tokenCount: base + estimatedTokens } : c,
+          );
+          saveConversations(withTokens);
+          return withTokens;
+        };
         setConversations((prev) => {
-          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg))
-          return withError
-        })
-      }
-      setIsStreaming(false)
-      throw err
-    }
-  }, [activeConversationId, isStreaming, persist, generateTitle]);
+          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
+          return withError;
+        });
+      },
+    );
+  }, [activeConversationId, isStreaming, persist, generateTitle, runStreamingFlow]);
 
   const retrySendMessage = useCallback(async (content: string, turnstileToken?: string) => {
     const conv = conversationsRef.current.find((c) => c.id === activeConversationId);
     if (!conv || isStreaming || !content.trim()) return;
-
     const lastUserMsg = conv.messages.filter((m) => m.role === "user").pop();
     if (!lastUserMsg || lastUserMsg.content !== content.trim()) return;
 
     const assistantMsg: ChatMessage = { role: "assistant", content: "", id: generateId(), toolCalls: [] };
-
     const updatedMessages = [...conv.messages, assistantMsg];
     const withMessages = conversationsRef.current.map((c) =>
       c.id === activeConversationId ? { ...c, messages: updatedMessages } : c,
@@ -425,133 +445,48 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     persist(withMessages, activeConversationId);
     setIsStreaming(true);
 
-    const abortController = new AbortController();
-    abortRef.current = abortController;
-
     const baseTokens = conv.tokenCount ?? 0;
-    const estimateTokens = (text: string) => Math.ceil(text.length / 4);
-    let estimatedTokens = 0;
-    const persistTokens = (convs: Conversation[]): Conversation[] => {
-      const withTokens = convs.map((c) =>
-        c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
-      );
-      saveConversations(withTokens);
-      return withTokens;
-    };
+    const messagesToSend = updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }));
 
-    try {
-      const res = await sendChat(
-        conv.agentId,
-        truncateMessages(
-          updatedMessages.slice(0, -1).map((m) => ({ role: m.role, content: m.content })),
-        ),
-        configRef.current ?? {},
-        turnstileToken,
-        generateId(),
-        abortController.signal,
-      );
-
-      const requestId = res.headers.get("x-request-id") ?? undefined;
-      const correlationId = res.headers.get("x-correlation-id") ?? undefined;
-      onLogRef.current?.({
-        level: res.ok ? "info" : "error",
-        event: "chat.response",
-        status: res.status,
-        requestId,
-        correlationId,
-      });
-
-      if (!res.ok) {
-        let errorBody: { error?: string; code?: string } | null = null
-        try {
-          errorBody = await res.json()
-        } catch {
-          /* non-JSON error body */
-        }
-        const msg = errorBody?.error ?? `Server error: ${res.status}`
-        const err = new Error(msg)
-        ;(err as Error & { code?: string }).code = errorBody?.code
-        throw err
-      }
-
-      let streamedContent = "";
-      let streamError: Error | null = null;
-      const pendingToolCalls: ToolCallInfo[] = [];
-
-      await readSSEStream(
-        res,
-        {
-          onToken: (token) => {
-            streamedContent += token;
-            estimatedTokens = estimateTokens(streamedContent);
-            setTotalTokens(baseTokens + estimatedTokens);
-            setConversations((prev) => updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
-          },
-          onToolCall: (tc) => {
-            pendingToolCalls.push({ id: tc.id, name: tc.name, args: tc.args, status: "pending", startedAt: Date.now() });
-            setConversations((prev) => {
-              const conv = prev.find((c) => c.id === activeConversationId);
-              if (!conv) return prev;
-              const msg = conv.messages.find((m) => m.id === assistantMsg.id);
-              if (!msg) return prev;
-              return updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent);
-            });
-          },
-          onToolResult: (tr) => {
-            const existing = pendingToolCalls.find((t) => t.id === tr.id);
-            if (existing) {
-              existing.status = tr.error ? "error" : "complete";
-              existing.result = tr.result;
-              existing.error = tr.error;
-              existing.completedAt = Date.now();
-              existing.durationMs = existing.startedAt ? Date.now() - existing.startedAt : undefined;
-            }
-            // Persist tool history as it lands so a tab closed mid-stream does
-            // not lose the executed calls. Persisting reads the ref and can
-            // trail the batched state by one commit; onDone persists the final
-            // canonical row, so the snapshot lag is bounded to the stream tail.
-            saveConversations(withToolResults(conversationsRef.current, activeConversationId!, assistantMsg.id, pendingToolCalls));
-            // Functional update so streamed content from a queued onToken/
-            // onToolCall update is preserved instead of being clobbered by a
-            // concrete ref snapshot.
-            setConversations((prev) => withToolResults(prev, activeConversationId!, assistantMsg.id, pendingToolCalls));
-          },
-          onDone: () => {
-            setConversations((prev) => {
-              const final = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, streamedContent));
-              return final;
-            });
-            setIsStreaming(false);
-          },
-          onLog: (log) => onLogRef.current?.(log),
-          onError: (err) => {
-            streamError = err;
-            const errorMsg = `Error: ${err.message}`;
-            setConversations((prev) => {
-              const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
-              return withError;
-            });
-            setIsStreaming(false);
-          },
-        },
-        abortController.signal,
-      );
-
-      if (streamError) throw streamError;
-    } catch (err) {
-      if (abortController.signal.aborted) {
-        setIsStreaming(false)
-        return
-      }
-      const errorMsg = `Error: ${err instanceof Error ? err.message : String(err)}`
-      setConversations((prev) => {
-        const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg))
-        return withError
-      })
-      setIsStreaming(false)
-      throw err
-    }
-  }, [activeConversationId, isStreaming, persist]);
+    await runStreamingFlow(
+      conv.agentId,
+      messagesToSend,
+      assistantMsg.id,
+      activeConversationId!,
+      baseTokens,
+      turnstileToken,
+      () => {
+        // retry path does not have special captcha cleanup; treat as generic error
+        const errorMsg = "Error: CAPTCHA_FAILED";
+        const estimatedTokens = 0;
+        const persistTokens = (convs: Conversation[]): Conversation[] => {
+          const withTokens = convs.map((c) =>
+            c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
+          );
+          saveConversations(withTokens);
+          return withTokens;
+        };
+        setConversations((prev) => {
+          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
+          return withError;
+        });
+      },
+      (errorMsg) => {
+        const estimatedTokensFinal = 0;
+        const persistTokens = (convs: Conversation[]): Conversation[] => {
+          const withTokens = convs.map((c) =>
+            c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokensFinal } : c,
+          );
+          saveConversations(withTokens);
+          return withTokens;
+        };
+        setConversations((prev) => {
+          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
+          return withError;
+        });
+      },
+    );
+  }, [activeConversationId, isStreaming, persist, runStreamingFlow]);
 
   const abortStream = useCallback(() => {
     abortRef.current?.abort();
