@@ -262,13 +262,8 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
     let estimatedTokens = 0;
     const estimate = (text: string) => Math.ceil(text.length / 4);
 
-    const persistTokens = (convs: Conversation[]): Conversation[] => {
-      const withTokens = convs.map((c) =>
-        c.id === convId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
-      );
-      saveConversations(withTokens);
-      return withTokens;
-    };
+    const withTokenCount = (convs: Conversation[]): Conversation[] =>
+      convs.map((c) => (c.id === convId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c));
 
     try {
       const res = await sendChat(
@@ -341,7 +336,9 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
           },
           onDone: () => {
             setConversations((prev) => {
-              const final = persistTokens(updateMessage(prev, convId, assistantMsgId, streamedContent));
+              const updated = updateMessage(prev, convId, assistantMsgId, streamedContent);
+              const final = withTokenCount(updated);
+              saveConversations(final);
               return final;
             });
             setIsStreaming(false);
@@ -351,7 +348,9 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
             streamError = err;
             const errorMsg = `Error: ${err.message}`;
             setConversations((prev) => {
-              const withError = persistTokens(updateMessage(prev, convId, assistantMsgId, errorMsg));
+              const updated = updateMessage(prev, convId, assistantMsgId, errorMsg);
+              const withError = withTokenCount(updated);
+              saveConversations(withError);
               return withError;
             });
             setIsStreaming(false);
@@ -414,18 +413,10 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
         conversationsRef.current = cleaned;
       },
       (errorMsg) => {
-        const estimatedTokens = 0;
-        const base = baseTokens;
-        const persistTokens = (convs: Conversation[]): Conversation[] => {
-          const withTokens = convs.map((c) =>
-            c.id === activeConversationId ? { ...c, tokenCount: base + estimatedTokens } : c,
-          );
-          saveConversations(withTokens);
-          return withTokens;
-        };
         setConversations((prev) => {
-          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
-          return withError;
+          const updated = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
+          saveConversations(updated);
+          return updated;
         });
       },
     );
@@ -456,33 +447,20 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       baseTokens,
       turnstileToken,
       () => {
-        // retry path does not have special captcha cleanup; treat as generic error
-        const errorMsg = "Error: CAPTCHA_FAILED";
-        const estimatedTokens = 0;
-        const persistTokens = (convs: Conversation[]): Conversation[] => {
-          const withTokens = convs.map((c) =>
-            c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokens } : c,
-          );
-          saveConversations(withTokens);
-          return withTokens;
-        };
-        setConversations((prev) => {
-          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
-          return withError;
-        });
+        const cleaned = conversationsRef.current.map((c) =>
+          c.id === activeConversationId
+            ? { ...c, messages: c.messages.filter((m) => m.id !== assistantMsg.id) }
+            : c,
+        );
+        saveConversations(cleaned);
+        setConversations(cleaned);
+        conversationsRef.current = cleaned;
       },
       (errorMsg) => {
-        const estimatedTokensFinal = 0;
-        const persistTokens = (convs: Conversation[]): Conversation[] => {
-          const withTokens = convs.map((c) =>
-            c.id === activeConversationId ? { ...c, tokenCount: baseTokens + estimatedTokensFinal } : c,
-          );
-          saveConversations(withTokens);
-          return withTokens;
-        };
         setConversations((prev) => {
-          const withError = persistTokens(updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg));
-          return withError;
+          const updated = updateMessage(prev, activeConversationId!, assistantMsg.id, errorMsg);
+          saveConversations(updated);
+          return updated;
         });
       },
     );
