@@ -94,28 +94,28 @@ export function useCaptcha(options: UseCaptchaOptions): UseCaptchaReturn {
     const hasFreshToken = (): boolean =>
       !!tokenRef.current && tokenRef.current !== staleToken;
 
-    if (staleToken) {
-      const deadline = Date.now() + 2000;
+    async function pollUntil(
+      predicate: () => boolean,
+      timeoutMs: number,
+      intervalMs: number,
+    ): Promise<boolean> {
+      const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
-        if (hasFreshToken()) return true;
-        await new Promise((r) => setTimeout(r, 50));
+        if (predicate()) return true;
+        await new Promise((r) => setTimeout(r, intervalMs));
       }
+      return predicate();
+    }
+
+    if (staleToken) {
+      if (await pollUntil(() => hasFreshToken(), 2000, 50)) return true;
       setRefreshKey((k) => k + 1);
-      const clearDeadline = Date.now() + 3000;
-      while (tokenRef.current === staleToken && Date.now() < clearDeadline) {
-        await new Promise((r) => setTimeout(r, 50));
-      }
-      const newDeadline = Date.now() + 10000;
-      while (!hasFreshToken() && Date.now() < newDeadline) {
-        await new Promise((r) => setTimeout(r, 100));
-      }
+      await pollUntil(() => tokenRef.current !== staleToken, 3000, 50);
+      await pollUntil(() => hasFreshToken(), 10000, 100);
       return hasFreshToken();
     }
     setRefreshKey((k) => k + 1);
-    const deadline = Date.now() + 10000;
-    while (!tokenRef.current && Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 100));
-    }
+    await pollUntil(() => !!tokenRef.current, 10000, 100);
     return !!tokenRef.current;
   }, []);
 

@@ -38,6 +38,7 @@ describe("Turnstile CAPTCHA validation", () => {
   it("bypasses validation when TURNSTILE_SECRET_KEY is missing", async () => {
     delete process.env.TURNSTILE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    process.env.TURNSTILE_REQUIRED = "false";
 
     const { POST } = await import("../app/api/studio/chat/route");
     const req = new Request("http://localhost/api/studio/chat", {

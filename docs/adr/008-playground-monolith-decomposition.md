@@ -1,7 +1,7 @@
 # ADR-008: Playground monolith decomposition into hooks and components
 
 **Date:** 2026-08-29
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 

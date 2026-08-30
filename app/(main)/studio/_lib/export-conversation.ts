@@ -92,9 +92,9 @@ export function serializeConversationMarkdown(conversation: Conversation): strin
     if (message.toolCalls && message.toolCalls.length > 0) {
       lines.push("**Tools:**", "");
       for (const toolCall of message.toolCalls) {
-        lines.push(`- \`${toolCall.name}\` args:`, "");
+        lines.push(`- \`${sanitizeForCodeBlock(toolCall.name)}\` args:`, "");
         lines.push("```json");
-        lines.push(JSON.stringify(toolCall.args, null, 2));
+        lines.push(sanitizeForCodeBlock(JSON.stringify(toolCall.args, null, 2)));
         lines.push("```");
         if (toolCall.result) {
           lines.push("", "  Result:", "");

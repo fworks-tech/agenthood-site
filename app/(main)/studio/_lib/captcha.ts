@@ -7,14 +7,16 @@ const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
 const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 /**
- * Shared server-side Turnstile verification for the Studio API. Gated by the
- * same env contract as ADR-005: enabled+misconfigured fails open with a loud
- * log instead of taking the endpoint down.
+ * Shared server-side Turnstile verification for the Studio API. When
+ * TURNSTILE_REQUIRED is true (ADR-005), a missing config fails closed;
+ * otherwise it fails open with a loud log so a misconfigured deploy does not
+ * take the endpoint down in non-required mode.
  */
 export async function validateTurnstile(token: unknown): Promise<void> {
   if (!TURNSTILE_ENABLED || !TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
     if (TURNSTILE_ENABLED && TURNSTILE_REQUIRED) {
-      logger.error("turnstile.config_missing", { message: "Turnstile enabled but TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set. CAPTCHA bypassed." });
+      logger.error("turnstile.config_missing", { message: "Turnstile enabled but TURNSTILE_SECRET_KEY or NEXT_PUBLIC_TURNSTILE_SITE_KEY not set." });
+      throw new CaptchaError("CAPTCHA configuration missing. Please try again later.");
     }
     return;
   }
