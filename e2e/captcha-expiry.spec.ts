@@ -109,7 +109,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     expect(messages1.some((m) => m.role === "user" && m.text.includes("first message"))).toBeTruthy();
   });
 
-  test("expiry makes the captcha widget visible during re-verification", async ({ page }) => {
+  test("expiry keeps the captcha widget hidden while re-verifying in background", async ({ page }) => {
     await mockChat(page);
 
     await selectAgent(page, "the-scribe");
@@ -118,14 +118,14 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     await sendMessage(page, "first message");
     await waitForStreamComplete(page);
 
-    // Widget is hidden after successful message (captchaVerified=true):
+    // Widget is hidden after successful message (verified=true → visible=false):
     // the mock gives the widget a fixed-size child, so assert the hidden style
     // rather than visibility (opacity:0 still has a bounding box).
     const widget = page.locator(".turnstile-widget");
     await expect(widget).toHaveAttribute("style", /opacity: 0/);
 
-    // Simulate token expiry: expired-callback sets captchaVerified=false,
-    // then the mock re-issues a token after 50ms which sets it back to true.
+    // Simulate token expiry: expired-callback keeps verified=true (hidden-always latch);
+    // the mock re-issues a token after 50ms via issue() which delivers a fresh token.
     await expireAndReissue(page);
 
     // After re-verification completes, the widget must be hidden again.
@@ -141,7 +141,7 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     expect(messages.some((m) => m.role === "user" && m.text.includes("second message"))).toBeTruthy();
   });
 
-  test("CAPTCHA_FAILED refresh timeout shows the widget and error", async ({ page }) => {
+  test("CAPTCHA_FAILED refresh timeout keeps widget hidden and shows error with Retry CAPTCHA", async ({ page }) => {
     let requestCount = 0;
     await page.route("**/api/studio/chat/**", async (route) => {
       const reqBody = route.request().postDataJSON();
@@ -183,17 +183,18 @@ test.describe("Playground — CAPTCHA Expiry Auto-Retry", () => {
     // timeout because the mock no longer issues tokens on reset.
     await sendMessage(page, "second message");
 
-    // The widget becomes visible so the user can re-verify.
+    // Widget stays hidden via visible={!verified} (opacity:0) — even on timeout.
     const widget = page.locator(".turnstile-widget");
-    await expect(widget).toBeVisible({ timeout: 15000 });
+    await expect(widget).toHaveAttribute("style", /opacity: 0/, { timeout: 15000 });
 
-    // Error message appears in the composer.
+    // Error message + Retry button appear in the composer (token nulled by reset → !captchaReady).
     await expect(
       page.locator("span.text-red-400").filter({ hasText: "CAPTCHA refresh timed out" }),
     ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Retry CAPTCHA" })).toBeVisible({ timeout: 15000 });
   });
 
-  test("Retry CAPTCHA button re-renders the widget after refresh failure", async ({ page }) => {
+  test("Retry CAPTCHA after refresh failure re-issues token and re-enables send", async ({ page }) => {
     let requestCount = 0;
     await page.route("**/api/studio/chat/**", async (route) => {
       const reqBody = route.request().postDataJSON();
