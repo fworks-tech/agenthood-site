@@ -51,6 +51,7 @@ describe("X-Correlation-Id propagation on chat route", () => {
   it("echoes a provided X-Correlation-Id in the response headers", async () => {
     delete process.env.TURNSTILE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    process.env.TURNSTILE_REQUIRED = "false";
 
     const { POST } = await import("../app/api/studio/chat/route");
     const res = await POST(makeRequest("client-session-42"));
@@ -60,6 +61,7 @@ describe("X-Correlation-Id propagation on chat route", () => {
   it("generates an X-Correlation-Id when the header is absent", async () => {
     delete process.env.TURNSTILE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    process.env.TURNSTILE_REQUIRED = "false";
 
     const { POST } = await import("../app/api/studio/chat/route");
     const res = await POST(makeRequest());
@@ -69,6 +71,7 @@ describe("X-Correlation-Id propagation on chat route", () => {
   it("rejects an oversized X-Correlation-Id header", async () => {
     delete process.env.TURNSTILE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    process.env.TURNSTILE_REQUIRED = "false";
 
     const { POST } = await import("../app/api/studio/chat/route");
     const res = await POST(makeRequest("x".repeat(129)));

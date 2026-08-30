@@ -39,7 +39,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 
 The Studio is a browser-based proof-of-work for the agenthood runtime (pinned to the
 installed `agenthood` package — see `app/_lib/agenthood-version.ts`, the single source of
-truth for the version shown by the Footer badge and referenced here). It allows users to chat with any of the 19 Society members through a configurable provider backend.
+truth for the version shown by the Footer badge and referenced here). It allows users to chat with any of the 20 Society members through a configurable provider backend.
 
 ### API Endpoints
 
@@ -68,7 +68,7 @@ Ollama requests are proxied server-side — the browser never connects directly 
 
 **Model Validation:** Model IDs are validated server-side against a known set (`PROVIDER_MODELS` in `studio.ts`). Unknown model IDs trigger a `ValidationError` before any provider call.
 
-**Supported providers:** Anthropic, OpenAI, Groq, OpenRouter, Ollama (local), OpenCode (local/cloud)
+**Supported providers:** Anthropic, OpenAI, Groq, OpenRouter, Ollama (local), OpenCode Zen, OpenCode Go (local/cloud)
 
 ### Rate Limiting
 
@@ -121,10 +121,18 @@ Applied to all routes via `next.config.ts`:
 
 ```
 app/(main)/studio/
-├── playground/page.tsx             Chat playground
+├── playground/
+│   ├── page.tsx                    Chat playground (composition shell, ~429 lines)
+│   └── _components/
+│       ├── PlaygroundHeader.tsx    Agent badge, token count, export menu, clear button
+│       ├── PlaygroundSidebar.tsx   Desktop: agent config + conversations + logs
+│       ├── PlaygroundChatArea.tsx  MessageList + ChatComposer + welcome state
+│       ├── MobileNavBar.tsx        Mobile bottom nav (Conversations/Config/Logs)
+│       ├── AnimatedMessage.tsx     Animated assistant message
+│       └── WelcomeTerminal.tsx     Welcome / empty state
 ├── layout.tsx                      Studio layout
 ├── error.tsx / loading.tsx         Error/loading boundaries
-├── _components/                    React components
+├── _components/                    Shared Studio components
 │   ├── AgentConfigPanel.tsx        Agent selection + config controls
 │   ├── ChatComposer.tsx            Message input
 │   ├── ConversationList.tsx        Conversation sidebar list
@@ -137,12 +145,20 @@ app/(main)/studio/
 │   ├── MobileDrawer.tsx            Mobile conversation drawer
 │   └── OllamaConnectivityCheck.tsx Local Ollama reachability
 ├── _hooks/
-│   ├── useStudioChat.ts            Chat state + streaming + persistence
-│   └── useAgentDirectory.ts        Agent list fetch
+│   ├── useStudioChat.ts            Chat state + streaming + persistence (core)
+│   ├── useAgentDirectory.ts        Agent list fetch
+│   ├── useCaptcha.ts               CAPTCHA token/verified latch + refreshAndWait
+│   ├── useLogs.ts                  Live log store + SSE telemetry
+│   ├── useConversationExport.ts    JSON/Markdown export + download
+│   └── useToolReplay.ts            Tool execution replay + duration tracking
 ├── _lib/
 │   ├── agenthood-adapter.ts        LLMRouter wrapper → ReadableStream, tool loop
+│   ├── captcha.ts                  Server-side Turnstile verification (fail-closed when required)
 │   ├── constants.ts                LocalStorage/SessionStorage key constants
+│   ├── env.ts                      TURNSTILE_ENABLED / TURNSTILE_REQUIRED
 │   ├── errors.ts                   StudioError hierarchy
+│   ├── export-conversation.ts      Conversation serialization (sanitized code fences)
+│   ├── log-store.ts                In-memory log buffer
 │   ├── logger.ts                   Structured JSON logging with redaction
 │   ├── stream.ts                   NDJSON/SSE stream reader (token, tool_call, tool_result)
 │   ├── studio-api.ts               Client-side fetch wrappers

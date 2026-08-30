@@ -60,6 +60,7 @@ Load skills from `skills/` to activate specialized agents:
 - `the-operator` — runtime health, deployment, incidents, rollback, monitoring
 - `the-strategist` — goal refinement, requirement discovery, ambiguity resolution
 - `the-mailman` — message delivery, content scheduling, notification dispatch, cross-posting
+- `the-mediator` — conflict mediation, consensus facilitation, delegation integrity (added in agenthood 3.38.0)
 - `the-inspector` — visual-reasoning benchmarking, pixel-level analysis, multi-panel correspondence
 
 ## Autonomous Runtime (agenthood run)

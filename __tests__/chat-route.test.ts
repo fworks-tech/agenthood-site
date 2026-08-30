@@ -24,6 +24,7 @@ beforeEach(() => {
   process.env = { ...originalEnv };
   delete process.env.TURNSTILE_SECRET_KEY;
   delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  process.env.TURNSTILE_REQUIRED = "false";
   chatMock.mockReset();
   captureSpy.mockReset();
 });
