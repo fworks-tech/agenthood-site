@@ -20,26 +20,29 @@ describe('useCaptcha', () => {
     expect(result.current.isRequired).toEqual(expect.any(Boolean));
   });
 
-  it('onStatus logs and handles token-expired', () => {
+  it('onStatus logs and keeps verified latched on token-expired', () => {
     const { result } = renderHook(() => useCaptcha({ addLog }));
     act(() => result.current.setToken('tok-1'));
     expect(result.current.token).toBe('tok-1');
     // token effect auto-verifies
     expect(result.current.verified).toBe(true);
     act(() => result.current.onStatus('token-expired'));
-    expect(result.current.verified).toBe(false);
-    expect(result.current.token).toBeNull();
+    // expired token keeps the last value and the verified latch stays true so the
+    // interactive widget does not pop back unchecked on every token cycle
+    expect(result.current.verified).toBe(true);
+    expect(result.current.token).toBe('tok-1');
     expect(addLog).toHaveBeenCalledWith('warn', expect.stringContaining('expired'), expect.any(Object));
   });
 
-  it('retry clears state and bumps refreshKey', () => {
+  it('retry clears token and bumps refreshKey but keeps verified latch', () => {
     const { result } = renderHook(() => useCaptcha({ addLog }));
     act(() => result.current.setToken('tok'));
+    expect(result.current.verified).toBe(true);
     const k0 = result.current.refreshKey;
     act(() => result.current.retry());
     expect(result.current.token).toBeNull();
-    expect(result.current.verified).toBe(false);
     expect(result.current.refreshKey).toBe(k0 + 1);
+    expect(result.current.verified).toBe(true);
   });
 
   it('onError sets error and logs', () => {
@@ -49,19 +52,40 @@ describe('useCaptcha', () => {
     expect(addLog).toHaveBeenCalledWith('error', 'captcha failed', expect.any(Object));
   });
 
-  it('refreshAndWait is a function that returns a promise', async () => {
-    const { result } = renderHook(() => useCaptcha({ addLog }));
-    expect(typeof result.current.refreshAndWait).toBe('function');
-    // when no token, it will eventually resolve to boolean (false after timeout if no token)
-    // we just verify it does not throw when called and returns a promise
-    const p = result.current.refreshAndWait();
-    expect(p).toBeInstanceOf(Promise);
-    // do not await full 10s timeout; just verify promise exists and handle quickly by setting token
-    act(() => result.current.setToken('fresh'));
-    // allow effect to sync tokenRef
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 0));
-    });
+  it('refreshAndWait resolves false when no token arrives in time', async () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useCaptcha({ addLog }));
+      expect(typeof result.current.refreshAndWait).toBe('function');
+      let p: Promise<boolean>;
+      act(() => {
+        p = result.current.refreshAndWait();
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000 + 200);
+      });
+      await expect(p!).resolves.toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('refreshAndWait resolves true once a token is set', async () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useCaptcha({ addLog }));
+      let p: Promise<boolean>;
+      act(() => {
+        p = result.current.refreshAndWait();
+      });
+      act(() => result.current.setToken('fresh'));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      await expect(p!).resolves.toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('onStatus handles all branches without throwing', () => {

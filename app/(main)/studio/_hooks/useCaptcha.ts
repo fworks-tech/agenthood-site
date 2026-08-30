@@ -21,7 +21,6 @@ interface UseCaptchaReturn {
   retry: () => void;
   refreshAndWait: () => Promise<boolean>;
   setToken: (t: string | null) => void;
-  setVerified: (v: boolean) => void;
 }
 
 export function useCaptcha(options: UseCaptchaOptions): UseCaptchaReturn {
@@ -65,8 +64,10 @@ export function useCaptcha(options: UseCaptchaOptions): UseCaptchaReturn {
           break;
         case 'token-expired':
           addLog('warn', 'CAPTCHA token expired. Re-verifying...', { category: 'captcha' });
-          setVerified(false);
-          setToken(null);
+          // Keep the last token and the verified latch: the Turnstile widget
+          // renews via its expired-callback and delivers a fresh token, so the
+          // interactive widget stays hidden after the first check. Re-showing it
+          // on every token cycle is what made the checkbox pop back unchecked.
           break;
       }
     },
@@ -76,7 +77,6 @@ export function useCaptcha(options: UseCaptchaOptions): UseCaptchaReturn {
   const retry = useCallback(() => {
     setError(null);
     setToken(null);
-    setVerified(false);
     setRefreshKey((k) => k + 1);
     addLog('info', 'CAPTCHA retry requested', { category: 'captcha' });
   }, [addLog]);
@@ -131,6 +131,5 @@ export function useCaptcha(options: UseCaptchaOptions): UseCaptchaReturn {
     retry,
     refreshAndWait,
     setToken,
-    setVerified,
   };
 }

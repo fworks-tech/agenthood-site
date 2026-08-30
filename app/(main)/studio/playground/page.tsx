@@ -128,9 +128,6 @@ export default function PlaygroundPage() {
         await chat.sendMessage(content, captcha.tokenRef.current ?? undefined);
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
         addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`);
-        if (captcha.tokenRef.current) {
-          captcha.setVerified(true);
-        }
         track('message_completed', {
           agentId: selectedAgent.id,
           provider: config.provider,
@@ -142,7 +139,6 @@ export default function PlaygroundPage() {
         const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
         if (code === 'CAPTCHA_FAILED') {
           addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' });
-          captcha.setVerified(false);
           const ready = await captcha.refreshAndWait();
           if (ready) {
             try {
@@ -171,7 +167,6 @@ export default function PlaygroundPage() {
               return;
             }
           }
-          captcha.setVerified(false);
           captcha.onError('CAPTCHA refresh timed out. Please verify manually.');
           return;
         }
