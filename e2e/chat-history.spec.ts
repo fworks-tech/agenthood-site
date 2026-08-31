@@ -82,7 +82,7 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     expect(assistantReplies[1].text).toContain("reply-3");
   });
 
-  test("each message carries a fresh single-use turnstile token", async ({ page }) => {
+  test("after first verification no turnstile token is sent (one-shot cookie covers)", async ({ page }) => {
     const tokens: Array<string | undefined> = [];
     await page.route("**/api/studio/chat/**", async (route) => {
       const reqBody = route.request().postDataJSON();
@@ -107,11 +107,10 @@ test.describe("Playground — Chat History & Multi-Turn Context", () => {
     await waitForAssistantCount(page, 2);
 
     expect(tokens.length).toBe(2);
-    expect(tokens[0]).toBeTruthy();
-    expect(tokens[1]).toBeTruthy();
-    // The server consumes each token on verification, so a fresh token must be
-    // issued for every message instead of reusing the previous one.
-    expect(tokens[1]).not.toBe(tokens[0]);
+    // One-shot gate: the widget is hidden and the HMAC-signed cookie covers
+    // every subsequent request, so neither message carries a per-request token.
+    expect(tokens[0]).toBeUndefined();
+    expect(tokens[1]).toBeUndefined();
   });
 
   test("switching conversations restores messages and saved config", async ({ page, mockChatSequence }) => {

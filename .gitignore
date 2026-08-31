@@ -30,6 +30,7 @@
 .agenthood/provenance/
 .agenthood/snapshots/
 .agenthood/metrics/
+.agenthood/traces/
 .agenthood/residual.json
 .agenthood/society-graph.json
 .agenthood/preferences.json
