@@ -74,8 +74,8 @@ No client-side config panel. The server applies defaults:
 | Provider | `opencode-go` | Default from `getDefaultModel()` |
 | Model | `getDefaultModel('opencode-go')` | `_types/studio.ts` |
 | Temperature | `0.7` | Same as Playground default |
-| MaxTokens | `4096` | Same as Playground default |
-| Enabled tools | `web_fetch`, `code_execution` | Same as Playground |
+| MaxTokens | uncapped (provider max, no `maxTokens` param) | Workspace uncapped for full research — Builder/Tester/Reviewer can fetch repos, read files, write code without truncation |
+| Enabled tools | `web_fetch`, `code_execution` | Same as Playground, unrestricted for repo research |
 
 The API key follows the same server-side `OPENCODE_API_KEY` / fallback chain the Playground
 uses. No BYOK for Workspaces (simplifies the flow).
@@ -244,7 +244,7 @@ The Workspaces page must match the Playground's visual quality:
 - [ ] Turn budget enforced (default 10; tunable up if runs converge faster)
 - [ ] Human checkpoint emitted before `code_execution` tool calls (stop/continue choice in chat)
 - [ ] Run ends on: all pass, budget exhausted, human stop, or checkpoint request
-- [ ] Default config (opencode-go, 0.7 temp, 4096 tokens) applied server-side
+- [ ] Default config (opencode-go, 0.7 temp, uncapped tokens) applied server-side
 - [ ] `RATE_LIMITS` entry added for `/api/studio/workspaces`
 - [ ] Visual quality matches Playground (dark theme, animations, typography, mobile)
 - [ ] Regression gate: `npm test` (252 tests), `npm run lint`, `npm run build` green
@@ -258,7 +258,7 @@ The Workspaces page must match the Playground's visual quality:
 
 - **Regression gate (blocking):** `npm test` (252 existing unit tests), `npm run lint`, `npm run build` must stay green on every commit. No new warnings introduced; Warden threshold untouched.
 - **Unit — orchestrator** (`__tests__/workspace-orchestrator.test.ts`): mock `LLMRouter` via `tests/helpers/agentFixtures.ts` (same pattern as `adapter.test.ts:1-40`). Covers: Mediator → member dispatch order, turn budget (10) enforcement, stop conditions (all-pass / budget-exhausted / AbortSignal / handoff), shared-thread trimming by max token budget, `workspace.handoff` emission before `code_execution`.
-- **Unit — adapter** (`__tests__/workspace-adapter.test.ts`): verifies `workspace-adapter.ts` calls `LLMRouter.fromConfig` with server defaults (`opencode-go`, `getDefaultModel`, 0.7, 4096), tool schemas (`web_fetch`, `code_execution`), and SSE event mapping (`workspace.turn_start` includes plan for Mediator).
+- **Unit — adapter** (`__tests__/workspace-adapter.test.ts`): verifies `workspace-adapter.ts` calls `LLMRouter.fromConfig` with server defaults (`opencode-go`, `getDefaultModel`, 0.7, uncapped), tool schemas (`web_fetch`, `code_execution` unrestricted), and SSE event mapping (`workspace.turn_start` includes plan for Mediator).
 - **Unit — route** (`__tests__/workspace-route.test.ts`): mock adapter, verify guards ported from `app/api/studio/chat/route.ts` — `memberIds` non-empty + `getAgentById` whitelist, `instruction` required/max 4000 chars, rate-limit entry exists in `app/middleware.ts:31`, SSE NDJSON shape, error → `workspace.error`.
 - **Unit — hook** (`__tests__/useWorkspace.test.ts`): client state machine — `workspace.started` → `turn_start`/`token`/`tool_call`/`tool_result`/`turn_end` → `done`; user intervention pauses current member (`AbortSignal`) and re-invokes Mediator; `RATE_LIMITS` signal surfaced.
 - **Conventions:** reuse `tests/helpers/agentFixtures.ts` (`createMockLLM`, `createAgentHarness`); single quotes, no semicolons; no guarded `if (cond) expect(...)` assertions; assert against exported constants (e.g. `RATE_LIMITS`) not literals.
