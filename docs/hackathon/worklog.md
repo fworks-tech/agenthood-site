@@ -54,9 +54,7 @@
 
 ---
 
----
-
-## 2026-08-31 — Day 1: Implementation (Phases 1-8)
+## 2026-08-31 — Day 1: Implementation (Phases 1-8, PR #169 `150cef7` — 11 granular commits `7268ce2..150cef7`)
 
 ### What we did
 - **Phase 1** `refactor(studio): extract shared SSE runner and trace helpers` — extended `app/(main)/studio/_lib/stream.ts` with `onWorkspaceEvent` for `workspace.*` vocab, created `app/(main)/studio/_lib/trace.ts` (`emitLogEvent`, `buildTraceEnvelope`, `createWorkspaceTraceMeta`), extended `app/(main)/studio/_lib/logger.ts` SAFE_LOG_KEYS with `workspaceId/turnIndex/memberId`, refactored `agenthood-adapter.ts` to reuse helpers
@@ -80,9 +78,24 @@
 - "remember to keep synced the docs inside docs/hackathon" — tri-sync maintained (spec + plan + worklog updated together)
 - "lets skip tests while we still not finish the workspace implementation" — kept `lint`+`build` gates, deferred `npm test` (283 tests) until feature complete
 
-### Evidence
-- Branch `frontier-hackathon` 8 commits beyond `e0414c7` scaffold: `718128c` → `c2eb0a7`, `lint` green, `build` green, `/studio/workspaces` renders picker → 3-zone, API guards + rate limit verified
-- Demo path ready: select Builder+Tester+Reviewer → instruction `Suggest an area for improvement for https://github.com/fworks-tech/agenthood` → Mediator JSON plan → Builder clones/explores → Tester audits → Reviewer synthesizes → `workspace.handoff` on `code_execution` → sidebar transitions → intervention aborts + re-plans
+### Evidence (judges: concrete, verifiable)
+
+- **Branch + PR:** `frontier-hackathon` 11 commits `7268ce2..150cef7` pushed → https://github.com/fworks-tech/agenthood-site/pull/169 · `git diff --stat main...150cef7` 21 files `+1974/-35`
+- **Gates:** `npm run lint` green (0 errors, 2 warnings on `c2eb0a7` fixed @ `150cef7`), `npm run build` green — `next build` lists `ƒ /api/studio/workspaces` (dynamic, `maxDuration 60`) + `○ /studio/workspaces` (static), `.next/dev/types/validator.ts` incident resolved
+- **Routes:** `app/middleware.ts:31` `/api/studio/workspaces` 20/min + `middleware.ts:98` Upstash `workspaces` + `middleware.ts:122` `LIMITER_BY_KEY`; `route.ts:1` guards `memberIds`×`getAgentById` (`_data/agents.ts:76`), `instruction≤4000`, wraps `workspace.started/done` with `workspaceId/correlationId`
+- **Mediation (interesting):** Mediator JSON `{members:[{id,task,order}]}` — `workspace-orchestrator.ts:1` `parseMediatorPlan` strips ```json fences, validates whitelist, falls back to `memberIds` order on malformed; example plan for `https://github.com/fworks-tech/agenthood`: Mediator delegates Builder="clone + explore repo, list areas for improvement" (order 0), Tester="audit tests/coverage gaps" (1), Reviewer="synthesize priority improvement" (2)
+- **Uncapped research (interesting):** `workspace-adapter.ts:1` `LLMRouter.fromConfig` with `opencode-go` + `getDefaultModel('opencode-go')` + 0.7, **no `maxTokens`**, `web_fetch`+`code_execution` unrestricted — lets Builder `code_execution` `git clone https://github.com/fworks-tech/agenthood` and read files without truncation (human-requested)
+- **Intervention (interesting):** `useWorkspace.ts:1` client loop one POST per turn, `AbortSignal` on `sendIntervention` appends user message to `threadRef` and **immediately** re-invokes `the-mediator` (`spec.md:140-142` — "Pause + Mediator immediately", `question` 2026-08-31)
+- **Handoff + budget (interesting):** `workspace-orchestrator.ts:1` `shouldRequestHandoff('code_execution')` → `workspace.handoff` `stop/continue` (`workspace-adapter.ts:1`) rendered in `workspaces/page.tsx:1`; `TURN_BUDGET_DEFAULT=10` `isBudgetExhausted` counts member activations only (Mediator free, human confirmed)
+- **Live thread + logs (interesting):** `stream.ts:7` `readSSEStream` `onWorkspaceEvent` for 10-event `workspace.*` vocabulary → `WorkspaceSidebar.tsx:1` dots `idle→thinking→working→waiting→done` + `WorkspaceChatArea.tsx:1` via `playground/_components/AnimatedMessage.tsx:1`; every `workspace.*` and `{type:log}` carries `workspaceId/correlationId/turnIndex/memberId` via `trace.ts:1` + `logger.ts:33` `SAFE_LOG_KEYS`
+- **UI triage:** `WorkspaceComposer.tsx:1` category grid `agents.ts:23-43` (Meditator excluded), `border-indigo-500` toggle, fade-in textarea placeholder `https://github.com/fworks-tech/agenthood`; `workspaces/page.tsx:1` picker → 3-zone with `LiveLogs`+`MobileDrawer`
+- **Demo path (replayable):** pick Builder+Tester+Reviewer → instruction `Suggest an area for improvement for https://github.com/fworks-tech/agenthood` → Mediator plan visible → Builder clones/explores → Tester audits → Reviewer synthesizes → `workspace.handoff` on `code_execution` → sidebar transitions → mid-run `Also check docs/` aborts + re-plans
+- **Trace shape (for Phase 9 trajectories):** per-agent NDJSON `{type:workspace.started|turn_start|token|tool_call|tool_result|turn_end|handoff|done|error|log}` with `workspaceId: ws-…` `correlationId: ws-corr-…` — directly exportable to `data/workspaces/trajectories/{mediator,builder,tester,reviewer}.json`
+
+### Hot take evidence so far
+
+Without **budget (10) + human veto (`workspace.handoff`)**, Builder+Tester ping-pongs: Tester finds nits, Builder patches, cost grows, no convergence. With `workspace.handoff` on `code_execution` and `isBudgetExhausted`, the loop closes — observed during manual smoke (2 turns → stop). Task 10 (subtle edge-case defect) and Task 11 (conflicting requirement → `workspace.handoff`) are designed to make the same point with measured `T` (human hand-offs) in §5.
 
 ### Next
-- Phase 9: trajectories (`data/workspaces/trajectories/` per-agent SSE JSON), `REPRODUCTION.md`, ADR `NNN-workspaces-orchestration.md`, coverage ≥80% suites when re-enabling tests
+
+- Phase 9: trajectories `data/workspaces/trajectories/` per-agent SSE JSON (shape above + `trace.ts:1` logs), `REPRODUCTION.md` (clone `fworks-tech/agenthood` + `agenthood-site`, `npm install`/`npm run build`/`npm run dev`, `.env` keys, expected output, versions/cost), ADR `docs/adr/NNN-workspaces-orchestration.md` (client-driven 60s vs server chunking, JSON plan, trimming 100k), re-enable `npm test` (283 tests, target ≥80% on orchestrator/adapter/route)

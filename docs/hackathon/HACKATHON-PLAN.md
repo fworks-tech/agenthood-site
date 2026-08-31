@@ -1,7 +1,7 @@
 # Agentic Workflows Frontier Hackathon — Multi-Agent Workspaces for the Agenthood Studio
 
-> **Status:** Planning. This document is the single source of truth for the project: the idea,
-> the user, the architecture, the evaluation plan, the deliverables, and the day-by-day roadmap.
+> **Status:** Implementation — Phases 1-8 landed on `frontier-hackathon` @ `150cef7` (PR #169, 11 granular commits `7268ce2..150cef7`). `lint` + `build` green. This document is the single source of truth for the project: the idea,
+> the user, the architecture, the evaluation plan, the deliverables, and the day-by-day roadmap. Tri-synced with `spec.md` and `worklog.md`.
 
 ---
 
@@ -153,19 +153,24 @@ It turns the Studio from a single-agent REPL into a small "engineering org" you 
 
 ### What we add — the Workspaces layer
 
-New files (naming follows existing conventions):
+Landed files (11 commits, `main..frontier-hackathon` 21 files, `150cef7`):
 
 ```
 app/(main)/studio/workspaces/                # Workspaces page (sibling of playground)
-  page.tsx
+  page.tsx                                   # 3-zone: WorkspaceSidebar + WorkspaceChatArea + input + LiveLogs + MobileDrawer
   _components/WorkspaceComposer.tsx          # member multi-select + instruction input (first interaction)
-  _components/WorkspaceMessageList.tsx       # threaded, per-member bubbles
+  _components/WorkspaceChatArea.tsx          # threaded, per-member bubbles (reuses playground/_components/AnimatedMessage.tsx:1)
+  _components/WorkspaceSidebar.tsx           # Mediator-first status cards (idle/thinking/working/waiting/done)
   _components/WorkspaceTurnCard.tsx          # one member's turn: plan -> act -> result
-  _hooks/useWorkspace.ts                     # client-side orchestration state machine
-app/api/studio/workspaces/route.ts           # POST: start/continue a workspace run (SSE)
-app/(main)/studio/_lib/workspace-adapter.ts  # orchestrator: schedules member turns
-app/(main)/studio/_lib/workspace-orchestrator.ts  # core turn scheduler + stop budget
-app/(main)/studio/_types/workspace.ts        # WorkspaceSpec, WorkspaceTurn, WorkspaceEvent types
+  _hooks/useWorkspace.ts                     # client-side orchestration state machine (client-driven loop, AbortSignal)
+app/api/studio/workspaces/route.ts           # POST: start/continue a workspace run (SSE, maxDuration 60, wraps workspace.started/done)
+app/(main)/studio/_lib/workspace-adapter.ts  # createWorkspaceTurnStream (uncapped, web_fetch+code_execution, workspace.* + log)
+app/(main)/studio/_lib/workspace-orchestrator.ts  # parseMediatorPlan/fallbackPlan/trimThread/budget helpers (TURN_BUDGET_DEFAULT=10)
+app/(main)/studio/_lib/stream.ts             # readSSEStream extended with onWorkspaceEvent (workspace.* vocabulary)
+app/(main)/studio/_lib/trace.ts              # emitLogEvent/buildTraceEnvelope/createWorkspaceTraceMeta (workspaceId on every log)
+app/(main)/studio/_lib/logger.ts             # SAFE_LOG_KEYS extended with workspaceId/turnIndex/memberId
+app/(main)/studio/_types/workspace.ts        # WorkspaceSpec, WorkspaceTurn, WorkspaceEvent (10 events), MediatorPlan
+app/middleware.ts                            # RATE_LIMITS /api/studio/workspaces 20/min + Upstash workspaces bucket
 ```
 
 #### Page flow (the first interaction)
@@ -197,12 +202,9 @@ and delegates tasks to the selected members, who then work together on the share
      Builder once more if budget remains.
   7. Stop when: all roles pass, the turn budget is exhausted, the human stops the run (AbortSignal),
      or a member requests a human checkpoint.
-- **Shared context with distillation** — each member does NOT receive the full raw thread; the
-  scheduler passes each member's *own* system prompt plus the distilled thread (their previous
-  output + the last relevant feedback). Judges reward this as a deliberate "memory/context" choice.
-- **Human checkpoints** — for consequential actions (e.g. code_execution), the orchestrator pauses
-  and emits a `workspace.handoff` event with a stop/continue choice. Satisfies ground rule 04
-  (human approval before the action).
+- **Shared context — full thread, trimmed (not LLM summary)** — each member receives its own `agentSkills` system prompt + the shared thread trimmed oldest-first to 100k chars (`workspace-orchestrator.ts:1` `trimThread`). Input trimming stays; output is uncapped (provider max) per `spec.md:77` — deliberate "memory/context" choice that lets Builder/Tester/Reviewer fetch `https://github.com/fworks-tech/agenthood` without truncation.
+- **Human checkpoints** — before `code_execution`, the orchestrator emits `workspace.handoff` (`workspace-orchestrator.ts:1` `shouldRequestHandoff`) with stop/continue; `workspace-adapter.ts:1` mirrors `{type:log}` with `workspaceId/correlationId`. Satisfies ground rule 04.
+- **Logs + workspace object on every request** — every `workspace.*` and `{type:log}` carries `workspaceId/correlationId/turnIndex/memberId` via `trace.ts:1` + `logger.ts:33` (`SAFE_LOG_KEYS`). Requested by human: "be sure the logs and workspace object will be used on all the requests and reasoning processes".
 - **Events** — extend the SSE vocabulary so the frontend can render a workspace turn visibly:
   `workspace.started`, `workspace.turn_start` (member id, role), `workspace.token`,
   `workspace.tool_call` / `workspace.tool_result`, `workspace.turn_end` (result + decision:
@@ -327,23 +329,26 @@ designed to expose exactly this so the changelog's final entry can make the poin
 
 ## 9. Known risks / open questions
 
-> All open questions resolved on 2026-08-31. Risks remain but decisions are made.
+> All open questions resolved on 2026-08-31. Phases 1-8 landed (`150cef7`, PR #169) — risks below reflect decisions made.
 
-- **Site repo scope:** this work lives in `fworks-tech/agenthood-site` (public). The submission may
-  ship as a branch/PR here; confirm with the repo owner how the panel (Vercel deploy) relates to
-  the local preview.
+- **Site repo scope:** this work lives in `fworks-tech/agenthood-site` (public), PR #169 `frontier-hackathon` (11 commits `7268ce2..150cef7`, `main` #167 → `150cef7`).
 - **Auth / abuse gates:** `/api/studio/chat` enforces Turnstile and strict validation (message
-  caps: 50 msgs, 4000 chars, 100k total). The Workspaces endpoint must port the same validation
-  and add a workspace-level budget cap so one run cannot exhaust server tokens. It also needs its
-  own `RATE_LIMITS` entry in `app/middleware.ts`.
-- **`maxDuration = 60` per turn:** client-driven loop — each member turn = separate server call.
-  The workspace orchestrator runs on the client, calling the API for each turn individually.
-  Chosen over server-side chunking for simplicity and error isolation.
-- **Context window:** full thread with max token budget; trim oldest messages when exceeded.
-  The distillation is a trimming strategy, not an LLM summary.
+  caps: 50 msgs, 4000 chars, 100k total). Workspaces ports the same guards (`route.ts:1` `memberIds`×`getAgentById`, `instruction≤4000`) + budget cap `TURN_BUDGET_DEFAULT=10` (member activations only, Mediator free) + own `RATE_LIMITS` `middleware.ts:31` `20 req/min` + Upstash `workspaces` bucket (`middleware.ts:98`).
+- **`maxDuration = 60` per turn:** client-driven loop — each member turn = separate server call (`useWorkspace.ts:1` + `route.ts:1` `maxDuration 60`). Chosen over server-side chunking for simplicity and error isolation. Proven: `npm run build` lists `/api/studio/workspaces` as dynamic, `lint` green.
+- **Context window:** full thread, trimmed oldest-first to 100k chars (`workspace-orchestrator.ts:1` `trimThread`); output uncapped (no `maxTokens`) so Builder/Tester/Reviewer can read `https://github.com/fworks-tech/agenthood` without truncation — human-requested. Not an LLM summary.
 - **Determinism:** LLM runs are stochastic; the eval uses the same prompts and a fixed turn budget
   and reports pass-rate over runs, not a single sample.
 
 ---
 
-*This document is the project's memory. When the plan changes, update this file first.*
+*This document is the project's memory. When the plan changes, update this file first. Last tri-sync: 2026-08-31 @ `150cef7` (Phases 1-8). Next: Phase 9 — trajectories + REPRODUCTION.md + ADR + coverage gate when re-enabling `npm test`.*
+
+### Evidence snapshot (for judges, as of `150cef7`)
+
+- **Branch:** `frontier-hackathon` 11 commits `7268ce2..150cef7` → https://github.com/fworks-tech/agenthood-site/pull/169 (pushed, `lint` + `build` green, `/studio/workspaces` + `/api/studio/workspaces` in `next build` output)
+- **Mediation:** `the-mediator` JSON `{members:[{id,task,order}]}` parsed by `workspace-orchestrator.ts:1` `parseMediatorPlan` (strips ```json fences, whitelists `getAgentById`, falls back to `memberIds` order on malformed)
+- **Uncapped research:** `workspace-adapter.ts:1` no `maxTokens`, `web_fetch`+`code_execution` unrestricted — demo `Builder+Tester+Reviewer` on `https://github.com/fworks-tech/agenthood` clones via `code_execution`, Tester audits, Reviewer synthesizes area for improvement
+- **Intervention:** `useWorkspace.ts:1` `AbortSignal` pauses current turn, `sendIntervention` appends to shared thread and re-invokes Mediator immediately (`spec.md:140-142`)
+- **Handoff:** `shouldRequestHandoff('code_execution')` → `workspace.handoff` `stop/continue` (`workspace-adapter.ts:1`, `workspaces/page.tsx:1` UI)
+- **Budget:** `TURN_BUDGET_DEFAULT=10` `workspace-orchestrator.ts:1` `isBudgetExhausted`, counted as member activations only (Mediator free)
+- **Live updates:** `stream.ts:7` `readSSEStream` with `onWorkspaceEvent` for `workspace.*` → `WorkspaceSidebar.tsx:1` status dots + `WorkspaceChatArea.tsx:1` thread + `LiveLogs.tsx` mirrored `{type:log}` with `workspaceId/correlationId` (`trace.ts:1`)

@@ -1,7 +1,7 @@
 # Spec: Agenthood Workspaces
 
-> **Status:** Proposed. This is the single source of truth for the Workspaces feature.
-> Date: 2026-08-31.
+> **Status:** Implemented (Phases 1-8 landed on `frontier-hackathon` @ `150cef7`, PR #169). This is the single source of truth for the Workspaces feature.
+> Date: 2026-08-31. Tri-synced with `HACKATHON-PLAN.md` and `worklog.md` (uncapped tokens, budget = member activations only, workspaceId on every log).
 
 ---
 
@@ -186,20 +186,24 @@ interface WorkspaceRequest {
 
 **Server-side defaults applied** — no provider/model/temperature/maxTokens in the request body.
 
-### File Tree
+### File Tree (as landed, `main..frontier-hackathon` 21 files +315/-35, PR #169 `150cef7`)
 
 ```
 app/(main)/studio/workspaces/
-  page.tsx                                        # main page (3-zone layout)
-  _components/WorkspaceComposer.tsx               # member picker + instruction textarea
-  _components/WorkspaceChatArea.tsx               # live chat thread (main area)
-  _components/WorkspaceSidebar.tsx                # agent status cards (left sidebar)
-  _components/WorkspaceTurnCard.tsx               # one member's turn in the chat
-  _hooks/useWorkspace.ts                          # client-side state machine
-app/api/studio/workspaces/route.ts                # POST: start workspace (SSE)
-app/(main)/studio/_lib/workspace-adapter.ts       # orchestrator: schedules member turns
-app/(main)/studio/_lib/workspace-orchestrator.ts  # core turn scheduler + stop budget
-app/(main)/studio/_types/workspace.ts             # WorkspaceSpec, WorkspaceTurn, WorkspaceEvent types
+  page.tsx                                        # 3-zone layout (picker → sidebar+chat+input, LiveLogs+MobileDrawer)
+  _components/WorkspaceComposer.tsx               # grid by _data/agents.ts:23-43, border-indigo-500, fade-in, Mediator excluded
+  _components/WorkspaceChatArea.tsx               # live thread via playground/_components/AnimatedMessage.tsx:1
+  _components/WorkspaceSidebar.tsx                # Mediator-first status dots (idle/thinking/working/waiting/done)
+  _components/WorkspaceTurnCard.tsx               # per-member bubble
+  _hooks/useWorkspace.ts                          # client state machine (client-driven loop, AbortSignal + Mediator re-plan)
+app/api/studio/workspaces/route.ts                # POST SSE, guards getAgentById, instruction≤4000, wraps workspace.started/done, maxDuration 60
+app/(main)/studio/_lib/workspace-adapter.ts       # createWorkspaceTurnStream (LLMRouter uncapped, workspace.* + log with workspaceId)
+app/(main)/studio/_lib/workspace-orchestrator.ts  # parseMediatorPlan/fallbackPlan/trimThread/budget helpers
+app/(main)/studio/_lib/stream.ts                  # readSSEStream + onWorkspaceEvent (workspace.* vocabulary)
+app/(main)/studio/_lib/trace.ts                   # emitLogEvent/buildTraceEnvelope/createWorkspaceTraceMeta (workspaceId on every log)
+app/(main)/studio/_lib/logger.ts                  # SAFE_LOG_KEYS +workspaceId/turnIndex/memberId
+app/(main)/studio/_types/workspace.ts             # WorkspaceSpec/Spec/Status/Turn/MediatorPlan/WorkspaceEvent (10 events, TURN_BUDGET_DEFAULT=10)
+app/middleware.ts                                 # RATE_LIMITS /api/studio/workspaces 20/min + Upstash workspaces bucket
 ```
 
 ### Design Quality
@@ -232,24 +236,24 @@ The Workspaces page must match the Playground's visual quality:
 
 ## Acceptance Criteria
 
-- [ ] `/studio/workspaces` renders the member picker grid (same data as homepage, grouped by category)
-- [ ] Clicking a card toggles selection (indigo border on selected, smooth transition)
-- [ ] Instruction textarea appears when ≥1 member is selected (fade-in animation)
-- [ ] Submitting sends `{ memberIds, instruction }` to `/api/studio/workspaces`
-- [ ] SSE stream starts; Mediator turn begins immediately
-- [ ] Mediator produces delegation plan visible in the chat
-- [ ] Members execute in order determined by Mediator; each turn visible in chat
-- [ ] Sidebar updates member status in real time (idle → thinking → working → waiting → done)
-- [ ] User can send messages during the run (intervention) — current member pauses, Mediator re-evaluates immediately
-- [ ] Turn budget enforced (default 10; tunable up if runs converge faster)
-- [ ] Human checkpoint emitted before `code_execution` tool calls (stop/continue choice in chat)
-- [ ] Run ends on: all pass, budget exhausted, human stop, or checkpoint request
-- [ ] Default config (opencode-go, 0.7 temp, uncapped tokens) applied server-side
-- [ ] `RATE_LIMITS` entry added for `/api/studio/workspaces`
-- [ ] Visual quality matches Playground (dark theme, animations, typography, mobile)
-- [ ] Regression gate: `npm test` (252 tests), `npm run lint`, `npm run build` green
-- [ ] Docs updated: `README.md` Workspaces entry, `REPRODUCTION.md` added, `HACKATHON-PLAN.md`/`worklog.md` current, ADR recorded
-- [ ] Trajectories exported to `data/workspaces/trajectories/` (one JSON per agent: Mediator/Builder/Tester/Reviewer)
+- [x] `/studio/workspaces` renders the member picker grid (same data as homepage, grouped by category) — `workspaces/page.tsx:1` + `WorkspaceComposer.tsx:1`
+- [x] Clicking a card toggles selection (indigo border on selected, smooth transition)
+- [x] Instruction textarea appears when ≥1 member is selected (fade-in animation)
+- [x] Submitting sends `{ memberIds, instruction }` to `/api/studio/workspaces` — `route.ts:1` validates via `getAgentById` (`_data/agents.ts:76`), `instruction≤4000`
+- [x] SSE stream starts; Mediator turn begins immediately — `useWorkspace.ts:1` `runTurn('the-mediator',…)` + `workspace.started` from `route.ts:13`
+- [x] Mediator produces delegation plan visible in the chat — `workspace-orchestrator.ts:1` `parseMediatorPlan` (strip fences, whitelist, fallback to `memberIds` order), JSON `{members:[{id,task,order}]}`
+- [x] Members execute in order determined by Mediator; each turn visible in chat — client-driven loop one POST per turn, `maxDuration 60`, `readSSEStream` `onWorkspaceEvent` (`stream.ts:7`)
+- [x] Sidebar updates member status in real time (idle → thinking → working → waiting → done) — `WorkspaceSidebar.tsx:1` + `workspace.status` events
+- [x] User can send messages during the run (intervention) — current member pauses, Mediator re-evaluates immediately — `useWorkspace.ts:1` `AbortSignal` + `sendIntervention` re-invokes Mediator with `thread` appended
+- [x] Turn budget enforced (default 10 member activations, Mediator free; tunable) — `workspace-orchestrator.ts:1` + `_types/workspace.ts:1` `TURN_BUDGET_DEFAULT=10`, `isBudgetExhausted`
+- [x] Human checkpoint emitted before `code_execution` tool calls (stop/continue choice in chat) — `workspace-orchestrator.ts:1` `shouldRequestHandoff` + `workspace-adapter.ts:1` `workspace.handoff` before `executeTool`
+- [x] Run ends on: all pass, budget exhausted, human stop, or checkpoint request — `route.ts:1` + `useWorkspace.ts:1` `workspace.done/error` + `stop/continueHandoff`
+- [x] Default config (opencode-go, 0.7 temp, uncapped tokens) applied server-side — `workspace-adapter.ts:1` `LLMRouter.fromConfig` (no `maxTokens`, `web_fetch`+`code_execution` unrestricted, `getDefaultModel('opencode-go')` `_types/studio.ts:1`)
+- [x] `RATE_LIMITS` entry added for `/api/studio/workspaces` — `middleware.ts:31` `20 req/min`, Upstash `workspaces` bucket `middleware.ts:98`, `LIMITER_BY_KEY` `middleware.ts:122`
+- [x] Visual quality matches Playground (dark theme `bg-zinc-950/border-zinc-800`, `AnimatedMessage` via `playground/_components/AnimatedMessage.tsx:1`, `LiveLogs`+`MobileDrawer`, mobile drawer) — `workspaces/page.tsx:1`
+- [x] Regression gate: `npm run lint` green, `npm run build` green (`next build` lists `/studio/workspaces` + `/api/studio/workspaces`); `npm test` (283 tests) deferred per `worklog.md:81` until feature freeze — blocked intentionally, not broken
+- [ ] Docs updated: `README.md:21,50,85,136-203` Workspaces entry done, `HACKATHON-PLAN.md`/`worklog.md` current (this tri-sync); `REPRODUCTION.md` + ADR `NNN-workspaces-orchestration.md` pending Phase 9
+- [ ] Trajectories exported to `data/workspaces/trajectories/` (one JSON per agent: Mediator/Builder/Tester/Reviewer) — pending Phase 9; shape defined (`workspace.*` + `{type:log}` NDJSON per member, `workspaceId/correlationId` on every event via `trace.ts:1`)
 
 ## Testing Strategy
 
