@@ -1,0 +1,1017 @@
+{
+  "workspaceId": "ws-e2e-1788214442631",
+  "correlationId": "ws-corr-e2e-1788214442631",
+  "memberId": "the-mediator",
+  "events": [
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.turn_start",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.turn_start",
+      "memberId": "the-mediator",
+      "role": "the-mediator",
+      "turnIndex": 0,
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.status",
+      "memberId": "the-mediator",
+      "status": "working",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_52eb7638df5c46a0b89c701b",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_52eb7638df5c46a0b89c701b",
+      "name": "web_fetch",
+      "result": "GitHub - fworks-tech/atlaslink: Product-oriented multi-agent orchestrator built on Agenthood, the agent-team runtime — featuring a modern UI to compose and integrate agents via gorgeous, intuitive, live diagram flows. · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights main Branches Tags Go to file Code Open more actions menu Latest commit History 146 Commits 146 Commits Folders and files Name Name Last commit message Last commit date .agenthood .agenthood .github/ workflows .github/ workflows dashboard dashboard deploy/ oracle deploy/ oracle docs docs src src .dockerignore .dockerignore .env.example .env.example .gitignore .gitignore AGENTS.md AGENTS.md CONTRIBUTING.md CONTRIBUTING.md Dockerfile Dockerfile LICENSE LICENSE PROGRESS.md PROGRESS.md README.md README.md docker-compose.yml docker-compose.yml fly.toml fly.toml package-lock.json package-lock.json package.json package.json tsconfig.json tsconfig.json View all files Repository files navigation README Contributing Apache-2.0 license More items Atlaslink Status: M1–M4 shipped — Daemon, Event Bridge, Task API and Live Dashboard (FULL DAG chain|fanout|full , deep-links /project/:p/session/:s + /s/:token + ?q=&lt;b64url&gt; ) on main (#58 #63 #64, Vercel https://atlas.flabs.tech ). Multi-agent orchestrator, Agenthood proof-of-concept, and modern UI to integrate agents through gorgeous, easy-to-use, live diagram flows. What is Atlaslink? Atlaslink is a product-oriented multi-agent orchestrator built on top of Agenthood , the agent-team runtime. Its goal is to make orchestrating a team of agents as intuitive as drawing a flowchart. A live diagram-flow UI — compose agents as visual nodes and connections, and watch them run in real time. A real-time event feed — every agent decision and action is bridged from the core runtime straight to the browser. A REST/event surface — a Task API (roadmap M3) to drive the orchestrator programmatically. A hosted product beginning as an open proof-of-concept — Prototype → product, productized from day one. Why Atlaslink? Orchestrating multiple AI agents today means hand-written glue code, opaque execution, and no visibility into what is happening. Atlaslink treats the agent team the way you would treat a team of people: See what is happening — a live diagram turns a black-box pipeline into something you can read and debug. Compose, don't code — wire agents together visually instead of maintaining orchestration logic by hand. A product, not a script — architected for a real hosted future (SaaS moat is the live orchestration experience, the service, and the ops — not the source). What runs today M1 Daemon + M2 Event Bridge + M3 Task API + M4 Live Dashboard are shipped on main : M1 Daemon — long-running Fastify server that validates the LLM provider config up front, hosts an ApplicationContext per task and subscribes to its RunEventBus ( /health + src/daemon/ ). M2 Event Bridge — NDJSON EventLogStore → EventBroadcaster → SSE ( GET /events , GET /events/:sessionId , GET /projects/:projectId/events ) with Last-Event-ID resume, bridge.gap / bridge.shutdown and 15 s ping ( src/bridge/ ). M3 Task API — bearer-gated POST/GET /tasks , POST /tasks/:id/cancel|reply|diagram , GET /tasks?projectId&amp;status and POST/GET /projects over Postgres ( src/session/ , src/api/ ). See spec . M4 Live Dashboard — SocietyDiagram ( chain|fanout|full FULL DAG with hex/diamond/stadium/terminal), SessionInspector / SessionThread , awaiting_input ↔ user_reply loop and deep-links /?session=&amp;project=&amp;node=&amp;mode=full , /?q=&lt;b64url&gt; , /project/:p/session/:s , /s/:token ( dashboard/ , case studies ). Architecture: see docs/architecture/README.md for the whole-system map, per-layer notes under src/ and dashboard/ , and the ADR index. Production dashboard at https://atlas.flabs.tech (Vercel force-dynamic /?session — see #64). Getting started Prerequisites Node.js &gt;= 22.14 npm The Agenthood sibling repository at ../agenthood (a file: dependency). Clone it once: git clone https://github.com/fworks-tech/agenthood.git ../agenthood Setup # 1. Build the agenthood core machine once (before first run) cd ../agenthood &amp;&amp; npm run build &amp;&amp; cd - # 2. Install dependencies npm install # 3. Configure your LLM provider key cp .env.example .env # then edit .env and set OPENCODE_API_KEY Use the Agenthood runtime # List the agent team npx agenthood list # Run a health check npx agenthood check # Invoke any member against a task npx agenthood run the-scribe \" write a commit message for the current diff \" npx agenthood run the-architect \" plan the implementation for issue #42 \" No key? agenthood run falls back through its configured providers (Groq via GROQ_API_KEY , free at console.groq.com), or to Ollama for fully offline execution — no key required. Run the Atlaslink daemon (M1) npm start # listens on http://127.0.0.1:3000 (ATLASLINK_HOST/PORT override) npm run dev # same, with file watching (tsx watch) curl http://127.0.0.1:3000/health npm run run -- the-architect \" 1-line plan for the event bridge \" # one-shot member run npm test # hermetic test suite (no LLM/API key required) npm run typecheck # TypeScript type checking The daemon boots a long-running server that validates the LLM provider config up front, hosts an ApplicationContext per task, and subscribes to its RunEventBus — the spine the event bridge (M2) and the dashboard (M4) build on. The event log lives at data/events.ndjson (rotated 10 MB × 3, cursor in data/events.seq ). Run the Live Dashboard (M4) # two terminals — backend + BFF dashboard npm start # :3000 (ATLASLINK_HOST/PORT, ATLASLINK_DATABASE_URL, ATLASLINK_CORS_ORIGINS) npm --prefix dashboard run dev # :3001 → http://127.0.0.1:3001 (proxies to ATLASLINK_API_URL, server-only ATLASLINK_API_TOKEN) # or single-process production alias # https://atlas.flabs.tech (Vercel, `force-dynamic` so `/?session=&amp;mode=full` is never prerendered — see #64) Configure dashboard/.env.local when proxying a remote backend (Render :10000 vs local :3000): ATLASLINK_API_URL=https://atlaslink-backend.onrender.com ATLASLINK_API_TOKEN= &lt; your-atlaslink-token &gt; # must match backend ATLASLINK_API_TOKEN (placeholder — not a real token) Selecting a session from the sidebar pushes /?session=&lt;id&gt;&amp;project=&lt;id&gt;&amp;mode=full (canonical deep-link; /?q=&lt;b64url&gt; and /project/:p/session/:s + /s/:token redirect there). The header shows Viewing session ses-… ; the diagram isolates to ATLAS → selected SESSION card → mediator delegation chain (reasoning hex → tool parallelogram → decision diamond → awaiting/terminal) and updates live from the event bridge. Event Bridge (M2) Run events persist to an append-only NDJSON log and stream to the browser over Server-Sent Events: curl -N http://127.0.0.1:3000/events # live-tail only curl -N -H \" Last-Event-ID: 42 \" http://127.0.0.1:3000/events # resume from 43 curl -N http://127.0.0.1:3000/events/ses-abc123 # per-session tail curl -N http://127.0.0.1:3000/projects/prj-1/events # per-project tail Each SSE frame carries id: (the replay cursor), event: (the type, passed verbatim per the read-only projection contract), and data: (one JSON line). A resume older than the retention window yields event: bridge.gap , never silence. Idle connections receive a : ping every 15 s; SIGINT/SIGTERM sends event: bridge.shutdown before closing. Delegating a run publishes session.* events ( session.queued/started/succeeded/failed ) and processes the queue strictly one session at a time: curl -X POST http://127.0.0.1:3000/runs \\ -H ' Content-Type: application/json ' \\ -d ' {\"member\":\"the-scribe\",\"prompt\":\"draft a commit message\"} ' # 202 {session} The bridge is layered in src/bridge/ : EventLogStore — durable source of truth: monotonic eventId , rotation, corrupt-tail tolerance, cursor restore. EventBroadcaster — verbatim fan-out, replay (slow-client eviction bounds catch-up), and detectGap() . SessionQueue — serial FIFO worker emitting session.* events with an injectable runner. sseEndpoint — SseHandler (framing, replay, bridge.gap / bridge.shutdown , ping) + formatSse . Logging Atlaslink emits structured JSON lines to stderr (one object per line), so a piped stdout stays clean for the human-facing result text. Control verbosity with ATLASLINK_LOG_LEVEL ( debug | info | warn | error , default info ): ATLASLINK_LOG_LEVEL=debug npm run dev Each line is shaped like: { \"ts\" : \" 2026-08-24T12:00:00.000Z \" , \"level\" : \" info \" , \"msg\" : \" request \" , \"method\" : \" POST \" , \"url\" : \" /runs \" , \"status\" : 202 , \"durationMs\" : 3 , \"correlationId\" : \" cor-… \" } Session-scoped lines carry correlationId , so you can filter every log for one session with jq . The logging decision and the explicit swallow boundary (which failure paths stay silent by design) are recorded in ADR-005 . Roadmap Milestone Scope Status M1 — Daemon Core Long-running daemon, agent runtime hosting Shipped M2 — Event Bridge Real-time event feed bridged to the browser Shipped M3 — Task API HTTP surface for driving the orchestrator (Fastify + Postgres, bearer gate, POST/GET /tasks , cancel, per-session/project SSE) Shipped (#44, #46) — spec M4 — Live Dashboard The live diagram-flow UI — `chain fanout Track active work and open issues on the issues page . Contributing We'd love your help. See CONTRIBUTING.md for the branch, commit, and pull-request workflow — the repository enforces Conventional Commits and agent-team standards via Agenthood ( AGENTS.md ). License Distributed under the Apache License 2.0 . About Product-oriented multi-agent orchestrator built on Agenthood, the agent-team runtime — featuring a modern UI to compose and integrate agents via gorgeous, intuitive, live diagram flows. atlas.flabs.tech Topics agent agent-orchestration agenthood agentic-ai agentic-workflow agents diagram flowchart subgraph Resources Readme Apache-2.0 license Contributing Contributing Activity Stars 1 star Watchers 0 watching Forks 0 forks Report repository Releases Packages Contributors Languages Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_3f563c1be2a54e36bb3647ea",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/README.md"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_3f563c1be2a54e36bb3647ea",
+      "name": "web_fetch",
+      "result": "# Atlaslink\n\n> **Status: M1–M4 shipped — Daemon, Event Bridge, Task API and Live Dashboard (FULL DAG `chain|fanout|full`, deep-links `/project/:p/session/:s` + `/s/:token` + `?q=<b64url>`) on `main` (#58 #63 #64, Vercel https://atlas.flabs.tech).**\n\nMulti-agent orchestrator, Agenthood proof-of-concept, and modern UI to integrate agents through gorgeous, easy-to-use, live diagram flows.\n\n[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)\n[![Node.js >= 22.14](https://img.shields.io/badge/node-%3E%3D22.14-339933.svg)](https://nodejs.org)\n\n---\n\n## What is Atlaslink?\n\nAtlaslink is a product-oriented multi-agent orchestrator built on top of **[Agenthood](https://github.com/fworks-tech/agenthood)**, the agent-team runtime. Its goal is to make orchestrating a team of agents as intuitive as drawing a flowchart.\n\n- **A live diagram-flow UI** — compose agents as visual nodes and connections, and watch them run in real time.\n- **A real-time event feed** — every agent decision and action is bridged from the core runtime straight to the browser.\n- **A REST/event surface** — a Task API (roadmap M3) to drive the orchestrator programmatically.\n- **A hosted product** beginning as an open proof-of-concept — Prototype → product, productized from day one.\n\n## Why Atlaslink?\n\nOrchestrating multiple AI agents today means hand-written glue code, opaque execution, and no visibility into what is happening. Atlaslink treats the agent team the way you would treat a team of people:\n\n- **See what is happening** — a live diagram turns a black-box pipeline into something you can read and debug.\n- **Compose, don't code** — wire agents together visually instead of maintaining orchestration logic by hand.\n- **A product, not a script** — architected for a real hosted future (SaaS moat is the live orchestration experience, the service, and the ops — not the source).\n\n## What runs today\n\n**M1 Daemon + M2 Event Bridge + M3 Task API + M4 Live Dashboard** are shipped on `main`:\n\n- **M1 Daemon** — long-running Fastify server that validates the LLM provider config up front, hosts an `ApplicationContext` per task and subscribes to its `RunEventBus` (`/health` + `src/daemon/`).\n- **M2 Event Bridge** — NDJSON `EventLogStore` → `EventBroadcaster` → SSE (`GET /events`, `GET /events/:sessionId`, `GET /projects/:projectId/events`) with `Last-Event-ID` resume, `bridge.gap`/`bridge.shutdown` and 15 s ping (`src/bridge/`).\n- **M3 Task API** — bearer-gated `POST/GET /tasks`, `POST /tasks/:id/cancel|reply|diagram`, `GET /tasks?projectId&status` and `POST/GET /projects` over Postgres (`src/session/`, `src/api/`). See [spec](docs/spec/m3-task-api.md).\n- **M4 Live Dashboard** — `SocietyDiagram` (`chain|fanout|full` FULL DAG with hex/diamond/stadium/terminal), `SessionInspector`/`SessionThread`, `awaiting_input` ↔ `user_reply` loop and deep-links `/?session=&project=&node=&mode=full`, `/?q=<b64url>`, `/project/:p/session/:s`, `/s/:token` (`dashboard/`, [case studies](docs/diagrams/full-dag-case-studies.md)).\n\n> **Architecture:** see [docs/architecture/README.md](docs/architecture/README.md) for the whole-system map, per-layer notes under `src/` and `dashboard/`, and the ADR index. Production dashboard at **https://atlas.flabs.tech** (Vercel `force-dynamic` `/?session` — see #64).\n\n## Getting started\n\n### Prerequisites\n\n- [Node.js](https://nodejs.org) `>= 22.14`\n- `npm`\n- The **Agenthood** sibling repository at `../agenthood` (a `file:` dependency). Clone it once:\n\n  ```bash\n  git clone https://github.com/fworks-tech/agenthood.git ../agenthood\n  ```\n\n### Setup\n\n```bash\n# 1. Build the agenthood core machine once (before first run)\ncd ../agenthood && npm run build && cd -\n\n# 2. Install dependencies\nnpm install\n\n# 3. Configure your LLM provider key\ncp .env.example .env\n#    then edit .env and set OPENCODE_API_KEY\n```\n\n### Use the Agenthood runtime\n\n```bash\n# List the agent team\nnpx agenthood list\n\n# Run a health check\nnpx agenthood check\n\n# Invoke any member against a task\nnpx agenthood run the-scribe \"write a commit message for the current diff\"\nnpx agenthood run the-architect \"plan the implementation for issue #42\"\n```\n\n> **No key?** `agenthood run` falls back through its configured providers (Groq via `GROQ_API_KEY`, free at console.groq.com), or to Ollama for fully offline execution — no key required.\n\n### Run the Atlaslink daemon (M1)\n\n```bash\nnpm start        # listens on http://127.0.0.1:3000 (ATLASLINK_HOST/PORT override)\nnpm run dev      # same, with file watching (tsx watch)\ncurl http://127.0.0.1:3000/health\n\nnpm run run -- the-architect \"1-line plan for the event bridge\"   # one-shot member run\nnpm test         # hermetic test suite (no LLM/API key required)\nnpm run typecheck  # TypeScript type checking\n```\n\nThe daemon boots a long-running server that validates the LLM provider config up front, hosts an `ApplicationContext` per task, and subscribes to its `RunEventBus` — the spine the event bridge (M2) and the dashboard (M4) build on. The event log lives at `data/events.ndjson` (rotated 10 MB × 3, cursor in `data/events.seq`).\n\n### Run the Live Dashboard (M4)\n\n```bash\n# two terminals — backend + BFF dashboard\nnpm start                 # :3000 (ATLASLINK_HOST/PORT, ATLASLINK_DATABASE_URL, ATLASLINK_CORS_ORIGINS)\nnpm --prefix dashboard run dev   # :3001 → http://127.0.0.1:3001 (proxies to ATLASLINK_API_URL, server-only ATLASLINK_API_TOKEN)\n# or single-process production alias\n# https://atlas.flabs.tech  (Vercel, `force-dynamic` so `/?session=&mode=full` is never prerendered — see #64)\n```\n\nConfigure `dashboard/.env.local` when proxying a remote backend (Render :10000 vs local :3000):\n\n```bash\nATLASLINK_API_URL=https://atlaslink-backend.onrender.com\nATLASLINK_API_TOKEN=<your-atlaslink-token> # must match backend ATLASLINK_API_TOKEN (placeholder — not a real token)\n```\n\nSelecting a session from the sidebar pushes `/?session=<id>&project=<id>&mode=full` (canonical deep-link; `/?q=<b64url>` and `/project/:p/session/:s` + `/s/:token` redirect there). The header shows *Viewing session `ses-…`*; the diagram isolates to `ATLAS → selected SESSION card → mediator delegation chain (reasoning hex → tool parallelogram → decision diamond → awaiting/terminal)` and updates live from the event bridge.\n\n### Event Bridge (M2)\n\nRun events persist to an append-only NDJSON log and stream to the browser over Server-Sent Events:\n\n```bash\ncurl -N http://127.0.0.1:3000/events                          # live-tail only\ncurl -N -H \"Last-Event-ID: 42\" http://127.0.0.1:3000/events   # resume from 43\ncurl -N http://127.0.0.1:3000/events/ses-abc123               # per-session tail\ncurl -N http://127.0.0.1:3000/projects/prj-1/events           # per-project tail\n```\n\nEach SSE frame carries `id:` (the replay cursor), `event:` (the type, passed **verbatim** per the read-only projection contract), and `data:` (one JSON line). A resume older than the retention window yields `event: bridge.gap`, never silence. Idle connections receive a `: ping` every 15 s; SIGINT/SIGTERM sends `event: bridge.shutdown` before closing.\n\nDelegating a run publishes `session.*` events (`session.queued/started/succeeded/failed`) and processes the queue strictly one session at a time:\n\n```bash\ncurl -X POST http://127.0.0.1:3000/runs \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"member\":\"the-scribe\",\"prompt\":\"draft a commit message\"}'   # 202 {session}\n```\n\nThe bridge is layered in `src/bridge/`:\n\n- **`EventLogStore`** — durable source of truth: monotonic `eventId`, rotation, corrupt-tail tolerance, cursor restore.\n- **`EventBroadcaster`** — verbatim fan-out, replay (slow-client eviction bounds catch-up), and `detectGap()`.\n- **`SessionQueue`** — serial FIFO worker emitting `session.*` events with an injectable runner.\n- **`sseEndpoint`** — `SseHandler` (framing, replay, `bridge.gap`/`bridge.shutdown`, ping) + `formatSse`.\n\n## Logging\n\nAtlaslink emits structured **JSON lines to stderr** (one object per line), so a\npiped `stdout` stays clean for the human-facing result text. Control verbosity\nwith `ATLASLINK_LOG_LEVEL` (`debug` | `info` | `warn` | `error`, default `info`):\n\n```bash\nATLASLINK_LOG_LEVEL=debug npm run dev\n```\n\nEach line is shaped like:\n\n```json\n{ \"ts\": \"2026-08-24T12:00:00.000Z\", \"level\": \"info\", \"msg\": \"request\", \"method\": \"POST\", \"url\": \"/runs\", \"status\": 202, \"durationMs\": 3, \"correlationId\": \"cor-…\" }\n```\n\nSession-scoped lines carry `correlationId`, so you can filter every log for one\nsession with `jq`. The logging decision and the explicit swallow boundary (which\nfailure paths stay silent by design) are recorded in\n[ADR-005](docs/adr/ADR-005-structured-json-logging.md).\n\n## Roadmap\n\n| Milestone | Scope | Status |\n|-----------|-------|--------|\n| **M1 — Daemon Core** | Long-running daemon, agent runtime hosting | Shipped |\n| **M2 — Event Bridge** | Real-time event feed bridged to the browser | Shipped |\n| **M3 — Task API** | HTTP surface for driving the orchestrator (Fastify + Postgres, bearer gate, `POST/GET /tasks`, cancel, per-session/project SSE) | Shipped (#44, #46) — [spec](docs/spec/m3-task-api.md) |\n| **M4 — Live Dashboard** | The live diagram-flow UI — `chain|fanout|full` DAG, Inspector/Thread, `awaiting_input` ↔ `user_reply` loop, deep-links `/project/:p/session/:s` + `/s/:token` + `?q=<b64url>` — [FULL DAG case studies](docs/diagrams/full-dag-case-studies.md) (7 prompts, mermaid) | Shipped (#58 projects, #63 FULL DAG, #64 `force-dynamic`) — [spec](docs/spec/m4-live-dashboard.md) |\n\nTrack active work and open issues on the [issues page](https://github.com/fworks-tech/atlaslink/issues).\n\n## Contributing\n\nWe'd love your help. See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch, commit, and pull-request workflow — the repository enforces [Conventional Commits](https://www.conventionalcommits.org/) and agent-team standards via **Agenthood** (`AGENTS.md`).\n\n## License\n\nDistributed under the [Apache License 2.0](LICENSE).\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_5a2925c8735c465daccf707d",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_5a2925c8735c465daccf707d",
+      "name": "web_fetch",
+      "result": "atlaslink/src at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. api api bridge bridge daemon daemon session session tasks tasks test test config.test.ts config.test.ts config.ts config.ts insights.ts insights.ts log.test.ts log.test.ts log.ts log.ts server.test.ts server.test.ts server.ts server.ts View all files Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_ae2c492462a9426b9ae5c87b",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/package.json"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_ae2c492462a9426b9ae5c87b",
+      "name": "web_fetch",
+      "result": "{\n  \"name\": \"atlaslink\",\n  \"version\": \"1.0.0\",\n  \"description\": \"Multi-agent orchestrator and Agenthood proof-of-concept with a live diagram-flow UI\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"start\": \"tsx src/server.ts\",\n    \"dev\": \"tsx watch src/server.ts\",\n    \"run\": \"tsx src/server.ts --run\",\n    \"insights\": \"tsx src/insights.ts\",\n    \"test\": \"node --import tsx --test \\\"src/**/*.test.ts\\\"\",\n    \"typecheck\": \"tsc --noEmit\"\n  },\n  \"keywords\": [\n    \"agenthood\",\n    \"orchestrator\",\n    \"agents\",\n    \"multi-agent\"\n  ],\n  \"author\": \"Fabio Ritzel Borges\",\n  \"license\": \"Apache-2.0\",\n  \"engines\": {\n    \"node\": \">=22.14.0\"\n  },\n  \"dependencies\": {\n    \"@electric-sql/pglite\": \"^0.5.8\",\n    \"@fastify/cors\": \"^11.3.0\",\n    \"@fastify/rate-limit\": \"^10.3.0\",\n    \"agenthood\": \"file:../agenthood\",\n    \"fastify\": \"^5.12.1\",\n    \"pg\": \"^8.23.0\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"^22.20.1\",\n    \"@types/pg\": \"^8.23.1\",\n    \"tsx\": \"^4.23.12\",\n    \"typescript\": \"^5.9.3\"\n  }\n}\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_ef66f3a1179c4d73911f2205",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/AGENTS.md"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_ef66f3a1179c4d73911f2205",
+      "name": "web_fetch",
+      "result": "# AGENTS.md — The Member Registry\n\nThis file is the agent-agnostic convention source for the Agenthood.\nAll AI coding agents (Claude Code, Copilot, Codex) should read this file\nto understand the Society's standards before taking any action in a repository.\n\n---\n\n## Commit Standards\n\n- Follow [Conventional Commits](https://www.conventionalcommits.org/) strictly\n- Format: `type(scope)!: subject` — `!` marks breaking changes\n- Types: `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `chore`, `revert`\n- Subject: imperative, lowercase, ≤150 chars, no trailing period\n- One logical change per commit — if in doubt, split it\n- Never write: `fix stuff`, `wip`, `update`, `changes`, `misc`, `asdf`\n\n## Branch Standards\n\n- One branch per issue: `type/issue-NUMBER-short-description`\n- Never commit directly to `main`\n- Branch names are lowercase, hyphenated, no spaces\n\n## Pull Request Standards\n\n- Every PR links to an issue via `Closes #N` or `Fixes #N`\n- PR title follows the same Conventional Commits format as commits\n- PR description answers: what changed, why, how to test\n- All CI checks must pass before merge\n\n## Agent Behavior Rules\n\n- Always create a branch before making changes\n- Always run tests before considering a task complete\n- Always prefer editing existing files over creating new ones\n- Never add comments that explain *what* — only *why* when non-obvious\n- Never introduce abstractions beyond what the task requires\n- Never push to remote without explicit user confirmation\n- Never merge without explicit user confirmation\n\n## The Members\n\nLoad skills from `skills/` to activate specialized agents:\n\n- `the-scribe` — commit messages, PR descriptions, changelogs\n- `the-architect` — spec-driven development, planning, ADRs\n- `the-builder` — coding, implementation, refactoring, test updates, local validation\n- `the-reviewer` — code review, quality gates\n- `the-tester` — TDD, test generation, coverage\n- `the-debugger` — error triage, root cause analysis\n- `the-auditor` — security review, dependency audit\n- `the-herald` — semantic versioning, release notes\n- `the-librarian` — documentation, knowledge management\n- `the-doorman` — validation, health checks, enforcement\n- `the-oracle` — institutional knowledge, member authoring templates, naming guidance\n- `the-envoy` — cross-provider translation, bootstrap generation, convention validation\n- `the-sentinel` — Society document integrity, cross-member contradiction detection, structural drift\n- `the-warden` — code smell detection, complexity enforcement, architectural boundary violations\n- `the-steward` — context economy, member routing, provider cache strategy, session triage\n- `the-operator` — runtime health, deployment, incidents, rollback, monitoring\n- `the-strategist` — goal refinement, requirement discovery, ambiguity resolution\n- `the-mediator` — first-in-line intent router, classify intent → hand off to specialist\n- `the-mailman` — message delivery, content scheduling, notification dispatch, cross-posting\n- `the-inspector` — visual-reasoning benchmarking, pixel-level analysis, multi-panel correspondence\n\n## Autonomous Runtime (agenthood run)\n\nMembers can also be executed as real LLM agents via the TypeScript runtime.\nThis is optional and additive — the prompt-driven workflow above continues to work unchanged.\n\n```bash\n# Build the runtime once (the agenthood package is a sibling file dependency\n# at ../agenthood and must be built before first run)\n#   cd ../agenthood && npm run build && cd -\n\n# Set the LLM provider key in your environment (do NOT commit it)\n# Set OPENCODE_API_KEY for the opencode-go provider (primary)\n# or GROQ_API_KEY for the Groq fallback (free at console.groq.com)\n# or use Ollama for fully offline execution — no key required\n\n# List available members\nnpx agenthood list\n\n# Invoke any member against a task\nnpx agenthood run the-scribe \"write a commit message for the current diff\"\nnpx agenthood run the-reviewer \"review the open PR\"\nnpx agenthood run the-architect \"plan the implementation for issue #42\"\n```\n\nThe runtime reads `.agenthood/config.json` (written by `npx agenthood init`) and respects\nthe same `members` configuration. The default LLM provider follows the `providers` list\nin the config (currently opencode-go, with Groq among the fallbacks). See\nADR-008 and ADR-009 in the agenthood repo\n([`docs/adr/`](../agenthood/docs/adr/)) for design decisions.\n\nEvery `agenthood run` records one decision and one provenance entry (success or\nfailure) — the audit trail in `.agenthood/decisions/` and\n`.agenthood/provenance/`, with tamper-evident hash-chain integrity and causal\nlinks between decisions. See\n[ADR-015](../agenthood/docs/adr/ADR-015-decision-intelligence-and-provenance.md) and\n[decision-intelligence.md](../agenthood/docs/architecture/decision-intelligence.md).\n\n> **ADR-008** supersedes the earlier Python/DeepAgents runtime approach.\n> The TypeScript CLI in this repo is the single supported runtime for `agenthood run`.\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_a560c8ae9911432bb7181edf",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/bridge"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_a560c8ae9911432bb7181edf",
+      "name": "web_fetch",
+      "result": "atlaslink/src/bridge at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / bridge / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / bridge / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. EventBroadcaster.test.ts EventBroadcaster.test.ts EventBroadcaster.ts EventBroadcaster.ts EventLogStore.test.ts EventLogStore.test.ts EventLogStore.ts EventLogStore.ts README.md README.md SessionQueue.test.ts SessionQueue.test.ts SessionQueue.ts SessionQueue.ts insights.test.ts insights.test.ts insights.ts insights.ts sseEndpoint.test.ts sseEndpoint.test.ts sseEndpoint.ts sseEndpoint.ts View all files README.md Outline src/bridge — the Event Bridge (M2) Bridges agent-execution events from the daemon to clients. Everything crossing the wire is a bridge envelope ( { eventId, type, ... } ); this layer persuades it onto disk (NDJSON) and out to browsers (SSE) while never rewriting it (ADR-002). Modules File Responsibility EventLogStore.ts Append-only, 10 MB × 3 rotating NDJSON log (ADR-001). Monotonic eventId cursor restored from sidecar + tail scan; failures swallowed so the live stream never blocks on disk. EventBroadcaster.ts Assigns eventId , persists the envelope, fans it out verbatim to subscribers; replays the recent highWaterMark for slow subscribers; detectGap() surfaces the first hole. SessionQueue.ts Serial FIFO session worker (ADR-003). Sessions run strictly one at a time; every lifecycle transition is mirrored as a session.* event because the RunEventBus has no \"queued\" state. sseEndpoint.ts SseHandler for GET /events : Last-Event-ID resume, stale-resume bridge.gap , 15 s : ping , graceful bridge.shutdown , no request log line. formatSse serializes the envelope per spec §4. insights.ts Pure aggregator ( buildInsightsReport ) over trace envelopes: cost/token/reliability grouped by member and model, plus optimization-lever rankings and a cost trend. Used by the CLI insights command. Invariants Verbatim envelopes (ADR-002): the emitter owns type ; the bridge never rewrites it or injects fields. Swallow-write: a failed append/rotation logs a warning and the stream keeps flowing (ADR-005 live-stream-never-blocks rule). Deterministic replay: rotation files are read oldest → newest so replay order matches emission order. Serial execution: all runs route through SessionQueue ; nothing in the HTTP layer drives runTask inline. Tests *.test.ts here run against real sockets and temp log dirs, fully hermetic. sseEndpoint.test.ts is the contract gate for the Fastify rewrite (ADR-006 Decision 2) — it must pass unchanged. Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_377fd462fc4b4e96a5dd1662",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/api"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_377fd462fc4b4e96a5dd1662",
+      "name": "web_fetch",
+      "result": "atlaslink/src/api at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / api / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / api / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. auth.ts auth.ts projects.ts projects.ts tasks.test.ts tasks.test.ts tasks.ts tasks.ts View all files Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_0af0155beb374291818e6209",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/server.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_0af0155beb374291818e6209",
+      "name": "web_fetch",
+      "result": "import { createServer, type Server } from 'node:http'\nimport { readFileSync } from 'node:fs'\nimport { resolve } from 'node:path'\nimport Fastify, { type FastifyError, type FastifyInstance } from 'fastify'\nimport { loadDaemonConfig } from './config'\nimport type { DaemonConfig } from './config'\nimport { validateConfig, MissingApiKeyError } from './daemon/contextFactory'\nimport { TaskRegistry, msg } from './tasks/taskRegistry'\nimport { log as logger } from './log'\nimport { runSession } from './daemon/runTask'\nimport { EventLogStore } from './bridge/EventLogStore'\nimport { EventBroadcaster } from './bridge/EventBroadcaster'\nimport { SessionQueue } from './bridge/SessionQueue'\nimport { SseHandler } from './bridge/sseEndpoint'\nimport { createSessionBackend } from './session/backendFactory'\nimport { SessionStore } from './session/sessionStore'\nimport type { SessionBackend } from './session/sessionBackend'\nimport type { SessionDelta } from './session/types'\nimport { VersionConflictError } from './session/types'\nimport { registerTaskRoutes } from './api/tasks'\nimport { registerProjectRoutes } from './api/projects'\nimport { registerTokenGate } from './api/auth'\nimport rateLimit from '@fastify/rate-limit'\nimport cors from '@fastify/cors'\nimport type { LLMConfig } from 'agenthood/dist/llm/types.js'\nimport type { RunEvent } from 'agenthood/dist/core/RunEventBus.js'\n\nconst { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))\n\nfunction parseArgs(argv: string[]): { runMode: boolean; member?: string; task?: string } {\n  let runMode = false\n  let member: string | undefined\n  let task: string | undefined\n  for (let i = 0; i < argv.length; i++) {\n    if (argv[i] === '--run') {\n      runMode = true\n      member = argv[i + 1]\n      task = argv.slice(i + 2).join(' ').trim()\n      break\n    }\n  }\n  return { runMode, member, task }\n}\n\nfunction friendlyKeyError(err: unknown): string {\n  return err instanceof MissingApiKeyError\n    ? `\\n${err.message}\\nRun \\`cp .env.example .env\\` and set the key, or add GROQ_API_KEY/use Ollama.\\n`\n    : err instanceof Error ? err.message : String(err)\n}\n\nasync function runOnce({ config, member, task }: { config: LLMConfig; member: string; task: string }): Promise<boolean> {\n  const registry = new TaskRegistry()\n  const session = registry.create({ member, prompt: task })\n  logger.info('session created', { correlationId: session.correlationId, member: session.task.member })\n  const finished = await runSession({\n    registry,\n    session,\n    config,\n    onEvent: (event: RunEvent) => {\n      logger.info('run event', {\n        correlationId: session.correlationId,\n        type: event.type,\n        ...('step' in event ? { step: (event as { step: number }).step } : {}),\n        ...('name' in event ? { name: (event as { name: string }).name } : {}),\n      })\n    },\n  })\n  if (finished.status === 'succeeded') {\n    console.log(`\\n✔ ${finished.task.member} result:\\n${finished.output}\\n`)\n    return true\n  }\n  console.error(`\\n✘ ${finished.task.member} failed: ${finished.error}\\n`)\n  return false\n}\n\n/**\n * Build the daemon HTTP server with its routes wired against the given event\n * log. Does not listen; `listen()` manages the port. The returned broadcaster,\n * queue, and sse handler let run code (POST /runs) and the entrypoint (shutdown)\n * drive the live stream, and let tests inject fakes.\n *\n * The app runs on Fastify (ADR-006 Decision 1) with `logger: false`; the\n * ADR-005 `request` envelope is emitted by an `onResponse` hook through the\n * `src/log.ts` facade so the logged shape stays the shipped contract.\n */\nexport async function createAppServer(params: {\n  log: EventLogStore\n  registry: TaskRegistry\n  queue: SessionQueue\n  sse: SseHandler\n  backend?: SessionBackend\n  bindHost?: string\n  version?: string\n  rateLimit?: { max: number; timeWindow: string }\n  corsOrigins?: string[]\n}): Promise<{ server: Server; broadcaster: EventBroadcaster; sse: SseHandler; queue: SessionQueue; app: FastifyInstance }> {\n  const { log, registry, queue, sse } = params\n  const backend = params.backend ?? new SessionStore()\n  const appVersion = params.version ?? version\n  const rateLimitOpts = params.rateLimit ?? { max: 100, timeWindow: '1 minute' }\n  // Explicit allowlist, never a wildcard: the browser must only ever read this\n  // API from the dashboard origin (dev + production). Server-to-server callers\n  // carry no Origin header and are unaffected.\n  const corsOrigins = params.corsOrigins ?? ['http://localhost:3001', 'https://atlas.flabs.tech']\n\n  // Fastify's serverFactory lets the entrypoint (and tests) own the socket:\n  // `server.listen(port)` drives Fastify's router without app.listen().\n  let server: Server\n  const app = Fastify({\n    logger: false,\n    ignoreTrailingSlash: true,\n    serverFactory: (handler) => {\n      server = createServer((req, res) => handler(req, res))\n      return server\n    },\n  })\n\n  // Root-level rate limit registered before any route so its onRoute hook sees\n  // every route (gated scope included); /health opts out below.\n  await app.register(rateLimit, {\n    ...rateLimitOpts,\n    errorResponseBuilder: () => ({ statusCode: 429, message: 'rate limit exceeded' }),\n  })\n\n  // CORS at the root so preflight short-circuits before the gated scope's auth\n  // gate (OPTIONS never needs a bearer token). Allowlist only.\n  await app.register(cors, { origin: corsOrigins })\n\n  app.addHook('onResponse', (request, reply, done) => {\n    // long-lived SSE streams do not emit a request envelope (same as pre-Fastify)\n    const route = request.routeOptions.url\n    if (route !== '/events' && route !== '/events/:sessionId') {\n      logger.info('request', {\n        method: request.method,\n        url: request.url,\n        status: reply.statusCode,\n        durationMs: reply.elapsedTime,\n      })\n    }\n    done()\n  })\n\n  // --- Safety health ---\n  app.get('/health', { config: { rateLimit: false } }, async () => ({ ok: true, name: 'atlaslink', version: appVersion, uptime: process.uptime() }))\n\n  // --- Account-facing surface (spec §3/§6/§7) ---\n  // One security boundary for /runs, /events, and the task-rest routes: the\n  // pre-auth bearer gate (fail-closed on non-loopback binds) plus the root rate\n  // limit. /health stays on the root app, outside the gate, unthrottled.\n  app.register(async (api) => {\n    registerTokenGate(api, { bindHost: params.bindHost })\n\n    // --- M4 Project API: project-scoped session workspace ---\n    registerProjectRoutes(api, { backend })\n\n    // --- POST /runs (M3 preview, spec §6): delegate a session to the queue ---\n    api.post(\n      '/runs',\n      {\n        schema: {\n          body: {\n            type: 'object',\n            additionalProperties: false,\n            required: ['member', 'prompt'],\n            properties: {\n              member: { type: 'string' },\n              prompt: { type: 'string' },\n            },\n          },\n        },\n      },\n      async (request, reply) => {\n        const { member, prompt } = request.body as { member: string; prompt: string }\n        const session = registry.create({ member, prompt })\n        queue.declareSession(session)\n        logger.info('session delegated', { sessionId: session.id, correlationId: session.correlationId, member })\n        return reply.code(202).send({ ok: true, session: { id: session.id, status: session.status } })\n      },\n    )\n\n    // --- SSE endpoint: GET /events ---\n    // Fastify cedes the socket (reply.hijack) and the existing SseHandler owns the\n    // stream — the reconnection contract (Last-Event-ID, ping, bridge.gap/shutdown)\n    // survives the framework swap untouched (ADR-006 Decision 2).\n    api.get('/events', (request, reply) => {\n      reply.hijack()\n      sse.handle(request.raw, reply.raw)\n    })\n\n    // --- M3 Task API (spec §3/§7): token-gated, store-backed, queue-driven ---\n    registerTaskRoutes(api, { backend, registry, queue, sse })\n  })\n\n  app.setNotFoundHandler((_request, reply) => {\n    reply.code(404).send({ ok: false, error: 'not found' })\n  })\n\n  // Route/validation errors keep the { ok: false, error } envelope the pre-Fastify\n  // router returned; server internals never leak on 5xx (fail-closed).\n  app.setErrorHandler((error: FastifyError, request, reply) => {\n    const status = error.statusCode ?? 500\n    const message = status >= 500 ? 'internal error' : error.message\n    return reply.code(status).send({ ok: false, error: message })\n  })\n\n  // boot the lifecycle so the router, hooks, and 404 handler are live before the\n  // caller (or a test) attaches the socket with server.listen()\n  await app.ready()\n\n  return { server: server!, broadcaster: sse.broadcaster, sse, queue, app }\n}\n\nasync function listen(config: DaemonConfig): Promise<{ server: Server; sse: SseHandler; registry: TaskRegistry; queue: SessionQueue }> {\n  const registry = new TaskRegistry()\n  const backend = await createSessionBackend()\n\n  const log = await EventLogStore.open(config.dataDir, { maxBytes: 10 * 1024 * 1024 })\n  const broadcaster = new EventBroadcaster(log)\n  const sse = new SseHandler(log, broadcaster)\n\n  const queue = new SessionQueue({\n    broadcaster,\n     registry,\n     runner: async (sessionId) => {\n       const session = registry.get(sessionId)!\n       // Mirror lifecycle into the store so GET /tasks read the live aggregate.\n       // /runs-created sessions live only in the registry — the store stays the\n       // /tasks surface, so a missing aggregate is skipped, not invented. A\n       // cancelled aggregate is final: never overwrite it with the run outcome.\n       const mirror = async (delta: SessionDelta): Promise<void> => {\n         const current = await backend.get(sessionId)\n         if (!current || current.status === 'cancelled') return\n         try {\n           await backend.readModifyWrite(sessionId, current.version, () => [delta])\n         } catch (err) {\n           if (!(err instanceof VersionConflictError)) throw err\n           // a cancel landed between read and write — the aggregate moved on,\n           // and the store already reflects the terminal decision; mirror drops\n         }\n       }\n       const at = (): string => new Date().toISOString()\n       try {\n         await mirror({ type: 'session.running', correlationId: session.correlationId, at: at() })\n         await runSession({\n           registry,\n           session,\n           config: config.agenthood,\n           onEvent: (event: RunEvent) => broadcaster.emit({ eventId: 0, ...event }),\n         })\n       } catch (err) {\n         logger.error('session run threw unexpectedly', {\n           sessionId,\n           correlationId: session.correlationId,\n           error: msg(err),\n         })\n       }\n       const final = registry.get(sessionId)!\n       if (final.status === 'succeeded') {\n         await mirror({ type: 'session.succeeded', correlationId: final.correlationId, at: at(), output: final.output, durationMs: final.durationMs })\n       } else if (final.status === 'failed') {\n         await mirror({ type: 'session.failed', correlationId: final.correlationId, at: at(), error: final.error, durationMs: final.durationMs })\n       }\n     },\n   })\n\n  const { server } = await createAppServer({\n    log,\n    registry,\n    queue,\n    sse,\n    backend,\n    bindHost: config.host,\n    corsOrigins: config.corsOrigins,\n  })\n  await new Promise<void>((resolve, reject) => {\n    server.once('error', reject)\n    server.listen(config.port, config.host, resolve)\n  })\n\n  logger.info('daemon online', { host: config.host, port: config.port, version })\n  return { server, sse, registry, queue }\n}\n\nasync function main(): Promise<void> {\n  const { runMode, member, task } = parseArgs(process.argv.slice(2))\n  const config: DaemonConfig = await loadDaemonConfig()\n\n  try {\n    validateConfig(config.agenthood)\n  } catch (err) {\n    logger.error(friendlyKeyError(err))\n    process.exit(1)\n  }\n\n  if (runMode) {\n    if (!member || !task) {\n      console.error('Usage: atlaslink --run <member> \"<task>\"')\n      process.exit(1)\n    }\n    const ok = await runOnce({ config: config.agenthood, member, task })\n    process.exit(ok ? 0 : 1)\n  }\n\n  const { server, sse } = await listen(config)\n\n  const shutdown = (signal: string): void => {\n    logger.info('shutdown signal', { signal })\n    sse.shutdown()\n    server.close(() => process.exit(0))\n    setTimeout(() => process.exit(0), 3000).unref()\n  }\n  process.on('SIGINT', () => shutdown('SIGINT'))\n  process.on('SIGTERM', () => shutdown('SIGTERM'))\n}\n\n// Only boot the daemon when executed directly (e.g. `tsx src/server.ts`), never\n// when imported by tests.\nif (process.argv[1] && new URL(`file://${resolve(process.argv[1])}`).href === import.meta.url) {\n  main().catch((err) => {\n    logger.error('startup failed', { error: err instanceof Error ? err.message : String(err) })\n    process.exit(1)\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_b8381d57e0914d1cb0b71981",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/config.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_b8381d57e0914d1cb0b71981",
+      "name": "web_fetch",
+      "result": "import { readFileSync, existsSync } from 'node:fs'\nimport { resolve } from 'node:path'\nimport { loadConfig as loadAgenthoodConfig } from 'agenthood/dist/commands/config.js'\nimport type { LLMConfig } from 'agenthood/dist/llm/types.js'\n\nexport const DEFAULT_HOST = '127.0.0.1'\nexport const DEFAULT_PORT = 3000\n\nexport interface DaemonConfig {\n  host: string\n  port: number\n  dataDir: string\n  corsOrigins: string[]\n  agenthood: LLMConfig\n}\n\n/**\n * Loads the project .env with project-first semantics. Node's own\n * `--env-file` does NOT override variables already exported by the parent\n * shell, which lets a stale OPENCODE_API_KEY silently shadow the repo's .env\n * (every provider call then fails auth). This loader unconditionally applies\n * non-empty values from the project .env so the file is the source of truth\n * for local runs. Empty values are skipped so explicitly-provided vars keep\n * working in CI-like environments.\n */\nexport function loadEnvFile(envPath: string): void {\n  if (!existsSync(envPath)) return\n  for (const raw of readFileSync(envPath, 'utf8').split(/\\r?\\n/)) {\n    const line = raw.trim()\n    if (!line || line.startsWith('#')) continue\n    const eq = line.indexOf('=')\n    if (eq === -1) continue\n    const key = line.slice(0, eq).trim()\n    let value = line.slice(eq + 1).trim()\n    if (\n      (value.startsWith('\"') && value.endsWith('\"')) ||\n      (value.startsWith(\"'\") && value.endsWith(\"'\"))\n    ) {\n      value = value.slice(1, -1)\n    }\n    if (!key || !value) continue\n    process.env[key] = value\n  }\n}\n\n/**\n * Loads both the atlaslink daemon settings (env-driven) and the agenthood\n * LLM config (.agenthood/config.json). The daemon must run from the project\n * root: many agenthood paths (metrics, skill discovery, config) resolve\n * against process.cwd().\n */\nexport async function loadDaemonConfig(): Promise<DaemonConfig> {\n  loadEnvFile(resolve(process.cwd(), '.env'))\n\n  const host = process.env.ATLASLINK_HOST ?? DEFAULT_HOST\n  const port = Number(process.env.ATLASLINK_PORT ?? DEFAULT_PORT)\n  const dataDir = resolve(process.cwd(), 'data')\n  const corsOrigins = (\n    process.env.ATLASLINK_CORS_ORIGINS ??\n    'http://localhost:3001,https://atlas.flabs.tech'\n  )\n    .split(',')\n    .map((origin) => origin.trim())\n    .filter((origin) => origin.length > 0)\n\n  if (!Number.isInteger(port) || port < 1 || port > 65535) {\n    throw new Error(`invalid ATLASLINK_PORT \"${process.env.ATLASLINK_PORT}\"`)\n  }\n\n  const agenthood = await loadAgenthoodConfig()\n  return { host, port, dataDir, corsOrigins, agenthood }\n}\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_58753b989fd2474db6abdd32",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/EventLogStore.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_58753b989fd2474db6abdd32",
+      "name": "web_fetch",
+      "result": "import { appendFileSync, writeFileSync, renameSync, readFileSync, mkdirSync, existsSync } from 'node:fs'\nimport { join } from 'node:path'\nimport { log } from '../log'\n\nexport const ROTATION_FILES = 3\nexport const MAX_BYTES = 10 * 1024 * 1024\nconst TAIL_BASENAME = 'events.ndjson'\nconst SEQ_BASENAME = 'events.seq'\n\n/**\n * Broadly-typed bridge envelope. The broadcaster assigns `eventId`; this branch\n * accepts an envelope that already carries one and persists it verbatim.\n */\nexport interface BridgeEnvelope {\n  eventId: number\n  type: string\n  [key: string]: unknown\n}\n\nexport interface EventLogStoreOptions {\n  /** Rotation size cap in bytes; kept injectable so tests can force rotation. */\n  maxBytes?: number\n}\n\nexport interface StoredEnvelope {\n  eventId: number\n  envelope: BridgeEnvelope\n}\n\n/**\n * Append-only NDJSON event log at `dataDir/events.ndjson` with 10 MB × 3\n * rotation (`events.ndjson`, `.1`, `.2`, oldest dropped) per ADR-001.\n * The `eventId` cursor never resets: it is restored on open from the\n * `events.seq` sidecar, else by a boot-time tail scan, and rewritten to the\n * surviving cursor after every rotation. A corrupt tail line is skipped, and a\n * failed append is swallowed so the live stream never blocks on disk.\n */\nexport class EventLogStore {\n  readonly dataDir: string\n  readonly maxBytes: number\n  #nextEventId = 0\n  #tailBytes = 0\n\n  private constructor(dataDir: string, maxBytes: number) {\n    this.dataDir = dataDir\n    this.maxBytes = maxBytes\n  }\n\n  static async open(dataDir: string, options: EventLogStoreOptions = {}): Promise<EventLogStore> {\n    mkdirSync(dataDir, { recursive: true })\n    const store = new EventLogStore(dataDir, options.maxBytes ?? MAX_BYTES)\n    store.#restoreCursor()\n    return store\n  }\n\n  /** Smallest retained eventId across all rotation files, or undefined when empty. */\n  get oldestId(): number | undefined {\n    let oldest: number | undefined\n    for (const line of this.#readLines()) {\n      const eventId = this.#parseId(line)\n      if (eventId === undefined) continue\n      if (oldest === undefined || eventId < oldest) oldest = eventId\n    }\n    return oldest\n  }\n\n  /** Next eventId the broadcaster should assign. Monotonic across restart + rotation. */\n  get nextEventId(): number {\n    return this.#nextEventId\n  }\n\n  append(envelope: BridgeEnvelope): boolean {\n    if (!Number.isInteger(envelope.eventId) || envelope.eventId < this.#nextEventId) return false\n    this.#nextEventId = envelope.eventId + 1\n    const line = JSON.stringify(envelope) + '\\n'\n    const incomingLen = Buffer.byteLength(line, 'utf8')\n    this.#rotateIfNeeded(incomingLen)\n    try {\n      appendFileSync(this.#path(0), line, 'utf8')\n      this.#tailBytes += incomingLen\n      return true\n    } catch {\n      // swallow-write-failure: a slow/failed disk write never blocks the live stream\n      log.warn('append failed, swallowed', { eventId: envelope.eventId, dataDir: this.dataDir })\n      return false\n    }\n  }\n\n  /**\n   * All retained envelopes with `eventId > readAfter`, ascending, joined across\n   * rotation files (`.1` oldest, `.2` next, current tail newest). Empty when\n   * `readAfter` reaches the newest.\n   */\n  replay(readAfter: number): StoredEnvelope[] {\n    const events: StoredEnvelope[] = []\n    for (const line of this.#readLines()) {\n      const stored = this.#parseLine(line)\n      if (stored && stored.eventId > readAfter) events.push(stored)\n    }\n    return events\n  }\n\n  /**\n   * Rotation cascade per ADR-001: when the tail would exceed the cap once the\n   * incoming line lands, `.1` → `.2` (oldest dropped), tail → `.1`, then the\n   * sidecar is rewritten to the surviving cursor. Runs before appending.\n   */\n  #rotateIfNeeded(incomingLen: number): void {\n    if (!(this.#tailBytes > 0 && this.#tailBytes + incomingLen > this.maxBytes)) return\n    try {\n      if (existsSync(this.#path(1))) renameSync(this.#path(1), this.#path(2))\n      if (existsSync(this.#path(0))) renameSync(this.#path(0), this.#path(1))\n      this.#tailBytes = 0\n      this.#writeSeq()\n    } catch {\n      // rotation must never break live streaming; preserve accounting so the next\n      // append still triggers rotation instead of silently exceeding the cap\n      log.warn('rotation failed, swallowed', { dataDir: this.dataDir })\n      try {\n        this.#tailBytes = existsSync(this.#path(0))\n          ? Buffer.byteLength(readFileSync(this.#path(0), 'utf8'), 'utf8')\n          : 0\n      } catch {\n        this.#tailBytes = 0\n      }\n    }\n  }\n\n  /**\n   * Restore the cursor from `events.seq` (present and parseable) reconciled\n   * with a tail scan. The sidecar is a fast-restart hint written at rotation;\n   * the scan is a correctness backstop so the counter never dips below — or\n   * collides with — an eventId that is already stored on disk. Without a valid\n   * sidecar the scan alone drives the resume.\n   */\n  #restoreCursor(): void {\n    const seqPath = this.#pathSeq()\n    let seqValue = -1\n    if (existsSync(seqPath)) {\n      const parsed = Number(readFileSync(seqPath, 'utf8').trim())\n      if (Number.isInteger(parsed) && parsed >= 0) seqValue = parsed\n    }\n    const scanMax = this.#scanMaxEventId()\n    this.#nextEventId = Math.max(seqValue, scanMax + 1)\n    if (existsSync(this.#path(0))) {\n      try {\n        this.#tailBytes = Buffer.byteLength(readFileSync(this.#path(0), 'utf8'), 'utf8')\n      } catch {\n        this.#tailBytes = 0\n      }\n    }\n  }\n\n  #scanMaxEventId(): number {\n    let max = -1\n    for (const line of this.#readLines()) {\n      const eventId = this.#parseId(line)\n      if (eventId !== undefined && eventId > max) max = eventId\n    }\n    return max\n  }\n\n  #writeSeq(): void {\n    try {\n      writeFileSync(this.#pathSeq(), String(this.#nextEventId) + '\\n', 'utf8')\n    } catch {\n      // a failed sidecar write is non-fatal; a subsequent rotation retries it\n    }\n  }\n\n  #parseId(line: string): number | undefined {\n    try {\n      const parsed = JSON.parse(line) as { eventId?: unknown }\n      return typeof parsed.eventId === 'number' && Number.isInteger(parsed.eventId) ? parsed.eventId : undefined\n    } catch {\n      return undefined\n    }\n  }\n\n  #parseLine(line: string): StoredEnvelope | undefined {\n    try {\n      const envelope = JSON.parse(line) as BridgeEnvelope\n      if (!Number.isInteger(envelope.eventId) || envelope.eventId < 0) return undefined\n      return { eventId: envelope.eventId, envelope }\n    } catch {\n      return undefined\n    }\n  }\n\n  /** Reads rotation files oldest → newest so replay order matches emission order. */\n  #readLines(): string[] {\n    const lines: string[] = []\n    for (let i = ROTATION_FILES - 1; i >= 0; i--) {\n      if (!existsSync(this.#path(i))) continue\n      try {\n        lines.push(...readFileSync(this.#path(i), 'utf8').split(/\\r?\\n/).filter((line) => line.length > 0))\n      } catch {\n        // an unreadable/corrupt rotation file is skipped — corrupt-tail tolerance\n      }\n    }\n    return lines\n  }\n\n  #path(index: number): string {\n    return index === 0 ? join(this.dataDir, TAIL_BASENAME) : join(this.dataDir, `${TAIL_BASENAME}.${index}`)\n  }\n\n  #pathSeq(): string {\n    return join(this.dataDir, SEQ_BASENAME)\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_83ae0cf1156e4f639985c9b9",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/EventBroadcaster.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_83ae0cf1156e4f639985c9b9",
+      "name": "web_fetch",
+      "result": "import { EventLogStore, BridgeEnvelope } from './EventLogStore'\n\n/**\n * EventBroadcaster fans out bridge events from an EventLogStore to registered\n * listeners. Envelopes pass verbatim (the read-only projection contract,\n * ADR-002): `type` is whatever the emitter assigned (e.g. `run.*`, `session.*`,\n * `bridge.*`) and is never rewritten.\n *\n * Responsibilities:\n *  1. emit(envelope) assigns a monotonic eventId, persists it, and delivers it\n *     verbatim to every subscriber.\n *  2. On subscribe() with replay, the most recent highWaterMark events are\n *     replayed so a fresh subscriber catches up with bounded memory (slow-client\n *     eviction drops the oldest).\n *  3. detectGap() reports the first missing eventId so a consumer can emit\n *     `bridge.gap` rather than silently skip.\n *  4. A throwing subscriber never breaks the broadcaster or its peers.\n */\nexport class EventBroadcaster {\n  private readonly log: EventLogStore\n  private readonly listeners: Set<(event: BridgeEnvelope) => void>\n  private readonly highWaterMark: number\n  private gap: number | null = null\n\n  constructor(log: EventLogStore, options: { highWaterMark?: number } = {}) {\n    this.log = log\n    this.listeners = new Set()\n    this.highWaterMark = options.highWaterMark ?? 1000\n  }\n\n  /**\n   * Register a listener. By default replays recent events first so the\n   * subscriber catches up; pass `{ replay: false }` for live delivery only.\n   * Returns an unsubscribe function.\n   */\n  subscribe(listener: (event: BridgeEnvelope) => void, options: { replay?: boolean } = {}): () => void {\n    this.listeners.add(listener)\n    if (options.replay !== false) {\n      const oldest = this.log.oldestId\n      // Slow-client eviction: replay only the most recent highWaterMark events.\n      const floor = Math.max(oldest ?? 0, this.log.nextEventId - this.highWaterMark)\n      for (const stored of this.log.replay((oldest ?? 0) - 1)) {\n        if (stored.eventId < floor) continue\n        this.#deliver(stored.envelope)\n      }\n    }\n    return () => this.listeners.delete(listener)\n  }\n\n  /** Assign a monotonic eventId, persist the envelope, and fan it out verbatim. */\n  emit(envelope: BridgeEnvelope): void {\n    const persisted = { ...envelope, eventId: this.log.nextEventId }\n    this.log.append(persisted)\n    this.#deliver(persisted)\n  }\n\n  /** All retained envelopes with `eventId >= startId`, ascending (Last-Event-ID resume). */\n  replayFrom(startId: number): BridgeEnvelope[] {\n    return this.log.replay(startId - 1).map((s) => s.envelope)\n  }\n\n  #deliver(envelope: BridgeEnvelope): void {\n    for (const listener of [...this.listeners]) {\n      try {\n        listener(envelope)\n      } catch {\n        // misbehaving subscriber never breaks the broadcaster or its peers\n      }\n    }\n  }\n\n  /**\n   * Detect the first gap in the eventId sequence and return the missing id, or\n   * null when contiguous (or too few events to judge).\n   */\n  detectGap(): number | null {\n    const ids = this.log.replay(-1).map((e) => e.eventId).filter((id): id is number => Number.isInteger(id))\n    if (ids.length < 2) return null\n    for (let i = 1; i < ids.length; i++) {\n      if (ids[i] !== ids[i - 1] + 1) {\n        const missing = ids[i - 1] + 1\n        if (this.gap === missing) continue\n        this.gap = missing\n        return missing\n      }\n    }\n    return null\n  }\n\n  getGap(): number | null {\n    return this.gap\n  }\n}\n\nexport default EventBroadcaster",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_48746b461ec649c8bc8a47f2",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/SessionQueue.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_48746b461ec649c8bc8a47f2",
+      "name": "web_fetch",
+      "result": "import { BridgeEnvelope } from './EventLogStore'\nimport { EventBroadcaster } from './EventBroadcaster'\nimport { SessionStatus } from '../tasks/taskRegistry'\n\n/**\n * SessionQueue is the serial FIFO worker behind the bridge (ADR-003: Atlas holds\n * the sky of sessions). Sessions are processed strictly one at a time in enqueue\n * order; the injected runner keeps it hermetic in tests. Every lifecycle\n * transition is mirrored to the wire as a namespaced `session.*` event so M4 can\n * render queued sessions that the RunEventBus (which has no \"queued\" state and\n * emits nothing for a fail-before-any-event run) cannot represent. The terminal\n * status comes from the registry after the run, never guessed (spec §5,\n * \"terminal-from-registry\").\n *\n * Event shapes (spec §4):\n *   session.queued    — {eventId, type, sessionId, correlationId, member, status, at}\n *   session.started   — same, status 'running'\n *   session.succeeded — same, status 'succeeded'\n *   session.failed    — same, status 'failed'\n */\nexport class SessionQueue {\n  private readonly broadcaster: EventBroadcaster\n  private readonly runner: (sessionId: string) => Promise<void>\n  private readonly registry: { get(id: string): SessionSnapshot | undefined }\n  private readonly queue: string[] = []\n  private running = false\n\n  constructor(params: {\n    broadcaster: EventBroadcaster\n    runner: (sessionId: string) => Promise<void>\n    registry: { get(id: string): SessionSnapshot | undefined }\n  }) {\n    this.broadcaster = params.broadcaster\n    this.runner = params.runner\n    this.registry = params.registry\n  }\n\n  /** Enqueue a session. Emits session.queued and starts processing if idle. */\n  declareSession(session: Omit<SessionSnapshot, 'status'>): void {\n    const enriched: SessionSnapshot = { ...session, status: SessionStatus.QUEUED }\n    this.#emit('session.queued', session.id, enriched, SessionStatus.QUEUED)\n    this.queue.push(session.id)\n    void this.#pump()\n  }\n\n  /** Process queued sessions in FIFO order, strictly one at a time. */\n  async #pump(): Promise<void> {\n    if (this.running) return\n    this.running = true\n    try {\n      while (this.queue.length > 0) {\n        const sessionId = this.queue.shift()!\n        const started = this.registry.get(sessionId)\n        // a cancelled queued session is skipped, never run (spec §3 guarantee)\n        if (!started || started.status === SessionStatus.CANCELLED) continue\n        this.#emit('session.started', sessionId, started, SessionStatus.RUNNING)\n        await this.runner(sessionId)\n        const final = this.registry.get(sessionId)\n        if (!final) continue\n        if (final.status === SessionStatus.SUCCEEDED) {\n          this.#emit('session.succeeded', sessionId, final, SessionStatus.SUCCEEDED)\n        } else if (final.status === SessionStatus.FAILED) {\n          this.#emit('session.failed', sessionId, final, SessionStatus.FAILED)\n        }\n      }\n    } finally {\n      this.running = false\n    }\n  }\n\n  #emit(type: string, sessionId: string, session: SessionSnapshot, status: string): void {\n    const envelope: BridgeEnvelope = {\n      eventId: 0, // assigned by the broadcaster\n      type,\n      sessionId,\n      correlationId: session.correlationId,\n      member: session.task.member,\n      status,\n      at: new Date().toISOString(),\n    }\n    this.broadcaster.emit(envelope)\n  }\n\n  /** Number of sessions still queued but not yet started. */\n  get pending(): number {\n    return this.queue.length\n  }\n}\n\nexport interface SessionSnapshot {\n  id: string\n  correlationId: string\n  task: { member: string }\n  status: string\n}\n\nexport default SessionQueue",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_01e7624c5c6e46babc382377",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/sseEndpoint.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_01e7624c5c6e46babc382377",
+      "name": "web_fetch",
+      "result": "import type { IncomingMessage, ServerResponse } from 'node:http'\nimport { EventLogStore, BridgeEnvelope } from './EventLogStore'\nimport { EventBroadcaster } from './EventBroadcaster'\n\nexport const PING_INTERVAL_MS = 15000\n\n/**\n * Serialize a bridge envelope as a Server-Sent Events frame per spec §4.\n * `run.*`, `session.*`, and `bridge.*` types pass verbatim; the emitter owns\n * `type`, and this endpoint never rewrites it (read-only projection contract).\n */\nexport function formatSse(envelope: BridgeEnvelope): string {\n  const lines = [`id: ${envelope.eventId}`, `event: ${envelope.type}`, `data: ${JSON.stringify(envelope)}`]\n  return lines.join('\\n') + '\\n\\n'\n}\n\n/** An active SSE client connection tracked for shutdown. */\ninterface SseClient {\n  res: ServerResponse\n}\n\n/**\n * `GET /events` Server-Sent Events handler. Replays events after Last-Event-ID\n * when provided (else live-tail only), then pushes live events verbatim. A stale\n * resume (`requested < oldestId`) is surfaced as `bridge.gap`, never silence.\n * Tracks open connections so a SIGINT/SIGTERM can send `bridge.shutdown` before\n * ending the stream, and pings idle connections to keep them alive.\n */\nexport class SseHandler {\n  private readonly log: EventLogStore\n  readonly broadcaster: EventBroadcaster\n  private readonly clients = new Set<SseClient>()\n  private readonly ping: ReturnType<typeof setInterval>\n\n  constructor(log: EventLogStore, broadcaster: EventBroadcaster) {\n    this.log = log\n    this.broadcaster = broadcaster\n    // `:ping` comment frame every PING_INTERVAL_MS keeps idle streams alive\n    this.ping = setInterval(() => {\n      for (const client of this.clients) {\n        try {\n          client.res.write(': ping\\n\\n')\n        } catch {\n          /* a closing socket is reclaimed on its res 'close' event */\n        }\n      }\n    }, PING_INTERVAL_MS)\n    this.ping.unref()\n  }\n\n  handle(req: IncomingMessage, res: ServerResponse): void {\n    this.#handle(req, res)\n  }\n\n  /**\n   * Per-session variant (spec §3): replay-then-live limited to one session's\n   * events by `correlationId`. Uses the same wire contract — Last-Event-ID\n   * resume, ping, gap, shutdown — filtered at the projection boundary.\n   */\n  handleForSession(req: IncomingMessage, res: ServerResponse, correlationId: string): void {\n    this.#handle(req, res, (envelope) => envelope.correlationId === correlationId)\n  }\n\n  /**\n   * Project-scoped variant: replay-then-live limited to sessions belonging to\n   * a project. `correlationIds` is the pre-fetched set at connection time; the\n   * live stream grows the set when a `session.created` for this project arrives\n   * so a client that stays connected sees new sessions without reconnecting.\n   */\n  handleForProject(req: IncomingMessage, res: ServerResponse, projectId: string, correlationIds: Set<string>): void {\n    const liveIds = new Set(correlationIds)\n    this.#handle(req, res, (envelope) => {\n      if (envelope.type === 'session.created' && (envelope as { projectId?: string }).projectId === projectId) {\n        const cid = envelope.correlationId as string | undefined\n        if (typeof cid === 'string') liveIds.add(cid)\n      }\n      return liveIds.has(envelope.correlationId as string)\n    })\n  }\n\n  #handle(req: IncomingMessage, res: ServerResponse, filter?: (envelope: BridgeEnvelope) => boolean): void {\n    res.writeHead(200, {\n      'Content-Type': 'text/event-stream; charset=utf-8',\n      'Cache-Control': 'no-cache',\n      Connection: 'keep-alive',\n      'X-Accel-Buffering': 'no',\n    })\n\n    const lastIdRaw = req.headers['last-event-id']\n    const lastId = typeof lastIdRaw === 'string' ? parseInt(lastIdRaw, 10) : NaN\n\n    if (!Number.isNaN(lastId)) {\n      const oldest = this.log.oldestId\n      if (oldest !== undefined && lastId < oldest) {\n        // requested event fallen off the retention window → bridge.gap, never silence\n        this.#frame(res, {\n          eventId: lastId,\n          type: 'bridge.gap',\n          requested: lastId,\n          oldest,\n          at: new Date().toISOString(),\n        })\n      } else {\n        for (const stored of this.log.replay(lastId)) {\n          if (filter !== undefined && !filter(stored.envelope)) continue\n          this.#frame(res, stored.envelope)\n        }\n      }\n    }\n\n    const unsubscribe = this.broadcaster.subscribe(\n      (envelope) => {\n        if (filter !== undefined && !filter(envelope)) return\n        this.#frame(res, envelope)\n      },\n      { replay: false },\n    )\n\n    const client: SseClient = { res }\n    this.clients.add(client)\n    const onClose = (): void => {\n      unsubscribe()\n      this.clients.delete(client)\n      res.removeListener('close', onClose)\n    }\n    res.on('close', onClose)\n\n    // initial comment establishes the event-stream framing per spec §4\n    res.write(': keep-alive\\n\\n')\n  }\n\n  /**\n   * Graceful shutdown: send `bridge.shutdown` to every open client and end the\n   * stream so a controlled stop is distinguishable from a network blip.\n   */\n  shutdown(): void {\n    for (const client of this.clients) {\n      try {\n        client.res.write(`event: bridge.shutdown\\ndata: {}\\n\\n`)\n        client.res.end()\n      } catch {\n        /* already closed */\n      }\n    }\n    this.clients.clear()\n    clearInterval(this.ping)\n  }\n\n  #frame(res: ServerResponse, envelope: BridgeEnvelope): void {\n    try {\n      res.write(formatSse(envelope))\n    } catch {\n      /* write errors surface via res 'close'; normal for a disconnected client */\n    }\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_bb0ab8c6a1be43a0b90ec81a",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/tasks"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_bb0ab8c6a1be43a0b90ec81a",
+      "name": "web_fetch",
+      "result": "atlaslink/src/tasks at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / tasks / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / tasks / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. README.md README.md taskRegistry.test.ts taskRegistry.test.ts taskRegistry.ts taskRegistry.ts View all files README.md Outline src/tasks — the M1-era in-memory registry TaskRegistry is the original, M1-era in-memory task/session store. It is the legacy surface: the M3 session layer ( src/session/README.md ) supersedes its durability and concurrency model. What it provides today create({member, prompt, provider?}) — assigns ses-… / cor-… ids and a dedicated correlationId , stamped onto the run's ExecutionContext so events, traces, decisions, and provenance join by it. start / succeed / fail — the M1 status machine that runSession drives. msg(error) — the standard error-to-string helper used across the codebase. SessionStatus — the shared queued|running|succeeded|failed constants. Why it still exists runTask.ts and taskRegistry.ts are a cross-branch invariant (untouched by the M3 refactor): createAppServer and SessionQueue depend on the registry to route and finalize runs, and the read-only projection contract (ADR-002) requires widely-used seams never to be re-plumbed while a rewrite is in flight. The task-rest branch reconciles it with the event-sourced session aggregate, which also carries a cancelled status this legacy model lacks. Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_fd7c6b4f855044b995c2b7eb",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/session"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_fd7c6b4f855044b995c2b7eb",
+      "name": "web_fetch",
+      "result": "atlaslink/src/session at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / session / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / session / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. README.md README.md backendContract.ts backendContract.ts backendFactory.ts backendFactory.ts db.ts db.ts deepFreeze.test.ts deepFreeze.test.ts deepFreeze.ts deepFreeze.ts eventLogBackend.test.ts eventLogBackend.test.ts eventLogBackend.ts eventLogBackend.ts migrations.ts migrations.ts postgresBackend.test.ts postgresBackend.test.ts postgresBackend.ts postgresBackend.ts sessionBackend.ts sessionBackend.ts sessionStore.test.ts sessionStore.test.ts sessionStore.ts sessionStore.ts types.ts types.ts View all files README.md Outline src/session — the Session layer (M3) The event-sourced session aggregate behind a backend port (ADR-004, direction ADR-006). A Session is rebuilt deterministically from its session.* event stream; version is the optimistic CAS token — a stale write rejects instead of silently clobbering. Modules File Responsibility sessionBackend.ts The SessionBackend port: append , get , readModifyWrite . Implementations must keep version-check + commit atomic. sessionStore.ts In-memory SessionStore plus the shared rehydrate(events) reducer and the StreamIntegrityError / VersionConflictError types. deepFreeze.ts deepFreeze(value) — recursively freezes an object graph. Used by every backend to prevent snapshot mutation. eventLogBackend.ts EventLogBackend : the same contract over the NDJSON EventLogStore , with a per-session SessionSnapshot cache and #versions map for zero-I/O hits; invalidated on append to that session. postgresBackend.ts PostgresBackend over Postgres event tables. CAS is enforced inside a FOR UPDATE transaction. Per-session SessionSnapshot cache with #versions in-memory counter for zero-I/O hits; the cache is single-process state — cross-process writes fall through to Postgres and re-sync. db.ts Minimal Db seam ( query / exec / transaction ) with pglite (hermetic CI) and pg (managed) adapters. migrations.ts Hand-rolled runner: applied-versions table, standard-SQL migrations in one transaction guarded by an advisory xact lock, so the identical statements run on both drivers. backendFactory.ts createSessionBackend() : in-memory by default; ATLASLINK_DATABASE_URL selects Postgres (migrations applied first). types.ts Session , SessionEvent , SessionDelta , SessionSnapshot , and the error classes. backendContract.ts Shared test harness — every backend binds to the same behavioral suite. Data model session_events (Postgres) is keyed by (tenant_id, session_id, seq) with a UNIQUE (tenant_id, session_id, version) CAS column and an index on (tenant_id, correlation_id) . tenant_id defaults to 'default' so the auth ADR is additive, not a schema rewrite. M3 ships rebuild-on-read; a maintained sessions materialization is the later optimization. Invariants Append is the commit. The store and the event stream cannot drift. Rebuild-on-read is deterministic and order-stable (failed/duplicate events are not invented). A backend swap cannot change observable behavior — backendContract pins it. Hermetic: pglite is in-process and offline; managed Postgres never runs in CI. Snapshot cache consistency. Every backend tracks a per-session snapshot ( SessionSnapshot in types.ts ). append() invalidates the affected session's cache; get() returns the frozen cached reference when the version matches. Callers receive a deepFreeze d snapshot — mutation is a contract violation caught by the shared backend contract test. Note on the two status models src/tasks/taskRegistry.ts carries an M1-era in-memory status ( queued|running|succeeded|failed ) with its own Session shape. The session layer defines its own richer status ( +cancelled ) and aggregate. src/tasks/README.md documents this coexistence; the task-rest branch reconciles them. Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_03bf7f7920c847b9b4f548c3",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/api/tasks.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_03bf7f7920c847b9b4f548c3",
+      "name": "web_fetch",
+      "result": "import { randomUUID } from 'node:crypto'\nimport type { FastifyInstance } from 'fastify'\nimport type { SessionBackend, SessionFilter } from '../session/sessionBackend'\nimport type { Session as AggregateSession, SessionEvent } from '../session/types'\nimport { VersionConflictError } from '../session/types'\nimport type { SessionQueue } from '../bridge/SessionQueue'\nimport type { SseHandler } from '../bridge/sseEndpoint'\nimport type { TaskRegistry } from '../tasks/taskRegistry'\nimport { log } from '../log'\n\nexport interface TaskDeps {\n  backend: SessionBackend\n  registry: TaskRegistry\n  queue: SessionQueue\n  sse: SseHandler\n}\n\nconst TERMINAL_STATUSES = ['succeeded', 'failed', 'cancelled'] as const\n\ninterface PostBody {\n  member: string\n  prompt: string\n  projectId?: string\n  tweaks?: { provider?: string; member?: Record<string, unknown>; team?: Record<string, unknown> }\n}\n\n/** Wire form of the store aggregate — same shape the spec §3 defines. */\nexport function sessionToWire(s: AggregateSession): AggregateSession {\n  return s\n}\n\n/**\n * The M3 Task API on Fastify (spec §3): create + enqueue, list with\n * backend-applied filters, aggregate read, and queued-cancel. The pre-auth\n * bearer gate and rate limit are installed once in `createAppServer` on the\n * scope that owns /runs, /events, and these routes (spec §7) — this module\n * stays a declarative route list.\n */\nexport function registerTaskRoutes(app: FastifyInstance, deps: TaskDeps): void {\n  app.post<{ Body: PostBody }>(\n    '/tasks',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['member', 'prompt'],\n          properties: {\n            member: { type: 'string', minLength: 1 },\n            prompt: { type: 'string', minLength: 1, maxLength: 10000 },\n            projectId: { type: 'string', maxLength: 200 },\n            tweaks: {\n              type: 'object',\n              additionalProperties: false,\n              properties: {\n                provider: { type: 'string' },\n                member: { type: 'object' },\n                team: { type: 'object' },\n              },\n            },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const { member, prompt, projectId, tweaks } = request.body\n      const sessionId = `ses-${randomUUID()}`\n      const correlationId = `cor-${randomUUID()}`\n      const event: SessionEvent = {\n        type: 'session.created',\n        sessionId,\n        correlationId,\n        at: new Date().toISOString(),\n        member,\n        prompt,\n        ...(projectId !== undefined ? { projectId } : {}),\n        ...(tweaks !== undefined ? { tweaks } : {}),\n      }\n      // the aggregate is committed first; the queue then runs by the same ids\n      await deps.backend.append(event)\n      const created = deps.registry.create({\n        member,\n        prompt,\n        provider: tweaks?.provider,\n        id: sessionId,\n        correlationId,\n      })\n      deps.queue.declareSession(created)\n      log.info('task created', { sessionId, correlationId, member, projectId })\n      const aggregate = await deps.backend.get(sessionId)\n      return reply.code(201).send({ ok: true, session: sessionToWire(aggregate!) })\n    }\n  )\n\n  app.get<{ Querystring: { projectId?: string; status?: string; since?: string; limit?: number; offset?: number } }>(\n    '/tasks',\n    {\n      schema: {\n        querystring: {\n          type: 'object',\n          additionalProperties: false,\n          properties: {\n            projectId: { type: 'string' },\n            status: { type: 'string', enum: ['queued', 'running', 'awaiting_input', 'succeeded', 'failed', 'cancelled'] },\n            since: { type: 'string' },\n            limit: { type: 'integer', minimum: 1, maximum: 500 },\n            offset: { type: 'integer', minimum: 0 },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const query = request.query\n      if (query.since !== undefined && Number.isNaN(Date.parse(query.since))) {\n        return reply.code(400).send({ ok: false, error: 'since must be an ISO-8601 date-time' })\n      }\n      const filter: SessionFilter = {\n        projectId: query.projectId ?? undefined,\n        status: (query.status as SessionFilter['status']) ?? undefined,\n        since: query.since ?? undefined,\n        limit: query.limit ?? 50,\n        offset: query.offset ?? 0,\n      }\n      const { sessions, total } = await deps.backend.list(filter)\n      return reply.send({\n        ok: true,\n        sessions: sessions.map(sessionToWire),\n        total,\n        limit: filter.limit,\n        offset: filter.offset,\n      })\n    }\n  )\n\n  app.get<{ Params: { sessionId: string } }>('/tasks/:sessionId', async (request, reply) => {\n    const aggregate = await deps.backend.get(request.params.sessionId)\n    if (!aggregate) return reply.code(404).send({ ok: false, error: 'unknown session' })\n    return reply.send({ ok: true, session: sessionToWire(aggregate) })\n  })\n\n  app.post<{ Params: { sessionId: string } }>('/tasks/:sessionId/cancel', async (request, reply) => {\n    const sessionId = request.params.sessionId\n\n    // Re-evaluate against a fresh aggregate until the state is stable: a\n    // VersionConflictError means the lifecycle moved between our read and\n    // write (the queue started the run) — resolve rather than 500.\n    for (let attempt = 0; attempt < 2; attempt++) {\n      const current = await deps.backend.get(sessionId)\n      if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n      if ((TERMINAL_STATUSES as readonly string[]).includes(current.status)) {\n        return reply.code(409).send({ ok: false, error: 'session already terminated' })\n      }\n      if (current.status === 'running') {\n        // M3 best-effort contract (spec §3): acknowledge now, cancel lands with the runtime\n        return reply.code(202).send({ ok: true, status: 'running', cancel: 'best-effort', session: sessionToWire(current) })\n      }\n      try {\n        await deps.backend.readModifyWrite(sessionId, current.version, () => [\n          { type: 'session.cancelled', correlationId: current.correlationId, at: new Date().toISOString() },\n        ])\n        // dequeue from execution so the pump never runs a cancelled session\n        try {\n          deps.registry.cancel(sessionId)\n        } catch {\n          // the registry entry may already be gone or terminal — the store commit is the truth\n        }\n        const after = await deps.backend.get(sessionId)\n        return reply.code(202).send({ ok: true, status: 'cancelled', session: sessionToWire(after!) })\n      } catch (err) {\n        if (err instanceof VersionConflictError) continue\n        throw err\n      }\n    }\n    return reply.code(409).send({ ok: false, error: 'session state changed' })\n  })\n\n  // Full DAG: Atlas asks follow-up in the latest card → user replies → diagram grows\n  app.post<{ Params: { sessionId: string }; Body: { content: string } }>(\n    '/tasks/:sessionId/reply',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['content'],\n          properties: {\n            content: { type: 'string', minLength: 1, maxLength: 10000 },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const sessionId = request.params.sessionId\n      const { content } = request.body\n      for (let attempt = 0; attempt < 2; attempt++) {\n        const current = await deps.backend.get(sessionId)\n        if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n        if (current.status !== 'awaiting_input') {\n          if ((TERMINAL_STATUSES as readonly string[]).includes(current.status)) {\n            return reply.code(409).send({ ok: false, error: 'session already terminated' })\n          }\n          return reply.code(409).send({ ok: false, error: 'session not awaiting input' })\n        }\n        try {\n          await deps.backend.readModifyWrite(sessionId, current.version, () => [\n            { type: 'session.user_reply', correlationId: current.correlationId, at: new Date().toISOString(), reply: content },\n            // re-queue as running so the diagram keeps growing — next iteration\n            { type: 'session.running', correlationId: current.correlationId, at: new Date().toISOString() },\n          ])\n          const after = await deps.backend.get(sessionId)\n          // also fan out on SSE so live diagram updates without polling\n          // (store is truth; SSE is best-effort projection)\n          try {\n            const eventId = after?.version ?? current.version + 2\n            deps.sse.broadcaster.emit({ eventId, type: 'session.user_reply', sessionId, correlationId: current.correlationId, at: new Date().toISOString(), reply: content } as unknown as { eventId: number; type: string } & Record<string, unknown>)\n          } catch {}\n          return reply.code(201).send({ ok: true, session: sessionToWire(after!) })\n        } catch (err) {\n          if (err instanceof VersionConflictError) continue\n          throw err\n        }\n      }\n      return reply.code(409).send({ ok: false, error: 'session state changed' })\n    }\n  )\n\n  // Persist editor drag positions (ephemeral) — diagram is a projection, but user wins position\n  app.post<{ Params: { sessionId: string }; Body: { diagram: { nodes: { id: string; type: string; position: { x: number; y: number } }[]; edges: { id: string; source: string; target: string }[]; mode: string } } }>(\n    '/tasks/:sessionId/diagram',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['diagram'],\n          properties: {\n            diagram: {\n              type: 'object',\n              additionalProperties: false,\n              required: ['nodes', 'edges', 'mode'],\n              properties: {\n                nodes: { type: 'array', items: { type: 'object', additionalProperties: true } },\n                edges: { type: 'array', items: { type: 'object', additionalProperties: true } },\n                mode: { type: 'string', enum: ['chain', 'fanout', 'full'] },\n              },\n            },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const sessionId = request.params.sessionId\n      const { diagram } = request.body\n      const current = await deps.backend.get(sessionId)\n      if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n      // ephemeral: frontend localStorage is truth for drag positions; backend echoes for now\n      // until diagram persistence migrates to event-sourced overlay (not swallowing success as durable)\n      return reply.send({ ok: true, diagram, persisted: false })\n    }\n  )\n\n  // Per-session SSE (spec §3/§4): replay-then-live for one session's events,\n  // filtered by correlationId over the global bridge projection.\n  app.get<{ Params: { sessionId: string } }>('/events/:sessionId', async (request, reply) => {\n    const aggregate = await deps.backend.get(request.params.sessionId)\n    if (!aggregate) return reply.code(404).send({ ok: false, error: 'unknown session' })\n    reply.hijack()\n    deps.sse.handleForSession(request.raw, reply.raw, aggregate.correlationId)\n  })\n\n  // Per-project SSE: replay-then-live for all sessions belonging to a project,\n  // filtered by the set of correlation IDs for that project's sessions. The live\n  // set grows on `session.created` for the same project so the stream is live.\n  app.get<{ Params: { projectId: string } }>('/projects/:projectId/events', async (request, reply) => {\n    const project = await deps.backend.getProject(request.params.projectId)\n    if (!project) return reply.code(404).send({ ok: false, error: 'unknown project' })\n    const { sessions } = await deps.backend.list({ projectId: request.params.projectId, limit: 500, offset: 0 })\n    const correlationIds = new Set(sessions.map((s) => s.correlationId))\n    reply.hijack()\n    deps.sse.handleForProject(request.raw, reply.raw, request.params.projectId, correlationIds)\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-mediator",
+      "id": "call_ad2b3f9265104150a696cf34",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/api/auth.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-mediator",
+      "id": "call_ad2b3f9265104150a696cf34",
+      "name": "web_fetch",
+      "result": "import { timingSafeEqual } from 'node:crypto'\nimport type { FastifyInstance } from 'fastify'\nimport { log } from '../log'\n\n/** Constant-time token comparison so the pre-auth gate leaks nothing via timing. */\nfunction safeEqual(a: string, b: string): boolean {\n  const left = Buffer.from(a)\n  const right = Buffer.from(b)\n  if (left.length !== right.length) {\n    // Avoid length oracle: still invoke timingSafeEqual on equal-length buffers\n    // so the early-return timing does not reveal the expected length. Use a\n    // dummy of the same shape as `right` when lengths differ.\n    const dummy = Buffer.alloc(right.length)\n    try {\n      timingSafeEqual(dummy, right)\n    } catch {\n      /* ignore — dummy compare is only for timing */\n    }\n    return false\n  }\n  return timingSafeEqual(left, right)\n}\n\n/** Hostnames that are loopback-equivalent; anything else is a cross-host bind. */\nconst LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1'])\n\n/**\n * Pre-auth baseline for the account-facing surface (m3 spec §7, ADR-006\n * Decision 7). When `ATLASLINK_API_TOKEN` is set, every task-rest route and the\n * per-session event stream require `Authorization: Bearer <token>`; otherwise\n * they are 401. When unset the API is unauthenticated — refusenik for a\n * non-loopback bind (a cost-bearing surface must not go live unauthenticated,\n * fail-closed), else logged once at boot so the operator knows the boundary.\n */\nexport function registerTokenGate(app: FastifyInstance, opts?: { bindHost?: string }): void {\n  const token = process.env.ATLASLINK_API_TOKEN\n  const bindHost = opts?.bindHost\n  if (!token) {\n    if (bindHost !== undefined && !LOOPBACK_HOSTS.has(bindHost.toLowerCase())) {\n      throw new Error(\n        `refusing to start: ATLASLINK_API_TOKEN must be set when binding ${bindHost} (the M3 task API would be unauthenticated and cost-bearing)`\n      )\n    }\n    log.warn('API is unauthenticated: ATLASLINK_API_TOKEN is unset; do not expose this host beyond loopback')\n    return\n  }\n\n  app.addHook('preHandler', (request, reply, done) => {\n    const header = request.headers.authorization\n    if (typeof header === 'string' && safeEqual(header, `Bearer ${token}`)) {\n      done()\n      return\n    }\n    // Security audit trail: every rejection is observable (rate-limited at the\n    // source), never the header itself — the token must not reach the log.\n    log.warn('auth rejected', { url: request.url, ip: request.ip, status: 401 })\n    reply.code(401).send({ ok: false, error: 'unauthorized' })\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "L",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "m",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "l",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "k",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "h",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "k",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "g",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "y",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "l",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "y",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "d",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "A",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "P",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "I",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "u",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-mediator",
+      "data": ".",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.turn_end",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator",
+      "correlationId": "ws-corr-e2e-1788214442631",
+      "outputChars": 64
+    },
+    {
+      "type": "workspace.turn_end",
+      "memberId": "the-mediator",
+      "decision": "pass",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.status",
+      "memberId": "the-mediator",
+      "status": "done",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "trace",
+      "member": "the-mediator",
+      "durationMs": 14502,
+      "tokenCount": {
+        "input": 1355,
+        "output": 16,
+        "total": 1371
+      },
+      "cost": 0.0002,
+      "qualityScore": null,
+      "status": "success",
+      "correlationId": "ws-corr-e2e-1788214442631",
+      "source": "api",
+      "model": "deepseek-v4-flash",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 0,
+      "memberId": "the-mediator"
+    }
+  ]
+}

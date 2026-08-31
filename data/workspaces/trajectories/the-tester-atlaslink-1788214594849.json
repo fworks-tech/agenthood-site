@@ -1,0 +1,1496 @@
+{
+  "workspaceId": "ws-e2e-1788214442631",
+  "correlationId": "ws-corr-e2e-1788214442631",
+  "memberId": "the-tester",
+  "events": [
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.turn_start",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.turn_start",
+      "memberId": "the-tester",
+      "role": "the-tester",
+      "turnIndex": 2,
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.status",
+      "memberId": "the-tester",
+      "status": "working",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_21d3871209a94da0a6ff7e21",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/daemon"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_21d3871209a94da0a6ff7e21",
+      "name": "web_fetch",
+      "result": "atlaslink/src/daemon at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / daemon / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / daemon / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. README.md README.md contextFactory.ts contextFactory.ts runTask.test.ts runTask.test.ts runTask.ts runTask.ts View all files README.md Outline src/daemon — the run-execution glue The one-shot execution path: nothing here touches the wire. It builds the Agenthood runtime pieces a single run needs and reports the outcome back through the registry. Modules File Responsibility contextFactory.ts validateConfig (fails fast at boot when a provider key is missing) and createContext — an ApplicationContext built lazily per run , because ApplicationContext.create connects the vector store and touches the LLM (pattern re-index). runTask.ts runSession : creates the context, subscribes to the run's RunEventBus , invokes the member, and finalizes the session from the real outcome ( runMemberTask throws on failure, so status is never guessed). Injectable createApp keeps it hermetic in tests. Invariants Lazy context creation: never at boot; only when a task actually runs. Terminal-from-registry: the session's final status comes from the runtime's outcome, never from a heuristic. Untouched by the M3/multi-account refactor: runTask.ts and taskRegistry.ts are a cross-branch invariant — the HTTP layer drives them only through SessionQueue (ADR-002 read-only contract). Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_56c06187ece04198bcba3811",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/session"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_56c06187ece04198bcba3811",
+      "name": "web_fetch",
+      "result": "atlaslink/src/session at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / session / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / session / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. README.md README.md backendContract.ts backendContract.ts backendFactory.ts backendFactory.ts db.ts db.ts deepFreeze.test.ts deepFreeze.test.ts deepFreeze.ts deepFreeze.ts eventLogBackend.test.ts eventLogBackend.test.ts eventLogBackend.ts eventLogBackend.ts migrations.ts migrations.ts postgresBackend.test.ts postgresBackend.test.ts postgresBackend.ts postgresBackend.ts sessionBackend.ts sessionBackend.ts sessionStore.test.ts sessionStore.test.ts sessionStore.ts sessionStore.ts types.ts types.ts View all files README.md Outline src/session — the Session layer (M3) The event-sourced session aggregate behind a backend port (ADR-004, direction ADR-006). A Session is rebuilt deterministically from its session.* event stream; version is the optimistic CAS token — a stale write rejects instead of silently clobbering. Modules File Responsibility sessionBackend.ts The SessionBackend port: append , get , readModifyWrite . Implementations must keep version-check + commit atomic. sessionStore.ts In-memory SessionStore plus the shared rehydrate(events) reducer and the StreamIntegrityError / VersionConflictError types. deepFreeze.ts deepFreeze(value) — recursively freezes an object graph. Used by every backend to prevent snapshot mutation. eventLogBackend.ts EventLogBackend : the same contract over the NDJSON EventLogStore , with a per-session SessionSnapshot cache and #versions map for zero-I/O hits; invalidated on append to that session. postgresBackend.ts PostgresBackend over Postgres event tables. CAS is enforced inside a FOR UPDATE transaction. Per-session SessionSnapshot cache with #versions in-memory counter for zero-I/O hits; the cache is single-process state — cross-process writes fall through to Postgres and re-sync. db.ts Minimal Db seam ( query / exec / transaction ) with pglite (hermetic CI) and pg (managed) adapters. migrations.ts Hand-rolled runner: applied-versions table, standard-SQL migrations in one transaction guarded by an advisory xact lock, so the identical statements run on both drivers. backendFactory.ts createSessionBackend() : in-memory by default; ATLASLINK_DATABASE_URL selects Postgres (migrations applied first). types.ts Session , SessionEvent , SessionDelta , SessionSnapshot , and the error classes. backendContract.ts Shared test harness — every backend binds to the same behavioral suite. Data model session_events (Postgres) is keyed by (tenant_id, session_id, seq) with a UNIQUE (tenant_id, session_id, version) CAS column and an index on (tenant_id, correlation_id) . tenant_id defaults to 'default' so the auth ADR is additive, not a schema rewrite. M3 ships rebuild-on-read; a maintained sessions materialization is the later optimization. Invariants Append is the commit. The store and the event stream cannot drift. Rebuild-on-read is deterministic and order-stable (failed/duplicate events are not invented). A backend swap cannot change observable behavior — backendContract pins it. Hermetic: pglite is in-process and offline; managed Postgres never runs in CI. Snapshot cache consistency. Every backend tracks a per-session snapshot ( SessionSnapshot in types.ts ). append() invalidates the affected session's cache; get() returns the frozen cached reference when the version matches. Callers receive a deepFreeze d snapshot — mutation is a contract violation caught by the shared backend contract test. Note on the two status models src/tasks/taskRegistry.ts carries an M1-era in-memory status ( queued|running|succeeded|failed ) with its own Session shape. The session layer defines its own richer status ( +cancelled ) and aggregate. src/tasks/README.md documents this coexistence; the task-rest branch reconciles them. Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_80fb642d1fda4d73b33b4fea",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/bridge"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_80fb642d1fda4d73b33b4fea",
+      "name": "web_fetch",
+      "result": "atlaslink/src/bridge at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / bridge / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / bridge / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. EventBroadcaster.test.ts EventBroadcaster.test.ts EventBroadcaster.ts EventBroadcaster.ts EventLogStore.test.ts EventLogStore.test.ts EventLogStore.ts EventLogStore.ts README.md README.md SessionQueue.test.ts SessionQueue.test.ts SessionQueue.ts SessionQueue.ts insights.test.ts insights.test.ts insights.ts insights.ts sseEndpoint.test.ts sseEndpoint.test.ts sseEndpoint.ts sseEndpoint.ts View all files README.md Outline src/bridge — the Event Bridge (M2) Bridges agent-execution events from the daemon to clients. Everything crossing the wire is a bridge envelope ( { eventId, type, ... } ); this layer persuades it onto disk (NDJSON) and out to browsers (SSE) while never rewriting it (ADR-002). Modules File Responsibility EventLogStore.ts Append-only, 10 MB × 3 rotating NDJSON log (ADR-001). Monotonic eventId cursor restored from sidecar + tail scan; failures swallowed so the live stream never blocks on disk. EventBroadcaster.ts Assigns eventId , persists the envelope, fans it out verbatim to subscribers; replays the recent highWaterMark for slow subscribers; detectGap() surfaces the first hole. SessionQueue.ts Serial FIFO session worker (ADR-003). Sessions run strictly one at a time; every lifecycle transition is mirrored as a session.* event because the RunEventBus has no \"queued\" state. sseEndpoint.ts SseHandler for GET /events : Last-Event-ID resume, stale-resume bridge.gap , 15 s : ping , graceful bridge.shutdown , no request log line. formatSse serializes the envelope per spec §4. insights.ts Pure aggregator ( buildInsightsReport ) over trace envelopes: cost/token/reliability grouped by member and model, plus optimization-lever rankings and a cost trend. Used by the CLI insights command. Invariants Verbatim envelopes (ADR-002): the emitter owns type ; the bridge never rewrites it or injects fields. Swallow-write: a failed append/rotation logs a warning and the stream keeps flowing (ADR-005 live-stream-never-blocks rule). Deterministic replay: rotation files are read oldest → newest so replay order matches emission order. Serial execution: all runs route through SessionQueue ; nothing in the HTTP layer drives runTask inline. Tests *.test.ts here run against real sockets and temp log dirs, fully hermetic. sseEndpoint.test.ts is the contract gate for the Fastify rewrite (ADR-006 Decision 2) — it must pass unchanged. Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_8e9730926b94429981afdae4",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://github.com/fworks-tech/atlaslink/tree/main/src/api"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_8e9730926b94429981afdae4",
+      "name": "web_fetch",
+      "result": "atlaslink/src/api at main · fworks-tech/atlaslink · GitHub Skip to content Navigation Menu Sign in Appearance settings Platform AI CODE CREATION GitHub Copilot Write better code with AI GitHub Copilot app Direct agents from issue to merge MCP Registry Integrate external tools DEVELOPER WORKFLOWS Actions Automate any workflow Codespaces Instant dev environments Issues Plan and track work Code Review Manage code changes Code Quality Enforce quality at merge APPLICATION SECURITY GitHub Advanced Security Find and fix vulnerabilities Code security Secure your code as you build Secret protection Stop leaks before they start EXPLORE Why GitHub Documentation Blog Changelog Marketplace View all features Solutions BY COMPANY SIZE Enterprises Small and medium teams Startups Nonprofits BY USE CASE App Modernization DevSecOps DevOps CI/CD View all use cases BY INDUSTRY Healthcare Financial services Manufacturing Government View all industries View all solutions Resources EXPLORE BY TOPIC AI Software Development DevOps Security View all topics EXPLORE BY TYPE Customer stories Events &amp; webinars Ebooks &amp; reports Business insights GitHub Skills SUPPORT &amp; SERVICES Documentation Customer support Community forum Trust center Partners View all resources Open Source COMMUNITY GitHub Sponsors Fund open source developers PROGRAMS Security Lab Maintainer Community GitHub Stars Archive Program REPOSITORIES Topics Trending Collections Enterprise ENTERPRISE SOLUTIONS Enterprise platform AI-powered developer platform AVAILABLE ADD-ONS GitHub Advanced Security Enterprise-grade security features Copilot for Business Enterprise-grade AI features Premium Support Enterprise-grade 24/7 support Pricing Search / Sign in Sign up Appearance settings You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert {{ message }} fworks-tech / atlaslink Public Notifications You must be signed in to change notification settings Fork 0 Star 1 Code Issues 1 Pull requests 0 Actions Projects Security and quality 0 Insights Additional navigation options Code Issues Pull requests Actions Projects Security and quality Insights Files Expand file tree main Breadcrumbs atlaslink / src / api / Copy path Directory actions More options More options Directory actions More options More options Latest commit History History History main Breadcrumbs atlaslink / src / api / Copy path Top Folders and files Name Name Last commit message Last commit date parent directory .. auth.ts auth.ts projects.ts projects.ts tasks.test.ts tasks.test.ts tasks.ts tasks.ts View all files Footer &copy; 2026 GitHub,&nbsp;Inc. Footer navigation Terms Privacy Security Status Community Docs Contact Manage cookies Do not share my personal information You can’t perform that action at this time.",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_34d868df15584332a9bca424",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/SessionQueue.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_34d868df15584332a9bca424",
+      "name": "web_fetch",
+      "result": "import { BridgeEnvelope } from './EventLogStore'\nimport { EventBroadcaster } from './EventBroadcaster'\nimport { SessionStatus } from '../tasks/taskRegistry'\n\n/**\n * SessionQueue is the serial FIFO worker behind the bridge (ADR-003: Atlas holds\n * the sky of sessions). Sessions are processed strictly one at a time in enqueue\n * order; the injected runner keeps it hermetic in tests. Every lifecycle\n * transition is mirrored to the wire as a namespaced `session.*` event so M4 can\n * render queued sessions that the RunEventBus (which has no \"queued\" state and\n * emits nothing for a fail-before-any-event run) cannot represent. The terminal\n * status comes from the registry after the run, never guessed (spec §5,\n * \"terminal-from-registry\").\n *\n * Event shapes (spec §4):\n *   session.queued    — {eventId, type, sessionId, correlationId, member, status, at}\n *   session.started   — same, status 'running'\n *   session.succeeded — same, status 'succeeded'\n *   session.failed    — same, status 'failed'\n */\nexport class SessionQueue {\n  private readonly broadcaster: EventBroadcaster\n  private readonly runner: (sessionId: string) => Promise<void>\n  private readonly registry: { get(id: string): SessionSnapshot | undefined }\n  private readonly queue: string[] = []\n  private running = false\n\n  constructor(params: {\n    broadcaster: EventBroadcaster\n    runner: (sessionId: string) => Promise<void>\n    registry: { get(id: string): SessionSnapshot | undefined }\n  }) {\n    this.broadcaster = params.broadcaster\n    this.runner = params.runner\n    this.registry = params.registry\n  }\n\n  /** Enqueue a session. Emits session.queued and starts processing if idle. */\n  declareSession(session: Omit<SessionSnapshot, 'status'>): void {\n    const enriched: SessionSnapshot = { ...session, status: SessionStatus.QUEUED }\n    this.#emit('session.queued', session.id, enriched, SessionStatus.QUEUED)\n    this.queue.push(session.id)\n    void this.#pump()\n  }\n\n  /** Process queued sessions in FIFO order, strictly one at a time. */\n  async #pump(): Promise<void> {\n    if (this.running) return\n    this.running = true\n    try {\n      while (this.queue.length > 0) {\n        const sessionId = this.queue.shift()!\n        const started = this.registry.get(sessionId)\n        // a cancelled queued session is skipped, never run (spec §3 guarantee)\n        if (!started || started.status === SessionStatus.CANCELLED) continue\n        this.#emit('session.started', sessionId, started, SessionStatus.RUNNING)\n        await this.runner(sessionId)\n        const final = this.registry.get(sessionId)\n        if (!final) continue\n        if (final.status === SessionStatus.SUCCEEDED) {\n          this.#emit('session.succeeded', sessionId, final, SessionStatus.SUCCEEDED)\n        } else if (final.status === SessionStatus.FAILED) {\n          this.#emit('session.failed', sessionId, final, SessionStatus.FAILED)\n        }\n      }\n    } finally {\n      this.running = false\n    }\n  }\n\n  #emit(type: string, sessionId: string, session: SessionSnapshot, status: string): void {\n    const envelope: BridgeEnvelope = {\n      eventId: 0, // assigned by the broadcaster\n      type,\n      sessionId,\n      correlationId: session.correlationId,\n      member: session.task.member,\n      status,\n      at: new Date().toISOString(),\n    }\n    this.broadcaster.emit(envelope)\n  }\n\n  /** Number of sessions still queued but not yet started. */\n  get pending(): number {\n    return this.queue.length\n  }\n}\n\nexport interface SessionSnapshot {\n  id: string\n  correlationId: string\n  task: { member: string }\n  status: string\n}\n\nexport default SessionQueue",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_72a11580f4264945881a765a",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/api/tasks.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_72a11580f4264945881a765a",
+      "name": "web_fetch",
+      "result": "import { randomUUID } from 'node:crypto'\nimport type { FastifyInstance } from 'fastify'\nimport type { SessionBackend, SessionFilter } from '../session/sessionBackend'\nimport type { Session as AggregateSession, SessionEvent } from '../session/types'\nimport { VersionConflictError } from '../session/types'\nimport type { SessionQueue } from '../bridge/SessionQueue'\nimport type { SseHandler } from '../bridge/sseEndpoint'\nimport type { TaskRegistry } from '../tasks/taskRegistry'\nimport { log } from '../log'\n\nexport interface TaskDeps {\n  backend: SessionBackend\n  registry: TaskRegistry\n  queue: SessionQueue\n  sse: SseHandler\n}\n\nconst TERMINAL_STATUSES = ['succeeded', 'failed', 'cancelled'] as const\n\ninterface PostBody {\n  member: string\n  prompt: string\n  projectId?: string\n  tweaks?: { provider?: string; member?: Record<string, unknown>; team?: Record<string, unknown> }\n}\n\n/** Wire form of the store aggregate — same shape the spec §3 defines. */\nexport function sessionToWire(s: AggregateSession): AggregateSession {\n  return s\n}\n\n/**\n * The M3 Task API on Fastify (spec §3): create + enqueue, list with\n * backend-applied filters, aggregate read, and queued-cancel. The pre-auth\n * bearer gate and rate limit are installed once in `createAppServer` on the\n * scope that owns /runs, /events, and these routes (spec §7) — this module\n * stays a declarative route list.\n */\nexport function registerTaskRoutes(app: FastifyInstance, deps: TaskDeps): void {\n  app.post<{ Body: PostBody }>(\n    '/tasks',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['member', 'prompt'],\n          properties: {\n            member: { type: 'string', minLength: 1 },\n            prompt: { type: 'string', minLength: 1, maxLength: 10000 },\n            projectId: { type: 'string', maxLength: 200 },\n            tweaks: {\n              type: 'object',\n              additionalProperties: false,\n              properties: {\n                provider: { type: 'string' },\n                member: { type: 'object' },\n                team: { type: 'object' },\n              },\n            },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const { member, prompt, projectId, tweaks } = request.body\n      const sessionId = `ses-${randomUUID()}`\n      const correlationId = `cor-${randomUUID()}`\n      const event: SessionEvent = {\n        type: 'session.created',\n        sessionId,\n        correlationId,\n        at: new Date().toISOString(),\n        member,\n        prompt,\n        ...(projectId !== undefined ? { projectId } : {}),\n        ...(tweaks !== undefined ? { tweaks } : {}),\n      }\n      // the aggregate is committed first; the queue then runs by the same ids\n      await deps.backend.append(event)\n      const created = deps.registry.create({\n        member,\n        prompt,\n        provider: tweaks?.provider,\n        id: sessionId,\n        correlationId,\n      })\n      deps.queue.declareSession(created)\n      log.info('task created', { sessionId, correlationId, member, projectId })\n      const aggregate = await deps.backend.get(sessionId)\n      return reply.code(201).send({ ok: true, session: sessionToWire(aggregate!) })\n    }\n  )\n\n  app.get<{ Querystring: { projectId?: string; status?: string; since?: string; limit?: number; offset?: number } }>(\n    '/tasks',\n    {\n      schema: {\n        querystring: {\n          type: 'object',\n          additionalProperties: false,\n          properties: {\n            projectId: { type: 'string' },\n            status: { type: 'string', enum: ['queued', 'running', 'awaiting_input', 'succeeded', 'failed', 'cancelled'] },\n            since: { type: 'string' },\n            limit: { type: 'integer', minimum: 1, maximum: 500 },\n            offset: { type: 'integer', minimum: 0 },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const query = request.query\n      if (query.since !== undefined && Number.isNaN(Date.parse(query.since))) {\n        return reply.code(400).send({ ok: false, error: 'since must be an ISO-8601 date-time' })\n      }\n      const filter: SessionFilter = {\n        projectId: query.projectId ?? undefined,\n        status: (query.status as SessionFilter['status']) ?? undefined,\n        since: query.since ?? undefined,\n        limit: query.limit ?? 50,\n        offset: query.offset ?? 0,\n      }\n      const { sessions, total } = await deps.backend.list(filter)\n      return reply.send({\n        ok: true,\n        sessions: sessions.map(sessionToWire),\n        total,\n        limit: filter.limit,\n        offset: filter.offset,\n      })\n    }\n  )\n\n  app.get<{ Params: { sessionId: string } }>('/tasks/:sessionId', async (request, reply) => {\n    const aggregate = await deps.backend.get(request.params.sessionId)\n    if (!aggregate) return reply.code(404).send({ ok: false, error: 'unknown session' })\n    return reply.send({ ok: true, session: sessionToWire(aggregate) })\n  })\n\n  app.post<{ Params: { sessionId: string } }>('/tasks/:sessionId/cancel', async (request, reply) => {\n    const sessionId = request.params.sessionId\n\n    // Re-evaluate against a fresh aggregate until the state is stable: a\n    // VersionConflictError means the lifecycle moved between our read and\n    // write (the queue started the run) — resolve rather than 500.\n    for (let attempt = 0; attempt < 2; attempt++) {\n      const current = await deps.backend.get(sessionId)\n      if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n      if ((TERMINAL_STATUSES as readonly string[]).includes(current.status)) {\n        return reply.code(409).send({ ok: false, error: 'session already terminated' })\n      }\n      if (current.status === 'running') {\n        // M3 best-effort contract (spec §3): acknowledge now, cancel lands with the runtime\n        return reply.code(202).send({ ok: true, status: 'running', cancel: 'best-effort', session: sessionToWire(current) })\n      }\n      try {\n        await deps.backend.readModifyWrite(sessionId, current.version, () => [\n          { type: 'session.cancelled', correlationId: current.correlationId, at: new Date().toISOString() },\n        ])\n        // dequeue from execution so the pump never runs a cancelled session\n        try {\n          deps.registry.cancel(sessionId)\n        } catch {\n          // the registry entry may already be gone or terminal — the store commit is the truth\n        }\n        const after = await deps.backend.get(sessionId)\n        return reply.code(202).send({ ok: true, status: 'cancelled', session: sessionToWire(after!) })\n      } catch (err) {\n        if (err instanceof VersionConflictError) continue\n        throw err\n      }\n    }\n    return reply.code(409).send({ ok: false, error: 'session state changed' })\n  })\n\n  // Full DAG: Atlas asks follow-up in the latest card → user replies → diagram grows\n  app.post<{ Params: { sessionId: string }; Body: { content: string } }>(\n    '/tasks/:sessionId/reply',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['content'],\n          properties: {\n            content: { type: 'string', minLength: 1, maxLength: 10000 },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const sessionId = request.params.sessionId\n      const { content } = request.body\n      for (let attempt = 0; attempt < 2; attempt++) {\n        const current = await deps.backend.get(sessionId)\n        if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n        if (current.status !== 'awaiting_input') {\n          if ((TERMINAL_STATUSES as readonly string[]).includes(current.status)) {\n            return reply.code(409).send({ ok: false, error: 'session already terminated' })\n          }\n          return reply.code(409).send({ ok: false, error: 'session not awaiting input' })\n        }\n        try {\n          await deps.backend.readModifyWrite(sessionId, current.version, () => [\n            { type: 'session.user_reply', correlationId: current.correlationId, at: new Date().toISOString(), reply: content },\n            // re-queue as running so the diagram keeps growing — next iteration\n            { type: 'session.running', correlationId: current.correlationId, at: new Date().toISOString() },\n          ])\n          const after = await deps.backend.get(sessionId)\n          // also fan out on SSE so live diagram updates without polling\n          // (store is truth; SSE is best-effort projection)\n          try {\n            const eventId = after?.version ?? current.version + 2\n            deps.sse.broadcaster.emit({ eventId, type: 'session.user_reply', sessionId, correlationId: current.correlationId, at: new Date().toISOString(), reply: content } as unknown as { eventId: number; type: string } & Record<string, unknown>)\n          } catch {}\n          return reply.code(201).send({ ok: true, session: sessionToWire(after!) })\n        } catch (err) {\n          if (err instanceof VersionConflictError) continue\n          throw err\n        }\n      }\n      return reply.code(409).send({ ok: false, error: 'session state changed' })\n    }\n  )\n\n  // Persist editor drag positions (ephemeral) — diagram is a projection, but user wins position\n  app.post<{ Params: { sessionId: string }; Body: { diagram: { nodes: { id: string; type: string; position: { x: number; y: number } }[]; edges: { id: string; source: string; target: string }[]; mode: string } } }>(\n    '/tasks/:sessionId/diagram',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['diagram'],\n          properties: {\n            diagram: {\n              type: 'object',\n              additionalProperties: false,\n              required: ['nodes', 'edges', 'mode'],\n              properties: {\n                nodes: { type: 'array', items: { type: 'object', additionalProperties: true } },\n                edges: { type: 'array', items: { type: 'object', additionalProperties: true } },\n                mode: { type: 'string', enum: ['chain', 'fanout', 'full'] },\n              },\n            },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const sessionId = request.params.sessionId\n      const { diagram } = request.body\n      const current = await deps.backend.get(sessionId)\n      if (!current) return reply.code(404).send({ ok: false, error: 'unknown session' })\n      // ephemeral: frontend localStorage is truth for drag positions; backend echoes for now\n      // until diagram persistence migrates to event-sourced overlay (not swallowing success as durable)\n      return reply.send({ ok: true, diagram, persisted: false })\n    }\n  )\n\n  // Per-session SSE (spec §3/§4): replay-then-live for one session's events,\n  // filtered by correlationId over the global bridge projection.\n  app.get<{ Params: { sessionId: string } }>('/events/:sessionId', async (request, reply) => {\n    const aggregate = await deps.backend.get(request.params.sessionId)\n    if (!aggregate) return reply.code(404).send({ ok: false, error: 'unknown session' })\n    reply.hijack()\n    deps.sse.handleForSession(request.raw, reply.raw, aggregate.correlationId)\n  })\n\n  // Per-project SSE: replay-then-live for all sessions belonging to a project,\n  // filtered by the set of correlation IDs for that project's sessions. The live\n  // set grows on `session.created` for the same project so the stream is live.\n  app.get<{ Params: { projectId: string } }>('/projects/:projectId/events', async (request, reply) => {\n    const project = await deps.backend.getProject(request.params.projectId)\n    if (!project) return reply.code(404).send({ ok: false, error: 'unknown project' })\n    const { sessions } = await deps.backend.list({ projectId: request.params.projectId, limit: 500, offset: 0 })\n    const correlationIds = new Set(sessions.map((s) => s.correlationId))\n    reply.hijack()\n    deps.sse.handleForProject(request.raw, reply.raw, request.params.projectId, correlationIds)\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_2eb3a19bb6f44ea7a5a5bfd7",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/daemon/runTask.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_2eb3a19bb6f44ea7a5a5bfd7",
+      "name": "web_fetch",
+      "result": "import { msg } from '../tasks/taskRegistry'\nimport { createContext } from './contextFactory'\nimport type { LLMConfig } from 'agenthood/dist/llm/types.js'\nimport type { RunEvent } from 'agenthood/dist/core/RunEventBus.js'\n\nexport interface AppLike {\n  events: { subscribe(listener: (event: RunEvent) => void): () => void }\n  runner: {\n    runMemberTask(memberName: string, task: string, config: LLMConfig): Promise<{ output: string; durationMs: number }>\n  }\n}\n\n/**\n * Executes one session to completion: builds a dedicated ApplicationContext,\n * subscribes to its RunEventBus, invokes the member, and finalizes the session\n * from the real run outcome. runMemberTask throws on failure (unlike the CLI's\n * process-exit path), so status is never guessed.\n */\nexport async function runSession(params: {\n  registry: import('../tasks/taskRegistry.js').TaskRegistry\n  session: import('../tasks/taskRegistry.js').Session\n  config: LLMConfig\n  onEvent?: (event: RunEvent) => void\n  createApp?: (params: { config: LLMConfig; correlationId: string }) => Promise<AppLike>\n}): Promise<import('../tasks/taskRegistry.js').Session> {\n  params.registry.start(params.session.id)\n  let unsubscribe = (): void => {}\n  try {\n    const app = params.createApp\n      ? await params.createApp({ config: params.config, correlationId: params.session.correlationId })\n      : await createContext({ config: params.config, correlationId: params.session.correlationId })\n\n    unsubscribe = app.events.subscribe(params.onEvent ?? (() => {}))\n    const { output, durationMs } = await app.runner.runMemberTask(params.session.task.member, params.session.task.prompt, params.config)\n    params.registry.succeed(params.session.id, { output, durationMs })\n  } catch (err) {\n    params.registry.fail(params.session.id, { error: msg(err) })\n  } finally {\n    unsubscribe()\n  }\n  return params.registry.get(params.session.id)!\n}\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_40daedc0262540ecad08e117",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/tasks/taskRegistry.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_40daedc0262540ecad08e117",
+      "name": "web_fetch",
+      "result": "import { randomUUID } from 'node:crypto'\n\n/** Session states per ADR-003: a session is one user-initiated task run. */\nexport const SessionStatus = Object.freeze({\n  QUEUED: 'queued',\n  RUNNING: 'running',\n  SUCCEEDED: 'succeeded',\n  FAILED: 'failed',\n  CANCELLED: 'cancelled',\n} as const)\n\nexport type SessionStatusType = (typeof SessionStatus)[keyof typeof SessionStatus]\n\nexport function msg(error: unknown): string {\n  return error instanceof Error ? error.message : String(error)\n}\n\n/**\n * In-memory task/session store (persisted in M3). A session always carries a\n * dedicated correlationId that is stamped onto the run's ExecutionContext so\n * events, traces, decisions, and provenance can be joined by it.\n */\nexport class TaskRegistry {\n  #sessions = new Map<string, Session>()\n\n  static #assert(status: SessionStatusType, step: string): void {\n    if (status !== SessionStatus.QUEUED) {\n      throw new Error(`cannot ${step} session in status \"${status}\"`)\n    }\n  }\n\n  create(params: {\n    member: string\n    prompt: string\n    provider?: string\n    id?: string\n    correlationId?: string\n  }): Session {\n    if (!params.member || typeof params.member !== 'string') {\n      throw new Error('member is required')\n    }\n    if (!params.prompt || typeof params.prompt !== 'string') {\n      throw new Error('prompt is required')\n    }\n    const session: Session = {\n      id: params.id ?? `ses-${randomUUID()}`,\n      correlationId: params.correlationId ?? `cor-${randomUUID()}`,\n      status: SessionStatus.QUEUED,\n      task: { member: params.member, prompt: params.prompt, ...(params.provider ? { provider: params.provider } : {}) },\n      createdAt: new Date().toISOString(),\n      startedAt: undefined,\n      finishedAt: undefined,\n      output: undefined,\n      error: undefined,\n      durationMs: undefined,\n    }\n    this.#sessions.set(session.id, session)\n    return session\n  }\n\n  get(id: string): Session | undefined {\n    return this.#sessions.get(id)\n  }\n\n  has(id: string): boolean {\n    return this.#sessions.has(id)\n  }\n\n  list(): Session[] {\n    return [...this.#sessions.values()]\n  }\n\n  start(id: string): Session {\n    const session = this.#sessions.get(id)\n    if (!session) throw new Error(`unknown session \"${id}\"`)\n    TaskRegistry.#assert(session.status, 'start')\n    session.status = SessionStatus.RUNNING\n    session.startedAt = new Date().toISOString()\n    return session\n  }\n\n  /**\n   * Cancel a queued session so the pump skips it. Only legal from QUEUED; a\n   * running/terminal session is untouched (the queue calls this only after the\n   * store commit succeeded, which the pump drains before starting).\n   */\n  cancel(id: string): Session {\n    const session = this.#sessions.get(id)\n    if (!session) throw new Error(`unknown session \"${id}\"`)\n    TaskRegistry.#assert(session.status, 'cancel')\n    session.status = SessionStatus.CANCELLED\n    session.finishedAt = new Date().toISOString()\n    return session\n  }\n\n  succeed(id: string, { output, durationMs }: { output: string; durationMs?: number }): Session {\n    const session = this.#sessions.get(id)\n    if (!session) throw new Error(`unknown session \"${id}\"`)\n    if (session.status !== SessionStatus.RUNNING) {\n      throw new Error(`cannot succeed session in status \"${session.status}\"`)\n    }\n    session.status = SessionStatus.SUCCEEDED\n    session.output = output\n    session.durationMs = durationMs\n    session.finishedAt = new Date().toISOString()\n    return session\n  }\n\n  fail(id: string, { error, durationMs }: { error: string; durationMs?: number }): Session {\n    const session = this.#sessions.get(id)\n    if (!session) throw new Error(`unknown session \"${id}\"`)\n    if (session.status !== SessionStatus.RUNNING) {\n      throw new Error(`cannot fail session in status \"${session.status}\"`)\n    }\n    session.status = SessionStatus.FAILED\n    session.error = error\n    session.durationMs = durationMs\n    session.finishedAt = new Date().toISOString()\n    return session\n  }\n}\n\nexport interface Session {\n  id: string\n  correlationId: string\n  status: SessionStatusType\n  task: { member: string; prompt: string; provider?: string }\n  createdAt: string\n  startedAt: string | undefined\n  finishedAt: string | undefined\n  output: string | undefined\n  error: string | undefined\n  durationMs: number | undefined\n}\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_948eebf7aa484c018984ecde",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/session/sessionStore.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_948eebf7aa484c018984ecde",
+      "name": "web_fetch",
+      "result": "import type { Session, SessionEvent, SessionDelta, SessionSnapshot, Project } from './types'\nimport { StreamIntegrityError, VersionConflictError } from './types'\nimport type { SessionBackend, SessionFilter, SessionList } from './sessionBackend'\nimport { deepFreeze } from './deepFreeze'\n\nexport { StreamIntegrityError, VersionConflictError }\n\n/**\n * Shared list filter for every backend: status and `since` (createdAt) match,\n * newest-first, with `total` counted before pagination. Keeps the task-rest\n * list endpoint semantics identical regardless of the backend underneath.\n */\nexport function filterSessions(sessions: Session[], filter: SessionFilter): SessionList {\n  const matched = sessions\n    .filter((s) => filter.projectId === undefined || s.projectId === filter.projectId)\n    .filter((s) => filter.status === undefined || s.status === filter.status)\n    .filter((s) => filter.since === undefined || (s.createdAt !== undefined && s.createdAt >= filter.since))\n    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))\n  return {\n    sessions: matched.slice(filter.offset, filter.offset + filter.limit),\n    total: matched.length,\n  }\n}\n\nexport function rehydrate(events: SessionEvent[]): Session | null {\n  if (events.length === 0) return null\n\n  const first = events[0]\n  for (const e of events) {\n    if (e.sessionId !== first.sessionId || e.correlationId !== first.correlationId) {\n      throw new StreamIntegrityError(first.sessionId, e.sessionId, e.correlationId)\n    }\n  }\n\n  const session: Session = {\n    sessionId: first.sessionId,\n    correlationId: first.correlationId,\n    status: 'queued',\n    version: events.length,\n    projectId: first.projectId,\n    task: { member: first.member ?? '', prompt: first.prompt ?? '' },\n    interaction: [],\n    nextStep: null,\n    diagram: null,\n  }\n\n  let createdAt: string | undefined\n  let startedAt: string | undefined\n  let finishedAt: string | undefined\n\n  for (const e of events) {\n    switch (e.type) {\n      case 'session.created':\n        createdAt = e.at\n        if (e.member !== undefined) session.task.member = e.member\n        if (e.prompt !== undefined) session.task.prompt = e.prompt\n        if (e.tweaks !== undefined) session.tweaks = e.tweaks\n        if (e.projectId !== undefined) session.projectId = e.projectId\n        session.interaction.push({ role: 'user', at: e.at, content: e.prompt ?? '' })\n        break\n      case 'session.running':\n        startedAt = e.at\n        session.status = 'running'\n        session.nextStep = null\n        break\n      case 'session.succeeded':\n        finishedAt = e.at\n        session.status = 'succeeded'\n        if (e.output !== undefined) session.output = e.output\n        if (e.durationMs !== undefined) session.durationMs = e.durationMs\n        session.nextStep = null\n        if (e.output) session.interaction.push({ role: 'member', member: e.member, at: e.at, content: e.output })\n        break\n      case 'session.failed':\n        finishedAt = e.at\n        session.status = 'failed'\n        if (e.error !== undefined) session.error = e.error\n        session.nextStep = null\n        if (e.error) session.interaction.push({ role: 'member', member: e.member, at: e.at, content: `Error: ${e.error}` })\n        break\n      case 'session.cancelled':\n        finishedAt = e.at\n        session.status = 'cancelled'\n        session.nextStep = null\n        break\n      case 'session.awaiting_input':\n        session.status = 'awaiting_input'\n        session.nextStep = { awaiting_input: true, prompt: e.question, member: e.member }\n        session.interaction.push({ role: 'atlas', member: e.member, at: e.at, content: e.question ?? '' })\n        break\n      case 'session.user_reply':\n        session.status = 'queued'\n        session.nextStep = null\n        session.interaction.push({ role: 'user', at: e.at, content: e.reply ?? '' })\n        break\n    }\n  }\n\n  session.createdAt = createdAt\n  session.startedAt = startedAt\n  session.finishedAt = finishedAt\n  return session\n}\n\nexport class SessionStore implements SessionBackend {\n  private readonly events = new Map<string, SessionEvent[]>()\n  private readonly versions = new Map<string, number>()\n  #snapshots = new Map<string, SessionSnapshot>()\n  #projects = new Map<string, Project>()\n\n  async append(event: SessionEvent): Promise<void> {\n    const list = this.events.get(event.sessionId) ?? []\n    list.push(event)\n    this.events.set(event.sessionId, list)\n    this.versions.set(event.sessionId, list.length)\n    this.#snapshots.delete(event.sessionId)\n  }\n\n  async get(sessionId: string): Promise<Session | null> {\n    const list = this.events.get(sessionId)\n    if (!list || list.length === 0) return null\n\n    const cached = this.#snapshots.get(sessionId)\n    const currentVersion = this.versions.get(sessionId) ?? 0\n    if (cached !== undefined && cached.version === currentVersion) {\n      return cached.session\n    }\n\n    const session = rehydrate(list)\n    if (session === null) throw new Error(`rehydrate returned null for non-empty list: ${sessionId}`)\n    const frozen = deepFreeze(session)\n    this.#snapshots.set(sessionId, { session: frozen, version: currentVersion })\n    return frozen\n  }\n\n  async list(filter: SessionFilter): Promise<SessionList> {\n    const sessions: Session[] = []\n    for (const events of this.events.values()) {\n      const session = rehydrate(events)\n      if (session !== null) sessions.push(session)\n    }\n    return filterSessions(sessions, filter)\n  }\n\n  async readModifyWrite(\n    sessionId: string,\n    expectedVersion: number,\n    mutator: (current: Session | null) => SessionDelta[]\n  ): Promise<void> {\n    const list = this.events.get(sessionId) ?? []\n    const actual = this.versions.get(sessionId) ?? 0\n    if (actual !== expectedVersion) {\n      throw new VersionConflictError(sessionId, expectedVersion, actual)\n    }\n\n    const current = list.length > 0 ? rehydrate(list) : null\n    // invalidation flows through append() — each delta append deletes the snapshot\n    for (const delta of mutator(current)) {\n      await this.append({ ...delta, sessionId })\n    }\n  }\n\n  async listProjects(): Promise<Project[]> {\n    return [...this.#projects.values()].sort(\n      (a, b) => b.createdAt.localeCompare(a.createdAt)\n    )\n  }\n\n  async getProject(id: string): Promise<Project | null> {\n    return this.#projects.get(id) ?? null\n  }\n\n  async createProject(id: string, name: string): Promise<Project> {\n    const project: Project = { id, name, createdAt: new Date().toISOString() }\n    this.#projects.set(id, project)\n    return project\n  }\n\n  async deleteProject(id: string): Promise<boolean> {\n    const existed = this.#projects.delete(id)\n    for (const [sessionId, events] of this.events.entries()) {\n      const first = events[0]\n      if (first?.projectId === id) {\n        this.events.delete(sessionId)\n        this.versions.delete(sessionId)\n        this.#snapshots.delete(sessionId)\n      }\n    }\n    // also remove sessions that were rehydrated but never appended? covered above\n    return existed\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_62192f0a661e4835a93cfd9d",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/session/types.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_62192f0a661e4835a93cfd9d",
+      "name": "web_fetch",
+      "result": "export type SessionStatus = 'queued' | 'running' | 'awaiting_input' | 'succeeded' | 'failed' | 'cancelled'\n\nexport interface SessionEvent {\n  type:\n    | 'session.created'\n    | 'session.running'\n    | 'session.succeeded'\n    | 'session.failed'\n    | 'session.cancelled'\n    | 'session.awaiting_input'\n    | 'session.user_reply'\n  sessionId: string\n  correlationId: string\n  at: string\n  projectId?: string\n  member?: string\n  prompt?: string\n  tweaks?: Record<string, unknown>\n  output?: string\n  error?: string\n  durationMs?: number\n  // awaiting_input / user_reply\n  question?: string\n  reply?: string\n  iteration?: number\n}\n\n/** What a readModifyWrite mutator may produce: a session event with the identity left to the store. */\nexport type SessionDelta = Omit<SessionEvent, 'sessionId'>\n\nexport interface Session {\n  sessionId: string\n  correlationId: string\n  status: SessionStatus\n  version: number\n  createdAt?: string\n  startedAt?: string\n  finishedAt?: string\n  projectId?: string\n  task: { member: string; prompt: string }\n  tweaks?: Record<string, unknown>\n  output?: string\n  error?: string\n  durationMs?: number\n  // conversational + next-step projection (M4)\n  interaction: { role: 'user' | 'atlas' | 'member'; member?: string; at: string; content: string }[]\n  nextStep: { awaiting_input: boolean; prompt?: string; member?: string } | null\n  diagram: { nodes: { id: string; type: string; position: { x: number; y: number } }[]; edges: { id: string; source: string; target: string }[]; mode: string } | null\n}\n\nexport interface Project {\n  id: string\n  name: string\n  createdAt: string\n}\n\nexport class VersionConflictError extends Error {\n  constructor(\n    public readonly sessionId: string,\n    public readonly expected: number,\n    public readonly actual: number\n  ) {\n    super(`version conflict for ${sessionId}: expected ${expected}, actual ${actual}`)\n    this.name = 'VersionConflictError'\n  }\n}\n\n/** Per-session snapshot cache entry shared by all SessionBackend implementations. */\nexport interface SessionSnapshot {\n  session: Session\n  /** Number of store events for the session — the version/CAS token used by `rehydrate`. */\n  version: number\n}\n\nexport class StreamIntegrityError extends Error {\n  constructor(\n    public readonly sessionId: string,\n    public readonly eventSessionId: string,\n    public readonly eventCorrelationId: string\n  ) {\n    super(\n      `stream integrity violation for ${sessionId}: event carries sessionId=${eventSessionId}, correlationId=${eventCorrelationId}`\n    )\n    this.name = 'StreamIntegrityError'\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_a091e6412ee64be08a5a5fec",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/sseEndpoint.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_a091e6412ee64be08a5a5fec",
+      "name": "web_fetch",
+      "result": "import type { IncomingMessage, ServerResponse } from 'node:http'\nimport { EventLogStore, BridgeEnvelope } from './EventLogStore'\nimport { EventBroadcaster } from './EventBroadcaster'\n\nexport const PING_INTERVAL_MS = 15000\n\n/**\n * Serialize a bridge envelope as a Server-Sent Events frame per spec §4.\n * `run.*`, `session.*`, and `bridge.*` types pass verbatim; the emitter owns\n * `type`, and this endpoint never rewrites it (read-only projection contract).\n */\nexport function formatSse(envelope: BridgeEnvelope): string {\n  const lines = [`id: ${envelope.eventId}`, `event: ${envelope.type}`, `data: ${JSON.stringify(envelope)}`]\n  return lines.join('\\n') + '\\n\\n'\n}\n\n/** An active SSE client connection tracked for shutdown. */\ninterface SseClient {\n  res: ServerResponse\n}\n\n/**\n * `GET /events` Server-Sent Events handler. Replays events after Last-Event-ID\n * when provided (else live-tail only), then pushes live events verbatim. A stale\n * resume (`requested < oldestId`) is surfaced as `bridge.gap`, never silence.\n * Tracks open connections so a SIGINT/SIGTERM can send `bridge.shutdown` before\n * ending the stream, and pings idle connections to keep them alive.\n */\nexport class SseHandler {\n  private readonly log: EventLogStore\n  readonly broadcaster: EventBroadcaster\n  private readonly clients = new Set<SseClient>()\n  private readonly ping: ReturnType<typeof setInterval>\n\n  constructor(log: EventLogStore, broadcaster: EventBroadcaster) {\n    this.log = log\n    this.broadcaster = broadcaster\n    // `:ping` comment frame every PING_INTERVAL_MS keeps idle streams alive\n    this.ping = setInterval(() => {\n      for (const client of this.clients) {\n        try {\n          client.res.write(': ping\\n\\n')\n        } catch {\n          /* a closing socket is reclaimed on its res 'close' event */\n        }\n      }\n    }, PING_INTERVAL_MS)\n    this.ping.unref()\n  }\n\n  handle(req: IncomingMessage, res: ServerResponse): void {\n    this.#handle(req, res)\n  }\n\n  /**\n   * Per-session variant (spec §3): replay-then-live limited to one session's\n   * events by `correlationId`. Uses the same wire contract — Last-Event-ID\n   * resume, ping, gap, shutdown — filtered at the projection boundary.\n   */\n  handleForSession(req: IncomingMessage, res: ServerResponse, correlationId: string): void {\n    this.#handle(req, res, (envelope) => envelope.correlationId === correlationId)\n  }\n\n  /**\n   * Project-scoped variant: replay-then-live limited to sessions belonging to\n   * a project. `correlationIds` is the pre-fetched set at connection time; the\n   * live stream grows the set when a `session.created` for this project arrives\n   * so a client that stays connected sees new sessions without reconnecting.\n   */\n  handleForProject(req: IncomingMessage, res: ServerResponse, projectId: string, correlationIds: Set<string>): void {\n    const liveIds = new Set(correlationIds)\n    this.#handle(req, res, (envelope) => {\n      if (envelope.type === 'session.created' && (envelope as { projectId?: string }).projectId === projectId) {\n        const cid = envelope.correlationId as string | undefined\n        if (typeof cid === 'string') liveIds.add(cid)\n      }\n      return liveIds.has(envelope.correlationId as string)\n    })\n  }\n\n  #handle(req: IncomingMessage, res: ServerResponse, filter?: (envelope: BridgeEnvelope) => boolean): void {\n    res.writeHead(200, {\n      'Content-Type': 'text/event-stream; charset=utf-8',\n      'Cache-Control': 'no-cache',\n      Connection: 'keep-alive',\n      'X-Accel-Buffering': 'no',\n    })\n\n    const lastIdRaw = req.headers['last-event-id']\n    const lastId = typeof lastIdRaw === 'string' ? parseInt(lastIdRaw, 10) : NaN\n\n    if (!Number.isNaN(lastId)) {\n      const oldest = this.log.oldestId\n      if (oldest !== undefined && lastId < oldest) {\n        // requested event fallen off the retention window → bridge.gap, never silence\n        this.#frame(res, {\n          eventId: lastId,\n          type: 'bridge.gap',\n          requested: lastId,\n          oldest,\n          at: new Date().toISOString(),\n        })\n      } else {\n        for (const stored of this.log.replay(lastId)) {\n          if (filter !== undefined && !filter(stored.envelope)) continue\n          this.#frame(res, stored.envelope)\n        }\n      }\n    }\n\n    const unsubscribe = this.broadcaster.subscribe(\n      (envelope) => {\n        if (filter !== undefined && !filter(envelope)) return\n        this.#frame(res, envelope)\n      },\n      { replay: false },\n    )\n\n    const client: SseClient = { res }\n    this.clients.add(client)\n    const onClose = (): void => {\n      unsubscribe()\n      this.clients.delete(client)\n      res.removeListener('close', onClose)\n    }\n    res.on('close', onClose)\n\n    // initial comment establishes the event-stream framing per spec §4\n    res.write(': keep-alive\\n\\n')\n  }\n\n  /**\n   * Graceful shutdown: send `bridge.shutdown` to every open client and end the\n   * stream so a controlled stop is distinguishable from a network blip.\n   */\n  shutdown(): void {\n    for (const client of this.clients) {\n      try {\n        client.res.write(`event: bridge.shutdown\\ndata: {}\\n\\n`)\n        client.res.end()\n      } catch {\n        /* already closed */\n      }\n    }\n    this.clients.clear()\n    clearInterval(this.ping)\n  }\n\n  #frame(res: ServerResponse, envelope: BridgeEnvelope): void {\n    try {\n      res.write(formatSse(envelope))\n    } catch {\n      /* write errors surface via res 'close'; normal for a disconnected client */\n    }\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_5ef34c91c34140a29bd61500",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/EventBroadcaster.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_5ef34c91c34140a29bd61500",
+      "name": "web_fetch",
+      "result": "import { EventLogStore, BridgeEnvelope } from './EventLogStore'\n\n/**\n * EventBroadcaster fans out bridge events from an EventLogStore to registered\n * listeners. Envelopes pass verbatim (the read-only projection contract,\n * ADR-002): `type` is whatever the emitter assigned (e.g. `run.*`, `session.*`,\n * `bridge.*`) and is never rewritten.\n *\n * Responsibilities:\n *  1. emit(envelope) assigns a monotonic eventId, persists it, and delivers it\n *     verbatim to every subscriber.\n *  2. On subscribe() with replay, the most recent highWaterMark events are\n *     replayed so a fresh subscriber catches up with bounded memory (slow-client\n *     eviction drops the oldest).\n *  3. detectGap() reports the first missing eventId so a consumer can emit\n *     `bridge.gap` rather than silently skip.\n *  4. A throwing subscriber never breaks the broadcaster or its peers.\n */\nexport class EventBroadcaster {\n  private readonly log: EventLogStore\n  private readonly listeners: Set<(event: BridgeEnvelope) => void>\n  private readonly highWaterMark: number\n  private gap: number | null = null\n\n  constructor(log: EventLogStore, options: { highWaterMark?: number } = {}) {\n    this.log = log\n    this.listeners = new Set()\n    this.highWaterMark = options.highWaterMark ?? 1000\n  }\n\n  /**\n   * Register a listener. By default replays recent events first so the\n   * subscriber catches up; pass `{ replay: false }` for live delivery only.\n   * Returns an unsubscribe function.\n   */\n  subscribe(listener: (event: BridgeEnvelope) => void, options: { replay?: boolean } = {}): () => void {\n    this.listeners.add(listener)\n    if (options.replay !== false) {\n      const oldest = this.log.oldestId\n      // Slow-client eviction: replay only the most recent highWaterMark events.\n      const floor = Math.max(oldest ?? 0, this.log.nextEventId - this.highWaterMark)\n      for (const stored of this.log.replay((oldest ?? 0) - 1)) {\n        if (stored.eventId < floor) continue\n        this.#deliver(stored.envelope)\n      }\n    }\n    return () => this.listeners.delete(listener)\n  }\n\n  /** Assign a monotonic eventId, persist the envelope, and fan it out verbatim. */\n  emit(envelope: BridgeEnvelope): void {\n    const persisted = { ...envelope, eventId: this.log.nextEventId }\n    this.log.append(persisted)\n    this.#deliver(persisted)\n  }\n\n  /** All retained envelopes with `eventId >= startId`, ascending (Last-Event-ID resume). */\n  replayFrom(startId: number): BridgeEnvelope[] {\n    return this.log.replay(startId - 1).map((s) => s.envelope)\n  }\n\n  #deliver(envelope: BridgeEnvelope): void {\n    for (const listener of [...this.listeners]) {\n      try {\n        listener(envelope)\n      } catch {\n        // misbehaving subscriber never breaks the broadcaster or its peers\n      }\n    }\n  }\n\n  /**\n   * Detect the first gap in the eventId sequence and return the missing id, or\n   * null when contiguous (or too few events to judge).\n   */\n  detectGap(): number | null {\n    const ids = this.log.replay(-1).map((e) => e.eventId).filter((id): id is number => Number.isInteger(id))\n    if (ids.length < 2) return null\n    for (let i = 1; i < ids.length; i++) {\n      if (ids[i] !== ids[i - 1] + 1) {\n        const missing = ids[i - 1] + 1\n        if (this.gap === missing) continue\n        this.gap = missing\n        return missing\n      }\n    }\n    return null\n  }\n\n  getGap(): number | null {\n    return this.gap\n  }\n}\n\nexport default EventBroadcaster",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_39668ee78e9c4e69b2d16aca",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/api/tasks.test.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_39668ee78e9c4e69b2d16aca",
+      "name": "web_fetch",
+      "result": "import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport { EventLogStore } from '../bridge/EventLogStore'\nimport { EventBroadcaster } from '../bridge/EventBroadcaster'\nimport { SessionQueue } from '../bridge/SessionQueue'\nimport { SseHandler } from '../bridge/sseEndpoint'\nimport { createAppServer } from '../server'\nimport { TaskRegistry } from '../tasks/taskRegistry'\nimport { SessionStore } from '../session/sessionStore'\nimport { tmpDataDir, runEnv, startServer, jsonRequest, collectStream, cleanup } from '../test/serverHarness'\n\ntest('POST /tasks creates a queued session in the store and returns 201', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const res = await jsonRequest(srv.port, 'POST', '/tasks', {\n      member: 'the-scribe',\n      prompt: 'describe the diff',\n      tweaks: { provider: 'groq' },\n    })\n    assert.equal(res.status, 201)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.ok, true)\n    assert.ok(parsed.session.sessionId.startsWith('ses-'))\n    assert.ok(parsed.session.correlationId.startsWith('cor-'))\n    assert.equal(parsed.session.status, 'queued')\n    assert.equal(parsed.session.version, 1)\n    assert.deepEqual(parsed.session.tweaks, { provider: 'groq' })\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('POST /tasks rejects a missing prompt with the error envelope', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const res = await jsonRequest(srv.port, 'POST', '/tasks', { member: 'the-scribe' })\n    assert.equal(res.status, 400)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.ok, false)\n    assert.equal(typeof parsed.error, 'string')\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('GET /tasks/{id} returns the current aggregate; unknown ids 404', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const created = JSON.parse((await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })).body)\n    const id = created.session.sessionId\n    const res = await jsonRequest(srv.port, 'GET', `/tasks/${id}`)\n    assert.equal(res.status, 200)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.session.status, 'queued')\n    assert.equal(parsed.session.task.member, 'm')\n\n    const missing = await jsonRequest(srv.port, 'GET', '/tasks/ses-nope')\n    assert.equal(missing.status, 404)\n    assert.equal(JSON.parse(missing.body).error, 'unknown session')\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('GET /tasks lists sessions newest-first with filters and pagination', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    await jsonRequest(srv.port, 'POST', '/tasks', { member: 'a', prompt: 'first' })\n    await jsonRequest(srv.port, 'POST', '/tasks', { member: 'b', prompt: 'second' })\n\n    const all = JSON.parse((await jsonRequest(srv.port, 'GET', '/tasks')).body)\n    assert.equal(all.total, 2)\n    assert.equal(all.sessions.length, 2)\n    assert.equal(all.limit, 50)\n    assert.equal(all.offset, 0)\n    assert.notEqual(all.sessions[0].sessionId, all.sessions[1].sessionId)\n\n    const paged = JSON.parse((await jsonRequest(srv.port, 'GET', '/tasks?limit=1&offset=0&status=queued')).body)\n    assert.equal(paged.sessions.length, 1)\n    assert.equal(paged.total, 2)\n\n    const bad = await jsonRequest(srv.port, 'GET', '/tasks?limit=999')\n    assert.equal(bad.status, 400)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('cancel moves a queued session to cancelled (202); a terminal session conflicts (409)', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const id = JSON.parse((await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })).body).session.sessionId\n\n    const cancelled = await jsonRequest(srv.port, 'POST', `/tasks/${id}/cancel`)\n    assert.equal(cancelled.status, 202)\n    const cancelledBody = JSON.parse(cancelled.body)\n    assert.equal(cancelledBody.status, 'cancelled')\n    assert.equal(cancelledBody.session.status, 'cancelled')\n\n    const again = await jsonRequest(srv.port, 'POST', `/tasks/${id}/cancel`)\n    assert.equal(again.status, 409)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('cancel of a running session is acknowledged as best-effort', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const created = JSON.parse((await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })).body).session\n    const id = created.sessionId\n    await srv.backend.append({ type: 'session.running', sessionId: id, correlationId: created.correlationId, at: new Date().toISOString() })\n\n    const res = await jsonRequest(srv.port, 'POST', `/tasks/${id}/cancel`)\n    assert.equal(res.status, 202)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.status, 'running')\n    assert.equal(parsed.session.status, 'running')\n    assert.equal(parsed.cancel, 'best-effort')\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('GET /events/{id} replays and live-tails only that session\\'s events', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const created = JSON.parse((await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })).body).session\n    const cor = created.correlationId\n\n    srv.broadcaster.emit(runEnv(0, { type: 'run.started', correlationId: cor }))\n    srv.broadcaster.emit(runEnv(1, { type: 'run.started', correlationId: 'cor-other' }))\n\n    const body = await collectStream(\n      `http://127.0.0.1:${srv.port}/events/${created.sessionId}`,\n      { 'Last-Event-ID': '0' },\n      900\n    )\n    assert.ok(body.includes('\"correlationId\":\"' + cor + '\"'))\n    assert.ok(!body.includes('\"correlationId\":\"cor-other\"'))\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('task-rest routes refuse a non-loopback bind without a token (fail-closed)', async () => {\n  const previous = process.env.ATLASLINK_API_TOKEN\n  delete process.env.ATLASLINK_API_TOKEN\n  const dir = tmpDataDir()\n  try {\n    const log = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(log)\n    const sse = new SseHandler(log, broadcaster)\n    const registry = new TaskRegistry()\n    const queue = new SessionQueue({ broadcaster, registry, runner: async () => {} })\n    const backend = new SessionStore()\n    await assert.rejects(\n      () => createAppServer({ log, registry, queue, sse, backend, bindHost: '0.0.0.0' }),\n      /ATLASLINK_API_TOKEN must be set/\n    )\n  } finally {\n    if (previous === undefined) delete process.env.ATLASLINK_API_TOKEN\n    else process.env.ATLASLINK_API_TOKEN = previous\n    cleanup(dir)\n  }\n})\n\ntest('the bearer token gate (spec §7) protects /runs, /events, and the task-rest routes', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir, { token: 'secret' })\n\n    const deniedTasks = await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })\n    assert.equal(deniedTasks.status, 401)\n    const deniedRuns = await jsonRequest(srv.port, 'POST', '/runs', { member: 'm', prompt: 'p' })\n    assert.equal(deniedRuns.status, 401)\n    const deniedEvents = await jsonRequest(srv.port, 'GET', '/events')\n    assert.equal(deniedEvents.status, 401)\n\n    const wrong = await jsonRequest(srv.port, 'GET', '/tasks', undefined, { authorization: 'Bearer nope' })\n    assert.equal(wrong.status, 401)\n\n    const allowed = await jsonRequest(\n      srv.port,\n      'POST',\n      '/tasks',\n      { member: 'm', prompt: 'p' },\n      { authorization: 'Bearer secret' }\n    )\n    assert.equal(allowed.status, 201)\n    const allowedRuns = await jsonRequest(\n      srv.port,\n      'POST',\n      '/runs',\n      { member: 'm', prompt: 'p' },\n      { authorization: 'Bearer secret' }\n    )\n    assert.equal(allowedRuns.status, 202)\n\n    // /health sits on the root app, outside the gated scope — probes stay open\n    const health = await jsonRequest(srv.port, 'GET', '/health')\n    assert.equal(health.status, 200)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('the gated scope rate-limits the cost-bearing surface (429 after the cap)', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir, { rateLimit: { max: 2, timeWindow: '1 second' } })\n    await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })\n    await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })\n    const limited = await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p' })\n    assert.equal(limited.status, 429)\n    assert.equal(JSON.parse(limited.body).error, 'rate limit exceeded')\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('POST /tasks with projectId creates a session in that project', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    // Create a project first\n    const projRes = await jsonRequest(srv.port, 'POST', '/projects', { name: 'test-project' })\n    const project = JSON.parse(projRes.body).project\n\n    const res = await jsonRequest(srv.port, 'POST', '/tasks', {\n      member: 'the-scribe',\n      prompt: 'describe the diff',\n      projectId: project.id,\n    })\n    assert.equal(res.status, 201)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.ok, true)\n    assert.equal(parsed.session.projectId, project.id)\n\n    // Verify the session appears in the project's task list\n    const listRes = await jsonRequest(srv.port, 'GET', `/tasks?projectId=${project.id}`)\n    const list = JSON.parse(listRes.body)\n    assert.equal(list.total, 1)\n    assert.equal(list.sessions[0].projectId, project.id)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('POST /projects creates a project and GET /projects lists it', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const res = await jsonRequest(srv.port, 'POST', '/projects', { name: 'my-project' })\n    assert.equal(res.status, 201)\n    const parsed = JSON.parse(res.body)\n    assert.equal(parsed.ok, true)\n    assert.ok(parsed.project.id.startsWith('proj-'))\n    assert.equal(parsed.project.name, 'my-project')\n\n    const list = JSON.parse((await jsonRequest(srv.port, 'GET', '/projects')).body)\n    assert.equal(list.projects.length, 1)\n    assert.equal(list.projects[0].name, 'my-project')\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('GET /projects/:id returns a project; unknown ids 404', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const created = JSON.parse((await jsonRequest(srv.port, 'POST', '/projects', { name: 'p' })).body)\n    const res = await jsonRequest(srv.port, 'GET', `/projects/${created.project.id}`)\n    assert.equal(res.status, 200)\n    assert.equal(JSON.parse(res.body).project.name, 'p')\n\n    const missing = await jsonRequest(srv.port, 'GET', '/projects/proj-nope')\n    assert.equal(missing.status, 404)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('CORS allows only the configured origins and preflight does not need a token', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir, { token: 'secret' })\n\n    // an allowlisted origin gets the CORS header on real (non-preflight) responses\n    const ok = await jsonRequest(srv.port, 'GET', '/health', undefined, {\n      origin: 'http://localhost:3001',\n    })\n    assert.equal(ok.status, 200)\n    assert.equal(ok.headers['access-control-allow-origin'], 'http://localhost:3001')\n\n    // an unknown origin is refused CORS access (no allow header) — but the API\n    // itself still answers, so a non-browser caller is never blocked\n    const unknown = await jsonRequest(\n      srv.port,\n      'POST',\n      '/tasks',\n      { member: 'm', prompt: 'p' },\n      { origin: 'https://evil.example', authorization: 'Bearer secret' }\n    )\n    assert.equal(unknown.status, 201)\n    assert.equal(unknown.headers['access-control-allow-origin'], undefined)\n\n    // a credentialed preflight short-circuits before the bearer gate\n    const preflight = await jsonRequest(srv.port, 'OPTIONS', '/tasks', undefined, {\n      origin: 'http://localhost:3001',\n      'access-control-request-method': 'POST',\n      'access-control-request-headers': 'authorization',\n    })\n    assert.equal(preflight.status, 204)\n    assert.equal(preflight.headers['access-control-allow-origin'], 'http://localhost:3001')\n\n    // the gated surface still enforces the token for real requests without one\n    const denied = await jsonRequest(srv.port, 'GET', '/tasks', undefined, {\n      origin: 'http://localhost:3001',\n    })\n    assert.equal(denied.status, 401)\n\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})\n\ntest('DELETE /projects/:id removes the project and its sessions', async () => {\n  const dir = tmpDataDir()\n  try {\n    const srv = await startServer(dir)\n    const created = JSON.parse((await jsonRequest(srv.port, 'POST', '/projects', { name: 'to-delete' })).body)\n    const id = created.project.id\n    await jsonRequest(srv.port, 'POST', '/tasks', { member: 'm', prompt: 'p', projectId: id })\n    const del = await jsonRequest(srv.port, 'DELETE', `/projects/${id}`)\n    assert.equal(del.status, 200)\n    assert.equal(JSON.parse(del.body).ok, true)\n    const missing = await jsonRequest(srv.port, 'GET', `/projects/${id}`)\n    assert.equal(missing.status, 404)\n    const list = JSON.parse((await jsonRequest(srv.port, 'GET', '/projects')).body)\n    assert.equal(list.projects.some((p: { id: string }) => p.id === id), false)\n    const tasks = JSON.parse((await jsonRequest(srv.port, 'GET', `/tasks?projectId=${id}`)).body)\n    assert.equal(tasks.total, 0)\n    const again = await jsonRequest(srv.port, 'DELETE', `/projects/${id}`)\n    assert.equal(again.status, 404)\n    await srv.close()\n  } finally {\n    cleanup(dir)\n  }\n})",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_b527efb280484a3084de2e64",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/server.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_b527efb280484a3084de2e64",
+      "name": "web_fetch",
+      "result": "import { createServer, type Server } from 'node:http'\nimport { readFileSync } from 'node:fs'\nimport { resolve } from 'node:path'\nimport Fastify, { type FastifyError, type FastifyInstance } from 'fastify'\nimport { loadDaemonConfig } from './config'\nimport type { DaemonConfig } from './config'\nimport { validateConfig, MissingApiKeyError } from './daemon/contextFactory'\nimport { TaskRegistry, msg } from './tasks/taskRegistry'\nimport { log as logger } from './log'\nimport { runSession } from './daemon/runTask'\nimport { EventLogStore } from './bridge/EventLogStore'\nimport { EventBroadcaster } from './bridge/EventBroadcaster'\nimport { SessionQueue } from './bridge/SessionQueue'\nimport { SseHandler } from './bridge/sseEndpoint'\nimport { createSessionBackend } from './session/backendFactory'\nimport { SessionStore } from './session/sessionStore'\nimport type { SessionBackend } from './session/sessionBackend'\nimport type { SessionDelta } from './session/types'\nimport { VersionConflictError } from './session/types'\nimport { registerTaskRoutes } from './api/tasks'\nimport { registerProjectRoutes } from './api/projects'\nimport { registerTokenGate } from './api/auth'\nimport rateLimit from '@fastify/rate-limit'\nimport cors from '@fastify/cors'\nimport type { LLMConfig } from 'agenthood/dist/llm/types.js'\nimport type { RunEvent } from 'agenthood/dist/core/RunEventBus.js'\n\nconst { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))\n\nfunction parseArgs(argv: string[]): { runMode: boolean; member?: string; task?: string } {\n  let runMode = false\n  let member: string | undefined\n  let task: string | undefined\n  for (let i = 0; i < argv.length; i++) {\n    if (argv[i] === '--run') {\n      runMode = true\n      member = argv[i + 1]\n      task = argv.slice(i + 2).join(' ').trim()\n      break\n    }\n  }\n  return { runMode, member, task }\n}\n\nfunction friendlyKeyError(err: unknown): string {\n  return err instanceof MissingApiKeyError\n    ? `\\n${err.message}\\nRun \\`cp .env.example .env\\` and set the key, or add GROQ_API_KEY/use Ollama.\\n`\n    : err instanceof Error ? err.message : String(err)\n}\n\nasync function runOnce({ config, member, task }: { config: LLMConfig; member: string; task: string }): Promise<boolean> {\n  const registry = new TaskRegistry()\n  const session = registry.create({ member, prompt: task })\n  logger.info('session created', { correlationId: session.correlationId, member: session.task.member })\n  const finished = await runSession({\n    registry,\n    session,\n    config,\n    onEvent: (event: RunEvent) => {\n      logger.info('run event', {\n        correlationId: session.correlationId,\n        type: event.type,\n        ...('step' in event ? { step: (event as { step: number }).step } : {}),\n        ...('name' in event ? { name: (event as { name: string }).name } : {}),\n      })\n    },\n  })\n  if (finished.status === 'succeeded') {\n    console.log(`\\n✔ ${finished.task.member} result:\\n${finished.output}\\n`)\n    return true\n  }\n  console.error(`\\n✘ ${finished.task.member} failed: ${finished.error}\\n`)\n  return false\n}\n\n/**\n * Build the daemon HTTP server with its routes wired against the given event\n * log. Does not listen; `listen()` manages the port. The returned broadcaster,\n * queue, and sse handler let run code (POST /runs) and the entrypoint (shutdown)\n * drive the live stream, and let tests inject fakes.\n *\n * The app runs on Fastify (ADR-006 Decision 1) with `logger: false`; the\n * ADR-005 `request` envelope is emitted by an `onResponse` hook through the\n * `src/log.ts` facade so the logged shape stays the shipped contract.\n */\nexport async function createAppServer(params: {\n  log: EventLogStore\n  registry: TaskRegistry\n  queue: SessionQueue\n  sse: SseHandler\n  backend?: SessionBackend\n  bindHost?: string\n  version?: string\n  rateLimit?: { max: number; timeWindow: string }\n  corsOrigins?: string[]\n}): Promise<{ server: Server; broadcaster: EventBroadcaster; sse: SseHandler; queue: SessionQueue; app: FastifyInstance }> {\n  const { log, registry, queue, sse } = params\n  const backend = params.backend ?? new SessionStore()\n  const appVersion = params.version ?? version\n  const rateLimitOpts = params.rateLimit ?? { max: 100, timeWindow: '1 minute' }\n  // Explicit allowlist, never a wildcard: the browser must only ever read this\n  // API from the dashboard origin (dev + production). Server-to-server callers\n  // carry no Origin header and are unaffected.\n  const corsOrigins = params.corsOrigins ?? ['http://localhost:3001', 'https://atlas.flabs.tech']\n\n  // Fastify's serverFactory lets the entrypoint (and tests) own the socket:\n  // `server.listen(port)` drives Fastify's router without app.listen().\n  let server: Server\n  const app = Fastify({\n    logger: false,\n    ignoreTrailingSlash: true,\n    serverFactory: (handler) => {\n      server = createServer((req, res) => handler(req, res))\n      return server\n    },\n  })\n\n  // Root-level rate limit registered before any route so its onRoute hook sees\n  // every route (gated scope included); /health opts out below.\n  await app.register(rateLimit, {\n    ...rateLimitOpts,\n    errorResponseBuilder: () => ({ statusCode: 429, message: 'rate limit exceeded' }),\n  })\n\n  // CORS at the root so preflight short-circuits before the gated scope's auth\n  // gate (OPTIONS never needs a bearer token). Allowlist only.\n  await app.register(cors, { origin: corsOrigins })\n\n  app.addHook('onResponse', (request, reply, done) => {\n    // long-lived SSE streams do not emit a request envelope (same as pre-Fastify)\n    const route = request.routeOptions.url\n    if (route !== '/events' && route !== '/events/:sessionId') {\n      logger.info('request', {\n        method: request.method,\n        url: request.url,\n        status: reply.statusCode,\n        durationMs: reply.elapsedTime,\n      })\n    }\n    done()\n  })\n\n  // --- Safety health ---\n  app.get('/health', { config: { rateLimit: false } }, async () => ({ ok: true, name: 'atlaslink', version: appVersion, uptime: process.uptime() }))\n\n  // --- Account-facing surface (spec §3/§6/§7) ---\n  // One security boundary for /runs, /events, and the task-rest routes: the\n  // pre-auth bearer gate (fail-closed on non-loopback binds) plus the root rate\n  // limit. /health stays on the root app, outside the gate, unthrottled.\n  app.register(async (api) => {\n    registerTokenGate(api, { bindHost: params.bindHost })\n\n    // --- M4 Project API: project-scoped session workspace ---\n    registerProjectRoutes(api, { backend })\n\n    // --- POST /runs (M3 preview, spec §6): delegate a session to the queue ---\n    api.post(\n      '/runs',\n      {\n        schema: {\n          body: {\n            type: 'object',\n            additionalProperties: false,\n            required: ['member', 'prompt'],\n            properties: {\n              member: { type: 'string' },\n              prompt: { type: 'string' },\n            },\n          },\n        },\n      },\n      async (request, reply) => {\n        const { member, prompt } = request.body as { member: string; prompt: string }\n        const session = registry.create({ member, prompt })\n        queue.declareSession(session)\n        logger.info('session delegated', { sessionId: session.id, correlationId: session.correlationId, member })\n        return reply.code(202).send({ ok: true, session: { id: session.id, status: session.status } })\n      },\n    )\n\n    // --- SSE endpoint: GET /events ---\n    // Fastify cedes the socket (reply.hijack) and the existing SseHandler owns the\n    // stream — the reconnection contract (Last-Event-ID, ping, bridge.gap/shutdown)\n    // survives the framework swap untouched (ADR-006 Decision 2).\n    api.get('/events', (request, reply) => {\n      reply.hijack()\n      sse.handle(request.raw, reply.raw)\n    })\n\n    // --- M3 Task API (spec §3/§7): token-gated, store-backed, queue-driven ---\n    registerTaskRoutes(api, { backend, registry, queue, sse })\n  })\n\n  app.setNotFoundHandler((_request, reply) => {\n    reply.code(404).send({ ok: false, error: 'not found' })\n  })\n\n  // Route/validation errors keep the { ok: false, error } envelope the pre-Fastify\n  // router returned; server internals never leak on 5xx (fail-closed).\n  app.setErrorHandler((error: FastifyError, request, reply) => {\n    const status = error.statusCode ?? 500\n    const message = status >= 500 ? 'internal error' : error.message\n    return reply.code(status).send({ ok: false, error: message })\n  })\n\n  // boot the lifecycle so the router, hooks, and 404 handler are live before the\n  // caller (or a test) attaches the socket with server.listen()\n  await app.ready()\n\n  return { server: server!, broadcaster: sse.broadcaster, sse, queue, app }\n}\n\nasync function listen(config: DaemonConfig): Promise<{ server: Server; sse: SseHandler; registry: TaskRegistry; queue: SessionQueue }> {\n  const registry = new TaskRegistry()\n  const backend = await createSessionBackend()\n\n  const log = await EventLogStore.open(config.dataDir, { maxBytes: 10 * 1024 * 1024 })\n  const broadcaster = new EventBroadcaster(log)\n  const sse = new SseHandler(log, broadcaster)\n\n  const queue = new SessionQueue({\n    broadcaster,\n     registry,\n     runner: async (sessionId) => {\n       const session = registry.get(sessionId)!\n       // Mirror lifecycle into the store so GET /tasks read the live aggregate.\n       // /runs-created sessions live only in the registry — the store stays the\n       // /tasks surface, so a missing aggregate is skipped, not invented. A\n       // cancelled aggregate is final: never overwrite it with the run outcome.\n       const mirror = async (delta: SessionDelta): Promise<void> => {\n         const current = await backend.get(sessionId)\n         if (!current || current.status === 'cancelled') return\n         try {\n           await backend.readModifyWrite(sessionId, current.version, () => [delta])\n         } catch (err) {\n           if (!(err instanceof VersionConflictError)) throw err\n           // a cancel landed between read and write — the aggregate moved on,\n           // and the store already reflects the terminal decision; mirror drops\n         }\n       }\n       const at = (): string => new Date().toISOString()\n       try {\n         await mirror({ type: 'session.running', correlationId: session.correlationId, at: at() })\n         await runSession({\n           registry,\n           session,\n           config: config.agenthood,\n           onEvent: (event: RunEvent) => broadcaster.emit({ eventId: 0, ...event }),\n         })\n       } catch (err) {\n         logger.error('session run threw unexpectedly', {\n           sessionId,\n           correlationId: session.correlationId,\n           error: msg(err),\n         })\n       }\n       const final = registry.get(sessionId)!\n       if (final.status === 'succeeded') {\n         await mirror({ type: 'session.succeeded', correlationId: final.correlationId, at: at(), output: final.output, durationMs: final.durationMs })\n       } else if (final.status === 'failed') {\n         await mirror({ type: 'session.failed', correlationId: final.correlationId, at: at(), error: final.error, durationMs: final.durationMs })\n       }\n     },\n   })\n\n  const { server } = await createAppServer({\n    log,\n    registry,\n    queue,\n    sse,\n    backend,\n    bindHost: config.host,\n    corsOrigins: config.corsOrigins,\n  })\n  await new Promise<void>((resolve, reject) => {\n    server.once('error', reject)\n    server.listen(config.port, config.host, resolve)\n  })\n\n  logger.info('daemon online', { host: config.host, port: config.port, version })\n  return { server, sse, registry, queue }\n}\n\nasync function main(): Promise<void> {\n  const { runMode, member, task } = parseArgs(process.argv.slice(2))\n  const config: DaemonConfig = await loadDaemonConfig()\n\n  try {\n    validateConfig(config.agenthood)\n  } catch (err) {\n    logger.error(friendlyKeyError(err))\n    process.exit(1)\n  }\n\n  if (runMode) {\n    if (!member || !task) {\n      console.error('Usage: atlaslink --run <member> \"<task>\"')\n      process.exit(1)\n    }\n    const ok = await runOnce({ config: config.agenthood, member, task })\n    process.exit(ok ? 0 : 1)\n  }\n\n  const { server, sse } = await listen(config)\n\n  const shutdown = (signal: string): void => {\n    logger.info('shutdown signal', { signal })\n    sse.shutdown()\n    server.close(() => process.exit(0))\n    setTimeout(() => process.exit(0), 3000).unref()\n  }\n  process.on('SIGINT', () => shutdown('SIGINT'))\n  process.on('SIGTERM', () => shutdown('SIGTERM'))\n}\n\n// Only boot the daemon when executed directly (e.g. `tsx src/server.ts`), never\n// when imported by tests.\nif (process.argv[1] && new URL(`file://${resolve(process.argv[1])}`).href === import.meta.url) {\n  main().catch((err) => {\n    logger.error('startup failed', { error: err instanceof Error ? err.message : String(err) })\n    process.exit(1)\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_01e71ea27df54f5a89e351e9",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/session/sessionStore.test.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_01e71ea27df54f5a89e351e9",
+      "name": "web_fetch",
+      "result": "import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport { rehydrate, SessionStore, StreamIntegrityError } from './sessionStore'\nimport { backendContract } from './backendContract'\nimport type { SessionEvent } from './types'\n\nconst created: SessionEvent = {\n  type: 'session.created',\n  sessionId: 'ses-1',\n  correlationId: 'cor-1',\n  at: '2026-01-01T00:00:00Z',\n  member: 'the-architect',\n  prompt: 'plan x',\n  tweaks: { provider: 'groq' },\n}\n\ntest('rehydrate returns null for an empty event stream', () => {\n  assert.equal(rehydrate([]), null)\n})\n\ntest('rehydrate rebuilds the current aggregate and bumps version per event', () => {\n  const running: SessionEvent = { type: 'session.running', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' }\n  const done: SessionEvent = { type: 'session.succeeded', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:02Z', output: 'ok', durationMs: 1000 }\n\n  const s = rehydrate([created, running, done])\n\n  assert.ok(s)\n  assert.equal(s.sessionId, 'ses-1')\n  assert.equal(s.correlationId, 'cor-1')\n  assert.equal(s.status, 'succeeded')\n  assert.equal(s.version, 3)\n  assert.equal(s.task.member, 'the-architect')\n  assert.equal(s.task.prompt, 'plan x')\n  assert.equal(s.tweaks?.provider, 'groq')\n  assert.equal(s.output, 'ok')\n  assert.equal(s.durationMs, 1000)\n  assert.equal(s.createdAt, '2026-01-01T00:00:00Z')\n  assert.equal(s.startedAt, '2026-01-01T00:00:01Z')\n  assert.equal(s.finishedAt, '2026-01-01T00:00:02Z')\n})\n\ntest('rehydrate throws StreamIntegrityError when the stream is inconsistent', () => {\n  const stray: SessionEvent = { type: 'session.running', sessionId: 'ses-2', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' }\n  assert.throws(() => rehydrate([created, stray]), (e) => e instanceof StreamIntegrityError)\n})\n\ntest('rehydrate projects awaiting_input: status, nextStep and atlas interaction, then user_reply re-queues', () => {\n  const awaiting: SessionEvent = { type: 'session.awaiting_input', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:03Z', question: 'continue?', member: 'atlas' }\n  const replyEv: SessionEvent = { type: 'session.user_reply', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:04Z', reply: 'yes' }\n  const a = rehydrate([created, awaiting])\n  assert.ok(a)\n  assert.equal(a.status, 'awaiting_input')\n  assert.equal(a.nextStep?.prompt, 'continue?')\n  assert.equal(a.interaction.at(-1)?.role, 'atlas')\n  const b = rehydrate([created, awaiting, replyEv])\n  assert.ok(b)\n  assert.equal(b.status, 'queued')\n  assert.equal(b.nextStep, null)\n  assert.equal(b.interaction.at(-1)?.role, 'user')\n})\n\nbackendContract('SessionStore satisfies the backend contract', async () => new SessionStore())\n\ntest('SessionStore: the snapshot cache serves the same aggregate until an append', async () => {\n  const store = new SessionStore()\n  await store.append(created)\n\n  const a = await store.get('ses-1')\n  const b = await store.get('ses-1')\n  assert.ok(a && b)\n  assert.equal(a, b) // cached reference, no rehydration on the repeat read\n  assert.ok(Object.isFrozen(a)) // a caller cannot corrupt the shared snapshot\n  assert.ok(Object.isFrozen(a.task))\n\n  const running: SessionEvent = { type: 'session.running', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' }\n  await store.append(running)\n  const c = await store.get('ses-1')\n  assert.ok(c)\n  assert.notEqual(a, c) // invalidated by the append, rebuilt fresh\n  assert.equal(c.status, 'running')\n  assert.equal(c.version, 2)\n})",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_abea9483358a4778bd77ce71",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/EventLogStore.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_abea9483358a4778bd77ce71",
+      "name": "web_fetch",
+      "result": "import { appendFileSync, writeFileSync, renameSync, readFileSync, mkdirSync, existsSync } from 'node:fs'\nimport { join } from 'node:path'\nimport { log } from '../log'\n\nexport const ROTATION_FILES = 3\nexport const MAX_BYTES = 10 * 1024 * 1024\nconst TAIL_BASENAME = 'events.ndjson'\nconst SEQ_BASENAME = 'events.seq'\n\n/**\n * Broadly-typed bridge envelope. The broadcaster assigns `eventId`; this branch\n * accepts an envelope that already carries one and persists it verbatim.\n */\nexport interface BridgeEnvelope {\n  eventId: number\n  type: string\n  [key: string]: unknown\n}\n\nexport interface EventLogStoreOptions {\n  /** Rotation size cap in bytes; kept injectable so tests can force rotation. */\n  maxBytes?: number\n}\n\nexport interface StoredEnvelope {\n  eventId: number\n  envelope: BridgeEnvelope\n}\n\n/**\n * Append-only NDJSON event log at `dataDir/events.ndjson` with 10 MB × 3\n * rotation (`events.ndjson`, `.1`, `.2`, oldest dropped) per ADR-001.\n * The `eventId` cursor never resets: it is restored on open from the\n * `events.seq` sidecar, else by a boot-time tail scan, and rewritten to the\n * surviving cursor after every rotation. A corrupt tail line is skipped, and a\n * failed append is swallowed so the live stream never blocks on disk.\n */\nexport class EventLogStore {\n  readonly dataDir: string\n  readonly maxBytes: number\n  #nextEventId = 0\n  #tailBytes = 0\n\n  private constructor(dataDir: string, maxBytes: number) {\n    this.dataDir = dataDir\n    this.maxBytes = maxBytes\n  }\n\n  static async open(dataDir: string, options: EventLogStoreOptions = {}): Promise<EventLogStore> {\n    mkdirSync(dataDir, { recursive: true })\n    const store = new EventLogStore(dataDir, options.maxBytes ?? MAX_BYTES)\n    store.#restoreCursor()\n    return store\n  }\n\n  /** Smallest retained eventId across all rotation files, or undefined when empty. */\n  get oldestId(): number | undefined {\n    let oldest: number | undefined\n    for (const line of this.#readLines()) {\n      const eventId = this.#parseId(line)\n      if (eventId === undefined) continue\n      if (oldest === undefined || eventId < oldest) oldest = eventId\n    }\n    return oldest\n  }\n\n  /** Next eventId the broadcaster should assign. Monotonic across restart + rotation. */\n  get nextEventId(): number {\n    return this.#nextEventId\n  }\n\n  append(envelope: BridgeEnvelope): boolean {\n    if (!Number.isInteger(envelope.eventId) || envelope.eventId < this.#nextEventId) return false\n    this.#nextEventId = envelope.eventId + 1\n    const line = JSON.stringify(envelope) + '\\n'\n    const incomingLen = Buffer.byteLength(line, 'utf8')\n    this.#rotateIfNeeded(incomingLen)\n    try {\n      appendFileSync(this.#path(0), line, 'utf8')\n      this.#tailBytes += incomingLen\n      return true\n    } catch {\n      // swallow-write-failure: a slow/failed disk write never blocks the live stream\n      log.warn('append failed, swallowed', { eventId: envelope.eventId, dataDir: this.dataDir })\n      return false\n    }\n  }\n\n  /**\n   * All retained envelopes with `eventId > readAfter`, ascending, joined across\n   * rotation files (`.1` oldest, `.2` next, current tail newest). Empty when\n   * `readAfter` reaches the newest.\n   */\n  replay(readAfter: number): StoredEnvelope[] {\n    const events: StoredEnvelope[] = []\n    for (const line of this.#readLines()) {\n      const stored = this.#parseLine(line)\n      if (stored && stored.eventId > readAfter) events.push(stored)\n    }\n    return events\n  }\n\n  /**\n   * Rotation cascade per ADR-001: when the tail would exceed the cap once the\n   * incoming line lands, `.1` → `.2` (oldest dropped), tail → `.1`, then the\n   * sidecar is rewritten to the surviving cursor. Runs before appending.\n   */\n  #rotateIfNeeded(incomingLen: number): void {\n    if (!(this.#tailBytes > 0 && this.#tailBytes + incomingLen > this.maxBytes)) return\n    try {\n      if (existsSync(this.#path(1))) renameSync(this.#path(1), this.#path(2))\n      if (existsSync(this.#path(0))) renameSync(this.#path(0), this.#path(1))\n      this.#tailBytes = 0\n      this.#writeSeq()\n    } catch {\n      // rotation must never break live streaming; preserve accounting so the next\n      // append still triggers rotation instead of silently exceeding the cap\n      log.warn('rotation failed, swallowed', { dataDir: this.dataDir })\n      try {\n        this.#tailBytes = existsSync(this.#path(0))\n          ? Buffer.byteLength(readFileSync(this.#path(0), 'utf8'), 'utf8')\n          : 0\n      } catch {\n        this.#tailBytes = 0\n      }\n    }\n  }\n\n  /**\n   * Restore the cursor from `events.seq` (present and parseable) reconciled\n   * with a tail scan. The sidecar is a fast-restart hint written at rotation;\n   * the scan is a correctness backstop so the counter never dips below — or\n   * collides with — an eventId that is already stored on disk. Without a valid\n   * sidecar the scan alone drives the resume.\n   */\n  #restoreCursor(): void {\n    const seqPath = this.#pathSeq()\n    let seqValue = -1\n    if (existsSync(seqPath)) {\n      const parsed = Number(readFileSync(seqPath, 'utf8').trim())\n      if (Number.isInteger(parsed) && parsed >= 0) seqValue = parsed\n    }\n    const scanMax = this.#scanMaxEventId()\n    this.#nextEventId = Math.max(seqValue, scanMax + 1)\n    if (existsSync(this.#path(0))) {\n      try {\n        this.#tailBytes = Buffer.byteLength(readFileSync(this.#path(0), 'utf8'), 'utf8')\n      } catch {\n        this.#tailBytes = 0\n      }\n    }\n  }\n\n  #scanMaxEventId(): number {\n    let max = -1\n    for (const line of this.#readLines()) {\n      const eventId = this.#parseId(line)\n      if (eventId !== undefined && eventId > max) max = eventId\n    }\n    return max\n  }\n\n  #writeSeq(): void {\n    try {\n      writeFileSync(this.#pathSeq(), String(this.#nextEventId) + '\\n', 'utf8')\n    } catch {\n      // a failed sidecar write is non-fatal; a subsequent rotation retries it\n    }\n  }\n\n  #parseId(line: string): number | undefined {\n    try {\n      const parsed = JSON.parse(line) as { eventId?: unknown }\n      return typeof parsed.eventId === 'number' && Number.isInteger(parsed.eventId) ? parsed.eventId : undefined\n    } catch {\n      return undefined\n    }\n  }\n\n  #parseLine(line: string): StoredEnvelope | undefined {\n    try {\n      const envelope = JSON.parse(line) as BridgeEnvelope\n      if (!Number.isInteger(envelope.eventId) || envelope.eventId < 0) return undefined\n      return { eventId: envelope.eventId, envelope }\n    } catch {\n      return undefined\n    }\n  }\n\n  /** Reads rotation files oldest → newest so replay order matches emission order. */\n  #readLines(): string[] {\n    const lines: string[] = []\n    for (let i = ROTATION_FILES - 1; i >= 0; i--) {\n      if (!existsSync(this.#path(i))) continue\n      try {\n        lines.push(...readFileSync(this.#path(i), 'utf8').split(/\\r?\\n/).filter((line) => line.length > 0))\n      } catch {\n        // an unreadable/corrupt rotation file is skipped — corrupt-tail tolerance\n      }\n    }\n    return lines\n  }\n\n  #path(index: number): string {\n    return index === 0 ? join(this.dataDir, TAIL_BASENAME) : join(this.dataDir, `${TAIL_BASENAME}.${index}`)\n  }\n\n  #pathSeq(): string {\n    return join(this.dataDir, SEQ_BASENAME)\n  }\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_113a9901f2434391a879d11d",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/test/serverHarness.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_113a9901f2434391a879d11d",
+      "name": "web_fetch",
+      "result": "import { mkdtempSync, rmSync } from 'node:fs'\nimport { tmpdir } from 'node:os'\nimport { join } from 'node:path'\nimport { request, type Server } from 'node:http'\nimport type { AddressInfo } from 'node:net'\nimport { EventLogStore, type BridgeEnvelope } from '../bridge/EventLogStore'\nimport { EventBroadcaster } from '../bridge/EventBroadcaster'\nimport { SessionQueue } from '../bridge/SessionQueue'\nimport { SseHandler } from '../bridge/sseEndpoint'\nimport { createAppServer } from '../server'\nimport { TaskRegistry } from '../tasks/taskRegistry'\nimport { SessionStore } from '../session/sessionStore'\n\nexport function tmpDataDir(): string {\n  return mkdtempSync(join(tmpdir(), 'atlaslink-sse-'))\n}\n\nexport function runEnv(eventId: number, overrides: Record<string, unknown> = {}): BridgeEnvelope {\n  return {\n    eventId,\n    type: 'run.started',\n    executionId: 'e-1',\n    member: 'the-architect',\n    correlationId: 'cor-1',\n    timestamp: '2026-08-22T00:00:00.000Z',\n    task: 'plan the M2 bridge',\n    ...overrides,\n  }\n}\n\nexport interface ServerHarness {\n  port: number\n  broadcaster: EventBroadcaster\n  sse: SseHandler\n  backend: SessionStore\n  close: () => Promise<void>\n}\n\nexport interface HarnessOptions {\n  /** Bearer token to register on the gated scope (default: none → dev mode). */\n  token?: string\n  rateLimit?: { max: number; timeWindow: string }\n}\n\nexport async function startServer(dir: string, opts: HarnessOptions = {}): Promise<ServerHarness> {\n  // The token gate reads the env at registration; snapshot/restore so a dev\n  // shell exporting ATLASLINK_API_TOKEN never leaks into the unauthenticated\n  // tests, and an opted-in test can pass its own token deterministically.\n  const previousToken = process.env.ATLASLINK_API_TOKEN\n  if (opts.token === undefined) delete process.env.ATLASLINK_API_TOKEN\n  else process.env.ATLASLINK_API_TOKEN = opts.token\n  let httpServer: Server\n  let broadcaster: EventBroadcaster\n  let sse: SseHandler\n  let backend: SessionStore\n  try {\n    const log = await EventLogStore.open(dir)\n    broadcaster = new EventBroadcaster(log)\n    sse = new SseHandler(log, broadcaster)\n    const registry = new TaskRegistry()\n    const queue = new SessionQueue({ broadcaster, registry, runner: async () => {} })\n    backend = new SessionStore()\n    const app = await createAppServer({\n      log,\n      registry,\n      queue,\n      sse,\n      backend,\n      ...(opts.rateLimit ? { rateLimit: opts.rateLimit } : {}),\n    })\n    httpServer = app.server\n    await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', resolve))\n  } finally {\n    if (previousToken === undefined) delete process.env.ATLASLINK_API_TOKEN\n    else process.env.ATLASLINK_API_TOKEN = previousToken\n  }\n  const port = (httpServer!.address() as AddressInfo).port\n  return {\n    port,\n    broadcaster,\n    sse,\n    backend,\n    close: () =>\n      new Promise<void>((resolve) => {\n        httpServer!.closeAllConnections?.()\n        httpServer!.close(() => resolve())\n      }),\n  }\n}\n\n/** Compact JSON request helper for the task-rest E2E surface. */\nexport function jsonRequest(\n  port: number,\n  method: string,\n  path: string,\n  body?: unknown,\n  headers: Record<string, string> = {}\n): Promise<{ status: number; body: string; headers: Record<string, string | string[] | undefined> }> {\n  return new Promise((resolve) => {\n    const req = request(\n      `http://127.0.0.1:${port}${path}`,\n      {\n        method,\n        headers: body === undefined ? headers : { 'content-type': 'application/json', ...headers },\n      },\n      (r) => {\n        let data = ''\n        r.setEncoding('utf8')\n        r.on('data', (c: string) => (data += c))\n        r.on('end', () => resolve({ status: r.statusCode ?? 0, body: data, headers: r.headers }))\n      }\n    )\n    if (body !== undefined) req.write(JSON.stringify(body))\n    req.end()\n  })\n}\n\n/** Connect and collect SSE data for a moment, then destroy the connection. */\nexport function collectStream(url: string, headers: Record<string, string>, collectMs: number): Promise<string> {\n  return new Promise((resolve) => {\n    let data = ''\n    const req = request(url, { headers }, (res) => {\n      res.setEncoding('utf8')\n      res.on('data', (chunk: string) => (data += chunk))\n    })\n    req.on('error', () => resolve(data))\n    req.end()\n    setTimeout(() => {\n      req.destroy()\n      resolve(data)\n    }, collectMs)\n  })\n}\n\n/** Remove the temp data dir, best-effort after the server closed. */\nexport function cleanup(dir: string): void {\n  rmSync(dir, { recursive: true, force: true })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_07fa13c1f83141b3afecd769",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/bridge/SessionQueue.test.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_07fa13c1f83141b3afecd769",
+      "name": "web_fetch",
+      "result": "import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport { mkdtempSync, rmSync } from 'node:fs'\nimport { tmpdir } from 'node:os'\nimport { join } from 'node:path'\nimport { EventLogStore, type BridgeEnvelope } from './EventLogStore'\nimport { EventBroadcaster } from './EventBroadcaster'\nimport { SessionQueue } from './SessionQueue'\nimport { SessionStatus } from '../tasks/taskRegistry'\n\nfunction tmpDataDir(): string {\n  return mkdtempSync(join(tmpdir(), 'atlaslink-sessionqueue-'))\n}\n\ninterface FakeSession {\n  id: string\n  correlationId: string\n  task: { member: string }\n  status: string\n}\n\nfunction makeRegistry(statuses: Record<string, string>): { get(id: string): FakeSession | undefined } {\n  const sessions = new Map(\n    Object.entries(statuses).map(([id, status]) => [\n      id,\n      { id, correlationId: `cor-${id}`, task: { member: 'm' }, status },\n    ]),\n  )\n  return { get: (id) => sessions.get(id) as FakeSession | undefined }\n}\n\ntest('declareSession emits session.queued then runs the session serially', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const seen: BridgeEnvelope[] = []\n    broadcaster.subscribe((e) => seen.push(e), { replay: false })\n\n    const ran: string[] = []\n    const registry = makeRegistry({ s1: SessionStatus.SUCCEEDED })\n    const queue = new SessionQueue({\n      broadcaster,\n      registry,\n      runner: async (id) => {\n        ran.push(id)\n      },\n    })\n\n    queue.declareSession({ id: 's1', correlationId: 'cor-1', task: { member: 'the-architect' } })\n    await new Promise((r) => setTimeout(r, 50))\n\n    assert.deepEqual(ran, ['s1'])\n    assert.ok(seen.some((e) => e.type === 'session.queued'))\n    assert.ok(seen.some((e) => e.type === 'session.started'))\n    assert.ok(seen.some((e) => e.type === 'session.succeeded'))\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('sessions run strictly one at a time in FIFO order', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const registry = makeRegistry({\n      a: SessionStatus.SUCCEEDED,\n      b: SessionStatus.SUCCEEDED,\n      c: SessionStatus.SUCCEEDED,\n    })\n    const order: string[] = []\n    const queue = new SessionQueue({\n      broadcaster,\n      registry,\n      runner: async (id) => {\n        order.push(`start-${id}`)\n        await new Promise((r) => setTimeout(r, 20))\n        order.push(`end-${id}`)\n      },\n    })\n\n    queue.declareSession({ id: 'a', correlationId: 'c1', task: { member: 'm' } })\n    queue.declareSession({ id: 'b', correlationId: 'c2', task: { member: 'm' } })\n    queue.declareSession({ id: 'c', correlationId: 'c3', task: { member: 'm' } })\n    await new Promise((r) => setTimeout(r, 200))\n\n    assert.deepEqual(order, ['start-a', 'end-a', 'start-b', 'end-b', 'start-c', 'end-c'])\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('a cancelled queued session is skipped, never started (spec §3)', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const seen: BridgeEnvelope[] = []\n    broadcaster.subscribe((e) => seen.push(e), { replay: false })\n    const ran: string[] = []\n    const registry = makeRegistry({ s1: SessionStatus.CANCELLED, s2: SessionStatus.SUCCEEDED })\n    const queue = new SessionQueue({ broadcaster, registry, runner: async (id) => { ran.push(id) } })\n\n    queue.declareSession({ id: 's1', correlationId: 'c1', task: { member: 'm' } })\n    queue.declareSession({ id: 's2', correlationId: 'c2', task: { member: 'm' } })\n    await new Promise((r) => setTimeout(r, 50))\n\n    assert.deepEqual(ran, ['s2'])\n    assert.ok(seen.some((e) => e.type === 'session.queued' && e.sessionId === 's1'))\n    assert.ok(!seen.some((e) => e.type === 'session.started' && e.sessionId === 's1'))\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('a failed session emits session.failed (terminal-from-registry)', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const seen: BridgeEnvelope[] = []\n    broadcaster.subscribe((e) => seen.push(e), { replay: false })\n    const registry = makeRegistry({ x: SessionStatus.FAILED })\n    const queue = new SessionQueue({ broadcaster, registry, runner: async () => {} })\n\n    queue.declareSession({ id: 'x', correlationId: 'cx', task: { member: 'm' } })\n    await new Promise((r) => setTimeout(r, 50))\n\n    assert.ok(seen.some((e) => e.type === 'session.failed'))\n    assert.ok(!seen.some((e) => e.type === 'session.succeeded'))\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('session.* events carry the session payload per spec §4', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const seen: BridgeEnvelope[] = []\n    broadcaster.subscribe((e) => seen.push(e), { replay: false })\n    const registry = makeRegistry({ q: SessionStatus.SUCCEEDED })\n    const queue = new SessionQueue({ broadcaster, registry, runner: async () => {} })\n\n    queue.declareSession({ id: 'q', correlationId: 'cor-q', task: { member: 'the-scribe' } })\n    await new Promise((r) => setTimeout(r, 50))\n\n    const queued = seen.find((e) => e.type === 'session.queued')!\n    assert.equal(queued.sessionId, 'q')\n    assert.equal(queued.correlationId, 'cor-q')\n    assert.equal(queued.member, 'the-scribe')\n    assert.equal(queued.status, SessionStatus.QUEUED)\n    assert.ok(typeof queued.at === 'string')\n    assert.equal(queued.type, 'session.queued')\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('declareSession emits queued before the session starts', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const seen: BridgeEnvelope[] = []\n    broadcaster.subscribe((e) => seen.push(e), { replay: false })\n    const registry = makeRegistry({ s: SessionStatus.SUCCEEDED })\n    const queue = new SessionQueue({ broadcaster, registry, runner: async () => {} })\n\n    queue.declareSession({ id: 's', correlationId: 'cs', task: { member: 'm' } })\n    await new Promise((r) => setTimeout(r, 50))\n\n    assert.equal(seen[0].type, 'session.queued')\n    assert.equal(seen[1].type, 'session.started')\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})\n\ntest('pending reflects queued-but-not-started sessions', async () => {\n  const dir = tmpDataDir()\n  try {\n    const store = await EventLogStore.open(dir)\n    const broadcaster = new EventBroadcaster(store)\n    const registry = makeRegistry({ a: SessionStatus.SUCCEEDED, b: SessionStatus.SUCCEEDED })\n    let release: (() => void) | undefined\n    const gate = new Promise<void>((r) => {\n      release = r\n    })\n    const queue = new SessionQueue({\n      broadcaster,\n      registry,\n      runner: async () => {\n        await gate\n      },\n    })\n\n    queue.declareSession({ id: 'a', correlationId: 'c1', task: { member: 'm' } })\n    queue.declareSession({ id: 'b', correlationId: 'c2', task: { member: 'm' } })\n    await new Promise((r) => setTimeout(r, 20))\n    assert.equal(queue.pending, 1)\n    release!()\n    await new Promise((r) => setTimeout(r, 50))\n    assert.equal(queue.pending, 0)\n  } finally {\n    rmSync(dir, { recursive: true, force: true })\n  }\n})",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_1d222e772b3f4298a4f27750",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/api/projects.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_1d222e772b3f4298a4f27750",
+      "name": "web_fetch",
+      "result": "import type { FastifyInstance } from 'fastify'\nimport type { SessionBackend } from '../session/sessionBackend'\nimport { randomUUID } from 'node:crypto'\n\ninterface ProjectDeps {\n  backend: SessionBackend\n}\n\n/**\n * The M4 Project API routes: create, list, and read projects. Projects are\n * workspace containers for sessions. The routes are token-gated via the\n * pre-auth hook installed in `server.ts` on the gated scope.\n */\nexport function registerProjectRoutes(app: FastifyInstance, deps: ProjectDeps): void {\n  app.post<{ Body: { name: string } }>(\n    '/projects',\n    {\n      schema: {\n        body: {\n          type: 'object',\n          additionalProperties: false,\n          required: ['name'],\n          properties: {\n            name: { type: 'string', minLength: 1, maxLength: 200 },\n          },\n        },\n      },\n    },\n    async (request, reply) => {\n      const { name } = request.body\n      const id = `proj-${randomUUID()}`\n      const project = await deps.backend.createProject(id, name)\n      return reply.code(201).send({ ok: true, project })\n    }\n  )\n\n  app.get('/projects', async (_request, reply) => {\n    const projects = await deps.backend.listProjects()\n    return reply.send({ ok: true, projects })\n  })\n\n  app.get<{ Params: { projectId: string } }>('/projects/:projectId', async (request, reply) => {\n    const project = await deps.backend.getProject(request.params.projectId)\n    if (!project) return reply.code(404).send({ ok: false, error: 'unknown project' })\n    return reply.send({ ok: true, project })\n  })\n\n  app.delete<{ Params: { projectId: string } }>(\n    '/projects/:projectId',\n    async (request, reply) => {\n      const deleted = await deps.backend.deleteProject(request.params.projectId)\n      if (!deleted) return reply.code(404).send({ ok: false, error: 'unknown project' })\n      return reply.send({ ok: true })\n    }\n  )\n}\n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_call",
+      "memberId": "the-tester",
+      "id": "call_8b6bcff37ed744b88d477050",
+      "name": "web_fetch",
+      "args": {
+        "url": "https://raw.githubusercontent.com/fworks-tech/atlaslink/main/src/session/backendContract.ts"
+      },
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.tool_call",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.tool_result",
+      "memberId": "the-tester",
+      "id": "call_8b6bcff37ed744b88d477050",
+      "name": "web_fetch",
+      "result": "import { test } from 'node:test'\nimport assert from 'node:assert/strict'\nimport type { SessionBackend } from './sessionBackend'\nimport { VersionConflictError } from './types'\nimport type { SessionEvent } from './types'\n\nconst created: SessionEvent = {\n  type: 'session.created',\n  sessionId: 'ses-1',\n  correlationId: 'cor-1',\n  at: '2026-01-01T00:00:00Z',\n  member: 'the-architect',\n  prompt: 'plan x',\n  tweaks: { provider: 'groq' },\n}\n\n/**\n * The behavioral contract every SessionBackend must satisfy. In-memory\n * SessionStore, EventLogBackend, and PostgresBackend all bind to it so a\n * backend swap cannot silently change observable semantics.\n */\nexport async function backendContract(name: string, create: () => Promise<SessionBackend>): Promise<void> {\n  await test(name, async () => {\n    await test('append then get returns the rehydrated aggregate', async () => {\n      const store = await create()\n      await store.append(created)\n      await store.append({ type: 'session.running', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' })\n\n      const s = await store.get('ses-1')\n      assert.ok(s)\n      assert.equal(s.status, 'running')\n      assert.equal(s.version, 2)\n    })\n\n    await test('get returns null for an unknown session', async () => {\n      const store = await create()\n      assert.equal(await store.get('ses-unknown'), null)\n    })\n\n    await test('a stale optimistic write is rejected with VersionConflictError', async () => {\n      const store = await create()\n      await store.append(created)\n\n      await store.append({ type: 'session.running', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' })\n\n      await assert.rejects(\n        store.readModifyWrite('ses-1', 1, () => [\n          { type: 'session.cancelled', correlationId: 'cor-1', at: '2026-01-01T00:00:03Z' },\n        ]),\n        (e) => e instanceof VersionConflictError\n      )\n    })\n\n    await test('readModifyWrite commits the delta and bumps the version', async () => {\n      const store = await create()\n      await store.append(created)\n\n      await store.readModifyWrite('ses-1', 1, () => [\n        { type: 'session.cancelled', correlationId: 'cor-1', at: '2026-01-01T00:00:03Z' },\n      ])\n\n      const s = await store.get('ses-1')\n      assert.ok(s)\n      assert.equal(s.status, 'cancelled')\n      assert.equal(s.version, 2)\n    })\n\n    await test('concurrent writers cannot both commit the same version', async () => {\n      const store = await create()\n      await store.append(created)\n\n      const results = await Promise.allSettled([\n        store.readModifyWrite('ses-1', 1, () => [\n          { type: 'session.running', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' },\n        ]),\n        store.readModifyWrite('ses-1', 1, () => [\n          { type: 'session.cancelled', correlationId: 'cor-1', at: '2026-01-01T00:00:02Z' },\n        ]),\n      ])\n\n      const rejected = results.filter((r) => r.status === 'rejected')\n      assert.equal(rejected.length, 1)\n      assert.ok((rejected[0] as PromiseRejectedResult).reason instanceof VersionConflictError)\n\n      const s = await store.get('ses-1')\n      assert.ok(s)\n      assert.equal(s.version, 2)\n    })\n\n    await test('list filters by status and since, newest-first, with total before pagination', async () => {\n      const store = await create()\n      await store.append({\n        ...created,\n        sessionId: 'ses-a',\n        correlationId: 'cor-a',\n        at: '2026-01-01T00:00:00Z',\n      })\n      await store.append({\n        ...created,\n        sessionId: 'ses-b',\n        correlationId: 'cor-b',\n        at: '2026-01-02T00:00:00Z',\n      })\n      await store.append({\n        type: 'session.running',\n        sessionId: 'ses-b',\n        correlationId: 'cor-b',\n        at: '2026-01-02T00:00:01Z',\n      })\n\n      const all = await store.list({ limit: 50, offset: 0 })\n      assert.equal(all.total, 2)\n      assert.deepEqual(\n        all.sessions.map((s) => s.sessionId),\n        ['ses-b', 'ses-a']\n      )\n\n      const running = await store.list({ status: 'running', limit: 50, offset: 0 })\n      assert.deepEqual(\n        running.sessions.map((s) => s.sessionId),\n        ['ses-b']\n      )\n\n      // 'queued' maps to the session.created event on every backend\n      const queued = await store.list({ status: 'queued', limit: 50, offset: 0 })\n      assert.deepEqual(\n        queued.sessions.map((s) => s.sessionId),\n        ['ses-a']\n      )\n\n      const since = await store.list({ since: '2026-01-02T00:00:00Z', limit: 50, offset: 0 })\n      assert.deepEqual(\n        since.sessions.map((s) => s.sessionId),\n        ['ses-b']\n      )\n\n      const paged = await store.list({ limit: 1, offset: 0 })\n      assert.equal(paged.sessions.length, 1)\n      assert.equal(paged.total, 2)\n    })\n\n    await test('the snapshot cache serves the same frozen reference until an append invalidates it', async () => {\n      const store = await create()\n      await store.append(created)\n\n      const a = await store.get('ses-1')\n      const b = await store.get('ses-1')\n      assert.ok(a && b)\n      assert.equal(a, b) // cached reference\n      assert.ok(Object.isFrozen(a))\n      assert.ok(Object.isFrozen(a.task))\n\n      await store.append({ type: 'session.running', sessionId: 'ses-1', correlationId: 'cor-1', at: '2026-01-01T00:00:01Z' })\n      const c = await store.get('ses-1')\n      assert.ok(c)\n      assert.notEqual(a, c) // invalidated by the append\n      assert.equal(c.status, 'running')\n      assert.equal(c.version, 2)\n    })\n\n    await test('list is not served from the snapshot cache', async () => {\n      const store = await create()\n      await store.append(created)\n      const a = await store.get('ses-1')\n      assert.ok(a)\n\n      await store.append({\n        type: 'session.created',\n        sessionId: 'ses-2',\n        correlationId: 'cor-2',\n        at: '2026-01-02T00:00:00Z',\n        member: 'x',\n        prompt: 'y',\n      })\n\n      const listed = await store.list({ limit: 50, offset: 0 })\n      assert.equal(listed.total, 2)\n      const again = await store.get('ses-1')\n      assert.ok(again)\n      assert.equal(again, a) // ses-1 snapshot still valid\n    })\n\n    await test('repeated get on an unknown session stays null', async () => {\n      const store = await create()\n      assert.equal(await store.get('ses-missing'), null)\n      assert.equal(await store.get('ses-missing'), null)\n      await store.append({ ...created, sessionId: 'ses-other', correlationId: 'cor-9' })\n      assert.equal(await store.get('ses-missing'), null)\n    })\n\n    await test('list filters by projectId, status and since, newest-first, with total before pagination', async () => {\n      const store = await create()\n      await store.append({\n        ...created,\n        sessionId: 'ses-a',\n        correlationId: 'cor-a',\n        at: '2026-01-01T00:00:00Z',\n        projectId: 'proj-1',\n      })\n      await store.append({\n        ...created,\n        sessionId: 'ses-b',\n        correlationId: 'cor-b',\n        at: '2026-01-02T00:00:00Z',\n        projectId: 'proj-1',\n      })\n      await store.append({\n        type: 'session.running',\n        sessionId: 'ses-b',\n        correlationId: 'cor-b',\n        at: '2026-01-02T00:00:01Z',\n      })\n      await store.append({\n        ...created,\n        sessionId: 'ses-c',\n        correlationId: 'cor-c',\n        at: '2026-01-03T00:00:00Z',\n        projectId: 'proj-2',\n      })\n\n      const all = await store.list({ limit: 50, offset: 0 })\n      assert.equal(all.total, 3)\n\n      const proj1 = await store.list({ projectId: 'proj-1', limit: 50, offset: 0 })\n      assert.equal(proj1.total, 2)\n      assert.deepEqual(\n        proj1.sessions.map((s) => s.sessionId),\n        ['ses-b', 'ses-a']\n      )\n\n      const proj2 = await store.list({ projectId: 'proj-2', limit: 50, offset: 0 })\n      assert.equal(proj2.total, 1)\n      assert.equal(proj2.sessions[0].sessionId, 'ses-c')\n\n      const proj1Running = await store.list({ projectId: 'proj-1', status: 'running', limit: 50, offset: 0 })\n      assert.equal(proj1Running.total, 1)\n      assert.equal(proj1Running.sessions[0].sessionId, 'ses-b')\n    })\n\n    await test('createProject / listProjects / getProject / deleteProject lifecycle', async () => {\n      const store = await create()\n      const p = await store.createProject('proj-x', 'probe')\n      assert.equal(p.id, 'proj-x')\n      assert.equal(p.name, 'probe')\n\n      const listed = await store.listProjects()\n      assert.ok(listed.some((pr) => pr.id === 'proj-x'))\n\n      const fetched = await store.getProject('proj-x')\n      assert.equal(fetched?.name, 'probe')\n\n      // project-scoped session is removed when the project is deleted\n      await store.append({\n        type: 'session.created',\n        sessionId: 'ses-proj',\n        correlationId: 'cor-proj',\n        at: '2026-01-04T00:00:00Z',\n        member: 'm',\n        prompt: 'p',\n        projectId: 'proj-x',\n      })\n      const deleted = await store.deleteProject('proj-x')\n      assert.equal(deleted, true)\n      assert.equal(await store.getProject('proj-x'), null)\n      assert.equal(await store.deleteProject('proj-x'), false)\n      assert.equal(await store.deleteProject('proj-missing'), false)\n      const after = await store.list({ projectId: 'proj-x', limit: 50, offset: 0 })\n      assert.equal(after.total, 0)\n      assert.equal(await store.get('ses-proj'), null)\n    })\n  })\n}",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "L",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "m",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "l",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "k",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "h",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "m",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "g",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "k",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "y",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "f",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "l",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "—",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "h",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "h",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "S",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "i",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "Q",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "u",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "u",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "p",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "j",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "c",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "s",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "A",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "P",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "I",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "u",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "h",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": ",",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "d",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "b",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "c",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "k",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "e",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "d",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": " ",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "c",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "o",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "n",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "r",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "a",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "c",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": "t",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.token",
+      "memberId": "the-tester",
+      "data": ".",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "workspace.turn_end",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester",
+      "correlationId": "ws-corr-e2e-1788214442631",
+      "outputChars": 120
+    },
+    {
+      "type": "workspace.turn_end",
+      "memberId": "the-tester",
+      "decision": "pass",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "workspace.status",
+      "memberId": "the-tester",
+      "status": "done",
+      "workspaceId": "ws-e2e-1788214442631",
+      "correlationId": "ws-corr-e2e-1788214442631"
+    },
+    {
+      "type": "log",
+      "level": "info",
+      "event": "trace",
+      "member": "the-tester",
+      "durationMs": 16893,
+      "tokenCount": {
+        "input": 5319,
+        "output": 30,
+        "total": 5349
+      },
+      "cost": 0.0008,
+      "qualityScore": null,
+      "status": "success",
+      "correlationId": "ws-corr-e2e-1788214442631",
+      "source": "api",
+      "model": "deepseek-v4-flash",
+      "workspaceId": "ws-e2e-1788214442631",
+      "turnIndex": 2,
+      "memberId": "the-tester"
+    }
+  ]
+}
