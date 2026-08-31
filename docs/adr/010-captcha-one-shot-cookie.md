@@ -29,10 +29,16 @@ cookie:
   - Else require a fresh token and verify it exactly once.
   - An unsigned or forged cookie is **not** accepted (no legacy grace window — the cookie was
     never deployed before this ADR).
-- The playground hides the widget after the first verification (`visible={!verified}`) and stops
-  sending tokens on subsequent requests.
+- The playground hides the widget after the first verification (`visible={!verified}`) and
+  the send guard uses `captchaReady` (`!!token`). The first message **carries its fresh
+  token** so it can establish the signed cookie; on success the cookie is set. All later
+  messages succeed via the cookie even if their token is stale/consumed, so the widget is
+  never re-shown mid-conversation (one-shot gate). Sending the current token whenever
+  available is the safe default — the server short-circuits on a valid cookie before
+  calling `siteverify`, so consumed tokens never cause a 400 once the cookie exists.
 - The `CAPTCHA_FAILED` → refresh → `retrySendMessage` path is retained as a fallback for
-  cookie-less clients (e.g. Playwright mocks, third-party tools) and for genuine token expiry.
+  cookie-less clients (e.g. Playwright mocks with no cookie jar, third-party tools) and
+  for genuine token expiry / cleared-cookie cases.
 
 ## Alternatives Considered
 
