@@ -46,6 +46,12 @@ const SAFE_LOG_KEYS = new Set([
   "status",
   "member",
   "source",
+  "workspaceId",
+  "turnIndex",
+  "memberId",
+  "turns",
+  "totalCost",
+  "reason",
 ]);
 
 export function pickSafeLogMeta(meta: Record<string, unknown> = {}, depth = 0): Record<string, unknown> {

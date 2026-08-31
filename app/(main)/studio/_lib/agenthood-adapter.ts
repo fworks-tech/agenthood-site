@@ -1,29 +1,12 @@
 import { agentSkills } from "../_data/agents.generated";
 import { ValidationError } from "./errors";
-import { logger, pickSafeLogMeta } from "./logger";
+import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm/types";
-import { createTraceEnvelope, estimateCostFromTokens } from "agenthood/dist/core";
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
 import type { ToolCall } from "./tools";
+import { emitLogEvent, buildTraceEnvelope } from "./trace";
 
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
-
-const TRACE_PAYLOAD_MAX = 8000;
-
-type LogLevel = "info" | "warn" | "error";
-
-function emitLogEvent(
-  controller: ReadableStreamDefaultController<Uint8Array>,
-  level: LogLevel,
-  event: string,
-  meta: Record<string, unknown> = {},
-): void {
-  // Duplicates the server-side structured log into the SSE stream so the client
-  // LiveLogs can correlate. Only pickSafeLogMeta's allowlist is forwarded.
-  controller.enqueue(
-    new TextEncoder().encode(JSON.stringify({ type: "log", level, event, ...pickSafeLogMeta(meta) }) + "\n"),
-  );
-}
 
 export interface ChatRequest {
   agentId: string;
@@ -104,28 +87,21 @@ export class LightweightAdapter implements AgenthoodAdapter {
       : undefined;
 
     function emitTrace(controller: ReadableStreamDefaultController<Uint8Array>, status: "success" | "error", output: string): void {
-      const inputTokens = Math.ceil(inputChars / 4);
-      const outputTokens = Math.ceil(output.length / 4);
       const model = req.config?.model ?? "unknown";
-      const envelope = createTraceEnvelope({
+      const envelope = buildTraceEnvelope({
         member: req.agentId,
-        input: req.messages.map((m) => m.content).join("\n").slice(0, TRACE_PAYLOAD_MAX),
-        output: output.slice(0, TRACE_PAYLOAD_MAX),
+        input: req.messages.map((m) => m.content).join("\n"),
+        output,
         durationMs: Math.round(performance.now() - startTime),
-        tokenCount: { input: inputTokens, output: outputTokens, total: inputTokens + outputTokens },
-        cost: estimateCostFromTokens(model, inputTokens, outputTokens),
-        qualityScore: null,
-        status,
+        model,
         correlationId,
         source: "playground",
-        model,
+        status,
+        inputChars,
       });
       logger.info("trace", { ...envelope });
       emitLogEvent(controller, "info", "trace", envelope as unknown as Record<string, unknown>);
     }
-
-    // #TODO Workspaces: extract tracer (createTraceEnvelope/emitLogEvent) to shared helper
-    // so workspace-adapter.ts / workspace-orchestrator.ts can reuse without duplicating LightweightAdapter (see spec.md:212-214, HACKATHON-PLAN.md:212-214)
 
     return new ReadableStream({
       async start(controller) {
