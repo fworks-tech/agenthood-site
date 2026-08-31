@@ -146,7 +146,7 @@ describe("LightweightAdapter", () => {
     });
   });
 
-  it("falls back to groq then openai then ollama when primary is configured", async () => {
+  it("falls back via CLI priority chain when primary is configured", async () => {
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "test", done: false }, { delta: "", done: true }]),
     );
@@ -161,7 +161,7 @@ describe("LightweightAdapter", () => {
 
     const llmConfig = mockFromConfig.mock.calls[0][0];
     const providerNames = llmConfig.providers.map((p: { name: string }) => p.name);
-    expect(providerNames).toEqual(["anthropic", "groq", "openai", "ollama"]);
+    expect(providerNames).toEqual(['anthropic', 'opencode-go', 'opencode', 'groq', 'ollama']);
   });
 
   it("sets model on provider when model is specified", async () => {

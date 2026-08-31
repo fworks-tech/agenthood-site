@@ -1,0 +1,138 @@
+diff --git a/node_modules/agenthood/dist/llm/LLMRouter.js b/node_modules/agenthood/dist/llm/LLMRouter.js
+index 72fe439..52e03e4 100644
+--- a/node_modules/agenthood/dist/llm/LLMRouter.js
++++ b/node_modules/agenthood/dist/llm/LLMRouter.js
+@@ -11,6 +11,10 @@
+  * on first use, not when LLMRouter is imported.
+  */
+ import { ProviderChain } from "./ProviderFailover.js";
++const PROVIDER_DEFAULT_PRIORITY = 999;
++function sortProvidersByPriority(a, b) {
++    return (a.priority ?? PROVIDER_DEFAULT_PRIORITY) - (b.priority ?? PROVIDER_DEFAULT_PRIORITY);
++}
+ /** Heuristic set of chain-of-thought triggers in system prompts.
+  *  Extend as needed per deployment — non-English or alternative
+  *  reasoning phrasing will not match without adding to this list. */
+@@ -126,7 +130,7 @@ export class LLMRouter {
+         const entries = config.providers ?? [];
+         if (entries.length === 0)
+             return LLMRouter.create(config);
+-        const sorted = [...entries].sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
++        const sorted = [...entries].sort(sortProvidersByPriority);
+         const instances = [];
+         const names = [];
+         const modelMap = new Map();
+@@ -161,6 +165,34 @@ export class LLMRouter {
+      */
+     static async createForMember(preferredProvider, config) {
+         LLMRouter.config = config;
++        if (config.providers?.length) {
++            // preference beats priority — member ask overrides operator order
++            const sorted = [...config.providers].sort(sortProvidersByPriority);
++            const prefEntry = sorted.find((e) => e.name === preferredProvider);
++            const orderedEntries = prefEntry ? [prefEntry, ...sorted.filter((e) => e.name !== preferredProvider)] : [{ name: preferredProvider }, ...sorted];
++            const instances = [];
++            const names = [];
++            const modelMap = new Map();
++            for (const entry of orderedEntries) {
++                const factory = LLMRouter.providerFactories[entry.name];
++                if (!factory)
++                    continue;
++                try {
++                    const inst = await factory(LLMRouter.entryToConfig(entry, config));
++                    instances.push(inst);
++                    names.push(entry.name);
++                    if (entry.models && entry.models.length > 1) {
++                        modelMap.set(entry.name, entry.models);
++                    }
++                }
++                catch {
++                    // Provider init failed, skip to fallback
++                }
++            }
++            if (instances.length > 0) {
++                return new ProviderChain(instances, names, LLMRouter.buildChainConfig(config), modelMap.size > 0 ? modelMap : undefined);
++            }
++        }
+         const order = [preferredProvider, 'groq', 'openai', 'ollama'];
+         return LLMRouter.buildProviderChain(order, config);
+     }
+diff --git a/node_modules/agenthood/dist/llm/ProviderFailover.js b/node_modules/agenthood/dist/llm/ProviderFailover.js
+index bcca27c..e3da86a 100644
+--- a/node_modules/agenthood/dist/llm/ProviderFailover.js
++++ b/node_modules/agenthood/dist/llm/ProviderFailover.js
+@@ -184,10 +184,11 @@ export class ProviderChain {
+     }
+     async executeWithStrategy(provider, request, index) {
+         let lastError;
+-        for (let retry = 0; retry < 3; retry++) {
++        // cheap failover — 250ms base, capped, so 5-provider chain stays well under 60s Vercel budget
++        for (let retry = 0; retry < 2; retry++) {
+             try {
+                 if (retry > 0) {
+-                    await sleep(1000 * Math.pow(2, retry - 1 + index));
++                    await sleep(250 * Math.pow(2, retry - 1 + Math.min(index, 1)));
+                 }
+                 return await provider.complete(request);
+             }
+diff --git a/node_modules/agenthood/dist/llm/validateApiKeys.js b/node_modules/agenthood/dist/llm/validateApiKeys.js
+index ea95c79..601f84a 100644
+--- a/node_modules/agenthood/dist/llm/validateApiKeys.js
++++ b/node_modules/agenthood/dist/llm/validateApiKeys.js
+@@ -17,28 +17,45 @@ export class MissingApiKeyError extends Error {
+ }
+ function resolveConfigKey(config, provider) {
+     const entry = config.providers?.find((p) => p.name === provider);
++    if (config.providers?.length) {
++        return entry?.apiKey;
++    }
+     return entry?.apiKey ?? config.apiKey;
+ }
++function sortProviders(a, b) {
++    return (a.priority ?? 999) - (b.priority ?? 999);
++}
+ function primaryProvider(config) {
+     if (config.provider)
+         return config.provider;
+     // No explicit provider block: validate the first entry of the failover
+     // chain (ascending priority), not a hardcoded groq default
+     if (config.providers?.length) {
+-        return [...config.providers].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0))[0].name;
++        return [...config.providers].sort(sortProviders)[0].name;
+     }
+     return 'groq';
+ }
+ export function validateApiKeys(config) {
+-    const provider = primaryProvider(config);
+-    const keyInfo = PROVIDER_KEYS[provider];
+-    if (!keyInfo) {
+-        return;
+-    }
+-    const configKey = resolveConfigKey(config, provider);
+-    const envKey = process.env[keyInfo.envVar];
+-    if (!envKey && !configKey) {
+-        throw new MissingApiKeyError(provider, keyInfo.envVar, keyInfo.signupUrl);
++    const sorted = config.providers?.length ? [...config.providers].sort(sortProviders).map((p) => p.name) : [];
++    const primary = primaryProvider(config);
++    const providers = sorted.length ? (sorted.includes(primary) ? sorted : [primary, ...sorted]) : [primary];
++    const seen = new Set();
++    for (const provider of providers) {
++        if (seen.has(provider))
++            continue;
++        seen.add(provider);
++        const keyInfo = PROVIDER_KEYS[provider];
++        if (!keyInfo) {
++            continue;
++        }
++        const configKey = resolveConfigKey(config, provider);
++        const envKey = process.env[keyInfo.envVar];
++        if (!envKey && !configKey) {
++            if (provider === primary) {
++                throw new MissingApiKeyError(provider, keyInfo.envVar, keyInfo.signupUrl);
++            }
++            console.warn(`[validateApiKeys] ${keyInfo.envVar} not set for fallback provider "${provider}" — skipping. Get a key at ${keyInfo.signupUrl}`);
++        }
+     }
+ }
+ //# sourceMappingURL=validateApiKeys.js.map
+\ No newline at end of file

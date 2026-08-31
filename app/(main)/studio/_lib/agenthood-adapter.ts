@@ -44,7 +44,11 @@ export interface AgenthoodAdapter {
   chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream>;
 }
 
-const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"];
+const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"]
+
+// CLI priority chain — mirrors .agenthood/config.json (opencode-go p1)
+// kept in sync by sync-skills; Studio reuses it so chat fallbacks are not hard-coded
+const CLI_PROVIDER_CHAIN: readonly ProviderName[] = ['opencode-go', 'opencode', 'anthropic', 'groq', 'ollama']
 
 function isKnownProvider(name: string): name is ProviderName {
   return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go", "openrouter"].includes(name);
@@ -58,13 +62,16 @@ function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
 }
 
 function buildLLMConfig(providerName: ProviderName, req: ChatRequest): LLMConfig {
+  // preference beats priority — requested provider first, then CLI chain order
+  const fallbacks = CLI_PROVIDER_CHAIN.filter((p) => p !== providerName)
   return {
     providers: [
       { name: providerName, apiKey: req.config?.apiKey, baseUrl: req.config?.baseUrl },
-      ...FALLBACK_ORDER.filter((p) => p !== providerName).map((name) => ({ name })),
+      ...fallbacks.map((name) => ({ name })),
     ],
     failureThreshold: 3,
-    cooldownMs: 30000,
+    cooldownMs: 60000,
+    probeEnabled: true,
   };
 }
 
@@ -76,7 +83,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const providerName = req.config?.provider || "opencode";
+    const providerName = req.config?.provider || "opencode-go";
     if (!isKnownProvider(providerName)) {
       throw new ValidationError(`Unknown provider: "${providerName}"`);
     }
