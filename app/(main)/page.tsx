@@ -10,6 +10,7 @@ import {
   IconShield,
   IconClock,
   IconBulb,
+  IconUsersGroup,
 } from "@tabler/icons-react";
 import HelpTip from "./studio/_components/HelpTip";
 import FadeIn from "../_components/FadeIn";
@@ -133,6 +134,13 @@ export default function Home() {
               >
                 <IconPlayerPlay size={16} />
                 Open Playground
+              </Link>
+              <Link
+                href="/studio/workspaces"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+              >
+                <IconUsersGroup size={16} />
+                Try Workspaces
               </Link>
               <Link
                 href="/studio"

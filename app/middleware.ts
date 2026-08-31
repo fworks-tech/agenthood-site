@@ -30,6 +30,7 @@ type RateLimits = Record<string, { max: number; windowMs: number }>;
 
 const RATE_LIMITS: RateLimits = {
   "/api/studio/chat": { max: 20, windowMs: 60_000 },
+  // #TODO Workspaces: add "/api/studio/workspaces" entry (20 req/min, 60s) per spec.md:184 and HACKATHON-PLAN.md:338
   "/api/studio/tools": { max: 30, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/status": { max: 30, windowMs: 60_000 },
@@ -94,6 +95,7 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/feedback"].max, `${RATE_LIMITS["/api/studio/feedback"].windowMs}ms`),
     prefix: "ratelimit:feedback",
   });
+  // #TODO Workspaces: add Upstash limiter for workspaces (reuse RATE_LIMITS entry, prefix "ratelimit:workspaces")
 
   return { chat, tools, agents, status, feedback };
 }
@@ -117,6 +119,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   const limits = RATE_LIMITS[limitKey];
 
   // Unknown matching keys (e.g. /api/news/comments) fall back to the feedback bucket.
+  // #TODO Workspaces: add "/api/studio/workspaces" -> "workspaces" mapping (add to union, keep fallback)
   const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "status" | "feedback"> = {
     "/api/studio/chat": "chat",
     "/api/studio/tools": "tools",
