@@ -112,11 +112,11 @@ export default function PlaygroundPage() {
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!selectedAgent) return;
-      // One-shot gate: require captcha only until first verification, then never again.
-      // After verified the widget stays hidden and the server cookie covers
-      // subsequent requests, but we keep the CAPTCHA_FAILED auto-retry as a
-      // fallback so mocked e2e (which ignores cookies) still passes.
-      if (captcha.isRequired && !captcha.verified && !captcha.tokenRef.current) {
+      // Require a token for the send; the widget stays hidden after the first
+      // verification but the fresh token is still sent so the first request
+      // can establish the signed cookie (the cookie then covers all later
+      // messages and prevents the consumed-token 400).
+      if (captcha.isRequired && !captcha.tokenRef.current) {
         addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' });
         return;
       }
@@ -128,9 +128,7 @@ export default function PlaygroundPage() {
         model: config.model,
         conversationId: activeConversationId ?? undefined,
       });
-      // After verified, stop sending token — server cookie covers subsequent requests.
-      // We still send a token if we have one for mocked servers without cookie support.
-      const captchaToken = captcha.verified ? undefined : captcha.tokenRef.current ?? undefined;
+      const captchaToken = captcha.tokenRef.current ?? undefined;
       try {
         await chat.sendMessage(content, captchaToken);
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
@@ -333,7 +331,7 @@ export default function PlaygroundPage() {
               onStop={handleAbortStream}
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
-              captchaReady={!captcha.isRequired || (captcha.error ? !!captcha.token : captcha.verified || !!captcha.token)}
+              captchaReady={!captcha.isRequired || !!captcha.token}
               captchaError={captcha.error}
               onRetryCaptcha={captcha.retry}
               captchaWidget={

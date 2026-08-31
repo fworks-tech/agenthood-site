@@ -72,11 +72,12 @@ test.describe("Playground — Tool Execution History & Replay", () => {
     await expect(page.locator("button", { hasText: "Retry tool" })).toHaveCount(0);
     await expect(toolRow).not.toContainText("boom");
 
-    // One-shot contract: after the first verification the cookie covers chat and
-    // tool replay, so no Turnstile token is submitted to either endpoint.
+    // The replay request re-used the recorded tool args and submitted a *fresh*
+    // token: the one consumed by the original chat request must not be reused.
     expect(replayBodies[0]?.tool).toBe("code_execution");
     expect(replayBodies[0]?.args).toEqual({ code: "fail()" });
-    expect(chatBodies[0]?.turnstileToken).toBeUndefined();
-    expect(replayBodies[0]?.turnstileToken).toBeUndefined();
+    expect(chatBodies[0]?.turnstileToken).toBeTruthy();
+    expect(replayBodies[0]?.turnstileToken).toBeTruthy();
+    expect(replayBodies[0]?.turnstileToken).not.toBe(chatBodies[0]?.turnstileToken);
   });
 });

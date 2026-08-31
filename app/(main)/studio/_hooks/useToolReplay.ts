@@ -23,15 +23,12 @@ export function useToolReplay(options: UseToolReplayOptions) {
       if (replayingRef.current) return;
       replayingRef.current = true;
       try {
-        // One-shot: if already verified, cookie covers tool replay; otherwise refresh
-        const needsCaptcha = TURNSTILE_REQUIRED && !(captcha as { verified?: boolean }).verified;
-        const fresh = needsCaptcha ? await captcha.refreshAndWait() : false;
-        const token = (captcha as { verified?: boolean }).verified
-          ? undefined
-          : fresh
-            ? captcha.tokenRef.current ?? undefined
-            : undefined;
-        const result = await chat.replayToolCall(messageId, toolCallId, token);
+        const fresh = TURNSTILE_REQUIRED ? await captcha.refreshAndWait() : false;
+        const result = await chat.replayToolCall(
+          messageId,
+          toolCallId,
+          fresh ? captcha.tokenRef.current ?? undefined : undefined,
+        );
         if (result.ok) {
           addLog('info', '↻ Tool re-executed successfully');
         } else {
