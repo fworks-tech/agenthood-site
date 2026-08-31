@@ -1,6 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
 import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
-import { validateTurnstile } from "@/app/(main)/studio/_lib/captcha";
+import {
+  validateTurnstile,
+  createCaptchaCookieValue,
+  getCaptchaCookieAttributes,
+  parseCaptchaCookie,
+} from "@/app/(main)/studio/_lib/captcha";
 import { executeTool, classifyToolResult } from "@/app/(main)/studio/_lib/tools";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 
@@ -44,7 +49,8 @@ export async function POST(request: Request) {
     correlationId = readCorrelationId(request) ?? requestId;
 
     const { tool, args, turnstileToken } = body as Record<string, unknown>;
-    await validateTurnstile(turnstileToken);
+    const verifiedCookie = parseCaptchaCookie(request.headers.get("cookie"));
+    const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
     if (typeof tool !== "string" || !VALID_TOOLS.has(tool)) {
       throw new ValidationError(`Unknown tool: "${tool ?? "undefined"}"`);
@@ -60,10 +66,15 @@ export async function POST(request: Request) {
     const outcome = classifyToolResult(result);
 
     logger.info("tools.execute", { tool, requestId, correlationId, ok: !outcome.error });
-    return Response.json(
-      { ...outcome, requestId, correlationId },
-      { status: 200, headers: { "X-Request-Id": requestId, "X-Correlation-Id": correlationId } },
-    );
+    const headers: Record<string, string> = {
+      "X-Request-Id": requestId,
+      "X-Correlation-Id": correlationId,
+    };
+    if (didVerify) {
+      const cookieValue = await createCaptchaCookieValue();
+      headers["Set-Cookie"] = `captcha_verified=${cookieValue}; ${getCaptchaCookieAttributes()}`;
+    }
+    return Response.json({ ...outcome, requestId, correlationId }, { status: 200, headers });
   } catch (err) {
     if (err instanceof StudioError) {
       logger.warn("tools.validation_failed", { code: err.code, message: err.message, requestId, correlationId });

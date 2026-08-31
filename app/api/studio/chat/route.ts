@@ -2,7 +2,12 @@ import * as Sentry from "@sentry/nextjs";
 import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
 import { getAgentById } from "@/app/(main)/studio/_data/agents";
 import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
-import { validateTurnstile } from "@/app/(main)/studio/_lib/captcha";
+import {
+  validateTurnstile,
+  createCaptchaCookieValue,
+  getCaptchaCookieAttributes,
+  parseCaptchaCookie,
+} from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
 import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
@@ -141,7 +146,8 @@ export async function POST(request: Request) {
     correlationId = readCorrelationId(request) ?? requestId;
 
     const { agentId, messages: rawMessages, config: rawConfig, turnstileToken } = body as Record<string, unknown>;
-    await validateTurnstile(turnstileToken);
+    const verifiedCookie = parseCaptchaCookie(request.headers.get("cookie"));
+    const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
     if (!agentId || typeof agentId !== "string") throw new ValidationError("agentId must be a string");
     const agent = getAgentById(agentId);
@@ -153,15 +159,18 @@ export async function POST(request: Request) {
     const adapter = new LightweightAdapter();
     const stream = await adapter.chat({ agentId, messages, config, correlationId }, request.signal);
 
-    const response = new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-        "X-Request-Id": requestId,
-        "X-Correlation-Id": correlationId,
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Request-Id": requestId,
+      "X-Correlation-Id": correlationId,
+    };
+    if (didVerify) {
+      const cookieValue = await createCaptchaCookieValue();
+      headers["Set-Cookie"] = `${"captcha_verified"}=${cookieValue}; ${getCaptchaCookieAttributes()}`;
+    }
+    const response = new Response(stream, { headers });
 
     logger.info("chat.request", { agentId, agentName: agent.name, provider: config.provider, model: config.model, messageCount: messages.length, requestId, correlationId });
     return response;

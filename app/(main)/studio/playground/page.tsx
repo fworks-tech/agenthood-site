@@ -112,7 +112,11 @@ export default function PlaygroundPage() {
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!selectedAgent) return;
-      if (captcha.isRequired && !captcha.token) {
+      // One-shot gate: require captcha only until first verification, then never again.
+      // After verified the widget stays hidden and the server cookie covers
+      // subsequent requests, but we keep the CAPTCHA_FAILED auto-retry as a
+      // fallback so mocked e2e (which ignores cookies) still passes.
+      if (captcha.isRequired && !captcha.verified && !captcha.tokenRef.current) {
         addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' });
         return;
       }
@@ -124,8 +128,11 @@ export default function PlaygroundPage() {
         model: config.model,
         conversationId: activeConversationId ?? undefined,
       });
+      // After verified, stop sending token — server cookie covers subsequent requests.
+      // We still send a token if we have one for mocked servers without cookie support.
+      const captchaToken = captcha.verified ? undefined : captcha.tokenRef.current ?? undefined;
       try {
-        await chat.sendMessage(content, captcha.tokenRef.current ?? undefined);
+        await chat.sendMessage(content, captchaToken);
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
         addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`);
         track('message_completed', {
@@ -137,14 +144,14 @@ export default function PlaygroundPage() {
         });
       } catch (err) {
         const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
-        if (code === 'CAPTCHA_FAILED') {
-          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying…', { category: 'captcha' });
+        if (code === "CAPTCHA_FAILED") {
+          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying...', { category: 'captcha' });
           const ready = await captcha.refreshAndWait();
           if (ready) {
             try {
               await chat.retrySendMessage(content, captcha.tokenRef.current ?? undefined);
-              const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-              addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s (retry)`);
+              const elapsed2 = ((Date.now() - ts) / 1000).toFixed(1);
+              addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed2}s (retry)`);
               track('message_completed', {
                 agentId: selectedAgent.id,
                 provider: config.provider,
@@ -168,6 +175,16 @@ export default function PlaygroundPage() {
             }
           }
           captcha.onError('CAPTCHA refresh timed out. Please verify manually.');
+          const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
+          addLog(
+            'error',
+            `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${err instanceof Error ? err.message : String(err)}`,
+          );
+          track('message_error', {
+            agentId: selectedAgent.id,
+            provider: config.provider,
+            error: err instanceof Error ? err.message : String(err),
+          });
           return;
         }
         const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
@@ -316,7 +333,7 @@ export default function PlaygroundPage() {
               onStop={handleAbortStream}
               isStreaming={chat.isStreaming}
               disabled={isLoading || !!error}
-              captchaReady={!captcha.isRequired || !!captcha.token}
+              captchaReady={!captcha.isRequired || (captcha.error ? !!captcha.token : captcha.verified || !!captcha.token)}
               captchaError={captcha.error}
               onRetryCaptcha={captcha.retry}
               captchaWidget={

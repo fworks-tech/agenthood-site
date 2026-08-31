@@ -176,4 +176,124 @@ describe("Turnstile CAPTCHA validation", () => {
     expect(fetchSpy).toHaveBeenCalled();
     expect(res.status).toBe(200);
   });
+
+  it("skips siteverify and sets a signed cookie on successful verification", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "test-secret";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
+
+    fetchSpy.mockResolvedValueOnce({
+      json: async () => ({ success: true }),
+    });
+
+    const { POST } = await import("../app/api/studio/chat/route");
+    const req = new Request("http://localhost/api/studio/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId: "the-scribe",
+        messages: [{ role: "user", content: "hello" }],
+        config: { provider: "anthropic", model: "claude-sonnet-4-20250514" },
+        turnstileToken: "valid-token",
+      }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const setCookie = res.headers.get("Set-Cookie") ?? "";
+    expect(setCookie).toContain("captcha_verified=1:");
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("Max-Age=86400");
+  });
+
+  it("honours a valid signed cookie without a token (one-shot gate)", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "test-secret";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
+
+    const { createCaptchaCookieValue } = await import("../app/(main)/studio/_lib/captcha");
+    const signed = await createCaptchaCookieValue();
+
+    const { POST } = await import("../app/api/studio/chat/route");
+    const req = new Request("http://localhost/api/studio/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `captcha_verified=${signed}`,
+      },
+      body: JSON.stringify({
+        agentId: "the-scribe",
+        messages: [{ role: "user", content: "hello" }],
+        config: { provider: "anthropic", model: "claude-sonnet-4-20250514" },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects a forged unsigned cookie and requires a token", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "test-secret";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
+
+    const { POST } = await import("../app/api/studio/chat/route");
+    const req = new Request("http://localhost/api/studio/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: "captcha_verified=1",
+      },
+      body: JSON.stringify({
+        agentId: "the-scribe",
+        messages: [{ role: "user", content: "hello" }],
+        config: { provider: "anthropic", model: "claude-sonnet-4-20250514" },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe("CAPTCHA_FAILED");
+  });
+
+  it("rejects an expired signed cookie", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "test-secret";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
+
+    // Craft a cookie whose signature is valid for an already-past expiry.
+    const secret = "test-secret";
+    const past = Math.floor(Date.now() / 1000) - 100;
+    const data = `v1:${past}`;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+    const hex = Array.from(new Uint8Array(sig))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const { POST } = await import("../app/api/studio/chat/route");
+    const req = new Request("http://localhost/api/studio/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: `captcha_verified=1:${past}:${hex}`,
+      },
+      body: JSON.stringify({
+        agentId: "the-scribe",
+        messages: [{ role: "user", content: "hello" }],
+        config: { provider: "anthropic", model: "claude-sonnet-4-20250514" },
+      }),
+    });
+
+    const res = await POST(req);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe("CAPTCHA_FAILED");
+  });
 });
