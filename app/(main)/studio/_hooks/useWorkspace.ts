@@ -6,7 +6,8 @@ import { parseMediatorPlan, fallbackPlan, type ThreadMessage } from '../_lib/wor
 import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type MediatorPlan } from '../_types/workspace'
 import { getAgentById } from '../_data/agents'
 
-export type WorkspaceMessage = { id: string; memberId: string; content: string; turnIndex: number }
+export type WorkspaceToolCall = { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }
+export type WorkspaceMessage = { id: string; memberId: string; content: string; turnIndex: number; toolCalls?: WorkspaceToolCall[] }
 
 export type WorkspaceState = 'idle' | 'running' | 'handoff' | 'done' | 'error'
 
@@ -21,6 +22,7 @@ export function useWorkspace() {
   const abortRef = useRef<AbortController | null>(null)
   const threadRef = useRef<ThreadMessage[]>([])
   const budgetRef = useRef(TURN_BUDGET_DEFAULT)
+  const memberIdsRef = useRef<string[]>([])
 
   const updateStatus = useCallback((memberId: string, status: WorkspaceStatus) => {
     setStatusMap((prev) => ({ ...prev, [memberId]: status }))
@@ -54,9 +56,10 @@ export function useWorkspace() {
       }
 
       let currentContent = ''
+      const toolCallsMap = new Map<string, WorkspaceToolCall>()
       const msgId = `${wId}-${memberId}-${turnIndex}`
 
-      setMessages((prev) => [...prev, { id: msgId, memberId, content: '', turnIndex }])
+      setMessages((prev) => [...prev, { id: msgId, memberId, content: '', turnIndex, toolCalls: [] }])
 
       await readSSEStream(
         res,
@@ -77,14 +80,31 @@ export function useWorkspace() {
               setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: currentContent } : m)))
             }
             if (event.type === 'workspace.tool_call') {
-              const detail = `${event.name as string}(${JSON.stringify(event.args as unknown)})`
-              currentContent += `\n\n[tool_call: ${detail}]`
-              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: currentContent } : m)))
+              const tc: WorkspaceToolCall = {
+                id: event.id as string,
+                name: event.name as string,
+                args: (event.args as Record<string, unknown>) ?? {},
+                status: 'running',
+              }
+              toolCallsMap.set(tc.id, tc)
+              const list = Array.from(toolCallsMap.values())
+              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: list } : m)))
             }
             if (event.type === 'workspace.tool_result') {
-              const result = (event.result as string) || (event.error as string) || ''
-              currentContent += `\n[tool_result: ${result.slice(0, 500)}]`
-              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: currentContent } : m)))
+              const id = event.id as string
+              const existing = toolCallsMap.get(id)
+              const status = event.error ? 'error' : 'complete'
+              const updated: WorkspaceToolCall = {
+                id,
+                name: (event.name as string) ?? existing?.name ?? 'tool',
+                args: existing?.args ?? (event.args as Record<string, unknown>) ?? {},
+                result: (event.result as string) ?? undefined,
+                error: (event.error as string) ?? undefined,
+                status: status as WorkspaceToolCall['status'],
+              }
+              toolCallsMap.set(id, updated)
+              const list = Array.from(toolCallsMap.values())
+              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: list } : m)))
             }
             if (event.type === 'workspace.handoff') {
               setHandoff({ memberId: event.memberId as string, reason: event.reason as string })
@@ -123,6 +143,7 @@ export function useWorkspace() {
       setWorkspaceState('running')
       threadRef.current = [{ role: 'user', content: spec.instruction }]
       budgetRef.current = TURN_BUDGET_DEFAULT
+      memberIdsRef.current = spec.memberIds
 
       const validIds = spec.memberIds
       let plan: MediatorPlan | null = null
@@ -166,7 +187,7 @@ export function useWorkspace() {
       const correlationId = `ws-corr-${Date.now()}`
       try {
         const mediatorOutput = await runTurn('the-mediator', content, 999, workspaceId, correlationId)
-        const plan = parseMediatorPlan(mediatorOutput, threadRef.current.map(() => '')) ?? null
+        const plan = parseMediatorPlan(mediatorOutput, memberIdsRef.current) ?? null
         if (plan) {
           for (const m of plan.members) {
             if (budgetRef.current <= 0) break
