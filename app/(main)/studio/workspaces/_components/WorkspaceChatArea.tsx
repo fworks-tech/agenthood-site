@@ -20,7 +20,7 @@ export default function WorkspaceChatArea({ messages }: Props) {
     <div className="space-y-4">
       {messages.map((m) => (
         <AnimatedMessage key={m.id}>
-          <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} />
+          <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} toolCalls={m.toolCalls} />
         </AnimatedMessage>
       ))}
     </div>
