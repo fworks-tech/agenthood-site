@@ -1,9 +1,28 @@
-// #TODO Workspaces: live shared thread per docs/hackathon/spec.md:46-49,194-195
-// - renders all selected members + Mediator messages in real time, tagged with name/icon
-// - uses AnimatedMessage fade/slide (reuse playground/_components/AnimatedMessage.tsx)
-// - shows tool_call/tool_result inline, user can intervene mid-run (pause + Mediator re-plan)
 'use client'
 
-export default function WorkspaceChatArea() {
-  return null
+import AnimatedMessage from '../../playground/_components/AnimatedMessage'
+import WorkspaceTurnCard from './WorkspaceTurnCard'
+import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
+
+interface Props {
+  messages: WorkspaceMessage[]
+}
+
+export default function WorkspaceChatArea({ messages }: Props) {
+  if (messages.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center py-16 text-sm text-zinc-500">
+        Workspace thread will appear here. Mediator will plan, then members will take turns.
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-4">
+      {messages.map((m) => (
+        <AnimatedMessage key={m.id}>
+          <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} />
+        </AnimatedMessage>
+      ))}
+    </div>
+  )
 }
