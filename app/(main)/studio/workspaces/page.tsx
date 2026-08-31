@@ -1,449 +1,164 @@
-// #TODO Workspaces: replace PlaygroundPage copy with Workspaces page per docs/hackathon/spec.md:189-203
-// - member picker grid (reuse agents.ts, indigo border, Mediator auto-included, not in grid)
-// - instruction textarea (fade-in when >=1 selected, Start Workspace -> 3-zone layout)
-// - 3-zone layout: WorkspaceSidebar (left) + WorkspaceChatArea (main) + WorkspaceComposer/input (bottom)
-// - hook: useWorkspace (not useStudioChat), client-driven turn loop, AbortSignal pause+Mediator re-plan
-// - remove AgentConfigPanel / ChatComposer (server defaults: opencode-go, 0.7, 4096, web_fetch+code_execution)
-'use client';
+'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useAgentDirectory } from '../_hooks/useAgentDirectory';
-import { useStudioChat } from '../_hooks/useStudioChat';
-import { useCaptcha } from '../_hooks/useCaptcha';
-import { useConversationExport } from '../_hooks/useConversationExport';
-import { useToolReplay } from '../_hooks/useToolReplay';
-import AgentConfigPanel from '../_components/AgentConfigPanel';
-import ChatComposer from '../_components/ChatComposer';
-import LiveLogs from '../_components/LiveLogs';
-import ConversationList from '../_components/ConversationList';
-import DragHandle from '../_components/DragHandle';
-import MobileDrawer from '../_components/MobileDrawer';
-import MobileBottomSheet from '../_components/MobileBottomSheet';
-import HelpTip from '../_components/HelpTip';
-import Turnstile from '../../../components/Turnstile';
-import type { AgentEntry } from '../_data/agents';
-import type { ChatConfig, Provider } from '../_types/studio';
-import { getDefaultModel, getProviderMeta } from '../_types/studio';
-import { agentSkills } from '../_data/agents.generated';
-import { track } from '@vercel/analytics';
-import PlaygroundHeader from './_components/PlaygroundHeader';
-import PlaygroundSidebar from './_components/PlaygroundSidebar';
-import PlaygroundChatArea from './_components/PlaygroundChatArea';
-import MobileNavBar from './_components/MobileNavBar';
-import { useLogs } from '../_hooks/useLogs';
+import { useState, useCallback } from 'react'
+import { useWorkspace } from '../_hooks/useWorkspace'
+import { useLogs } from '../_hooks/useLogs'
+import WorkspaceComposer from './_components/WorkspaceComposer'
+import WorkspaceSidebar from './_components/WorkspaceSidebar'
+import WorkspaceChatArea from './_components/WorkspaceChatArea'
+import LiveLogs from '../_components/LiveLogs'
+import MobileDrawer from '../_components/MobileDrawer'
 
-const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant.';
+export default function WorkspacesPage() {
+  const [selected, setSelected] = useState<string[]>([])
+  const [instruction, setInstruction] = useState('')
+  const [input, setInput] = useState('')
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
-const CONFIG_STORAGE_KEY = 'agenthood-studio-config';
+  const workspace = useWorkspace()
+  const { logs, logsOpen, setLogsOpen, debugVisible, setDebugVisible, logCategoryFilter, setLogCategoryFilter, liveLogsHeight } = useLogs()
 
-function loadSavedConfig(): Partial<ChatConfig> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = sessionStorage.getItem(CONFIG_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
+  const toggle = useCallback((id: string) => {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }, [])
 
-export default function PlaygroundPage() {
-  const { agents, isLoading, error } = useAgentDirectory();
-  const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
-  const [config, setConfig] = useState<ChatConfig>({
-    provider: 'opencode-go',
-    model: getDefaultModel('opencode-go'),
-    baseUrl: getProviderMeta('opencode-go').defaultBaseUrl,
-    temperature: 0.7,
-    maxTokens: 4096,
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
-  });
-  const [configOpen, setConfigOpen] = useState(true);
-  const [configPanelOpen, setConfigPanelOpen] = useState(true);
-  const [leftColWidth, setLeftColWidth] = useState(288);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const {
-    logs,
-    addLog,
-    handleNetworkLog,
-    logsOpen,
-    setLogsOpen,
-    debugVisible,
-    setDebugVisible,
-    logCategoryFilter,
-    setLogCategoryFilter,
-    liveLogsHeight,
-    setLiveLogsHeight,
-  } = useLogs();
+  const handleStart = useCallback(async () => {
+    if (selected.length === 0 || !instruction.trim()) return
+    await workspace.start({ memberIds: selected, instruction: instruction.trim() })
+  }, [selected, instruction, workspace])
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConfigOpen(window.innerWidth >= 768);
-  }, []);
-
-  const chat = useStudioChat({ config, onLog: handleNetworkLog });
-  const { conversations, activeConversationId, hydrated: chatHydrated } = chat;
-  const captcha = useCaptcha({ addLog });
-  const exportConv = useConversationExport({ conversations, activeConversationId, addLog });
-  const toolReplay = useToolReplay({ chat, captcha, addLog });
-
-  useEffect(() => {
-    const saved = loadSavedConfig();
-    if (saved.provider) {
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setConfig((prev) => ({ ...prev, ...saved }));
-      /* eslint-enable react-hooks/set-state-in-effect */
+  const handleSend = useCallback(async () => {
+    const text = input.trim()
+    if (!text) return
+    setInput('')
+    if (workspace.workspaceState === 'idle' || workspace.workspaceState === 'done' || workspace.workspaceState === 'error') {
+      await workspace.start({ memberIds: selected, instruction: text })
+    } else {
+      await workspace.sendIntervention(text)
     }
-  }, []);
-  const lastConfigConvIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (activeConversationId === lastConfigConvIdRef.current) return;
-    lastConfigConvIdRef.current = activeConversationId;
-    const saved = loadSavedConfig();
-    if (saved.provider) return;
-    const conv = conversations.find((c) => c.id === activeConversationId);
-    if (!conv?.config || Object.keys(conv.config).length === 0) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConfig((prev) => ({ ...prev, ...conv.config, apiKey: prev.apiKey }));
-  }, [activeConversationId, conversations]);
-  useEffect(() => {
-    if (!isLoading && !error) {
-      addLog('info', `Agents loaded: ${agents.length} available`);
-      if (config.provider) {
-        addLog('info', `Config: ${config.provider} · ${config.model}`);
-      }
-    }
-  }, [isLoading, error, agents.length, addLog, config.model, config.provider]);
+  }, [input, selected, workspace])
 
-  const handleSendMessage = useCallback(
-    async (content: string) => {
-      if (!selectedAgent) return;
-      // Require a token for the send; the widget stays hidden after the first
-      // verification but the fresh token is still sent so the first request
-      // can establish the signed cookie (the cookie then covers all later
-      // messages and prevents the consumed-token 400).
-      if (captcha.isRequired && !captcha.tokenRef.current) {
-        addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' });
-        return;
-      }
-      const ts = Date.now();
-      addLog('info', `→ ${selectedAgent.icon ?? ''} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
-      track('message_sent', {
-        agentId: selectedAgent.id,
-        provider: config.provider,
-        model: config.model,
-        conversationId: activeConversationId ?? undefined,
-      });
-      const captchaToken = captcha.tokenRef.current ?? undefined;
-      try {
-        await chat.sendMessage(content, captchaToken);
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-        addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`);
-        track('message_completed', {
-          agentId: selectedAgent.id,
-          provider: config.provider,
-          model: config.model,
-          durationMs: Date.now() - ts,
-          tokenCount: chat.totalTokens,
-        });
-      } catch (err) {
-        const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
-        if (code === "CAPTCHA_FAILED") {
-          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying...', { category: 'captcha' });
-          const ready = await captcha.refreshAndWait();
-          if (ready) {
-            try {
-              await chat.retrySendMessage(content, captcha.tokenRef.current ?? undefined);
-              const elapsed2 = ((Date.now() - ts) / 1000).toFixed(1);
-              addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed2}s (retry)`);
-              track('message_completed', {
-                agentId: selectedAgent.id,
-                provider: config.provider,
-                model: config.model,
-                durationMs: Date.now() - ts,
-                tokenCount: chat.totalTokens,
-              });
-              return;
-            } catch (retryErr) {
-              const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
-              addLog(
-                'error',
-                `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`,
-              );
-              track('message_error', {
-                agentId: selectedAgent.id,
-                provider: config.provider,
-                error: retryErr instanceof Error ? retryErr.message : String(retryErr),
-              });
-              return;
-            }
-          }
-          captcha.onError('CAPTCHA refresh timed out. Please verify manually.');
-          const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
-          addLog(
-            'error',
-            `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          track('message_error', {
-            agentId: selectedAgent.id,
-            provider: config.provider,
-            error: err instanceof Error ? err.message : String(err),
-          });
-          return;
-        }
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-        addLog(
-          'error',
-          `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        track('message_error', {
-          agentId: selectedAgent.id,
-          provider: config.provider,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-    },
-    [chat, selectedAgent, config.provider, config.model, activeConversationId, addLog, captcha],
-  );
-
-  const handleSaveConfig = useCallback(
-    (cfg: ChatConfig) => {
-      try {
-        sessionStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ ...cfg, apiKey: undefined }));
-        addLog('info', 'Configuration saved locally');
-      } catch {
-        addLog('error', 'Failed to save configuration');
-      }
-    },
-    [addLog],
-  );
-  const handleSelectAgent = useCallback(
-    (agent: AgentEntry) => {
-      const provider: Provider = 'opencode-go';
-      const model = getDefaultModel(provider);
-      const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
-      setSelectedAgent(agent);
-      const agentConfig = {
-        provider,
-        model,
-        baseUrl: getProviderMeta(provider).defaultBaseUrl,
-        systemPrompt: prompt,
-      };
-      setConfig((prev) => ({ ...prev, ...agentConfig }));
-      chat.newConversation(agent.id, agentConfig);
-      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${provider}/${model}`);
-      track('agent_selected', { agentId: agent.id, provider, model });
-      if (!configOpen && window.innerWidth >= 768) setConfigOpen(true);
-    },
-    [chat, addLog, configOpen],
-  );
-  const handleNewConversation = useCallback(() => {
-    if (selectedAgent) {
-      chat.newConversation(selectedAgent.id);
-      addLog('info', `New conversation with ${selectedAgent.name}`);
-      track('conversation_created', { agentId: selectedAgent.id });
-    }
-  }, [chat, selectedAgent, addLog]);
-  const handleDeleteConversation = useCallback(
-    (id: string) => {
-      track('conversation_deleted', { agentId: selectedAgent?.id ?? 'unknown', conversationId: id });
-      chat.deleteConversation(id);
-    },
-    [chat, selectedAgent?.id],
-  );
-  const handleConfigChange = useCallback(
-    (newConfig: ChatConfig) => {
-      if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
-        addLog('info', `Config: ${newConfig.provider} · ${newConfig.model}`);
-        track('config_changed', {
-          provider: newConfig.provider,
-          model: newConfig.model,
-          temperature: newConfig.temperature,
-          maxTokens: newConfig.maxTokens,
-        });
-      }
-      setConfig(newConfig);
-    },
-    [config.provider, config.model, addLog],
-  );
-  const handleAbortStream = useCallback(() => {
-    if (chat.isStreaming && selectedAgent) {
-      addLog('warn', '⏹ Streaming cancelled by user');
-    }
-    chat.abortStream();
-  }, [chat, selectedAgent, addLog]);
-
-  useEffect(() => {
-    if (chat.isStreaming && selectedAgent) {
-      addLog('info', `↻ Streaming response from ${selectedAgent.name}...`);
-    }
-  }, [chat.isStreaming, selectedAgent, addLog]);
+  const isRunning = workspace.workspaceState === 'running' || workspace.workspaceState === 'handoff'
+  const hasStarted = workspace.workspaceId !== null
 
   return (
-    <div className="h-screen bg-zinc-950 py-12">
-      <div className="relative flex h-full max-w-7xl mx-auto">
-        <PlaygroundSidebar
-          configOpen={configOpen}
-          leftColWidth={leftColWidth}
-          configPanelOpen={configPanelOpen}
-          onToggleConfigPanel={() => setConfigPanelOpen((p) => !p)}
-          chatHydrated={chatHydrated}
-          conversations={conversations}
-          activeConversationId={activeConversationId}
-          onSwitchConversation={chat.switchConversation}
-          onNewConversation={handleNewConversation}
-          onDeleteConversation={handleDeleteConversation}
-          agents={agents}
-          isLoading={isLoading}
-          error={error}
-          selectedAgent={selectedAgent}
-          config={config}
-          onChangeConfig={handleConfigChange}
-          onChangeAgent={handleSelectAgent}
-          onSave={handleSaveConfig}
-          captchaToken={captcha.token}
-        />
-        {configOpen && (
-          <DragHandle
-            direction="horizontal"
-            onDrag={(delta) => setLeftColWidth((w) => Math.min(500, Math.max(200, w + delta)))}
-            className="hidden md:flex"
-          />
-        )}
-        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2">
-          <PlaygroundHeader
-            selectedAgent={selectedAgent}
-            config={config}
-            totalTokens={chat.totalTokens}
-            messagesLength={chat.messages.length}
-            configOpen={configOpen}
-            onToggleConfig={() => setConfigOpen((prev) => !prev)}
-            onExport={exportConv.handleExport}
-            onClear={chat.clearMessages}
-          />
-          <div className="flex-1 overflow-y-auto">
-            <PlaygroundChatArea
-              selectedAgent={selectedAgent}
-              messages={chat.messages}
-              isStreaming={chat.isStreaming}
-              conversationId={chat.activeConversationId}
-              onReplayTool={toolReplay.handleReplay}
-              onSendMessage={handleSendMessage}
-            />
-          </div>
-          {selectedAgent && (
-            <ChatComposer
-              onSend={handleSendMessage}
-              onStop={handleAbortStream}
-              isStreaming={chat.isStreaming}
-              disabled={isLoading || !!error}
-              captchaReady={!captcha.isRequired || !!captcha.token}
-              captchaError={captcha.error}
-              onRetryCaptcha={captcha.retry}
-              captchaWidget={
-                captcha.isRequired ? (
-                  <Turnstile
-                    onToken={captcha.setToken}
-                    onError={captcha.onError}
-                    onStatus={captcha.onStatus}
-                    refreshKey={captcha.refreshKey}
-                    visible={!captcha.verified}
-                  />
-                ) : undefined
-              }
-            />
-          )}
-          {!selectedAgent && (
-            <div className="block border-t border-zinc-800 p-4 md:hidden">
-              {isLoading ? (
-                <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Loading agents...
-                  <HelpTip text="Fetching the agent directory from the server. This should take a moment." />
-                </div>
-              ) : error ? (
-                <div className="flex items-center gap-1 rounded-lg border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs text-red-400">
-                  Failed to load agents
-                  <HelpTip text="Could not load the agent list. Try again or check your connection." />
-                </div>
-              ) : (
-                <select
-                  value=""
-                  aria-label="Select an agent"
-                  onChange={(e) => {
-                    const agent = agents.find((a) => a.id === e.target.value);
-                    if (agent) handleSelectAgent(agent);
-                  }}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="" disabled>
-                    Select an agent...
-                  </option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.icon ?? ''} {agent.name} — {agent.role}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )}
-          <DragHandle
-            direction="vertical"
-            onDrag={(delta) => {
-              const newH = Math.min(300, Math.max(40, liveLogsHeight - delta));
-              setLiveLogsHeight(newH);
-              if (!logsOpen) setLogsOpen(true);
-            }}
-          />
-          <div style={{ height: logsOpen ? liveLogsHeight : undefined }} className="shrink-0">
-            <LiveLogs
-              logs={logs}
-              open={logsOpen}
-              onToggle={() => setLogsOpen(!logsOpen)}
-              debugVisible={debugVisible}
-              onToggleDebug={() => setDebugVisible((v) => !v)}
-              categoryFilter={logCategoryFilter}
-              onCategoryFilter={setLogCategoryFilter}
+    <div className="flex h-screen flex-col bg-zinc-950">
+      <div className="border-b border-zinc-800 px-4 py-3 md:px-6">
+        <h1 className="text-lg font-semibold text-zinc-100">Workspaces</h1>
+        <p className="text-sm text-zinc-500">Assemble a team, give one instruction, watch them collaborate. Mediator is auto-included.</p>
+      </div>
+
+      {!hasStarted ? (
+        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+          <div className="mx-auto max-w-4xl">
+            <WorkspaceComposer
+              selected={selected}
+              onToggle={toggle}
+              instruction={instruction}
+              onInstructionChange={setInstruction}
+              onStart={handleStart}
+              running={isRunning}
             />
           </div>
         </div>
-      </div>
-      <MobileNavBar
-        onOpenConversations={() => setMobileDrawerOpen((p) => !p)}
-        onOpenConfig={() => setMobileSheetOpen((p) => !p)}
-        onToggleLogs={() => setLogsOpen((p) => !p)}
-      />
-      <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} onOpen={() => setMobileDrawerOpen(true)}>
-        <div data-conversation-list="sidebar">
-          <ConversationList
-            conversations={conversations}
-            activeConversationId={activeConversationId}
-            onSelect={(id) => {
-              chat.switchConversation(id);
-              setMobileDrawerOpen(false);
-            }}
-            onNewConversation={handleNewConversation}
-            onDelete={handleDeleteConversation}
-          />
+      ) : (
+        <div className="flex flex-1 overflow-hidden">
+          <aside className="hidden w-64 shrink-0 border-r border-zinc-800 p-4 md:block">
+            <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
+            {workspace.handoff && (
+              <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm">
+                <div className="font-medium text-amber-300">Human checkpoint</div>
+                <div className="mt-1 text-xs text-amber-200/80">{workspace.handoff.reason}</div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={workspace.continueHandoff}
+                    className="flex-1 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+                  >
+                    Continue
+                  </button>
+                  <button
+                    onClick={workspace.stop}
+                    className="flex-1 rounded border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
+                  >
+                    Stop
+                  </button>
+                </div>
+              </div>
+            )}
+            <button
+              onClick={workspace.stop}
+              className="mt-4 w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900"
+            >
+              Stop workspace
+            </button>
+          </aside>
+
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 md:hidden">
+              <button onClick={() => setDrawerOpen(true)} className="rounded border border-zinc-800 px-3 py-1.5 text-sm text-zinc-300">
+                Agents
+              </button>
+              <span className="text-xs text-zinc-500">{workspace.workspaceState}</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+              <div className="mx-auto max-w-3xl">
+                <WorkspaceChatArea messages={workspace.messages} />
+                {workspace.error && (
+                  <div className="mt-4 rounded-lg border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">{workspace.error}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-800 p-4">
+              <div className="mx-auto flex max-w-3xl gap-2">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
+                  placeholder={isRunning ? 'Send a message to intervene...' : 'Send a follow-up instruction...'}
+                  className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!input.trim()}
+                  className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  Send
+                </button>
+                {isRunning && (
+                  <button onClick={workspace.stop} className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400">
+                    Stop
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ height: logsOpen ? liveLogsHeight : undefined }} className="shrink-0">
+              <LiveLogs
+                logs={logs}
+                open={logsOpen}
+                onToggle={() => setLogsOpen(!logsOpen)}
+                debugVisible={debugVisible}
+                onToggleDebug={() => setDebugVisible((v) => !v)}
+                categoryFilter={logCategoryFilter}
+                onCategoryFilter={setLogCategoryFilter}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onOpen={() => setDrawerOpen(true)}>
+        <div className="p-4">
+          <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
         </div>
       </MobileDrawer>
-      <MobileBottomSheet open={mobileSheetOpen} onClose={() => setMobileSheetOpen(false)}>
-        <AgentConfigPanel
-          agents={agents}
-          isLoading={isLoading}
-          error={error}
-          selectedAgent={selectedAgent}
-          config={config}
-          onChangeConfig={handleConfigChange}
-          onChangeAgent={handleSelectAgent}
-          onSave={handleSaveConfig}
-          captchaToken={captcha.token}
-        />
-      </MobileBottomSheet>
     </div>
-  );
+  )
 }
