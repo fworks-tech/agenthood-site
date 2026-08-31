@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Text, Badge, Group, SimpleGrid } from "@mantine/core";
-import { IconPlayerPlay, IconCode, IconShieldCheck, IconMessages } from "@tabler/icons-react";
+import { IconPlayerPlay, IconCode, IconShieldCheck, IconMessages, IconUsersGroup } from "@tabler/icons-react";
 import HelpTip from "./_components/HelpTip";
 import FadeIn from "../../_components/FadeIn";
 
@@ -36,6 +36,13 @@ export default function StudioHubPage() {
               >
                 <IconPlayerPlay size={16} />
                 Open Playground
+              </Link>
+              <Link
+                href="/studio/workspaces"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+              >
+                <IconUsersGroup size={16} />
+                Try Workspaces
               </Link>
               <Link
                 href="/getting-started"

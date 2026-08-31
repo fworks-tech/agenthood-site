@@ -18,6 +18,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 | `/studio` | Agenthood Studio — chat with Society members, dashboard |
 | `/studio/playground` | Interactive chat playground with agent config panel and tools (web fetch, code execution) |
 | `/studio/dashboard` | Runtime dashboard: KPI cards, agent status, activity feed |
+| `/studio/workspaces` | Multi-agent workspaces — pick several Society members (The Mediator auto-included as conductor), give one instruction, and watch them plan → act → retry → handoff in a live shared thread (SSE `workspace.*` events, turn budget, human checkpoints) |
 | `/releases` | Release notes (synced from agenthood repo) |
 
 ---
@@ -46,6 +47,7 @@ truth for the version shown by the Footer badge and referenced here). It allows 
 | Method | Route | Description |
 |--------|-------|-------------|
 | POST | `/api/studio/chat` | SSE-streamed chat with an agent |
+| POST | `/api/studio/workspaces` | SSE-streamed workspace run — Mediator intake + turn scheduler over selected members (shared thread, `workspace.*` events) |
 | GET | `/api/studio/agents` | List all Society members |
 | GET | `/api/studio/status` | Runtime health (agents online, KV connectivity, errors, activity) |
 
@@ -80,6 +82,7 @@ Sliding-window rate limiter at the Edge middleware layer with dual-mode backend:
 | Path | Limit | Window |
 |------|-------|--------|
 | `/api/studio/chat` | 20 req/min | 60s |
+| `/api/studio/workspaces` | 20 req/min | 60s |
 | `/api/studio/agents` | 60 req/min | 60s |
 | `/api/studio/status` | 30 req/min | 60s |
 
@@ -130,6 +133,13 @@ app/(main)/studio/
 │       ├── MobileNavBar.tsx        Mobile bottom nav (Conversations/Config/Logs)
 │       ├── AnimatedMessage.tsx     Animated assistant message
 │       └── WelcomeTerminal.tsx     Welcome / empty state
+├── workspaces/
+│   ├── page.tsx                    Workspaces (member picker → 3-zone live thread)
+│   └── _components/
+│       ├── WorkspaceComposer.tsx   Member multi-select + instruction input
+│       ├── WorkspaceChatArea.tsx   Live shared thread (per-member bubbles)
+│       ├── WorkspaceSidebar.tsx    Agent status cards (idle→thinking→working→done)
+│       └── WorkspaceTurnCard.tsx   One member's turn: plan → act → result
 ├── layout.tsx                      Studio layout
 ├── error.tsx / loading.tsx         Error/loading boundaries
 ├── _components/                    Shared Studio components
@@ -146,6 +156,7 @@ app/(main)/studio/
 │   └── OllamaConnectivityCheck.tsx Local Ollama reachability
 ├── _hooks/
 │   ├── useStudioChat.ts            Chat state + streaming + persistence (core)
+│   ├── useWorkspace.ts             Workspace state machine + SSE `workspace.*` handling (client-driven turn loop)
 │   ├── useAgentDirectory.ts        Agent list fetch
 │   ├── useCaptcha.ts               CAPTCHA token/verified latch + refreshAndWait
 │   ├── useLogs.ts                  Live log store + SSE telemetry
@@ -153,6 +164,8 @@ app/(main)/studio/
 │   └── useToolReplay.ts            Tool execution replay + duration tracking
 ├── _lib/
 │   ├── agenthood-adapter.ts        LLMRouter wrapper → ReadableStream, tool loop
+│   ├── workspace-adapter.ts        Workspace orchestrator adapter (member scheduling → SSE)
+│   ├── workspace-orchestrator.ts   Turn scheduler + stop budget + handoff + thread trimming
 │   ├── captcha.ts                  Server-side Turnstile verification (fail-closed when required)
 │   ├── constants.ts                LocalStorage/SessionStorage key constants
 │   ├── env.ts                      TURNSTILE_ENABLED / TURNSTILE_REQUIRED
@@ -168,8 +181,11 @@ app/(main)/studio/
 │   ├── registry.generated.ts       Auto-generated from upstream docs/members/registry.json
 │   ├── agents.generated.ts         Auto-generated skill prompts
 │   └── agentPrompts.generated.ts   Auto-generated When-to-Use prompt hints
-└── _types/
-    └── studio.ts                   TypeScript types for providers, config
+├── _types/
+│   ├── studio.ts                   TypeScript types for providers, config
+│   └── workspace.ts                WorkspaceSpec / WorkspaceTurn / WorkspaceEvent types
+└── api/studio/workspaces/
+    └── route.ts                    POST /api/studio/workspaces (SSE, validation, rate limit)
 ```
 
 ---

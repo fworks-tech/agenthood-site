@@ -124,6 +124,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
       emitLogEvent(controller, "info", "trace", envelope as unknown as Record<string, unknown>);
     }
 
+    // #TODO Workspaces: extract tracer (createTraceEnvelope/emitLogEvent) to shared helper
+    // so workspace-adapter.ts / workspace-orchestrator.ts can reuse without duplicating LightweightAdapter (see spec.md:212-214, HACKATHON-PLAN.md:212-214)
+
     return new ReadableStream({
       async start(controller) {
         let outputChars = 0;
