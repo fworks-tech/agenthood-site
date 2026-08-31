@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-08-31"
+    ],
+    "path": "news/whats-new-2026-08-31.md",
+    "title": "Agenthood Release Digest — August 31, 2026",
+    "date": "2026-08-31",
+    "author": "Agenthood Team",
+    "summary": "Three releases: agent count fix, LLM logging cleanup, runtime telemetry, and audit hardening."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-22"
     ],
     "path": "news/whats-new-2026-08-22.md",
