@@ -42,14 +42,14 @@ export default function WorkspacesPage() {
   const hasStarted = workspace.workspaceId !== null
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-zinc-950">
       <div className="border-b border-zinc-800 px-4 py-3 md:px-6">
         <h1 className="text-lg font-semibold text-zinc-100">Workspaces</h1>
         <p className="text-sm text-zinc-500">Assemble a team, give one instruction, watch them collaborate. Mediator is auto-included.</p>
       </div>
 
       {!hasStarted ? (
-        <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 md:px-6">
           <div className="mx-auto max-w-4xl">
             <WorkspaceComposer
               selected={selected}
@@ -62,23 +62,23 @@ export default function WorkspacesPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           <aside className="hidden w-64 shrink-0 border-r border-zinc-800 p-4 md:block">
             <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
             {workspace.handoff && (
-              <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm">
+              <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm animate-in zoom-in-95 duration-300">
                 <div className="font-medium text-amber-300">Human checkpoint</div>
                 <div className="mt-1 text-xs text-amber-200/80">{workspace.handoff.reason}</div>
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={workspace.continueHandoff}
-                    className="flex-1 rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500"
+                    className="flex-1 cursor-pointer rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white shadow-md transition-all duration-200 hover:bg-amber-500 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Continue
                   </button>
                   <button
                     onClick={workspace.stop}
-                    className="flex-1 rounded border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800"
+                    className="flex-1 cursor-pointer rounded border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-all duration-200 hover:bg-zinc-800 hover:border-zinc-600 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Stop
                   </button>
@@ -87,21 +87,21 @@ export default function WorkspacesPage() {
             )}
             <button
               onClick={workspace.stop}
-              className="mt-4 w-full rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900"
+              className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:bg-zinc-900 hover:border-zinc-700 hover:text-zinc-200 hover:scale-[1.01] active:scale-[0.99]"
             >
               Stop workspace
             </button>
           </aside>
 
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 min-h-0 flex-col min-w-0">
             <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 md:hidden">
-              <button onClick={() => setDrawerOpen(true)} className="rounded border border-zinc-800 px-3 py-1.5 text-sm text-zinc-300">
+              <button onClick={() => setDrawerOpen(true)} className="cursor-pointer rounded border border-zinc-800 px-3 py-1.5 text-sm text-zinc-300 transition-all duration-200 hover:bg-zinc-900 hover:border-zinc-700 hover:scale-[1.02] active:scale-95">
                 Agents
               </button>
               <span className="text-xs text-zinc-500">{workspace.workspaceState}</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 md:px-6">
               <div className="mx-auto max-w-3xl">
                 <WorkspaceChatArea messages={workspace.messages} statusMap={workspace.statusMap} />
                 {workspace.error && (
@@ -122,17 +122,17 @@ export default function WorkspacesPage() {
                     }
                   }}
                   placeholder={isRunning ? 'Send a message to intervene...' : 'Send a follow-up instruction...'}
-                  className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:shadow-lg focus:shadow-indigo-500/10"
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                  className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   Send
                 </button>
                 {isRunning && (
-                  <button onClick={workspace.stop} className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400">
+                  <button onClick={workspace.stop} className="cursor-pointer rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
                     Stop
                   </button>
                 )}
