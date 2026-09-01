@@ -137,12 +137,24 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
     await expect(page.getByText('The Builder').first()).toBeVisible()
     await expect(page.getByText('The Tester').first()).toBeVisible()
 
-    // chat messages appear sequentially — mediator plan, builder with tool, tester
+    // chat messages appear sequentially — mediator plan is hidden, builder and tester polished
     await expect(page.getByText('Implementing feature...')).toBeVisible({ timeout: 15000 })
-    // tool is now rendered as a badge, not raw text — check badge and expand to see result
-    await expect(page.getByText('web_fetch').first()).toBeVisible({ timeout: 15000 })
-    await page.getByText('web_fetch').first().click()
-    await expect(page.getByText('repo content').first()).toBeVisible({ timeout: 5000 })
+    // raw tool markers and tool results are NOT shown in the polished chat
+    await expect(page.getByText('[tool_call:')).not.toBeVisible()
+    await expect(page.getByText('repo content')).not.toBeVisible()
+    // mediator routing JSON is hidden from chat too
+    await expect(page.getByText('"members"')).not.toBeVisible()
+    // builder turn shows tool-call count and a View logs action
+    await expect(page.getByText('1 tool calls').first()).toBeVisible({ timeout: 15000 })
+    // open the builder card's View logs dialog (scoped to the card, not the mediator's)
+    const builderCard = page.locator('div.mantine-Paper-root').filter({ hasText: 'Implementing feature...' })
+    await builderCard.getByRole('button', { name: 'View logs' }).click()
+    await expect(page.getByRole('dialog').getByText('web_fetch').first()).toBeVisible({ timeout: 5000 })
+    // expand the tool row to reveal its result
+    await page.getByRole('dialog').getByText('web_fetch').first().click()
+    await expect(page.getByRole('dialog').getByText('repo content').first()).toBeVisible({ timeout: 5000 })
+    // close modal
+    await page.keyboard.press('Escape')
     await expect(page.getByText('Tests pass.')).toBeVisible({ timeout: 15000 })
 
     // sidebar status done for at least builder
