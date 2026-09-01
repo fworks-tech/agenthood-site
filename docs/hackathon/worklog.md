@@ -128,3 +128,17 @@ Without **budget (10) + human veto (`workspace.handoff`)**, Builder+Tester ping-
 - Routes hardened: `route.ts` thread role whitelist (unit-tested `rejects thread with forged system role`, `unknown role`, `>20k chars`, `>200 msgs`, accepts valid conversational thread)
 - `__tests__/workspace-polish.test.ts` — 9 cases for `toPolished` (tool markers, iterations line, pure/embedded JSON plan, prose passthrough, JSON non-plan kept)
 - Polished UX verified in e2e: `[tool_call:` and `repo content` and `"members"` NOT visible in chat; builder card `1 tool calls` → View logs dialog shows `web_fetch` → expand → `repo content`
+
+---
+
+## 2026-09-01 — Day 3: Session Memory + Synthesizer + UX Polish (`facb31d`)
+
+### What we did
+- **Thread wipe fix** `7549c37` — `page.tsx: hasStarted` guard (`if(!hasStarted) start() else sendIntervention()`) so follow-up `Give me a summary` preserves prior thread; verified screenshots 1-5 no longer delete history
+- **Reliable session memory** `facb31d` — `workspace-store.ts` (`globalThis Map` server + `localStorage` mirror client, TTL 45m cap 20, `STORAGE_KEYS.WORKSPACES/ACTIVE_WORKSPACE`, interface ready for future Redis via `WorkspaceStore`), `WorkspaceSession` structured scratchpad `{goal, scratchpad, decisions, artifacts}`, `GET /api/studio/workspaces?workspaceId=` rehydrate, `useWorkspace` hydrate/persist, `route POST` upserts thread. All members see prior replies.
+- **Auto-synthesizer** — `workspace-synthesizer.ts` Claude-Work style prompt over full thread via `opencode-go`, `POST /api/studio/workspaces/synthesize` streams `workspace.synthesized` into violet `Synthesis` card after every agent turn (budget-free)
+- **UX polish** — `WorkspaceChatArea` collapse `Show N` after 6, `WorkspaceTurnCard` clamp `max-h-[520px]` `View more/less` + `pre wrap max-h-[420px]`, single scrollbar (`MainLayout flex-1 min-h-0` + `page flex-1 min-h-0 overflow-hidden`), cursor `cursor-pointer` + stagger/scale animations on composer/sidebar/cards, placeholder `for → in`
+
+### Evidence
+- `npm test` 352 passed (incl. `workspace-store.test.ts` 4), `npm run lint` 0 (1 warning fixed), `npx next build` lists `ƒ /api/studio/workspaces` + `ƒ /api/studio/workspaces/synthesize` + `○ /studio/workspaces`; `npx playwright test e2e/workspaces.spec.ts` 7 passed
+- Second message now preserves: `useWorkspace` thread length after intervention = prior +2, `workspace-store` thread visible to all members

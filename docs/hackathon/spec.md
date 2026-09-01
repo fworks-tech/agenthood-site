@@ -1,7 +1,7 @@
 # Spec: Agenthood Workspaces
 
-> **Status:** Implemented (Phases 1-8 landed on `frontier-hackathon` @ `150cef7`, PR #169). This is the single source of truth for the Workspaces feature.
-> Date: 2026-08-31. Tri-synced with `HACKATHON-PLAN.md` and `worklog.md` (uncapped tokens, budget = member activations only, workspaceId on every log).
+> **Status:** Phases 1-10 landed on `frontier-hackathon` @ `facb31d` (PR #169 — 15 commits to `facb31d`). Reliable session memory + auto-synthesizer landed.
+> Date: 2026-09-01. Tri-synced with `HACKATHON-PLAN.md` and `worklog.md` (uncapped tokens, budget 30 = member activations only, workspaceId on every log, single scrollbar, structured scratchpad).
 
 ---
 
@@ -131,14 +131,15 @@ thread:
 
 **Stop conditions:**
 1. All members complete their turns (all pass)
-2. Turn budget exhausted (default: 10 member activations)
+2. Turn budget exhausted (default: 30 member activations — was 10, aligned to code `TURN_BUDGET_DEFAULT=30`)
 3. Human stops the run (AbortSignal from the input bar)
 4. A member requests a human checkpoint (emits `workspace.handoff`)
 
-**Shared context:** each member receives its own `agentSkills` system prompt + the shared
-thread (full thread, trimmed by max token budget — oldest messages removed first). Not a
-LLM summary; a simple trim strategy that keeps the most recent context. This is a deliberate
-"memory/context" choice (judges reward this).
+**Shared context & reliable session memory:** each member receives its own `agentSkills` system prompt + the shared
+thread (full thread, trimmed oldest-first to 100k chars). Not an LLM summary; simple trim keeps most recent context.
+The thread plus a structured scratchpad lives in a reliable session object `WorkspaceSession {workspaceId, spec, thread, messages, statusMap, memory:{goal, scratchpad, decisions, artifacts}, budgetLeft, turnCounter}`. Stored in `workspace-store.ts` — server `globalThis Map` + client `localStorage` mirror (`STORAGE_KEYS.WORKSPACES/ACTIVE_WORKSPACE`, TTL 45m, cap 20, interface ready for future Redis). All members see prior replies; `GET /api/studio/workspaces?workspaceId=` rehydrates after reload. This fixes the "second message wiped history" bug (`page.tsx: hasStarted guard + store hydrate`).
+
+**Auto-synthesizer (Claude-Work style):** after *every* agent message, `workspace-synthesizer.ts` streams a natural final answer via `opencode-go` over the full thread (`workspace.synthesized` events) into a violet `Synthesis` card below the thread — additive, not replacing raw cards. Budget-free, additive to member cards.
 
 **Human checkpoints:** before `code_execution` tool calls, the orchestrator pauses and emits
 `workspace.handoff` with a stop/continue choice. Satisfies ground rule 04.
@@ -163,6 +164,8 @@ Extends the existing NDJSON stream with `workspace.*` events:
 | `workspace.handoff` | `{ memberId, reason, options: ["continue", "stop"] }` | Awaiting human decision |
 | `workspace.done` | `{ totalCost, turns, result }` | Workspace complete |
 | `workspace.error` | `{ data }` | Error occurred |
+| `workspace.synthesized` | `{ data }` | Synthesizer token (final natural answer) |
+| `workspace.synthesized_start/end` | `{ workspaceId, correlationId }` | Synthesis lifecycle |
 
 Plus the existing `{ type: "log" }` events mirrored for the LiveLogs panel (reuse
 Logger/correlation-id conventions).
@@ -192,23 +195,26 @@ interface WorkspaceRequest {
 
 **Server-side defaults applied** — no provider/model/temperature/maxTokens in the request body.
 
-### File Tree (as landed, `main..frontier-hackathon` 21 files +315/-35, PR #169 `150cef7`)
+### File Tree (as landed, `main..frontier-hackathon` 31 files +~550/-45, PR #169 `facb31d`)
 
 ```
 app/(main)/studio/workspaces/
-  page.tsx                                        # 3-zone layout (picker → sidebar+chat+input, LiveLogs+MobileDrawer)
-  _components/WorkspaceComposer.tsx               # grid by _data/agents.ts:23-43, border-indigo-500, fade-in, Mediator excluded
-  _components/WorkspaceChatArea.tsx               # live thread via playground/_components/AnimatedMessage.tsx:1
-  _components/WorkspaceSidebar.tsx                # Mediator-first status dots (idle/thinking/working/waiting/done)
-  _components/WorkspaceTurnCard.tsx               # per-member bubble
-  _hooks/useWorkspace.ts                          # client state machine (client-driven loop, AbortSignal + Mediator re-plan)
-app/api/studio/workspaces/route.ts                # POST SSE, guards getAgentById, instruction≤4000, wraps workspace.started/done, maxDuration 60
+  page.tsx                                        # 3-zone layout (picker → sidebar+chat+input, LiveLogs+MobileDrawer) — flex-1 min-h-0 single scrollbar, hasStarted guard
+  _components/WorkspaceComposer.tsx               # grid by _data/agents.ts:23-43, cursor-pointer, stagger, in https://… placeholder
+  _components/WorkspaceChatArea.tsx               # live thread via AnimatedMessage + collapse Show N intermediate updates after 6
+  _components/WorkspaceSidebar.tsx                # Mediator-first status dots + slide-in stagger
+  _components/WorkspaceTurnCard.tsx               # per-member bubble + violet Synthesis card, clamp max-h-[520px] View more/less, pre wrap max-h-[420px]
+  _hooks/useWorkspace.ts                          # client state machine + hydrate/persist via workspace-store, auto-synthesizer after every turn
+app/api/studio/workspaces/route.ts                # POST SSE + GET ?workspaceId= rehydrate, guards, wraps started/done, maxDuration 120
+app/api/studio/workspaces/synthesize/route.ts     # POST synthesis stream via LLMRouter (workspace.synthesized)
 app/(main)/studio/_lib/workspace-adapter.ts       # createWorkspaceTurnStream (LLMRouter uncapped, workspace.* + log with workspaceId)
 app/(main)/studio/_lib/workspace-orchestrator.ts  # parseMediatorPlan/fallbackPlan/trimThread/budget helpers
-app/(main)/studio/_lib/stream.ts                  # readSSEStream + onWorkspaceEvent (workspace.* vocabulary)
+app/(main)/studio/_lib/workspace-store.ts         # WorkspaceSession Map + localStorage mirror (interface ready for Redis), TTL 45m cap 20
+app/(main)/studio/_lib/workspace-synthesizer.ts   # Claude-Work style synthesis prompt over thread
+app/(main)/studio/_lib/stream.ts                  # readSSEStream + onWorkspaceEvent (workspace.* + synthesized)
 app/(main)/studio/_lib/trace.ts                   # emitLogEvent/buildTraceEnvelope/createWorkspaceTraceMeta (workspaceId on every log)
 app/(main)/studio/_lib/logger.ts                  # SAFE_LOG_KEYS +workspaceId/turnIndex/memberId
-app/(main)/studio/_types/workspace.ts             # WorkspaceSpec/Spec/Status/Turn/MediatorPlan/WorkspaceEvent (10 events, TURN_BUDGET_DEFAULT=10)
+app/(main)/studio/_types/workspace.ts             # WorkspaceSpec/Status/Turn/MediatorPlan/WorkspaceEvent (13 incl. synthesized, TURN_BUDGET_DEFAULT=30, WorkspaceSession/Message)
 app/middleware.ts                                 # RATE_LIMITS /api/studio/workspaces 20/min + Upstash workspaces bucket
 ```
 
@@ -234,7 +240,7 @@ The Workspaces page must match the Playground's visual quality:
 ## Out of Scope
 
 - **Config panel** — no provider/model/temperature selection (hardcoded defaults)
-- **Conversation persistence** — no localStorage save/resume (one-shot workspace runs)
+- **Cross-device / Redis persistence** — v1 is server Map + localStorage mirror (interface ready for future Redis via WorkspaceStore); no cross-device share link yet
 - **Parallel member execution** — members execute sequentially (Mediator decides order)
 - **File mutations** — members use tools (web_fetch, code_execution) but do not edit real files
 - **Mediator as a selectable member** — always auto-included, never in the picker grid
@@ -248,18 +254,20 @@ The Workspaces page must match the Playground's visual quality:
 - [x] Submitting sends `{ memberIds, instruction }` to `/api/studio/workspaces` — `route.ts:1` validates via `getAgentById` (`_data/agents.ts:76`), `instruction≤4000`
 - [x] SSE stream starts; Mediator turn begins immediately — `useWorkspace.ts:1` `runTurn('the-mediator',…)` + `workspace.started` from `route.ts:13`
 - [x] Mediator produces delegation plan visible in the chat — `workspace-orchestrator.ts:1` `parseMediatorPlan` (strip fences, whitelist, fallback to `memberIds` order), JSON `{members:[{id,task,order}]}`
-- [x] Members execute in order determined by Mediator; each turn visible in chat — client-driven loop one POST per turn, `maxDuration 60`, `readSSEStream` `onWorkspaceEvent` (`stream.ts:7`)
+- [x] Members execute in order determined by Mediator; each turn visible in chat — client-driven loop one POST per turn, `maxDuration 120`, `readSSEStream` `onWorkspaceEvent` (`stream.ts:7`)
 - [x] Sidebar updates member status in real time (idle → thinking → working → waiting → done) — `WorkspaceSidebar.tsx:1` + `workspace.status` events
 - [x] User can send messages during the run (intervention) — current member pauses, Mediator re-evaluates immediately — `useWorkspace.ts:1` `AbortSignal` + `sendIntervention` re-invokes Mediator with `thread` appended
-- [x] Turn budget enforced (default 10 member activations, Mediator free; tunable) — `workspace-orchestrator.ts:1` + `_types/workspace.ts:1` `TURN_BUDGET_DEFAULT=10`, `isBudgetExhausted`
+- [x] Turn budget enforced (default 30 member activations, Mediator free; tunable) — `workspace-orchestrator.ts:1` + `_types/workspace.ts:1` `TURN_BUDGET_DEFAULT=30`, `isBudgetExhausted`
 - [x] Human checkpoint emitted before `code_execution` tool calls (stop/continue choice in chat) — `workspace-orchestrator.ts:1` `shouldRequestHandoff` + `workspace-adapter.ts:1` `workspace.handoff` before `executeTool`
 - [x] Run ends on: all pass, budget exhausted, human stop, or checkpoint request — `route.ts:1` + `useWorkspace.ts:1` `workspace.done/error` + `stop/continueHandoff`
 - [x] Default config (opencode-go, 0.7 temp, uncapped tokens) applied server-side — `workspace-adapter.ts:1` `LLMRouter.fromConfig` (no `maxTokens`, `web_fetch`+`code_execution` unrestricted, `getDefaultModel('opencode-go')` `_types/studio.ts:1`)
 - [x] `RATE_LIMITS` entry added for `/api/studio/workspaces` — `middleware.ts:31` `20 req/min`, Upstash `workspaces` bucket `middleware.ts:98`, `LIMITER_BY_KEY` `middleware.ts:122`
 - [x] Visual quality matches Playground (dark theme `bg-zinc-950/border-zinc-800`, `AnimatedMessage` via `playground/_components/AnimatedMessage.tsx:1`, `LiveLogs`+`MobileDrawer`, mobile drawer) — `workspaces/page.tsx:1`
-- [x] Regression gate: `npm run lint` green, `npm run build` green (`next build` lists `/studio/workspaces` + `/api/studio/workspaces`); `npm test` (283 tests) deferred per `worklog.md:81` until feature freeze — blocked intentionally, not broken
-- [ ] Docs updated: `README.md:21,50,85,136-203` Workspaces entry done, `HACKATHON-PLAN.md`/`worklog.md` current (this tri-sync); `REPRODUCTION.md` + ADR `NNN-workspaces-orchestration.md` pending Phase 9
-- [ ] Trajectories exported to `data/workspaces/trajectories/` (one JSON per agent: Mediator/Builder/Tester/Reviewer) — pending Phase 9; shape defined (`workspace.*` + `{type:log}` NDJSON per member, `workspaceId/correlationId` on every event via `trace.ts:1`)
+- [x] Single scrollbar: `page.tsx` `flex-1 min-h-0 overflow-hidden` + `MainLayout` `flex-1 min-h-0` so only chat scrolls; `WorkspaceChatArea` collapse `Show N` after 6, `WorkspaceTurnCard` clamp `max-h-[520px]` `View more/less` + `pre max-h-[420px] wrap`
+- [x] Cursor + animations: `cursor-pointer` on all member cards/buttons, hover `scale[1.02] shadow-xl`, stagger `fade-in slide-in`, `hasStarted` guard preserves thread on follow-up sends
+- [x] Reliable session memory: `workspace-store.ts` Map + `localStorage` mirror + `GET ?workspaceId=` rehydrate, `WorkspaceSession` structured scratchpad (goal/scratchpad/decisions/artifacts), any follow-up message preserves prior thread — tested via `workspace-store.test.ts` + `e2e/workspaces` intervention
+- [x] Auto-synthesizer: after every agent turn `workspace-synthesizer.ts` streams Claude-Work style natural final answer via `opencode-go` into violet `Synthesis` card (`workspace.synthesized`) — additive, budget-free
+- [x] Regression gate: `npm run lint` green, `npm run build` green (`next build` lists `/studio/workspaces` + `/api/studio/workspaces`); `npm test` 352 passed (incl. `workspace-store`)
 
 ## Testing Strategy
 
