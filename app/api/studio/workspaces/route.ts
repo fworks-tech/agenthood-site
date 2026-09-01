@@ -8,6 +8,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+const MAX_THREAD_MESSAGES = 200
+const MAX_MESSAGE_CHARS = 20_000
+
 export async function POST(req: NextRequest) {
   let body: unknown
   try {
@@ -73,6 +76,30 @@ export async function POST(req: NextRequest) {
     typeof payload.memberId === 'string' && payload.memberId.length > 0 ? payload.memberId : memberIds[0]
   const turnIndex = typeof payload.turnIndex === 'number' ? payload.turnIndex : 0
   const thread = Array.isArray(payload.thread) ? (payload.thread as { role: string; content: string }[]) : []
+
+  // Only conversational roles are allowed from the client — a forged system
+  // message could otherwise override the member system prompt (prompt injection).
+  const VALID_ROLES = ['user', 'assistant', 'tool']
+  if (thread.length > MAX_THREAD_MESSAGES) {
+    return new Response(JSON.stringify({ error: `thread must have at most ${MAX_THREAD_MESSAGES} messages`, code: 'VALIDATION_ERROR' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  for (const m of thread) {
+    if (typeof m.role !== 'string' || !VALID_ROLES.includes(m.role)) {
+      return new Response(JSON.stringify({ error: 'thread contains an invalid role', code: 'VALIDATION_ERROR' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+    if (typeof m.content !== 'string' || m.content.length > MAX_MESSAGE_CHARS) {
+      return new Response(JSON.stringify({ error: `thread messages must be strings of at most ${MAX_MESSAGE_CHARS} chars`, code: 'VALIDATION_ERROR' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  }
 
   logger.info('workspace.request', { workspaceId, memberId, turnIndex, correlationId, members: memberIds })
 
