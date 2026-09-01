@@ -3,7 +3,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { readSSEStream } from '../_lib/stream'
 import { parseMediatorPlan, fallbackPlan, type ThreadMessage } from '../_lib/workspace-orchestrator'
-import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type MediatorPlan } from '../_types/workspace'
+import { toPolished } from '../_lib/workspace-polish'
+import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus } from '../_types/workspace'
 import { getAgentById } from '../_data/agents'
 
 export type WorkspaceToolCall = { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }
@@ -22,7 +23,11 @@ export function useWorkspace() {
   const abortRef = useRef<AbortController | null>(null)
   const threadRef = useRef<ThreadMessage[]>([])
   const budgetRef = useRef(TURN_BUDGET_DEFAULT)
-  const memberIdsRef = useRef<string[]>([])
+  const specRef = useRef<WorkspaceSpec | null>(null)
+  // Monotonic turn counter — unique message ids + trace turn index across the whole session.
+  const turnCounterRef = useRef(0)
+  // Session token: only the latest start/intervention may write terminal state.
+  const sessionRef = useRef(0)
 
   const updateStatus = useCallback((memberId: string, status: WorkspaceStatus) => {
     setStatusMap((prev) => ({ ...prev, [memberId]: status }))
@@ -64,10 +69,7 @@ export function useWorkspace() {
       await readSSEStream(
         res,
         {
-          onToken: (token) => {
-            currentContent += token
-            setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: currentContent } : m)))
-          },
+          onToken: () => {},
           onDone: () => {},
           onError: (e) => {
             setError(e.message)
@@ -87,24 +89,21 @@ export function useWorkspace() {
                 status: 'running',
               }
               toolCallsMap.set(tc.id, tc)
-              const list = Array.from(toolCallsMap.values())
-              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: list } : m)))
+              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: Array.from(toolCallsMap.values()) } : m)))
             }
             if (event.type === 'workspace.tool_result') {
               const id = event.id as string
               const existing = toolCallsMap.get(id)
               const status = event.error ? 'error' : 'complete'
-              const updated: WorkspaceToolCall = {
+              toolCallsMap.set(id, {
                 id,
                 name: (event.name as string) ?? existing?.name ?? 'tool',
                 args: existing?.args ?? (event.args as Record<string, unknown>) ?? {},
                 result: (event.result as string) ?? undefined,
                 error: (event.error as string) ?? undefined,
                 status: status as WorkspaceToolCall['status'],
-              }
-              toolCallsMap.set(id, updated)
-              const list = Array.from(toolCallsMap.values())
-              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: list } : m)))
+              })
+              setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, toolCalls: Array.from(toolCallsMap.values()) } : m)))
             }
             if (event.type === 'workspace.handoff') {
               setHandoff({ memberId: event.memberId as string, reason: event.reason as string })
@@ -121,7 +120,7 @@ export function useWorkspace() {
         controller.signal,
       )
 
-      threadRef.current = [...threadRef.current, { role: 'assistant', content: currentContent }]
+      threadRef.current = [...threadRef.current, { role: 'assistant', content: toPolished(currentContent) || currentContent }]
       updateStatus(memberId, 'done')
       return currentContent
     },
@@ -135,6 +134,7 @@ export function useWorkspace() {
       }
       const wId = `ws-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const correlationId = `ws-corr-${Date.now()}`
+      const session = ++sessionRef.current
       setWorkspaceId(wId)
       setMessages([])
       setStatusMap({})
@@ -143,26 +143,24 @@ export function useWorkspace() {
       setWorkspaceState('running')
       threadRef.current = [{ role: 'user', content: spec.instruction }]
       budgetRef.current = TURN_BUDGET_DEFAULT
-      memberIdsRef.current = spec.memberIds
-
-      const validIds = spec.memberIds
-      let plan: MediatorPlan | null = null
+      specRef.current = spec
+      turnCounterRef.current = 0
 
       try {
-        const mediatorOutput = await runTurn('the-mediator', spec.instruction, 0, wId, correlationId)
-        plan = parseMediatorPlan(mediatorOutput, validIds)
+        const mediatorOutput = await runTurn('the-mediator', spec.instruction, ++turnCounterRef.current, wId, correlationId)
+        if (session !== sessionRef.current) return
+        const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
         const effective = plan ?? fallbackPlan(spec)
 
-        let turnIdx = 1
         for (const member of effective.members) {
           if (budgetRef.current <= 0) break
           if (abortRef.current?.signal.aborted) break
           budgetRef.current -= 1
-          await runTurn(member.id, member.task, turnIdx, wId, correlationId)
-          turnIdx++
+          await runTurn(member.id, member.task, ++turnCounterRef.current, wId, correlationId)
         }
-        setWorkspaceState('done')
+        if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {
+        if (session !== sessionRef.current) return
         if ((err as Error).name === 'AbortError') {
           setWorkspaceState('handoff')
           return
@@ -170,7 +168,7 @@ export function useWorkspace() {
         setError(err instanceof Error ? err.message : String(err))
         setWorkspaceState('error')
       } finally {
-        abortRef.current = null
+        if (session === sessionRef.current) abortRef.current = null
       }
     },
     [runTurn],
@@ -178,25 +176,29 @@ export function useWorkspace() {
 
   const sendIntervention = useCallback(
     async (content: string) => {
-      if (!workspaceId) return
+      const spec = specRef.current
+      if (!workspaceId || !spec) return
       abortRef.current?.abort()
+      const session = ++sessionRef.current
       threadRef.current = [...threadRef.current, { role: 'user', content }]
       setMessages((prev) => [...prev, { id: `user-${Date.now()}`, memberId: 'user', content, turnIndex: -1 }])
       setWorkspaceState('running')
       setHandoff(null)
       const correlationId = `ws-corr-${Date.now()}`
       try {
-        const mediatorOutput = await runTurn('the-mediator', content, 999, workspaceId, correlationId)
-        const plan = parseMediatorPlan(mediatorOutput, memberIdsRef.current) ?? null
+        const mediatorOutput = await runTurn('the-mediator', content, ++turnCounterRef.current, workspaceId, correlationId)
+        if (session !== sessionRef.current) return
+        const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
         if (plan) {
           for (const m of plan.members) {
             if (budgetRef.current <= 0) break
             budgetRef.current -= 1
-            await runTurn(m.id, m.task, 1000 + m.order, workspaceId, correlationId)
+            await runTurn(m.id, m.task, ++turnCounterRef.current, workspaceId, correlationId)
           }
         }
-        setWorkspaceState('done')
+        if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {
+        if (session !== sessionRef.current) return
         if ((err as Error).name === 'AbortError') return
         setError(err instanceof Error ? err.message : String(err))
         setWorkspaceState('error')
@@ -206,6 +208,7 @@ export function useWorkspace() {
   )
 
   const stop = useCallback(() => {
+    sessionRef.current++
     abortRef.current?.abort()
     setWorkspaceState('done')
   }, [])

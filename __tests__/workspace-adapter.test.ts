@@ -113,12 +113,13 @@ describe('createWorkspaceTurnStream', () => {
     const events = await collectEvents(stream)
     expect(events.some((e) => e.type === 'workspace.turn_start' && e.memberId === 'the-builder')).toBe(true)
     expect(events.some((e) => e.type === 'workspace.status' && e.status === 'working')).toBe(true)
-    expect(events.some((e) => e.type === 'workspace.token' && e.data === 'f')).toBe(true)
+    const tokens = events.filter((e) => e.type === 'workspace.token').map((e) => e.data).join('')
+    expect(tokens).toBe('final answer')
     expect(events.some((e) => e.type === 'workspace.turn_end' && e.decision === 'pass')).toBe(true)
     expect(events.some((e) => e.type === 'workspace.status' && e.status === 'done')).toBe(true)
   })
 
-  it('streams tokens via char loop when complete returns content', async () => {
+  it('streams tokens in batches when complete returns content', async () => {
     setupProvider({ complete: { content: 'Hi', toolCalls: [] } })
     const stream = await createWorkspaceTurnStream({
       workspaceId: 'ws-2', correlationId: 'c2', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
@@ -126,6 +127,15 @@ describe('createWorkspaceTurnStream', () => {
     const events = await collectEvents(stream)
     const tokens = events.filter((e) => e.type === 'workspace.token').map((e) => e.data)
     expect(tokens.join('')).toBe('Hi')
+    // long content is chunked rather than one token per char
+    setupProvider({ complete: { content: 'x'.repeat(600), toolCalls: [] } })
+    const stream2 = await createWorkspaceTurnStream({
+      workspaceId: 'ws-2b', correlationId: 'c2b', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    const events2 = await collectEvents(stream2)
+    const tokens2 = events2.filter((e) => e.type === 'workspace.token').map((e) => e.data)
+    expect(tokens2.length).toBeLessThan(600)
+    expect(tokens2.join('')).toBe('x'.repeat(600))
   })
 
   it('falls back to provider.stream when no finalText and no toolCalls', async () => {
