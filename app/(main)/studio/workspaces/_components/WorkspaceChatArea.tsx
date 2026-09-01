@@ -13,9 +13,12 @@ interface Props {
 
 export default function WorkspaceChatArea({ messages, statusMap }: Props) {
   // Collect members currently thinking/typing but without a fresh message yet
+  // Include the-mediator here — while it has no card (empty/routing plan
+  // is hidden) the typing dots are the only feedback during the first
+  // turn; excluding it made a fresh workspace look empty.
   const typingMembers = statusMap
     ? Object.entries(statusMap)
-        .filter(([id, s]) => s === 'working' && id !== 'the-mediator')
+        .filter(([, s]) => s === 'working')
         .map(([id]) => id)
         // don't show typing if their last message is already visible and still streaming
         .filter((id) => {
@@ -62,8 +65,10 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
       ))}
       {typingMembers.map((id) => {
         const lastMsg = [...messages].reverse().find((m) => m.memberId === id)
-        // If last message from this member is still empty/thinking, the card already shows it — don't duplicate
-        if (lastMsg && !lastMsg.content) return null
+        // If last message from this member is still empty, the card already
+        // shows "is thinking..." — don't duplicate, except for the-mediator
+        // whose empty/bare-JSON card is hidden (return null in the card).
+        if (lastMsg && !lastMsg.content && id !== 'the-mediator') return null
         const agent = getAgentById(id)
         return (
           <div key={`typing-${id}`} className="flex items-center gap-2 py-1 text-sm text-zinc-500">

@@ -136,7 +136,10 @@ export function useWorkspace() {
       const correlationId = `ws-corr-${Date.now()}`
       const session = ++sessionRef.current
       setWorkspaceId(wId)
-      setMessages([])
+      // Show the user instruction as the first bubble so the thread is never
+      // empty — previously only agent messages were pushed, so a fresh
+      // workspace looked like "no message / instructions not captured".
+      setMessages([{ id: `user-${wId}`, memberId: 'user', content: spec.instruction, turnIndex: 0 }])
       setStatusMap({})
       setError(null)
       setHandoff(null)
@@ -161,7 +164,6 @@ export function useWorkspace() {
         // continues with an auto-nudge until a useful answer appears.
         // No hard round cap — budget (30) is the only limiter for cost.
         let rounds = 0
-        let hasUseful = false
         while (budgetRef.current > 0) {
           let roundHadUseful = false
           for (const member of effective.members) {
@@ -171,7 +173,6 @@ export function useWorkspace() {
             const raw = await runTurn(member.id, member.task, ++turnCounterRef.current, wId, correlationId)
             if (session !== sessionRef.current) return
             if (isUsefulPolished(toPolished(raw))) {
-              hasUseful = true
               roundHadUseful = true
             }
           }
