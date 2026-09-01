@@ -20,6 +20,10 @@ function encode(controller: ReadableStreamDefaultController<Uint8Array>, payload
   controller.enqueue(new TextEncoder().encode(JSON.stringify(payload) + '\n'))
 }
 
+// Stream tokens in small batches — per-char enqueues caused ~10k controller
+// writes and client state updates per turn on long answers.
+const TOKEN_CHUNK = 128
+
 export async function createWorkspaceTurnStream(
   req: WorkspaceTurnRequest,
   signal?: AbortSignal,
@@ -216,22 +220,19 @@ export async function createWorkspaceTurnStream(
           }
           finalText = output || finalText
         } else if (finalText) {
-          for (const ch of finalText) {
+          for (let i = 0; i < finalText.length; i += TOKEN_CHUNK) {
             if (signal?.aborted) break
-            output += ch
-            outputChars++
+            const chunk = finalText.slice(i, i + TOKEN_CHUNK)
+            output += chunk
+            outputChars += chunk.length
             encode(controller, {
               type: 'workspace.token',
               memberId: req.memberId,
-              data: ch,
+              data: chunk,
               workspaceId: req.workspaceId,
               correlationId: req.correlationId,
             })
           }
-        }
-
-        for (const tc of toolCallsRun) {
-          if (!tc.result && !tc.error) continue
         }
 
         output = finalText || output
