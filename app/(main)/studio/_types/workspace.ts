@@ -5,6 +5,33 @@ export type WorkspaceSpec = {
   instruction: string
 }
 
+export type WorkspaceMessage = {
+  id: string
+  memberId: string
+  content: string
+  turnIndex: number
+  toolCalls?: { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }[]
+}
+
+export type WorkspaceSession = {
+  workspaceId: string
+  correlationId: string
+  spec: WorkspaceSpec
+  thread: { role: 'user' | 'assistant' | 'tool' | 'system'; content: string }[]
+  messages: WorkspaceMessage[]
+  statusMap: Record<string, WorkspaceStatus>
+  memory: {
+    goal: string
+    scratchpad: Record<string, unknown>
+    decisions: { memberId: string; turnIndex: number; content: string; ts: number }[]
+    artifacts: { id: string; content: string }[]
+  }
+  budgetLeft: number
+  turnCounter: number
+  createdAt: number
+  updatedAt: number
+}
+
 export type WorkspaceStatus = 'idle' | 'thinking' | 'working' | 'waiting' | 'done'
 
 export type WorkspaceTurn = {
@@ -29,6 +56,9 @@ export type WorkspaceEvent =
   | { type: 'workspace.handoff'; memberId: string; reason: string; options: ['continue', 'stop']; workspaceId: string; correlationId: string }
   | { type: 'workspace.done'; totalCost: number; turns: number; result: string; workspaceId: string; correlationId: string }
   | { type: 'workspace.error'; data: string; workspaceId: string; correlationId: string }
+  | { type: 'workspace.synthesized'; data: string; workspaceId: string; correlationId: string }
+  | { type: 'workspace.synthesized_start'; workspaceId: string; correlationId: string }
+  | { type: 'workspace.synthesized_end'; workspaceId: string; correlationId: string }
 
 export type WorkspaceLogEvent = {
   level: 'info' | 'warn' | 'error'

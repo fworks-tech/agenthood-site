@@ -5,4 +5,6 @@ export const STORAGE_KEYS = {
   FEEDBACK: "agenthood-studio-feedback",
   LOGS_DEBUG: "agenthood-studio-logs-debug",
   LOGS_CATEGORY: "agenthood-studio-logs-category",
+  WORKSPACES: "agenthood-workspaces",
+  ACTIVE_WORKSPACE: "agenthood-workspace-active",
 } as const;

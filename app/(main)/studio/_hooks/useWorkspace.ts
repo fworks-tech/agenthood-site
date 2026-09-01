@@ -1,14 +1,15 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { readSSEStream } from '../_lib/stream'
 import { parseMediatorPlan, fallbackPlan, type ThreadMessage } from '../_lib/workspace-orchestrator'
 import { isUsefulPolished, toPolished } from '../_lib/workspace-polish'
-import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus } from '../_types/workspace'
+import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type WorkspaceMessage } from '../_types/workspace'
 import { getAgentById } from '../_data/agents'
+import { getActiveWorkspaceId, getWorkspace, saveWorkspace, setActiveWorkspaceId } from '../_lib/workspace-store'
 
 export type WorkspaceToolCall = { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }
-export type WorkspaceMessage = { id: string; memberId: string; content: string; turnIndex: number; toolCalls?: WorkspaceToolCall[] }
+export type { WorkspaceMessage }
 
 export type WorkspaceState = 'idle' | 'running' | 'handoff' | 'done' | 'error'
 
@@ -28,10 +29,56 @@ export function useWorkspace() {
   const turnCounterRef = useRef(0)
   // Session token: only the latest start/intervention may write terminal state.
   const sessionRef = useRef(0)
+  const correlationRef = useRef<string | null>(null)
 
   const updateStatus = useCallback((memberId: string, status: WorkspaceStatus) => {
     setStatusMap((prev) => ({ ...prev, [memberId]: status }))
   }, [])
+
+  // Hydrate from workspace-store on mount — mirrors useStudioChat persistence.
+  // Server Map + client localStorage share the same session so reload preserves chat.
+  useEffect(() => {
+    const activeId = getActiveWorkspaceId()
+    if (!activeId) return
+    const sess = getWorkspace(activeId)
+    if (!sess) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMessages(sess.messages)
+    setStatusMap(sess.statusMap)
+    setWorkspaceId(sess.workspaceId)
+    threadRef.current = sess.thread
+    specRef.current = sess.spec
+    budgetRef.current = sess.budgetLeft
+    turnCounterRef.current = sess.turnCounter
+    correlationRef.current = sess.correlationId
+    setWorkspaceState('done')
+  }, [])
+
+  // Persist every change to workspace-store — reliable shared memory for all members + user.
+  useEffect(() => {
+    if (!workspaceId || !specRef.current) return
+    saveWorkspace({
+      workspaceId,
+      correlationId: correlationRef.current ?? `ws-corr-${workspaceId}`,
+      spec: specRef.current,
+      thread: threadRef.current,
+      messages,
+      statusMap,
+      memory: {
+        goal: specRef.current.instruction,
+        scratchpad: {},
+        decisions: messages
+          .filter((m) => m.memberId !== 'user')
+          .map((m) => ({ memberId: m.memberId, turnIndex: m.turnIndex, content: m.content.slice(0, 2000), ts: Date.now() })),
+        artifacts: [],
+      },
+      budgetLeft: budgetRef.current,
+      turnCounter: turnCounterRef.current,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+    setActiveWorkspaceId(workspaceId)
+  }, [messages, statusMap, workspaceId])
 
   const runTurn = useCallback(
     async (memberId: string, instruction: string, turnIndex: number, wId: string, correlationId: string) => {
@@ -127,6 +174,59 @@ export function useWorkspace() {
     [updateStatus],
   )
 
+  // Auto-synthesizer: after every agent turn, produce a natural Claude-Work style
+  // final answer via LLM provider (opencode-go). Runs on every message sent by
+  // an agent, uses shared thread + scratchpad as source, streams as
+  // workspace.synthesized into a dedicated synthesizer card.
+  const runSynthesis = useCallback(
+    async (wId: string, correlationId: string) => {
+      // No synthesis if thread empty
+      if (threadRef.current.length === 0) return null
+      const synId = `syn-${wId}-${Date.now()}`
+      let current = ''
+      // placeholder card so user sees synthesis in progress
+      setMessages((prev) => [...prev, { id: synId, memberId: 'synthesizer', content: '', turnIndex: 999 }])
+      try {
+        const res = await fetch('/api/studio/workspaces/synthesize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
+          body: JSON.stringify({ workspaceId: wId, correlationId, thread: threadRef.current }),
+        })
+        if (!res.ok) {
+          setMessages((prev) => prev.filter((m) => m.id !== synId))
+          return null
+        }
+        await readSSEStream(
+          res,
+          {
+            onToken: () => {},
+            onDone: () => {},
+            onError: () => {},
+            onLog: () => {},
+            onWorkspaceEvent: (event) => {
+              if (event.type === 'workspace.synthesized' && typeof event.data === 'string') {
+                current += event.data as string
+                setMessages((prev) => prev.map((m) => (m.id === synId ? { ...m, content: current } : m)))
+              }
+            },
+          },
+          undefined,
+        )
+        if (!current.trim()) {
+          setMessages((prev) => prev.filter((m) => m.id !== synId))
+          return null
+        }
+        // Keep synthesized content out of thread (it's a view, not a turn) but
+        // keep it debuggable via messages; future Redis store could log it.
+        return current
+      } catch {
+        setMessages((prev) => prev.filter((m) => m.id !== synId))
+        return null
+      }
+    },
+    [],
+  )
+
   const start = useCallback(
     async (spec: WorkspaceSpec) => {
       for (const id of spec.memberIds) {
@@ -134,6 +234,7 @@ export function useWorkspace() {
       }
       const wId = `ws-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
       const correlationId = `ws-corr-${Date.now()}`
+      correlationRef.current = correlationId
       const session = ++sessionRef.current
       setWorkspaceId(wId)
       // Show the user instruction as the first bubble so the thread is never
@@ -200,6 +301,11 @@ export function useWorkspace() {
           // the second guard.
           if (rounds > 3) break
         }
+        // Auto-synthesizer on every workspace run — final polished natural answer
+        // like Claude Work, using shared thread (the reliable session object).
+        if (session === sessionRef.current) {
+          await runSynthesis(wId, correlationId)
+        }
         if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {
         if (session !== sessionRef.current) return
@@ -213,7 +319,7 @@ export function useWorkspace() {
         if (session === sessionRef.current) abortRef.current = null
       }
     },
-    [runTurn],
+    [runTurn, runSynthesis],
   )
 
   const sendIntervention = useCallback(
@@ -227,6 +333,7 @@ export function useWorkspace() {
       setWorkspaceState('running')
       setHandoff(null)
       const correlationId = `ws-corr-${Date.now()}`
+      correlationRef.current = correlationId
       try {
         const mediatorOutput = await runTurn('the-mediator', content, ++turnCounterRef.current, workspaceId, correlationId)
         if (session !== sessionRef.current) return
@@ -238,6 +345,9 @@ export function useWorkspace() {
             await runTurn(m.id, m.task, ++turnCounterRef.current, workspaceId, correlationId)
           }
         }
+        if (session === sessionRef.current) {
+          await runSynthesis(workspaceId, correlationId)
+        }
         if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {
         if (session !== sessionRef.current) return
@@ -246,7 +356,7 @@ export function useWorkspace() {
         setWorkspaceState('error')
       }
     },
-    [workspaceId, runTurn],
+    [workspaceId, runTurn, runSynthesis],
   )
 
   const stop = useCallback(() => {

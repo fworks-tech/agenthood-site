@@ -71,6 +71,8 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   // Hide empty mediator routing messages entirely — they are technical
   if (memberId === 'the-mediator' && !polished) return null
 
+  const isSynthesizer = memberId === 'synthesizer'
+
   if (isUser) {
     return (
       <div className="flex justify-end">
@@ -118,14 +120,19 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
 
   return (
     <>
-      <Paper bg="zinc.9" px="xl" py={10} className="max-w-[85%] md:max-w-[75%] transition-all duration-300 hover:shadow-xl hover:shadow-black/20 hover:border-zinc-700/50 animate-in fade-in slide-in-from-bottom-1">
+      <Paper
+        bg={isSynthesizer ? 'violet.9' : 'zinc.9'}
+        px="xl"
+        py={10}
+        className={`max-w-[85%] md:max-w-[75%] transition-all duration-300 hover:shadow-xl hover:shadow-black/20 hover:border-zinc-700/50 animate-in fade-in slide-in-from-bottom-1 ${isSynthesizer ? 'border border-violet-800/50 shadow-violet-900/20' : ''}`}
+      >
         <div className="mb-2 flex items-center gap-2">
-          <span className="text-base">{agent?.icon ?? '•'}</span>
-          <span className="text-sm font-semibold text-zinc-100">{agent?.name ?? memberId}</span>
-          <Badge size="xs" variant="light" color="gray" className="uppercase tracking-wide">
-            turn {turnIndex}
+          <span className="text-base">{isSynthesizer ? '✨' : (agent?.icon ?? '•')}</span>
+          <span className="text-sm font-semibold text-zinc-100">{isSynthesizer ? 'Synthesis' : (agent?.name ?? memberId)}</span>
+          <Badge size="xs" variant={isSynthesizer ? 'filled' : 'light'} color={isSynthesizer ? 'violet' : 'gray'} className="uppercase tracking-wide">
+            {isSynthesizer ? 'final' : `turn ${turnIndex}`}
           </Badge>
-          <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-indigo-500" title={memberId} />
+          <span className={`ml-auto h-2 w-2 shrink-0 rounded-full ${isSynthesizer ? 'bg-violet-400' : 'bg-indigo-500'}`} title={memberId} />
         </div>
 
         {(() => {
