@@ -44,9 +44,15 @@ single instruction, and watch them collaborate in a live shared thread — with 
 changes (same animation quality as the Playground).
 
 **Main area:** live group chat thread — all selected members contribute here in real time. Each
-message is tagged with the member's name and icon. Tool calls and reasoning are visible. The
-user can step in and send messages at any point during the run. Messages use the same
-`AnimatedMessage` fade/slide wrapper the Playground uses.
+message is tagged with the member's icon, name, and turn number. The chat shows **only the
+polished answer** — no tool markers, routing JSON, or technical one-liners (stripped by
+`_lib/workspace-polish.ts` `toPolished`, shared by the card and the thread sent to the next
+member). Under each message, ChatGPT-style actions: like/dislike (posts to
+`/api/studio/feedback/`), copy, and **View logs** — a per-message dialog exposing the tool calls
+(collapsible args/result/error), polished content, and raw content. Markdown renders via
+`ReactMarkdown` + `remark-gfm` with explicit `pre/code/h1-3/strong/a` components. The user can
+step in and send messages at any point during the run. Messages use the same `AnimatedMessage`
+fade/slide wrapper the Playground uses.
 
 **Bottom:** instruction input (multiline textarea). Before the run starts, this is where the
 user writes the initial instruction. During the run, it becomes a chat input where the user can
