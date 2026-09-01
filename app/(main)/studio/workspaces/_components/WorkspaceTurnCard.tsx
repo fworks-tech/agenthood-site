@@ -8,7 +8,7 @@ import { Paper, Text, ActionIcon, Group, Title, Modal, Collapse, Badge } from '@
 import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck } from '@tabler/icons-react'
 import { getAgentById } from '../../_data/agents'
 import { STORAGE_KEYS } from '../../_lib/constants'
-import { toPolished } from '../../_lib/workspace-polish'
+import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 import type { WorkspaceToolCall } from '../../_hooks/useWorkspace'
 
 interface Props {
@@ -50,6 +50,8 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   const agent = getAgentById(memberId)
   const isUser = memberId === 'user'
   const polished = toPolished(content)
+  const thinkingOnly = isThinkingOnly(polished)
+  const useful = isUsefulPolished(polished)
   const hasLogs = (toolCalls && toolCalls.length > 0) || (!polished && !!content)
 
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
@@ -64,6 +66,9 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFeedback(loadFeedback()[messageId] ?? null)
   }, [messageId])
+
+  // Hide empty mediator routing messages entirely — they are technical
+  if (memberId === 'the-mediator' && !polished) return null
 
   if (isUser) {
     return (
@@ -116,7 +121,21 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
         </div>
 
         <div className="break-words text-sm leading-relaxed text-zinc-200">
-          {polished ? (
+          {thinkingOnly ? (
+            <div className="flex items-center gap-2 py-1 text-zinc-400">
+              <span className="inline-flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
+              </span>
+              <Text c="dimmed" size="xs">
+                {agent?.name ?? memberId} is thinking...
+              </Text>
+              <Text c="dimmed" size="xs" className="ml-1 hidden sm:inline">
+                {polished.slice(0, 80)}
+              </Text>
+            </div>
+          ) : polished ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
               {polished}
             </ReactMarkdown>
@@ -126,10 +145,28 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
             </ReactMarkdown>
           ) : (
             <Text c="dimmed" size="sm">
-              Thinking...
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
+                </span>
+                {agent?.name ?? memberId} is thinking...
+              </span>
             </Text>
           )}
         </div>
+
+        {thinkingOnly && (
+          <Text c="dimmed" size="xs" mt={4} className="italic">
+            Reasoning in progress — full answer will appear when ready.
+          </Text>
+        )}
+        {polished && !useful && !thinkingOnly && (
+          <Text c="dimmed" size="xs" mt={4} className="italic">
+            Working — gathering context before the final answer.
+          </Text>
+        )}
 
         <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-800">
           <ActionIcon

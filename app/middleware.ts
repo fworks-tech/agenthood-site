@@ -29,9 +29,9 @@ function validateOrigin(request: NextRequest): void {
 type RateLimits = Record<string, { max: number; windowMs: number }>;
 
 const RATE_LIMITS: RateLimits = {
-  "/api/studio/chat": { max: 20, windowMs: 60_000 },
-  "/api/studio/workspaces": { max: 20, windowMs: 60_000 },
-  "/api/studio/tools": { max: 30, windowMs: 60_000 },
+  "/api/studio/chat": { max: 100, windowMs: 60_000 },
+  "/api/studio/workspaces": { max: 120, windowMs: 60_000 },
+  "/api/studio/tools": { max: 100, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/status": { max: 30, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },

@@ -1,4 +1,4 @@
-export const TURN_BUDGET_DEFAULT = 10
+export const TURN_BUDGET_DEFAULT = 30
 
 export type WorkspaceSpec = {
   memberIds: string[]

@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { readSSEStream } from '../_lib/stream'
 import { parseMediatorPlan, fallbackPlan, type ThreadMessage } from '../_lib/workspace-orchestrator'
-import { toPolished } from '../_lib/workspace-polish'
+import { isUsefulPolished, toPolished } from '../_lib/workspace-polish'
 import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus } from '../_types/workspace'
 import { getAgentById } from '../_data/agents'
 
@@ -152,11 +152,49 @@ export function useWorkspace() {
         const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
         const effective = plan ?? fallbackPlan(spec)
 
-        for (const member of effective.members) {
-          if (budgetRef.current <= 0) break
+        // Live collaboration — round-robin through the plan until budget
+        // exhausted so every member gets to contribute and validate. The
+        // previous implementation stopped after one pass, which left the
+        // chat with only "Let me check..." thinking messages (see sim2).
+        // Now we keep chatting; intermediate thinking is shown as
+        // "is thinking..." in the card/typing indicator, and the loop
+        // continues with an auto-nudge until a useful answer appears.
+        // No hard round cap — budget (30) is the only limiter for cost.
+        let rounds = 0
+        let hasUseful = false
+        while (budgetRef.current > 0) {
+          let roundHadUseful = false
+          for (const member of effective.members) {
+            if (budgetRef.current <= 0) break
+            if (abortRef.current?.signal.aborted) break
+            budgetRef.current -= 1
+            const raw = await runTurn(member.id, member.task, ++turnCounterRef.current, wId, correlationId)
+            if (session !== sessionRef.current) return
+            if (isUsefulPolished(toPolished(raw))) {
+              hasUseful = true
+              roundHadUseful = true
+            }
+          }
           if (abortRef.current?.signal.aborted) break
-          budgetRef.current -= 1
-          await runTurn(member.id, member.task, ++turnCounterRef.current, wId, correlationId)
+          if (budgetRef.current <= 0) break
+          // If nobody was useful this round, nudge and continue live chat
+          if (!roundHadUseful) {
+            threadRef.current = [
+              ...threadRef.current,
+              {
+                role: 'user',
+                content:
+                  'Your previous response was only reasoning ("Let me check..."). Now deliver the final improvement for the repo with concrete, copy-pasteable code snippets and tests. Keep collaborating until the answer is complete.',
+              },
+            ]
+          } else {
+            // Found a useful answer — stop the live loop and let the user
+            // intervene for further validation if needed
+            break
+          }
+          rounds++
+          // Safety: never spin forever if budget is large
+          if (rounds > 8) break
         }
         if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {

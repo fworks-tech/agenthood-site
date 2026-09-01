@@ -13,7 +13,7 @@ export interface ToolCall {
   error?: string;
 }
 
-export const MAX_TOOL_ITERATIONS = 5;
+export const MAX_TOOL_ITERATIONS = 25;
 export const MAX_FETCH_SIZE = 100_000;
 export const FETCH_TIMEOUT_MS = 15_000;
 

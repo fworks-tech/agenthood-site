@@ -143,8 +143,8 @@ describe('orchestrator state', () => {
   })
 
   it('isBudgetExhausted respects budget', () => {
-    expect(isBudgetExhausted({ plan: { members: [] }, executed: 10, turnIndex: 0 })).toBe(true)
-    expect(isBudgetExhausted({ plan: { members: [] }, executed: 9, turnIndex: 0 })).toBe(false)
+    expect(isBudgetExhausted({ plan: { members: [] }, executed: 30, turnIndex: 0 })).toBe(true)
+    expect(isBudgetExhausted({ plan: { members: [] }, executed: 29, turnIndex: 0 })).toBe(false)
     expect(isBudgetExhausted({ plan: { members: [] }, executed: 5, turnIndex: 0 }, 5)).toBe(true)
   })
 
@@ -174,7 +174,7 @@ describe('shouldRequestHandoff', () => {
 })
 
 describe('TURN_BUDGET_DEFAULT', () => {
-  it('is 10', () => {
-    expect(TURN_BUDGET_DEFAULT).toBe(10)
+  it('is 30', () => {
+    expect(TURN_BUDGET_DEFAULT).toBe(30)
   })
 })

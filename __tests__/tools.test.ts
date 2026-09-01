@@ -82,8 +82,8 @@ describe("classifyToolResult", () => {
 });
 
 describe("tool constants", () => {
-  it("caps tool loop iterations at 5", () => {
-    expect(MAX_TOOL_ITERATIONS).toBe(5);
+  it("caps tool loop iterations at 25", () => {
+    expect(MAX_TOOL_ITERATIONS).toBe(25);
   });
 
   it("caps the fetch buffer at 100k characters", () => {
