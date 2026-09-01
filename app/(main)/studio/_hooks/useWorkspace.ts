@@ -194,8 +194,11 @@ export function useWorkspace() {
             break
           }
           rounds++
-          // Safety: never spin forever if budget is large
-          if (rounds > 8) break
+          // Safety: screenshots showed 15+ huge cards when no answer was
+          // deemed useful — cap live loop to 4 rounds so UI stays scannable
+          // (budget 30 alone would spam). Collapse in WorkspaceChatArea is
+          // the second guard.
+          if (rounds > 3) break
         }
         if (session === sessionRef.current) setWorkspaceState('done')
       } catch (err) {

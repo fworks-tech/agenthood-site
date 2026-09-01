@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import AnimatedMessage from '../../playground/_components/AnimatedMessage'
 import WorkspaceTurnCard from './WorkspaceTurnCard'
 import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
 import type { WorkspaceStatus } from '../../_types/workspace'
 import { getAgentById } from '../../_data/agents'
+import { isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 
 interface Props {
   messages: WorkspaceMessage[]
@@ -12,6 +14,7 @@ interface Props {
 }
 
 export default function WorkspaceChatArea({ messages, statusMap }: Props) {
+  const [showHidden, setShowHidden] = useState(false)
   // Collect members currently thinking/typing but without a fresh message yet
   // Include the-mediator here — while it has no card (empty/routing plan
   // is hidden) the typing dots are the only feedback during the first
@@ -56,13 +59,49 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
       </div>
     )
   }
+  // Collapse intermediate non-useful turns when the thread gets long — screenshots
+  // showed 15+ huge cards stacked, making the final answer hard to find.
+  // Keep: every user bubble + every useful polished answer + the latest
+  // streaming placeholder. Hide older thinking/working intermediaries behind
+  // a toggle.
+  const THRESHOLD = 6
+  let visibleMessages = messages
+  let hiddenMessages: WorkspaceMessage[] = []
+  if (messages.length > THRESHOLD) {
+    const lastIdx = messages.length - 1
+    const keep = new Set<number>()
+    messages.forEach((m, i) => {
+      if (m.memberId === 'user') keep.add(i)
+      else if (m.content === '') keep.add(i)
+      else if (isUsefulPolished(toPolished(m.content))) keep.add(i)
+      else if (i === lastIdx) keep.add(i) // keep latest intermediate for context
+    })
+    // always keep first and last 2 to avoid empty collapse edge cases
+    keep.add(0)
+    keep.add(lastIdx)
+    if (lastIdx - 1 >= 0) keep.add(lastIdx - 1)
+    visibleMessages = messages.filter((_, i) => keep.has(i))
+    hiddenMessages = messages.filter((_, i) => !keep.has(i))
+    if (hiddenMessages.length === 0) visibleMessages = messages
+  }
+
   return (
     <div className="space-y-4">
-      {messages.map((m) => (
+      {hiddenMessages.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowHidden((v) => !v)}
+          className="w-full cursor-pointer rounded-lg border border-dashed border-zinc-700 bg-zinc-900/40 px-3 py-2 text-xs text-zinc-400 transition-all duration-200 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-500 hover:scale-[1.01] active:scale-[0.99]"
+        >
+          {showHidden ? 'Hide intermediate updates' : `Show ${hiddenMessages.length} intermediate updates`}
+        </button>
+      )}
+      {(showHidden ? messages : visibleMessages).map((m) => (
         <AnimatedMessage key={m.id}>
           <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} toolCalls={m.toolCalls} />
         </AnimatedMessage>
       ))}
+      {/* when collapsed, also render hidden as collapsed details if user expanded */}
       {typingMembers.map((id) => {
         const lastMsg = [...messages].reverse().find((m) => m.memberId === id)
         // If last message from this member is still empty, the card already

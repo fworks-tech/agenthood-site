@@ -57,6 +57,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const [logsOpen, setLogsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({})
 
   // turnIndex is a monotonic session counter, so memberId+turnIndex is a stable unique id
@@ -79,12 +80,19 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   }
 
   const mdComponents: Components = {
+    // wrap long lines — screenshots showed code_execution results with 120+ char lines
+    // overflowing the Paper; wrap + max-h keeps the thread scannable
     pre: ({ children }) => (
-      <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-950/70 p-2 text-xs leading-relaxed">{children}</pre>
+      <pre className="my-2 max-w-full overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-950/70 p-3 text-xs leading-relaxed [overflow-wrap:anywhere] max-h-[420px]">{children}</pre>
     ),
-    code: ({ children }) => (
-      <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">{children}</code>
-    ),
+    code: ({ children, className }) => {
+      const isBlock = !!className
+      return isBlock ? (
+        <code className={className}>{children}</code>
+      ) : (
+        <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs break-words [overflow-wrap:anywhere]">{children}</code>
+      )
+    },
     h1: ({ children }) => (
       <Title order={3} size="sm" fw={600} mt="sm" mb={4}>
         {children}
@@ -110,7 +118,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
 
   return (
     <>
-      <Paper bg="zinc.9" px="xl" py={10} className="max-w-[85%] md:max-w-[75%]">
+      <Paper bg="zinc.9" px="xl" py={10} className="max-w-[85%] md:max-w-[75%] transition-all duration-300 hover:shadow-xl hover:shadow-black/20 hover:border-zinc-700/50 animate-in fade-in slide-in-from-bottom-1">
         <div className="mb-2 flex items-center gap-2">
           <span className="text-base">{agent?.icon ?? '•'}</span>
           <span className="text-sm font-semibold text-zinc-100">{agent?.name ?? memberId}</span>
@@ -120,53 +128,71 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
           <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-indigo-500" title={memberId} />
         </div>
 
-        <div className="break-words text-sm leading-relaxed text-zinc-200">
-          {thinkingOnly ? (
-            <div className="flex items-center gap-2 py-1 text-zinc-400">
-              <span className="inline-flex gap-1">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-              </span>
-              <Text c="dimmed" size="xs">
-                {agent?.name ?? memberId} is thinking...
-              </Text>
-              <Text c="dimmed" size="xs" className="ml-1 hidden sm:inline">
-                {polished.slice(0, 80)}
-              </Text>
-            </div>
-          ) : polished ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-              {polished}
-            </ReactMarkdown>
-          ) : content ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-              {toPolished(content) || '_No polished output — see logs_'}
-            </ReactMarkdown>
-          ) : (
-            <Text c="dimmed" size="sm">
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-flex gap-1">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                </span>
-                {agent?.name ?? memberId} is thinking...
-              </span>
-            </Text>
-          )}
-        </div>
-
-        {thinkingOnly && (
-          <Text c="dimmed" size="xs" mt={4} className="italic">
-            Reasoning in progress — full answer will appear when ready.
-          </Text>
-        )}
-        {polished && !useful && !thinkingOnly && (
-          <Text c="dimmed" size="xs" mt={4} className="italic">
-            Working — gathering context before the final answer.
-          </Text>
-        )}
+        {(() => {
+          const isLong = !thinkingOnly && !!polished && (polished.length > 2200 || polished.split('\n').length > 50)
+          const showToggle = isLong && useful
+          const clamped = showToggle && !expanded
+          return (
+            <>
+              <div className={`break-words text-sm leading-relaxed text-zinc-200 ${clamped ? 'relative max-h-[520px] overflow-hidden' : ''}`}>
+                {thinkingOnly ? (
+                  <div className="flex items-center gap-2 py-1 text-zinc-400">
+                    <span className="inline-flex gap-1">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
+                    </span>
+                    <Text c="dimmed" size="xs">
+                      {agent?.name ?? memberId} is thinking...
+                    </Text>
+                    <Text c="dimmed" size="xs" className="ml-1 hidden sm:inline">
+                      {polished.slice(0, 80)}
+                    </Text>
+                  </div>
+                ) : polished ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                    {polished}
+                  </ReactMarkdown>
+                ) : content ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                    {toPolished(content) || '_No polished output — see logs_'}
+                  </ReactMarkdown>
+                ) : (
+                  <Text c="dimmed" size="sm">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex gap-1">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
+                      </span>
+                      {agent?.name ?? memberId} is thinking...
+                    </span>
+                  </Text>
+                )}
+                {clamped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[rgb(24,24,27)] to-transparent" />}
+              </div>
+              {showToggle && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="mt-3 cursor-pointer text-xs font-medium text-indigo-400 transition-all duration-200 hover:text-indigo-300 hover:scale-[1.02] active:scale-95"
+                >
+                  {expanded ? 'View less' : `View more — ${Math.ceil(polished.length / 1000)}k chars`}
+                </button>
+              )}
+              {thinkingOnly && (
+                <Text c="dimmed" size="xs" mt={4} className="italic">
+                  Reasoning in progress — full answer will appear when ready.
+                </Text>
+              )}
+              {polished && !useful && !thinkingOnly && (
+                <Text c="dimmed" size="xs" mt={4} className="italic">
+                  Working — gathering context before the final answer.
+                </Text>
+              )}
+            </>
+          )
+        })()}
 
         <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-800">
           <ActionIcon
