@@ -27,19 +27,24 @@ export default function WorkspacesPage() {
     await workspace.start({ memberIds: selected, instruction: instruction.trim() })
   }, [selected, instruction, workspace])
 
+  const isRunning = workspace.workspaceState === 'running' || workspace.workspaceState === 'handoff'
+  const hasStarted = workspace.workspaceId !== null
+
   const handleSend = useCallback(async () => {
     const text = input.trim()
     if (!text) return
     setInput('')
-    if (workspace.workspaceState === 'idle' || workspace.workspaceState === 'done' || workspace.workspaceState === 'error') {
+    // Follow-ups must never wipe history — screenshots showed a second
+    // "Give me a summary" replacing the whole thread because done/error
+    // triggered start() which resets messages/workspaceId. Only the
+    // initial composer (hasStarted===false) may start a new workspace;
+    // otherwise always intervene so the conversation stays intact.
+    if (!hasStarted) {
       await workspace.start({ memberIds: selected, instruction: text })
     } else {
       await workspace.sendIntervention(text)
     }
-  }, [input, selected, workspace])
-
-  const isRunning = workspace.workspaceState === 'running' || workspace.workspaceState === 'handoff'
-  const hasStarted = workspace.workspaceId !== null
+  }, [input, selected, workspace, hasStarted])
 
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-zinc-950">
