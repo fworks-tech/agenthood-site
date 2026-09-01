@@ -46,6 +46,13 @@ export default function WorkspacesPage() {
     }
   }, [input, selected, workspace, hasStarted])
 
+  const handleReset = useCallback(() => {
+    workspace.reset()
+    setSelected([])
+    setInstruction('')
+    setInput('')
+  }, [workspace])
+
   return (
     <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-zinc-950">
       <div className="border-b border-zinc-800 px-4 py-3 md:px-6">
@@ -90,12 +97,21 @@ export default function WorkspacesPage() {
                 </div>
               </div>
             )}
-            <button
-              onClick={workspace.stop}
-              className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:bg-zinc-900 hover:border-zinc-700 hover:text-zinc-200 hover:scale-[1.01] active:scale-[0.99]"
-            >
-              Stop workspace
-            </button>
+            {isRunning ? (
+              <button
+                onClick={workspace.stop}
+                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:bg-zinc-900 hover:border-zinc-700 hover:text-zinc-200 hover:scale-[1.01] active:scale-[0.99]"
+              >
+                Stop workspace
+              </button>
+            ) : (
+              <button
+                onClick={handleReset}
+                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-200 transition-all duration-200 hover:bg-zinc-800 hover:border-zinc-600 hover:text-white hover:scale-[1.01] active:scale-[0.99]"
+              >
+                New workspace
+              </button>
+            )}
           </aside>
 
           <div className="flex flex-1 min-h-0 flex-col min-w-0">
@@ -103,7 +119,18 @@ export default function WorkspacesPage() {
               <button onClick={() => setDrawerOpen(true)} className="cursor-pointer rounded border border-zinc-800 px-3 py-1.5 text-sm text-zinc-300 transition-all duration-200 hover:bg-zinc-900 hover:border-zinc-700 hover:scale-[1.02] active:scale-95">
                 Agents
               </button>
-              <span className="text-xs text-zinc-500">{workspace.workspaceState}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-500">{workspace.workspaceState}</span>
+                {isRunning ? (
+                  <button onClick={workspace.stop} className="cursor-pointer rounded border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300 transition-all hover:bg-zinc-800">
+                    Stop
+                  </button>
+                ) : (
+                  <button onClick={handleReset} className="cursor-pointer rounded border border-zinc-700 bg-zinc-900 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-all hover:bg-zinc-800">
+                    New
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto px-4 py-6 md:px-6">
@@ -136,9 +163,13 @@ export default function WorkspacesPage() {
                 >
                   Send
                 </button>
-                {isRunning && (
+                {isRunning ? (
                   <button onClick={workspace.stop} className="cursor-pointer rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
                     Stop
+                  </button>
+                ) : (
+                  <button onClick={handleReset} className="cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition-all duration-200 hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
+                    New workspace
                   </button>
                 )}
               </div>
@@ -162,6 +193,15 @@ export default function WorkspacesPage() {
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onOpen={() => setDrawerOpen(true)}>
         <div className="p-4">
           <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
+          {isRunning ? (
+            <button onClick={() => { workspace.stop(); setDrawerOpen(false) }} className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-800 px-3 py-2 text-sm text-zinc-400 transition-all hover:bg-zinc-900 hover:text-zinc-200">
+              Stop workspace
+            </button>
+          ) : hasStarted ? (
+            <button onClick={() => { handleReset(); setDrawerOpen(false) }} className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-200 transition-all hover:bg-zinc-800">
+              New workspace
+            </button>
+          ) : null}
         </div>
       </MobileDrawer>
     </div>

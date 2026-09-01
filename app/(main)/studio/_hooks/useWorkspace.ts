@@ -362,7 +362,27 @@ export function useWorkspace() {
   const stop = useCallback(() => {
     sessionRef.current++
     abortRef.current?.abort()
+    abortRef.current = null
+    setHandoff(null)
     setWorkspaceState('done')
+  }, [])
+
+  const reset = useCallback(() => {
+    sessionRef.current++
+    abortRef.current?.abort()
+    abortRef.current = null
+    setMessages([])
+    setStatusMap({})
+    setWorkspaceState('idle')
+    setHandoff(null)
+    setError(null)
+    setWorkspaceId(null)
+    threadRef.current = []
+    specRef.current = null
+    budgetRef.current = TURN_BUDGET_DEFAULT
+    turnCounterRef.current = 0
+    correlationRef.current = null
+    setActiveWorkspaceId(null)
   }, [])
 
   const continueHandoff = useCallback(() => {
@@ -380,6 +400,7 @@ export function useWorkspace() {
     start,
     sendIntervention,
     stop,
+    reset,
     continueHandoff,
   }
 }
