@@ -3,6 +3,6 @@ import { TURN_BUDGET_DEFAULT } from '../app/(main)/studio/_types/workspace'
 
 describe('workspace types', () => {
   it('exports TURN_BUDGET_DEFAULT', () => {
-    expect(TURN_BUDGET_DEFAULT).toBe(10)
+    expect(TURN_BUDGET_DEFAULT).toBe(30)
   })
 })

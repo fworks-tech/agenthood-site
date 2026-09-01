@@ -33,7 +33,7 @@ vi.mock('../app/(main)/studio/_lib/tools', async (importOriginal) => {
       { name: 'web_fetch', description: 'fetch', inputSchema: { type: 'object', properties: { url: { type: 'string' } }, required: ['url'] } },
       { name: 'code_execution', description: 'code', inputSchema: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] } },
     ],
-    MAX_TOOL_ITERATIONS: 5,
+    MAX_TOOL_ITERATIONS: 25,
   }
 })
 
@@ -266,7 +266,7 @@ describe('createWorkspaceTurnStream', () => {
   })
 
   it('handles MAX_TOOL_ITERATIONS reached', async () => {
-    // every complete returns a tool call, so we hit 5 iterations
+    // every complete returns a tool call, so we hit 25 iterations
     mockComplete.mockResolvedValue({
       content: '',
       toolCalls: [{ id: 'call_x', name: 'web_fetch', args: { url: 'https://github.com/foo' } }],
@@ -277,7 +277,7 @@ describe('createWorkspaceTurnStream', () => {
       workspaceId: 'ws-iter', correlationId: 'c10', memberId: 'the-builder', instruction: 'loop', thread: [], turnIndex: 0,
     })
     const events = await collectEvents(stream)
-    // should have 5 tool_calls (MAX=5)
-    expect(events.filter((e) => e.type === 'workspace.tool_call').length).toBe(5)
+    // should have 25 tool_calls (MAX=25)
+    expect(events.filter((e) => e.type === 'workspace.tool_call').length).toBe(25)
   })
 })

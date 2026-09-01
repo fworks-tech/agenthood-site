@@ -6,7 +6,7 @@ import { emitLogEvent } from '@/app/(main)/studio/_lib/trace'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 120
 
 const MAX_THREAD_MESSAGES = 200
 const MAX_MESSAGE_CHARS = 20_000

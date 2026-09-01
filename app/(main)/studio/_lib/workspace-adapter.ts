@@ -189,11 +189,11 @@ export async function createWorkspaceTurnStream(
 
           if (i === MAX_TOOL_ITERATIONS - 1) {
             finalText = resp.content || 'Max tool iterations reached.'
-          } else if (!handoffEmitted) {
-            continue
           } else {
-            finalText = resp.content || ''
-            break
+            // Live collaboration: keep iterating even after a handoff is
+            // emitted (the UI surfaces the checkpoint but does not block the
+            // agent from continuing to reason and produce a useful answer).
+            continue
           }
         }
 

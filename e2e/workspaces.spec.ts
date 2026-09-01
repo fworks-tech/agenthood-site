@@ -122,8 +122,8 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
     ])
     await mockWorkspaceSequence(page, [
       { memberId: 'the-mediator', tokens: [plan] },
-      { memberId: 'the-builder', tokens: ['Implementing feature...'], toolCalls: [{ name: 'web_fetch', args: { url: 'https://github.com/fworks-tech/agenthood' }, result: 'repo content' }] },
-      { memberId: 'the-tester', tokens: ['Tests pass.'] },
+      { memberId: 'the-builder', tokens: ['Implementing feature...\n```ts\nconst x=1\n```'], toolCalls: [{ name: 'web_fetch', args: { url: 'https://github.com/fworks-tech/agenthood' }, result: 'repo content' }] },
+      { memberId: 'the-tester', tokens: ['Tests pass.\n```ts\ntest()\n```'] },
     ])
 
     await page.getByRole('button', { name: /The Builder/ }).first().click()
@@ -155,7 +155,7 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
     await expect(page.getByRole('dialog').getByText('repo content').first()).toBeVisible({ timeout: 5000 })
     // close modal
     await page.keyboard.press('Escape')
-    await expect(page.getByText('Tests pass.')).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText('Tests pass.').first()).toBeVisible({ timeout: 15000 })
 
     // sidebar status done for at least builder
     await expect(page.locator('text=done').first()).toBeVisible({ timeout: 5000 })
@@ -164,7 +164,7 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
   test('handoff checkpoint shows Continue/Stop and is interactive', async ({ page }) => {
     await mockWorkspaceSequence(page, [
       { memberId: 'the-mediator', tokens: [mediatorPlan([{ id: 'the-builder', task: 'run code', order: 0 }])] },
-      { memberId: 'the-builder', tokens: ['About to run code'], handoff: 'code_execution requested — awaiting human approval' },
+      { memberId: 'the-builder', tokens: ['About to run code\n```ts\ncode\n```'], handoff: 'code_execution requested — awaiting human approval' },
     ])
 
     await page.getByRole('button', { name: /The Builder/ }).first().click()
@@ -184,10 +184,10 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
   test('user intervention appends message and re-invokes mediator', async ({ page }) => {
     await mockWorkspaceSequence(page, [
       { memberId: 'the-mediator', tokens: [mediatorPlan([{ id: 'the-builder', task: 'initial task', order: 0 }])] },
-      { memberId: 'the-builder', tokens: ['Working...'], delayMs: 8000 },
+      { memberId: 'the-builder', tokens: ['Working...\n```ts\nx\n```'], delayMs: 8000 },
       // intervention: mediator re-plans as JSON, builder then produces final output
       { memberId: 'the-mediator', tokens: [mediatorPlan([{ id: 'the-builder', task: 'edge cases', order: 0 }])] },
-      { memberId: 'the-builder', tokens: ['Done with edge cases.'] },
+      { memberId: 'the-builder', tokens: ['Done with edge cases.\n```ts\ndone\n```'] },
     ])
 
     await page.getByRole('button', { name: /The Builder/ }).first().click()
@@ -225,7 +225,7 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
     await page.getByPlaceholder('e.g. Suggest an area for improvement').fill('Mobile test')
     await mockWorkspaceSequence(page, [
       { memberId: 'the-mediator', tokens: [mediatorPlan([{ id: 'the-builder', task: 'x', order: 0 }])] },
-      { memberId: 'the-builder', tokens: ['Mobile hello'] },
+      { memberId: 'the-builder', tokens: ['Mobile hello\n```ts\nx\n```'] },
     ])
     await page.getByRole('button', { name: 'Start Workspace' }).click()
 

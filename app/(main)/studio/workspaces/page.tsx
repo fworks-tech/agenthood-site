@@ -103,7 +103,7 @@ export default function WorkspacesPage() {
 
             <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
               <div className="mx-auto max-w-3xl">
-                <WorkspaceChatArea messages={workspace.messages} />
+                <WorkspaceChatArea messages={workspace.messages} statusMap={workspace.statusMap} />
                 {workspace.error && (
                   <div className="mt-4 rounded-lg border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">{workspace.error}</div>
                 )}
