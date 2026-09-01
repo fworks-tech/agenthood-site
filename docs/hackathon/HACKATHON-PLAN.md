@@ -1,7 +1,6 @@
 # Agentic Workflows Frontier Hackathon — Multi-Agent Workspaces for the Agenthood Studio
 
-> **Status:** Implementation — Phases 1-8 landed on `frontier-hackathon` @ `150cef7` (PR #169, 11 granular commits `7268ce2..150cef7`). `lint` + `build` green. This document is the single source of truth for the project: the idea,
-> the user, the architecture, the evaluation plan, the deliverables, and the day-by-day roadmap. Tri-synced with `spec.md` and `worklog.md`.
+> **Status:** Phases 1-10 landed on `frontier-hackathon` @ `facb31d` (PR #169 — 15 commits). Reliable session memory + auto-synthesizer landed. `lint` + `build` + `352 tests` green. Tri-synced with `spec.md` and `worklog.md`.
 
 ---
 
