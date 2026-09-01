@@ -3,6 +3,7 @@ import { getAgentById } from '@/app/(main)/studio/_data/agents'
 import { createWorkspaceTurnStream } from '@/app/(main)/studio/_lib/workspace-adapter'
 import { logger } from '@/app/(main)/studio/_lib/logger'
 import { emitLogEvent } from '@/app/(main)/studio/_lib/trace'
+import { getWorkspace, saveWorkspace } from '@/app/(main)/studio/_lib/workspace-store'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,26 @@ export const maxDuration = 120
 
 const MAX_THREAD_MESSAGES = 200
 const MAX_MESSAGE_CHARS = 20_000
+
+export async function GET(req: NextRequest) {
+  const workspaceId = req.nextUrl.searchParams.get('workspaceId')
+  if (!workspaceId) {
+    return new Response(JSON.stringify({ error: 'workspaceId required', code: 'VALIDATION_ERROR' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  const session = getWorkspace(workspaceId)
+  if (!session) {
+    return new Response(JSON.stringify({ error: 'not found', code: 'NOT_FOUND' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  return new Response(JSON.stringify(session), {
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
 
 export async function POST(req: NextRequest) {
   let body: unknown
@@ -102,6 +123,34 @@ export async function POST(req: NextRequest) {
   }
 
   logger.info('workspace.request', { workspaceId, memberId, turnIndex, correlationId, members: memberIds })
+
+  // Server-side session store — reliable shared memory (Map + client localStorage mirror).
+  // Upsert incoming thread so GET can rehydrate after reload; client also persists full
+  // session via workspace-store saveWorkspace after each turn (future Redis swaps Map).
+  try {
+    const existing = getWorkspace(workspaceId)
+    const sessionToSave = existing ?? {
+      workspaceId,
+      correlationId,
+      spec: { memberIds: memberIds as string[], instruction: instruction as string },
+      thread: thread as { role: 'user' | 'assistant' | 'tool'; content: string }[],
+      messages: [],
+      statusMap: {},
+      memory: { goal: instruction as string, scratchpad: {}, decisions: [], artifacts: [] },
+      budgetLeft: 30,
+      turnCounter: turnIndex,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }
+    // always refresh thread from latest client (client is source of truth for chat)
+    sessionToSave.thread = thread as { role: 'user' | 'assistant' | 'tool'; content: string }[]
+    sessionToSave.correlationId = correlationId
+    sessionToSave.turnCounter = turnIndex
+    sessionToSave.updatedAt = Date.now()
+    saveWorkspace(sessionToSave)
+  } catch {
+    // store best-effort
+  }
 
   try {
     const baseStream = await createWorkspaceTurnStream(
