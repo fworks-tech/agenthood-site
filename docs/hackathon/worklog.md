@@ -99,3 +99,32 @@ Without **budget (10) + human veto (`workspace.handoff`)**, Builder+Tester ping-
 ### Next
 
 - Phase 9: trajectories `data/workspaces/trajectories/` per-agent SSE JSON (shape above + `trace.ts:1` logs), `REPRODUCTION.md` (clone `fworks-tech/agenthood` + `agenthood-site`, `npm install`/`npm run build`/`npm run dev`, `.env` keys, expected output, versions/cost), ADR `docs/adr/NNN-workspaces-orchestration.md` (client-driven 60s vs server chunking, JSON plan, trimming 100k), re-enable `npm test` (283 tests, target ≥80% on orchestrator/adapter/route)
+
+---
+
+## 2026-08-31 — Day 2: Polished Chat + Review Hardening (PR #169 `4925314` → local)
+
+### What we did
+- **CI coverage closed** `9d31271` — 4 suites `workspace-orchestrator` (14) / `workspace-adapter` (12) / `workspace-route` (14→19) / `workspace` (1) + `eslint.config.mjs` ignores; `npm test` 334→348, coverage `93.23%` (thresholds 90/90/85/80 in `vitest.config.ts:18`)
+- **E2E suite** `e2e/workspaces.spec.ts` — 7 cases mocking `**/api/studio/workspaces*` (`wsBody`/`mediatorPlan`/`mockWorkspaceSequence`): picker excludes Mediator, selection toggle + instruction reveal, full multi-agent orchestration, handoff Continue/Stop, intervention re-invoke, error banner, mobile drawer; `playwright.config.ts:11` `npx next dev` to bypass `sync-docs.mjs` GitHub 403 rate limit
+- **Chat split + polish (human feedback: "message is the final polished answer")** — `useWorkspace.ts:9` `WorkspaceToolCall` + `toolCallsMap` (no more `[tool_call: web_fetch(...)]` blob in content), `WorkspaceTurnCard.tsx` per-member card with icon + name + `turn N` badge + like/dislike/copy + **View logs** dialog (tool calls collapsible args/result/error, polished content, raw content), `ReactMarkdown` + `remark-gfm` components (`pre/code/h1-3/strong/a`) so markdown renders
+- **Polishing rule** `_lib/workspace-polish.ts` — single source of truth `toPolished()` strips `[tool_call:]/[tool_result:]`, `Max tool iterations`, and Mediator JSON plan (`{"members":…}`) from both the rendered card and the `threadRef` sent to the next member
+- **Review hardening (blocking findings)** — `route.ts:75` thread validation: roles whitelist `['user','assistant','tool']` (rejects forged `system` → prompt injection), ≤200 msgs, ≤20k chars/msg; `workspace-adapter.ts:233` removed dead `toolCallsRun` loop; token streaming batched `TOKEN_CHUNK=128` (was 1 char = ~10k enqueues/turn on atlaslink `10.1k` chars); `useWorkspace.ts` consolidated loop — session token `sessionRef` guards abort race (stale start/intervention can't write terminal state), monotonic `turnCounterRef` replaces magic `999/1000`, `specRef` replaces `memberIdsRef`
+
+### Agent decisions
+- **Session-guard abort:** `stop()`/`start()`/`sendIntervention()` each bump `sessionRef`; only the latest session may set `workspaceState` — fixes the transient "handoff stuck" race the reviewer flagged when intervening mid-turn
+- **Turn index = monotonic session counter:** every `runTurn` uses `++turnCounterRef.current` → unique message ids + clean `turn N` badges across interventions, no `1000 + order` collision
+- **Polished thread:** only the polished (stripped) content is appended to `threadRef` for the next member, so downstream turns never see tool/JSON noise
+- **Tools only in View logs:** per user feedback "dont show tools/reasoning in the message" — tool badges moved out of the bubble into a per-message Modal; chat shows conversation only
+
+### Human insights
+- "Message is not rendering the markdown styles" → explicit `Components` map (was relying on `prose` plugin not loaded)
+- "first message does not show who sent it" → every card has icon + name + `turn N`
+- "we dont need to show in the message the information about tools ... message is the final polished answer ... actions below the message like ChatGPT (like/submit feedback) or View Logs" → like/dislike/copy + View logs dialog
+- "an error happened ... message got printed this Error information" → `toPolished` strips technical one-liners; `workspace.error` surfaces as banner, not message content
+
+### Evidence
+- `npm test` 348 passed, coverage `All files 93.23%`; `npm run lint` 0; `npx next build` lists `ƒ /api/studio/workspaces` + `○ /studio/workspaces`; `npx playwright test e2e/workspaces.spec.ts` **7 passed**
+- Routes hardened: `route.ts` thread role whitelist (unit-tested `rejects thread with forged system role`, `unknown role`, `>20k chars`, `>200 msgs`, accepts valid conversational thread)
+- `__tests__/workspace-polish.test.ts` — 9 cases for `toPolished` (tool markers, iterations line, pure/embedded JSON plan, prose passthrough, JSON non-plan kept)
+- Polished UX verified in e2e: `[tool_call:` and `repo content` and `"members"` NOT visible in chat; builder card `1 tool calls` → View logs dialog shows `web_fetch` → expand → `repo content`
