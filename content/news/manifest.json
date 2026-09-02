@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-02"
+    ],
+    "path": "news/whats-new-2026-09-02.md",
+    "title": "Agenthood v3.39.2: Provider Failover Hardening",
+    "date": "2026-09-02",
+    "author": "Agenthood Team",
+    "summary": "Patch release hardening LLM provider failover priority, per-entry keys, and retry behavior."
+  },
+  {
+    "slug": [
       "whats-new-2026-08-31"
     ],
     "path": "news/whats-new-2026-08-31.md",
