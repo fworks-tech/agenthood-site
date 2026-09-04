@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-04"
+    ],
+    "path": "news/whats-new-2026-09-04.md",
+    "title": "Agenthood v3.40.0 and v3.41.0: ask_human park primitive",
+    "date": "2026-09-04",
+    "author": "Agenthood Team",
+    "summary": "New ask_human park primitive for park-and-resume hosts, plus a test stub provider."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-02"
     ],
     "path": "news/whats-new-2026-09-02.md",
