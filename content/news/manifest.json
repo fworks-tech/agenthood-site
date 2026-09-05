@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-05"
+    ],
+    "path": "news/whats-new-2026-09-05.md",
+    "title": "Agenthood Release Digest: September 5, 2026",
+    "date": "2026-09-05",
+    "author": "Agenthood Team",
+    "summary": "A roundup of Agenthood releases from September 4–5, 2026, covering skills CLI, MCP server, model defaults, CI reviews, plugins, and logging."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-04"
     ],
     "path": "news/whats-new-2026-09-04.md",
