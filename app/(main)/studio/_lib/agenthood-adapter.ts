@@ -31,7 +31,7 @@ const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"]
 
 // CLI priority chain — mirrors .agenthood/config.json (opencode-go p1)
 // kept in sync by sync-skills; Studio reuses it so chat fallbacks are not hard-coded
-const CLI_PROVIDER_CHAIN: readonly ProviderName[] = ['opencode-go', 'opencode', 'anthropic', 'groq', 'ollama']
+export const CLI_PROVIDER_CHAIN: readonly ProviderName[] = ['opencode-go', 'opencode', 'anthropic', 'groq', 'ollama']
 
 function isKnownProvider(name: string): name is ProviderName {
   return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go", "openrouter"].includes(name);

@@ -20,7 +20,8 @@
     "the-steward",
     "the-strategist",
     "the-operator",
-    "the-inspector"
+    "the-inspector",
+    "the-mediator"
   ],
   "providers": [
     {
@@ -56,5 +57,8 @@
   },
   "skills": {
     "autoDiscover": false
+  },
+  "security": {
+    "strictSkillIntegrity": true
   }
 }

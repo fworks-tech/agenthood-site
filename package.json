@@ -20,6 +20,7 @@
     "sync-skills": "node scripts/sync-skills.mjs",
     "sync-news": "node scripts/build-news-manifest.mjs",
     "summarize-news": "node scripts/summarize-news.mjs",
+    "check:deps": "node scripts/check-deps.mjs",
     "postinstall": "patch-package",
     "prebuild": "npm run sync && npm run sync-news && npm run sync-skills",
     "predev": "npm run sync && npm run sync-news -- --lenient && npm run sync-skills"

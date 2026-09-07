@@ -1,5 +1,6 @@
 import { getDefaultModel } from '../_types/studio'
 import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
+import { CLI_PROVIDER_CHAIN } from './agenthood-adapter'
 
 const SYNTHESIS_SYSTEM = `You are the Workspace Synthesizer — the final voice the user hears, exactly like Claude Work.
 
@@ -29,12 +30,12 @@ export async function createSynthesisStream(
       try {
         const { LLMRouter } = await import('agenthood/dist/llm')
         const llmConfig = {
-          providers: [{ name: 'opencode-go' }, { name: 'opencode' }, { name: 'anthropic' }, { name: 'groq' }, { name: 'ollama' }],
+          providers: CLI_PROVIDER_CHAIN.map((name) => ({ name })),
           failureThreshold: 3,
           cooldownMs: 60000,
           probeEnabled: true,
         }
-        const provider = await LLMRouter.fromConfig(llmConfig as never)
+        const provider = await LLMRouter.fromConfig(llmConfig)
         try {
           provider.setModel(model)
         } catch {}
@@ -46,8 +47,8 @@ export async function createSynthesisStream(
         )
 
         // Stream synthesis
-        const llmMessages = messages.map((m) => ({ role: m.role as never, content: m.content }))
-        const gen = await provider.stream({ messages: llmMessages, temperature: 0.7 } as never)
+        const llmMessages = messages.map((m) => ({ role: m.role, content: m.content }))
+        const gen = await provider.stream({ messages: llmMessages, temperature: 0.7 })
         let output = ''
         for await (const chunk of gen) {
           if (signal?.aborted) break
@@ -69,7 +70,7 @@ export async function createSynthesisStream(
 
         // Fallback to single complete if stream empty (some providers)
         if (!output) {
-          const resp = await provider.complete({ messages: llmMessages, temperature: 0.7 } as never)
+          const resp = await provider.complete({ messages: llmMessages, temperature: 0.7 })
           if (resp.content) {
             for (let i = 0; i < resp.content.length; i += 128) {
               const slice = resp.content.slice(i, i + 128)
