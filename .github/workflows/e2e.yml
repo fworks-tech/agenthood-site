@@ -43,12 +43,12 @@ jobs:
         env:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
           TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
           path: playwright-report/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: test-results
