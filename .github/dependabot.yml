@@ -18,8 +18,7 @@ updates:
     # failing bump PR never merges is noise — upgrades are applied manually per
     # issue #176, so Dependabot ignores it.
     ignore:
-      dependency-name:
-        - agenthood
+      - dependency-name: agenthood
     groups:
       prod-dependencies:
         patterns:
