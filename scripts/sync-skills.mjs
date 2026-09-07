@@ -1,4 +1,4 @@
-import { writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,20 @@ const OUTPUT_DIR = join(PROJECT_ROOT, "app", "(main)", "studio", "_data");
 const OUTPUT_FILE = join(OUTPUT_DIR, "agents.generated.ts");
 const PROMPTS_FILE = join(OUTPUT_DIR, "agentPrompts.generated.ts");
 const REGISTRY_FILE = join(OUTPUT_DIR, "registry.generated.ts");
+
+function getInstalledVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(join(PROJECT_ROOT, "node_modules", "agenthood", "package.json"), "utf8"));
+    return pkg.version;
+  } catch {
+    return null;
+  }
+}
+
+const INSTALLED_VERSION = getInstalledVersion();
+const RAW_BASE = INSTALLED_VERSION
+  ? `https://raw.githubusercontent.com/fworks-tech/agenthood/v${INSTALLED_VERSION}`
+  : "https://raw.githubusercontent.com/fworks-tech/agenthood/main";
 
 const MEMBERS = [
   "the-architect", "the-auditor", "the-builder", "the-debugger", "the-doorman",
@@ -52,6 +66,12 @@ function extractWhenToUse(markdown) {
 async function main() {
   const skills = {};
   const prompts = {};
+
+  if (INSTALLED_VERSION) {
+    console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
+  } else {
+    console.warn("  ! could not detect installed agenthood version, falling back to main");
+  }
 
   const registry = await fetchRegistry();
   const registryIds = new Set(registry.members.map((m) => m.name));
