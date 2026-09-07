@@ -5,6 +5,7 @@ import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
 import { getDefaultModel } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
+import { CLI_PROVIDER_CHAIN } from './agenthood-adapter'
 import type { Message } from 'agenthood/dist/llm/types'
 
 export interface WorkspaceTurnRequest {
@@ -100,23 +101,20 @@ export async function createWorkspaceTurnStream(
         const llmConfig = {
           providers: [
             { name: providerName },
-            { name: 'opencode' },
-            { name: 'anthropic' },
-            { name: 'groq' },
-            { name: 'ollama' },
+            ...CLI_PROVIDER_CHAIN.filter((p) => p !== providerName).map((name) => ({ name })),
           ],
           failureThreshold: 3,
           cooldownMs: 60000,
           probeEnabled: true,
         }
-        const provider = await LLMRouter.fromConfig(llmConfig as never)
+        const provider = await LLMRouter.fromConfig(llmConfig)
         try {
           provider.setModel(model)
         } catch {}
 
         const toolCallsRun: ToolCall[] = []
         const llmMessages: Message[] = messages.map((m) => ({
-          role: m.role as never,
+          role: m.role,
           content: m.content,
           ...(m.tool_call_id ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
         }))
@@ -156,7 +154,7 @@ export async function createWorkspaceTurnStream(
             role: 'assistant',
             content: resp.content || '',
             toolCalls: resp.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, args: tc.args })),
-          } as never)
+          })
 
           for (const tc of resp.toolCalls) {
             if (signal?.aborted) break
@@ -184,7 +182,7 @@ export async function createWorkspaceTurnStream(
               workspaceId: req.workspaceId,
               correlationId: req.correlationId,
             })
-            llmMessages.push({ role: 'tool', content: result, tool_call_id: tc.id, name: tc.name } as never)
+            llmMessages.push({ role: 'tool', content: result, tool_call_id: tc.id, name: tc.name })
           }
 
           if (i === MAX_TOOL_ITERATIONS - 1) {
@@ -198,11 +196,7 @@ export async function createWorkspaceTurnStream(
         }
 
         if (!finalText && toolCallsRun.length === 0) {
-          const streamReq = {
-            messages: llmMessages,
-            temperature: 0.7,
-          }
-          const gen = await provider.stream(streamReq as never)
+          const gen = await provider.stream({ messages: llmMessages, temperature: 0.7 })
           for await (const chunk of gen) {
             if (signal?.aborted) break
             if (chunk.delta) {
