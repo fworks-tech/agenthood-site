@@ -5,6 +5,213 @@
 
 ---
 
+## v3.55.2 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- send x-opencode-session header for all OpenCode requests (#738)
+
+---
+
+## v3.55.1 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- add x-opencode-session header for OpenCode Go tier (#736)
+
+---
+
+## v3.55.0 — September 7, 2026
+
+### ✨ Features
+
+- **Registry:** add SkillRegistryClient, search, and upgrade commands (#729)
+
+---
+
+## v3.54.0 — September 7, 2026
+
+### ✨ Features
+
+- **Provisioning:** add RemoteSkillSource for URL/git fetching with caching (#728)
+- **Trajectory:** add TrajectoryStore and trace visualize/diff subcommands (#727)
+
+---
+
+## v3.53.0 — September 7, 2026
+
+### ✨ Features
+
+- **Interactive:** add --interactive flag for human-in-the-loop confirmation (#726)
+
+---
+
+## v3.52.0 — September 7, 2026
+
+### ✨ Features
+
+- **Logs:** add --tail and --follow flags to log command (#725)
+
+---
+
+## v3.51.0 — September 7, 2026
+
+### ✨ Features
+
+- **Cli:** add agenthood completion command for bash/zsh/fish (#724)
+
+---
+
+## v3.50.0 — September 7, 2026
+
+### ✨ Features
+
+- **Debug:** add --debug flag for LLM request/response logging (#723)
+
+---
+
+## v3.49.0 — September 5, 2026
+
+### ✨ Features
+
+- **Checkpoint:** add run checkpoint persistence and --resume flag (#722)
+
+---
+
+## v3.48.0 — September 5, 2026
+
+### 🐛 Bug Fixes
+
+- **Install:** use execFileSync to prevent shell injection
+
+### ✨ Features
+
+- **Cli:** add publish command and --dry-run for install
+
+---
+
+## v3.47.0 — September 5, 2026
+
+### 🐛 Bug Fixes
+
+- **Mcp:** extract handlers, pin dep, update docs
+
+### ✨ Features
+
+- **Mcp:** add MCP server to expose skills as tools
+
+---
+
+## v3.46.0 — September 5, 2026
+
+### ✨ Features
+
+- **Cli:** add install command for skills from URLs and git repos
+- **Skills:** add quality tiers (official, community, experimental) with visual indicators
+
+---
+
+## v3.45.0 — September 5, 2026
+
+### ✨ Features
+
+- **Config:** switch default model from deepseek-v4-flash to mimo-v2.5 (#686)
+
+---
+
+## v3.44.0 — September 5, 2026
+
+### ✨ Features
+
+- **Ci:** dedupe analysis comments and post inline review findings (#684)
+
+---
+
+## v3.43.0 — September 5, 2026
+
+### ✨ Features
+
+- **Plugin:** add official opencode plugin entry with member-run tool (#629)
+
+---
+
+## v3.42.0 — September 4, 2026
+
+### ✨ Features
+
+- **Logging:** add structured log API and agenthood log command on trace store (#507)
+
+---
+
+## v3.41.1 — September 4, 2026
+
+### 🐛 Bug Fixes
+
+- **Security:** surface absent-lockfile and missing-skill integrity states (#506)
+
+---
+
+## v3.41.0 — September 3, 2026
+
+### ✨ Features
+
+- **Hitl:** ask_human park primitive with test stub provider (#502)
+
+---
+
+## v3.40.0 — September 3, 2026
+
+### ✨ Features
+
+- **Hitl:** add ask_human park primitive for park-and-resume hosts (#501)
+
+---
+
+## v3.39.2 — September 1, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** harden provider failover priority, per-entry keys and cheap retry
+
+---
+
+## v3.39.1 — August 30, 2026
+
+### 🐛 Bug Fixes
+
+- **Agenthood:** correct agent count 19 -> 20 in package description
+
+---
+
+## v3.39.0 — August 30, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** remove unused name parameter in stream callback
+- **Llm:** use announce() in complete() for consistent logging
+
+### ✨ Features
+
+- **Runtime:** add RunEventBus tests and enrich reasoning telemetry
+
+---
+
+## v3.38.1 — August 30, 2026
+
+### 🐛 Bug Fixes
+
+- **Audit:** fail-closed tool gating, testable filter, and doc reconciliation
+- **Audit:** harden audit filter against array and bad vulnerabilities shape
+- **Ci:** exempt npm ecosystem tools from dependency audit, closes [hi#severity](https://github.com/hi/issues/severity)
+- **Ci:** fail closed on empty-node advisories in audit gate
+- **Ci:** restore mixed-node advisory reporting in audit gate
+- **Members:** address auditor and reviewer findings on member tool gating
+- **Members:** prevent LLM from echoing SKILL.md content in responses
+- **Review:** address reviewer warnings on 6906423
+- **Review:** sync institutional-knowledge steps 2/4 with oracle and harden audit filter
+
+---
+
 ## v3.38.0 — August 21, 2026
 
 ### 🐛 Bug Fixes
