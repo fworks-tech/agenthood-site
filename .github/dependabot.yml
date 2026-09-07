@@ -7,36 +7,30 @@ updates:
       day: monday
       time: '09:00'
     open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - javascript
     commit-message:
       prefix: chore
       include: scope
     groups:
+      # agenthood is exact-pinned and its upgrade is blocked by agenthood#739,
+      # so surface every bump on its own PR flagged breaking-suspect.
+      agenthood:
+        patterns:
+          - agenthood
+        labels:
+          - dependencies
+          - agenthood
+          - breaking-suspect
       prod-dependencies:
         patterns:
           - '*'
+        exclude-patterns:
+          - agenthood
         update-types:
           - minor
           - patch
-
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-      day: monday
-      time: '09:00'
-    allow:
-      - dependency-name: agenthood
-    labels:
-      - dependencies
-      - agenthood
-      - breaking-suspect
-    commit-message:
-      prefix: chore
-      include: scope
-    open-pull-requests-limit: 1
+        labels:
+          - dependencies
+          - javascript
 
   - package-ecosystem: github-actions
     directory: /
