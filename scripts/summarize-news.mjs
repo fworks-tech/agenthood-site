@@ -15,6 +15,7 @@ import { load as parseYaml } from "js-yaml";
 
 const API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/go/v1";
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
+const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-summarize-news";
 const MAX_SUMMARY_CHARS = 160;
 
 function parseFrontMatter(text) {
@@ -52,6 +53,7 @@ async function summarize(text) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
+      "x-opencode-session": SESSION_ID,
     },
     body: JSON.stringify({
       model: MODEL,

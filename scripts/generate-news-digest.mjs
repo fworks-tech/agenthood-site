@@ -45,6 +45,7 @@ const STATE_PATH = path.join(NEWS_DIR, ".digest-state.json");
 
 const OPENCODE_API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/go/v1";
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
+const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-news-digest";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SUMMARY_CHARS = 160;
 
@@ -181,6 +182,7 @@ async function draftArticle(postDate, releases, onError) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
+      "x-opencode-session": SESSION_ID,
     },
     body: JSON.stringify({
       model: MODEL,
