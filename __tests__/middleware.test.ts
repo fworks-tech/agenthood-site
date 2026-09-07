@@ -106,7 +106,7 @@ describe("middleware origin validation", () => {
   });
 
   it("allows localhost origins in development mode", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "development";
     const res = await callMiddleware(
       makeRequest("http://localhost:3000/api/studio/chat", { origin: "http://localhost:3000" }),
     );
@@ -114,7 +114,7 @@ describe("middleware origin validation", () => {
   });
 
   it("rejects the production origin in development mode", async () => {
-    process.env.NODE_ENV = "development";
+    (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "development";
     const res = await callMiddleware(
       makeRequest("/api/studio/chat", { origin: "https://agenthood.flabs.tech" }),
     );
