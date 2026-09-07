@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAgentDirectory } from '../_hooks/useAgentDirectory';
 import { useStudioChat } from '../_hooks/useStudioChat';
 import { useCaptcha } from '../_hooks/useCaptcha';
@@ -25,6 +25,8 @@ import PlaygroundSidebar from './_components/PlaygroundSidebar';
 import PlaygroundChatArea from './_components/PlaygroundChatArea';
 import MobileNavBar from './_components/MobileNavBar';
 import { useLogs } from '../_hooks/useLogs';
+import { useActiveAgent } from '../_hooks/useActiveAgent';
+import { useActiveConfigSync } from '../_hooks/useActiveConfigSync';
 
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant.';
 
@@ -42,7 +44,6 @@ function loadSavedConfig(): Partial<ChatConfig> {
 
 export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
-  const [selectedAgent, setSelectedAgent] = useState<AgentEntry | null>(null);
   const [config, setConfig] = useState<ChatConfig>({
     provider: 'opencode-go',
     model: getDefaultModel('opencode-go'),
@@ -77,6 +78,7 @@ export default function PlaygroundPage() {
 
   const chat = useStudioChat({ config, onLog: handleNetworkLog });
   const { conversations, activeConversationId, hydrated: chatHydrated } = chat;
+  const selectedAgent = useActiveAgent(conversations, activeConversationId, agents);
   const captcha = useCaptcha({ addLog });
   const exportConv = useConversationExport({ conversations, activeConversationId, addLog });
   const toolReplay = useToolReplay({ chat, captcha, addLog });
@@ -89,17 +91,7 @@ export default function PlaygroundPage() {
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, []);
-  const lastConfigConvIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (activeConversationId === lastConfigConvIdRef.current) return;
-    lastConfigConvIdRef.current = activeConversationId;
-    const saved = loadSavedConfig();
-    if (saved.provider) return;
-    const conv = conversations.find((c) => c.id === activeConversationId);
-    if (!conv?.config || Object.keys(conv.config).length === 0) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConfig((prev) => ({ ...prev, ...conv.config, apiKey: prev.apiKey }));
-  }, [activeConversationId, conversations]);
+  useActiveConfigSync(conversations, activeConversationId, setConfig);
   useEffect(() => {
     if (!isLoading && !error) {
       addLog('info', `Agents loaded: ${agents.length} available`);
@@ -216,7 +208,6 @@ export default function PlaygroundPage() {
       const provider: Provider = 'opencode-go';
       const model = getDefaultModel(provider);
       const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
-      setSelectedAgent(agent);
       const agentConfig = {
         provider,
         model,

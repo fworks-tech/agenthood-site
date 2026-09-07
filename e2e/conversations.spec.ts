@@ -25,7 +25,7 @@ test.describe("Playground — Conversation Management", () => {
     expect(entries.length).toBe(2);
   });
 
-  test("switching conversation shows correct messages", async ({ page, mockChat }) => {
+  test("switching conversation renders that conversation's own messages", async ({ page, mockChat }) => {
     await mockChat(["Response A"]);
     await selectAgent(page, "the-scribe");
     await sendMessage(page, "message A");
@@ -38,11 +38,50 @@ test.describe("Playground — Conversation Management", () => {
     const entries = await getConversationEntries(page);
     expect(entries.length).toBe(2);
 
-    const firstEntry = page.locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']").first();
-    await firstEntry.click();
-    await page.waitForTimeout(500);
-    const messages = await getMessages(page);
-    expect(messages.length).toBeGreaterThan(0);
+    // the architect conversation is active; click the *scribe* one (a real
+    // cross-agent switch, not the already-selected row the old test clicked)
+    await page
+      .locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']")
+      .filter({ hasText: "message A" })
+      .first()
+      .click();
+    await page.waitForTimeout(300);
+
+    const texts = (await getMessages(page)).map((m) => m.text);
+    expect(texts.some((t) => t.includes("message A"))).toBe(true);
+    expect(texts.some((t) => t.includes("message B"))).toBe(false);
+  });
+
+  test("restored conversation renders after reload without re-selecting an agent", async ({ page, mockChat }) => {
+    await mockChat(["Response A"]);
+    await selectAgent(page, "the-scribe");
+    await sendMessage(page, "persist me");
+    await waitForStreamComplete(page);
+
+    await selectAgent(page, "the-architect");
+    await sendMessage(page, "architect chat");
+    await waitForStreamComplete(page, 2);
+
+    await page.reload();
+    await waitForHydration(page);
+
+    // active conversation is restored from localStorage, but no agent has been
+    // clicked since reload — the view must still render it (regression: a null
+    // selectedAgent used to fall through to the welcome screen)
+    await expect(page.getByText("Welcome to Agenthood Studio")).toBeHidden();
+    const texts = (await getMessages(page)).map((m) => m.text);
+    expect(texts.some((t) => t.includes("architect chat"))).toBe(true);
+
+    // and clicking the other, different-agent conversation must swap content
+    await page
+      .locator("[data-conversation-list='sidebar'] [class*='cursor-pointer']")
+      .filter({ hasText: "persist me" })
+      .first()
+      .click();
+    await page.waitForTimeout(300);
+    const after = (await getMessages(page)).map((m) => m.text);
+    expect(after.some((t) => t.includes("persist me"))).toBe(true);
+    expect(after.some((t) => t.includes("architect chat"))).toBe(false);
   });
 
   test("delete conversation removes it from list", async ({ page, mockChat }) => {
