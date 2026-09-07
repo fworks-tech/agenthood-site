@@ -31,8 +31,6 @@ const MEMBERS = [
   "the-mediator",
 ];
 
-const RAW_BASE = "https://raw.githubusercontent.com/fworks-tech/agenthood/main";
-
 async function fetchSkill(member) {
   const url = `${RAW_BASE}/skills/${member}/SKILL.md`;
   const res = await fetch(url);
