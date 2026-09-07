@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAgentDirectory } from '../_hooks/useAgentDirectory';
 import { useStudioChat } from '../_hooks/useStudioChat';
 import { useCaptcha } from '../_hooks/useCaptcha';
@@ -26,6 +26,7 @@ import PlaygroundChatArea from './_components/PlaygroundChatArea';
 import MobileNavBar from './_components/MobileNavBar';
 import { useLogs } from '../_hooks/useLogs';
 import { useActiveAgent } from '../_hooks/useActiveAgent';
+import { useActiveConfigSync } from '../_hooks/useActiveConfigSync';
 
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant.';
 
@@ -90,17 +91,7 @@ export default function PlaygroundPage() {
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, []);
-  const lastConfigConvIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (activeConversationId === lastConfigConvIdRef.current) return;
-    lastConfigConvIdRef.current = activeConversationId;
-    const saved = loadSavedConfig();
-    if (saved.provider) return;
-    const conv = conversations.find((c) => c.id === activeConversationId);
-    if (!conv?.config || Object.keys(conv.config).length === 0) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setConfig((prev) => ({ ...prev, ...conv.config, apiKey: prev.apiKey }));
-  }, [activeConversationId, conversations]);
+  useActiveConfigSync(conversations, activeConversationId, setConfig);
   useEffect(() => {
     if (!isLoading && !error) {
       addLog('info', `Agents loaded: ${agents.length} available`);
