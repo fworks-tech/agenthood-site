@@ -41,6 +41,7 @@ export function useLogs(): UseLogsReturn {
   const [debugVisible, setDebugVisible] = useState(false);
   const [logCategoryFilter, setLogCategoryFilter] = useState<LogCategoryFilter>('all');
   const [liveLogsHeight, setLiveLogsHeight] = useState(120);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const saved = loadLogs();
@@ -56,18 +57,21 @@ export function useLogs(): UseLogsReturn {
     /* eslint-disable react-hooks/set-state-in-effect */
     setDebugVisible(state.debug);
     setLogCategoryFilter(state.category);
+    // Gate the persistence effects below until after this read has committed, so
+    // a mount can never write the un-hydrated default back over stored state.
+    setHydrated(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !hydrated) return;
     sessionStorage.setItem(STORAGE_KEYS.LOGS_DEBUG, debugVisible ? '1' : '0');
-  }, [debugVisible]);
+  }, [debugVisible, hydrated]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !hydrated) return;
     sessionStorage.setItem(STORAGE_KEYS.LOGS_CATEGORY, logCategoryFilter);
-  }, [logCategoryFilter]);
+  }, [logCategoryFilter, hydrated]);
 
   const prevLogCountRef = useRef(0);
   useEffect(() => {
