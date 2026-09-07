@@ -61,7 +61,9 @@ for (const { name, critical } of DEPS) {
 if (outdated > 0) {
   console.log(`\n  ${outdated} package(s) outdated`);
   if (criticalOutdated > 0) {
-    console.log(`  ${criticalOutdated} critical — run npm install agenthood@latest to fix`);
+    console.log(
+      `  ${criticalOutdated} critical — 3.55.2+ uses strict exports that break barrel imports; upgrade blocked until import paths migrate`,
+    );
   }
   if (strict) process.exit(1);
 } else {
