@@ -94,9 +94,9 @@ function validateConfig(config: unknown): ChatRequestConfig {
     validated.apiKey = c.apiKey;
   }
   if (Array.isArray(c.enabledTools)) {
-    const validToolNames = new Set(["web_fetch", "code_execution"]);
+    const builtIn = new Set(["web_fetch", "code_execution"]);
     validated.enabledTools = (c.enabledTools as unknown[]).filter(
-      (t): t is string => typeof t === "string" && validToolNames.has(t),
+      (t): t is string => typeof t === "string" && (builtIn.has(t) || t.startsWith("custom_")),
     );
   }
 
