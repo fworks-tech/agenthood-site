@@ -56,10 +56,10 @@ describe('patchOpenCodeSession', () => {
     expect(calls[0].headers.get('x-opencode-session')).toBeNull()
   })
 
-  it('preserves an existing session header', async () => {
+  it('overrides an existing (upstream random) session header with the stable id', async () => {
     await freshPatch()
-    await globalThis.fetch(ORIGINAL, { headers: { 'x-opencode-session': 'mine' } })
-    expect(calls[0].headers.get('x-opencode-session')).toBe('mine')
+    await globalThis.fetch(ORIGINAL, { headers: { 'x-opencode-session': 'some-random-uuid' } })
+    expect(calls[0].headers.get('x-opencode-session')).toBe('agenthood-site')
   })
 
   it('is idempotent — double patch does not stack wrappers', async () => {

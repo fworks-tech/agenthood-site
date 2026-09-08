@@ -1,4 +1,4 @@
-import type { ToolSchema } from "agenthood/dist/llm/types";
+import type { ToolSchema } from "agenthood/dist/llm";
 
 export interface ToolDefinition {
   schema: ToolSchema;
