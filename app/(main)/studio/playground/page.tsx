@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAgentDirectory } from '../_hooks/useAgentDirectory';
 import { useStudioChat } from '../_hooks/useStudioChat';
 import { useCaptcha } from '../_hooks/useCaptcha';
 import { useConversationExport } from '../_hooks/useConversationExport';
 import { useToolReplay } from '../_hooks/useToolReplay';
+import { useSendMessage } from '../_hooks/useSendMessage';
+import { usePlaygroundActions } from '../_hooks/usePlaygroundActions';
 import AgentConfigPanel from '../_components/AgentConfigPanel';
 import ChatComposer from '../_components/ChatComposer';
 import LiveLogs from '../_components/LiveLogs';
@@ -13,16 +15,13 @@ import ConversationList from '../_components/ConversationList';
 import DragHandle from '../_components/DragHandle';
 import MobileDrawer from '../_components/MobileDrawer';
 import MobileBottomSheet from '../_components/MobileBottomSheet';
-import HelpTip from '../_components/HelpTip';
 import Turnstile from '../../../components/Turnstile';
-import type { AgentEntry } from '../_data/agents';
-import type { ChatConfig, Provider } from '../_types/studio';
+import type { ChatConfig } from '../_types/studio';
 import { getDefaultModel, getProviderMeta } from '../_types/studio';
-import { agentSkills } from '../_data/agents.generated';
-import { track } from '@vercel/analytics';
 import PlaygroundHeader from './_components/PlaygroundHeader';
 import PlaygroundSidebar from './_components/PlaygroundSidebar';
 import PlaygroundChatArea from './_components/PlaygroundChatArea';
+import MobileAgentPicker from './_components/MobileAgentPicker';
 import MobileNavBar from './_components/MobileNavBar';
 import { useLogs } from '../_hooks/useLogs';
 import { useActiveAgent } from '../_hooks/useActiveAgent';
@@ -82,6 +81,19 @@ export default function PlaygroundPage() {
   const captcha = useCaptcha({ addLog });
   const exportConv = useConversationExport({ conversations, activeConversationId, addLog });
   const toolReplay = useToolReplay({ chat, captcha, addLog });
+  const { handleSendMessage } = useSendMessage({ chat, selectedAgent, config, activeConversationId, captcha, addLog });
+  const { handleSaveConfig, handleSelectAgent, handleNewConversation, handleDeleteConversation, handleConfigChange, handleAbortStream } =
+    usePlaygroundActions({
+      chat,
+      selectedAgent,
+      config,
+      setConfig,
+      configOpen,
+      setConfigOpen,
+      configStorageKey: CONFIG_STORAGE_KEY,
+      defaultSystemPrompt: DEFAULT_SYSTEM_PROMPT,
+      addLog,
+    });
 
   useEffect(() => {
     const saved = loadSavedConfig();
@@ -101,162 +113,6 @@ export default function PlaygroundPage() {
     }
   }, [isLoading, error, agents.length, addLog, config.model, config.provider]);
 
-  const handleSendMessage = useCallback(
-    async (content: string) => {
-      if (!selectedAgent) return;
-      // Require a token for the send; the widget stays hidden after the first
-      // verification but the fresh token is still sent so the first request
-      // can establish the signed cookie (the cookie then covers all later
-      // messages and prevents the consumed-token 400).
-      if (captcha.isRequired && !captcha.tokenRef.current) {
-        addLog('warn', 'CAPTCHA token not ready yet. Please wait a moment.', { category: 'captcha' });
-        return;
-      }
-      const ts = Date.now();
-      addLog('info', `→ ${selectedAgent.icon ?? ''} ${selectedAgent.name} · ${config.provider} · ${config.model}`);
-      track('message_sent', {
-        agentId: selectedAgent.id,
-        provider: config.provider,
-        model: config.model,
-        conversationId: activeConversationId ?? undefined,
-      });
-      const captchaToken = captcha.tokenRef.current ?? undefined;
-      try {
-        await chat.sendMessage(content, captchaToken);
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-        addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed}s`);
-        track('message_completed', {
-          agentId: selectedAgent.id,
-          provider: config.provider,
-          model: config.model,
-          durationMs: Date.now() - ts,
-          tokenCount: chat.totalTokens,
-        });
-      } catch (err) {
-        const code = err instanceof Error ? (err as Error & { code?: string }).code : undefined;
-        if (code === "CAPTCHA_FAILED") {
-          addLog('warn', 'CAPTCHA token expired. Refreshing and retrying...', { category: 'captcha' });
-          const ready = await captcha.refreshAndWait();
-          if (ready) {
-            try {
-              await chat.retrySendMessage(content, captcha.tokenRef.current ?? undefined);
-              const elapsed2 = ((Date.now() - ts) / 1000).toFixed(1);
-              addLog('info', `✓ ${selectedAgent.icon ?? ''} ${selectedAgent.name} completed in ${elapsed2}s (retry)`);
-              track('message_completed', {
-                agentId: selectedAgent.id,
-                provider: config.provider,
-                model: config.model,
-                durationMs: Date.now() - ts,
-                tokenCount: chat.totalTokens,
-              });
-              return;
-            } catch (retryErr) {
-              const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
-              addLog(
-                'error',
-                `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`,
-              );
-              track('message_error', {
-                agentId: selectedAgent.id,
-                provider: config.provider,
-                error: retryErr instanceof Error ? retryErr.message : String(retryErr),
-              });
-              return;
-            }
-          }
-          captcha.onError('CAPTCHA refresh timed out. Please verify manually.');
-          const retryElapsed = ((Date.now() - ts) / 1000).toFixed(1);
-          addLog(
-            'error',
-            `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${retryElapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-          );
-          track('message_error', {
-            agentId: selectedAgent.id,
-            provider: config.provider,
-            error: err instanceof Error ? err.message : String(err),
-          });
-          return;
-        }
-        const elapsed = ((Date.now() - ts) / 1000).toFixed(1);
-        addLog(
-          'error',
-          `✗ ${selectedAgent.icon ?? ''} ${selectedAgent.name} failed after ${elapsed}s: ${err instanceof Error ? err.message : String(err)}`,
-        );
-        track('message_error', {
-          agentId: selectedAgent.id,
-          provider: config.provider,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-    },
-    [chat, selectedAgent, config.provider, config.model, activeConversationId, addLog, captcha],
-  );
-
-  const handleSaveConfig = useCallback(
-    (cfg: ChatConfig) => {
-      try {
-        sessionStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify({ ...cfg, apiKey: undefined }));
-        addLog('info', 'Configuration saved locally');
-      } catch {
-        addLog('error', 'Failed to save configuration');
-      }
-    },
-    [addLog],
-  );
-  const handleSelectAgent = useCallback(
-    (agent: AgentEntry) => {
-      const provider: Provider = 'opencode-go';
-      const model = getDefaultModel(provider);
-      const prompt = agentSkills[agent.id] ?? DEFAULT_SYSTEM_PROMPT;
-      const agentConfig = {
-        provider,
-        model,
-        baseUrl: getProviderMeta(provider).defaultBaseUrl,
-        systemPrompt: prompt,
-      };
-      setConfig((prev) => ({ ...prev, ...agentConfig }));
-      chat.newConversation(agent.id, agentConfig);
-      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${provider}/${model}`);
-      track('agent_selected', { agentId: agent.id, provider, model });
-      if (!configOpen && window.innerWidth >= 768) setConfigOpen(true);
-    },
-    [chat, addLog, configOpen],
-  );
-  const handleNewConversation = useCallback(() => {
-    if (selectedAgent) {
-      chat.newConversation(selectedAgent.id);
-      addLog('info', `New conversation with ${selectedAgent.name}`);
-      track('conversation_created', { agentId: selectedAgent.id });
-    }
-  }, [chat, selectedAgent, addLog]);
-  const handleDeleteConversation = useCallback(
-    (id: string) => {
-      track('conversation_deleted', { agentId: selectedAgent?.id ?? 'unknown', conversationId: id });
-      chat.deleteConversation(id);
-    },
-    [chat, selectedAgent?.id],
-  );
-  const handleConfigChange = useCallback(
-    (newConfig: ChatConfig) => {
-      if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
-        addLog('info', `Config: ${newConfig.provider} · ${newConfig.model}`);
-        track('config_changed', {
-          provider: newConfig.provider,
-          model: newConfig.model,
-          temperature: newConfig.temperature,
-          maxTokens: newConfig.maxTokens,
-        });
-      }
-      setConfig(newConfig);
-    },
-    [config.provider, config.model, addLog],
-  );
-  const handleAbortStream = useCallback(() => {
-    if (chat.isStreaming && selectedAgent) {
-      addLog('warn', '⏹ Streaming cancelled by user');
-    }
-    chat.abortStream();
-  }, [chat, selectedAgent, addLog]);
 
   useEffect(() => {
     if (chat.isStreaming && selectedAgent) {
@@ -339,42 +195,7 @@ export default function PlaygroundPage() {
             />
           )}
           {!selectedAgent && (
-            <div className="block border-t border-zinc-800 p-4 md:hidden">
-              {isLoading ? (
-                <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Loading agents...
-                  <HelpTip text="Fetching the agent directory from the server. This should take a moment." />
-                </div>
-              ) : error ? (
-                <div className="flex items-center gap-1 rounded-lg border border-red-900/40 bg-red-950/20 px-3 py-2 text-xs text-red-400">
-                  Failed to load agents
-                  <HelpTip text="Could not load the agent list. Try again or check your connection." />
-                </div>
-              ) : (
-                <select
-                  value=""
-                  aria-label="Select an agent"
-                  onChange={(e) => {
-                    const agent = agents.find((a) => a.id === e.target.value);
-                    if (agent) handleSelectAgent(agent);
-                  }}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="" disabled>
-                    Select an agent...
-                  </option>
-                  {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.icon ?? ''} {agent.name} — {agent.role}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+            <MobileAgentPicker agents={agents} isLoading={isLoading} error={error} onSelect={handleSelectAgent} />
           )}
           <DragHandle
             direction="vertical"
