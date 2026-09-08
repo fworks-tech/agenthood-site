@@ -1,4 +1,5 @@
 import type { ToolSchema } from "agenthood/dist/llm";
+import { getCustomToolSchemas } from "./custom-tools";
 
 export interface ToolDefinition {
   schema: ToolSchema;
@@ -142,7 +143,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
 };
 
 export function getToolSchemas(): ToolSchema[] {
-  return Object.values(TOOL_DEFINITIONS).map((t) => t.schema);
+  return [...Object.values(TOOL_DEFINITIONS).map((t) => t.schema), ...getCustomToolSchemas()];
 }
 
 export async function executeTool(
@@ -151,8 +152,9 @@ export async function executeTool(
   signal?: AbortSignal,
 ): Promise<string> {
   const tool = TOOL_DEFINITIONS[name];
-  if (!tool) return `Error: unknown tool "${name}"`;
-  return tool.execute(args, signal);
+  if (tool) return tool.execute(args, signal);
+  if (name.startsWith("custom_")) return `Error: custom tool "${name}" execution not yet implemented`;
+  return `Error: unknown tool "${name}"`;
 }
 
 /**

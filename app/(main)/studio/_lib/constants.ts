@@ -7,4 +7,5 @@ export const STORAGE_KEYS = {
   LOGS_CATEGORY: "agenthood-studio-logs-category",
   WORKSPACES: "agenthood-workspaces",
   ACTIVE_WORKSPACE: "agenthood-workspace-active",
+  CUSTOM_TOOLS: "agenthood-studio-custom-tools",
 } as const;

@@ -13,7 +13,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const VALID_TOOLS = new Set(["web_fetch", "code_execution"]);
+const BUILT_IN_TOOLS = new Set(["web_fetch", "code_execution"]);
+const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 const MAX_ARGS_CHARS = 100_000;
 const CORRELATION_ID_MAX_LENGTH = 128;
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
     const verifiedCookie = parseCaptchaCookie(request.headers.get("cookie"));
     const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
-    if (typeof tool !== "string" || !VALID_TOOLS.has(tool)) {
+    const isValidCustom = typeof tool === "string" && CUSTOM_TOOL_PATTERN.test(tool);
+    if (typeof tool !== "string" || (!BUILT_IN_TOOLS.has(tool) && !isValidCustom)) {
       throw new ValidationError(`Unknown tool: "${tool ?? "undefined"}"`);
     }
     if (!args || typeof args !== "object" || Array.isArray(args)) {
