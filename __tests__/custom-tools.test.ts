@@ -150,4 +150,48 @@ describe("custom-tools", () => {
     const result = await executeTool("custom_weather", {});
     expect(result).toBe('Error: custom tool "custom_weather" execution not yet implemented');
   });
+
+  it("rejects tool names exceeding 64 characters", async () => {
+    const { registerCustomTool } = await import("../app/(main)/studio/_lib/custom-tools");
+    const longName = "custom_" + "a".repeat(60);
+    const result = registerCustomTool({
+      name: longName,
+      description: "test",
+      inputSchema: { type: "object" as const, properties: {} },
+      executionType: "webhook" as const,
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("enforces maximum custom tool limit", async () => {
+    const { registerCustomTool } = await import("../app/(main)/studio/_lib/custom-tools");
+    for (let i = 0; i < 50; i++) {
+      registerCustomTool({
+        name: `custom_tool${i}`,
+        description: "test",
+        inputSchema: { type: "object" as const, properties: {} },
+        executionType: "webhook" as const,
+      });
+    }
+    const result = registerCustomTool({
+      name: "custom_one_too_many",
+      description: "test",
+      inputSchema: { type: "object" as const, properties: {} },
+      executionType: "webhook" as const,
+    });
+    expect(result).toEqual({ ok: false, error: "Maximum 50 custom tools allowed" });
+  });
+
+  it("getCustomToolSchemas caches results", async () => {
+    const { registerCustomTool, getCustomToolSchemas } = await import("../app/(main)/studio/_lib/custom-tools");
+    registerCustomTool({
+      name: "custom_cached",
+      description: "Test caching",
+      inputSchema: { type: "object" as const, properties: {} },
+      executionType: "webhook" as const,
+    });
+    const first = getCustomToolSchemas();
+    const second = getCustomToolSchemas();
+    expect(first).toBe(second);
+  });
 });

@@ -16,9 +16,11 @@ export interface CustomToolDefinition {
 
 const NAME_PATTERN = /^custom_[a-z][a-z0-9_]*$/;
 const RESERVED_NAMES = new Set(["web_fetch", "code_execution"]);
+const MAX_TOOLS = 50;
+const MAX_NAME_LENGTH = 64;
 
 export function isValidCustomToolName(name: string): boolean {
-  return NAME_PATTERN.test(name) && !RESERVED_NAMES.has(name);
+  return NAME_PATTERN.test(name) && name.length <= MAX_NAME_LENGTH && !RESERVED_NAMES.has(name);
 }
 
 function loadCustomTools(): CustomToolDefinition[] {
@@ -53,23 +55,37 @@ function isValidCustomToolDefinition(def: unknown): def is CustomToolDefinition 
   );
 }
 
+let schemasCache: { key: string; schemas: ToolSchema[] } | null = null;
+
+function getCacheKey(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(STORAGE_KEYS.CUSTOM_TOOLS) ?? "";
+}
+
 export function getCustomTools(): CustomToolDefinition[] {
   return loadCustomTools();
 }
 
 export function getCustomToolSchemas(): ToolSchema[] {
-  return loadCustomTools().map((t) => ({
+  const key = getCacheKey();
+  if (schemasCache && schemasCache.key === key) return schemasCache.schemas;
+  const schemas = loadCustomTools().map((t) => ({
     name: t.name,
     description: t.description,
     inputSchema: t.inputSchema,
   }));
+  schemasCache = { key, schemas };
+  return schemas;
 }
 
 export function registerCustomTool(def: CustomToolDefinition): { ok: true } | { ok: false; error: string } {
   if (!isValidCustomToolName(def.name)) {
-    return { ok: false, error: `Invalid tool name "${def.name}". Must match custom_[a-z][a-z0-9_]*` };
+    return { ok: false, error: `Invalid tool name "${def.name}". Must match custom_[a-z][a-z0-9_]{1,62}` };
   }
   const tools = loadCustomTools();
+  if (tools.length >= MAX_TOOLS) {
+    return { ok: false, error: `Maximum ${MAX_TOOLS} custom tools allowed` };
+  }
   if (tools.some((t) => t.name === def.name)) {
     return { ok: false, error: `Tool "${def.name}" already exists` };
   }

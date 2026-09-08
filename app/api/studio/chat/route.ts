@@ -95,8 +95,9 @@ function validateConfig(config: unknown): ChatRequestConfig {
   }
   if (Array.isArray(c.enabledTools)) {
     const builtIn = new Set(["web_fetch", "code_execution"]);
+    const customPattern = /^custom_[a-z][a-z0-9_]{0,62}$/;
     validated.enabledTools = (c.enabledTools as unknown[]).filter(
-      (t): t is string => typeof t === "string" && (builtIn.has(t) || t.startsWith("custom_")),
+      (t): t is string => typeof t === "string" && (builtIn.has(t) || customPattern.test(t)),
     );
   }
 
