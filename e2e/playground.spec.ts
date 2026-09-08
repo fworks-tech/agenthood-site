@@ -92,7 +92,7 @@ test.describe("Playground — Core UI", () => {
     await openConfigPanel(page);
     await selectMantineOption(page, "Provider", "Anthropic");
     await page.waitForTimeout(200);
-    await expect(page.locator("text=Code-optimized provider available").first()).toBeVisible();
+    await expect(page.getByText("Code-optimized provider available", { exact: true })).toBeVisible();
     const configDialog = page
       .getByRole("dialog")
       .filter({ has: page.getByText("Agent Configuration") })
