@@ -264,8 +264,8 @@ describe("LightweightAdapter", () => {
 
   function traceLogs(spy: ReturnType<typeof vi.spyOn>): Record<string, unknown>[] {
     return spy.mock.calls
-      .map((c) => JSON.parse(c[0] as string))
-      .filter((e) => e.event === "trace");
+      .map((c: unknown[]) => JSON.parse(c[0] as string))
+      .filter((e: Record<string, unknown>) => e.event === "trace");
   }
 
   it("emits a success trace with source playground and correlationId", async () => {
