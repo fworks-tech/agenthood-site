@@ -1,6 +1,27 @@
 {
   "name": "agenthood-site",
   "version": "0.1.0",
+  "description": "Marketing and documentation site for Agenthood — a full AI engineering team as plain Markdown skill files. Next.js, TypeScript, Mantine UI, deployed to Vercel.",
+  "license": "MIT",
+  "author": {
+    "name": "Fabio Ritzel Borges",
+    "url": "https://flabs.tech"
+  },
+  "homepage": "https://agenthood.flabs.tech",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fworks-tech/agenthood-site.git"
+  },
+  "keywords": [
+    "agenthood",
+    "ai-agents",
+    "claude-code",
+    "copilot",
+    "markdown-skills",
+    "developer-tools",
+    "nextjs",
+    "typescript"
+  ],
   "private": true,
   "engines": {
     "node": ">=22.22.2"
