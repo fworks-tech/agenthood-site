@@ -17,16 +17,16 @@ export function generateMetadata(): Metadata {
 
 export default function StudioHubPage() {
   return (
-    <div className="h-full bg-zinc-950">
+    <div className="h-full bg-zinc-50 dark:bg-zinc-950">
       <FadeIn>
-        <section className="border border-zinc-800">
+        <section className="border border-zinc-200 dark:border-zinc-800">
           <div className="mx-auto max-w-4xl px-6 py-20 text-center">
             <Group justify="center" mb="md">
               <Badge variant="outline" color="dark" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
                 Agenthood Studio
               </Badge>
             </Group>
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-4xl">
               Try the Society live
             </h1>
             <Text className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" c="dimmed">
@@ -51,7 +51,7 @@ export default function StudioHubPage() {
               </Link>
               <Link
                 href="/getting-started"
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 dark:border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
               >
                 Getting started
               </Link>
@@ -64,11 +64,11 @@ export default function StudioHubPage() {
       <section className="mx-auto max-w-4xl px-6 py-16">
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
           <FadeIn delay={0}>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-              <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-emerald-500">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 p-6">
+              <div className="mb-3 inline-flex rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2.5 text-emerald-500">
                 <IconMessages size={20} />
               </div>
-              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 Talk to any member
                 <HelpTip text="Each member's system prompt is synced from its SKILL.md file at build time." />
               </div>
@@ -80,11 +80,11 @@ export default function StudioHubPage() {
           </FadeIn>
 
           <FadeIn delay={60}>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-              <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-blue-500">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 p-6">
+              <div className="mb-3 inline-flex rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2.5 text-blue-500">
                 <IconCode size={20} />
               </div>
-              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 Choose your provider
                 <HelpTip text="Switch between 7 providers. A free OpenCode provider is preconfigured out of the box. Adjust temperature, max tokens, and model per conversation." />
               </div>
@@ -97,11 +97,11 @@ export default function StudioHubPage() {
           </FadeIn>
 
           <FadeIn delay={120}>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-              <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-purple-500">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 p-6">
+              <div className="mb-3 inline-flex rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2.5 text-purple-500">
                 <IconShieldCheck size={20} />
               </div>
-              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 Server-side routing
                 <HelpTip text="Requests go through the LLMRouter with automatic failover. Rate limited and logged." />
               </div>
@@ -113,11 +113,11 @@ export default function StudioHubPage() {
           </FadeIn>
 
           <FadeIn delay={180}>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
-              <div className="mb-3 inline-flex rounded-lg border border-zinc-800 bg-zinc-950 p-2.5 text-amber-500">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 p-6">
+              <div className="mb-3 inline-flex rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-2.5 text-amber-500">
                 <IconMessages size={20} />
               </div>
-              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-200">
+              <div className="flex items-center gap-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 Conversations saved
                 <HelpTip text="Chat history persists in your browser between sessions via localStorage." />
               </div>

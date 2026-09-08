@@ -82,21 +82,21 @@ export default function WelcomeTerminal() {
       <div className="flex items-center gap-2 mb-3">
         <span className="text-2xl">{current.icon}</span>
         <div>
-          <p className="text-sm font-medium text-zinc-300">{current.agent}</p>
-          <p className="text-xs text-zinc-600">Try asking...</p>
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{current.agent}</p>
+          <p className="text-xs text-zinc-400 dark:text-zinc-600">Try asking...</p>
         </div>
       </div>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-1.5 border-b border-zinc-800/80 px-4 py-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-          <span className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-          <span className="h-2.5 w-2.5 rounded-full bg-zinc-700" />
-          <span className="ml-2 text-[10px] text-zinc-600">terminal</span>
+      <div className="rounded-xl border border-zinc-200 bg-zinc-100/80 overflow-hidden shadow-2xl dark:border-zinc-800 dark:bg-zinc-900/80">
+        <div className="flex items-center gap-1.5 border-b border-zinc-200/80 px-4 py-2 dark:border-zinc-800/80">
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+          <span className="ml-2 text-[10px] text-zinc-400 dark:text-zinc-600">terminal</span>
         </div>
         <div className="px-4 py-3 font-mono text-sm min-h-[140px]">
           <div className="flex items-center gap-1.5">
             <span className="text-emerald-400">$</span>
-            <span className="text-zinc-200 break-all">{typedText}</span>
+            <span className="text-zinc-800 dark:text-zinc-200 break-all">{typedText}</span>
             {phase === "typing" && (
               <span className="inline-block h-4 w-[2px] animate-pulse bg-emerald-400 align-text-bottom" />
             )}

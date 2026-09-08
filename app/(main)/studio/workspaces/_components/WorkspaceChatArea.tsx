@@ -91,7 +91,7 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
         <button
           type="button"
           onClick={() => setShowHidden((v) => !v)}
-          className="w-full cursor-pointer rounded-lg border border-dashed border-zinc-700 bg-zinc-900/40 px-3 py-2 text-xs text-zinc-400 transition-all duration-200 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-500 hover:scale-[1.01] active:scale-[0.99]"
+          className="w-full cursor-pointer rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-100/40 dark:bg-zinc-900/40 px-3 py-2 text-xs text-zinc-600 dark:text-zinc-400 transition-all duration-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-800 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 hover:scale-[1.01] active:scale-[0.99]"
         >
           {showHidden ? 'Hide intermediate updates' : `Show ${hiddenMessages.length} intermediate updates`}
         </button>

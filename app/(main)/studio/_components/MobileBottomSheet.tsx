@@ -65,7 +65,7 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
         onTouchEnd={handleTouchEnd}
       >
         <div className="flex justify-center pt-3 pb-2">
-          <div className="h-1 w-10 rounded-full bg-zinc-700" />
+          <div className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700" />
         </div>
         <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 40px)" }}>
           {children}

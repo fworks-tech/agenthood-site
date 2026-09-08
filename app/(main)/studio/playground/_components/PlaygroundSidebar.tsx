@@ -57,7 +57,7 @@ export default function PlaygroundSidebar({
     >
       <div
         style={{ flex: configPanelOpen ? '0 0 auto' : '1 1 0%' }}
-        className="overflow-hidden flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl my-2"
+        className="overflow-hidden flex flex-1 flex-col min-w-0 border border-zinc-200/80 rounded-xl my-2 dark:border-zinc-800/80"
       >
         {chatHydrated && (
           <div data-conversation-list="sidebar">

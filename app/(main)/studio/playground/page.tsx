@@ -121,7 +121,7 @@ export default function PlaygroundPage() {
   }, [chat.isStreaming, selectedAgent, addLog]);
 
   return (
-    <div className="h-screen bg-zinc-950 py-12">
+    <div className="h-screen bg-zinc-50 py-12 dark:bg-zinc-950">
       <div className="relative flex h-full max-w-7xl mx-auto">
         <PlaygroundSidebar
           configOpen={configOpen}
@@ -151,7 +151,7 @@ export default function PlaygroundPage() {
             className="hidden md:flex"
           />
         )}
-        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-800/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2">
+        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-200/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2 dark:border-zinc-800/80">
           <PlaygroundHeader
             selectedAgent={selectedAgent}
             config={config}

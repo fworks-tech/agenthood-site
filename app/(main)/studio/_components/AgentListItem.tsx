@@ -22,8 +22,8 @@ export default function AgentListItem({ agent, isSelected, onSelect }: AgentList
       onClick={onSelect}
       className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
         isSelected
-          ? "bg-zinc-700/60"
-          : "hover:bg-zinc-800/50"
+           ? "bg-zinc-300/60 dark:bg-zinc-700/60"
+          : "hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
       }`}
     >
       <Group gap="sm" wrap="nowrap">
@@ -32,7 +32,7 @@ export default function AgentListItem({ agent, isSelected, onSelect }: AgentList
         ) : (
           <span
             className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-              agent.enabled ? CATEGORY_COLORS[agent.category] || "bg-zinc-500" : "bg-zinc-600"
+              agent.enabled ? CATEGORY_COLORS[agent.category] || "bg-zinc-400 dark:bg-zinc-500" : "bg-zinc-400 dark:bg-zinc-600"
             }`}
           />
         )}

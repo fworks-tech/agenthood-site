@@ -41,11 +41,11 @@ export default function ConversationList({
   const sorted = [...conversations].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
-    <div className="border border-zinc-800">
+    <div className="border border-zinc-200 dark:border-zinc-800">
       <Group justify="space-between" px="lg" py="sm">
         <UnstyledButton
           onClick={() => setOpen((p) => !p)}
-          className="hover:bg-zinc-900 transition-colors"
+          className="hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
         >
           <Group gap="xs">
             <IconChevronDown
@@ -63,7 +63,7 @@ export default function ConversationList({
         <Group gap="xs">
           <UnstyledButton
             onClick={onNewConversation}
-            className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:text-emerald-400 hover:bg-zinc-800 transition-colors"
+             className="rounded px-1.5 py-0.5 text-xs text-zinc-400 dark:text-zinc-500 hover:text-emerald-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             title="New conversation"
           >
             + New
@@ -73,7 +73,7 @@ export default function ConversationList({
       </Group>
 
       <Collapse expanded={open}>
-        <ScrollArea h={192} className="border-t border-zinc-800/50">
+        <ScrollArea h={192} className="border-t border-zinc-200/50 dark:border-zinc-800/50">
           {sorted.length === 0 ? (
             <Group px="lg" py="md" gap="xs">
               <Text size="xs" c="zinc.6" fs="italic">
@@ -90,7 +90,7 @@ export default function ConversationList({
                   className={`group flex items-center gap-2 px-4 py-1.5 cursor-pointer transition-colors ${
                     isActive
                       ? "bg-emerald-950/30 border-l-2 border-emerald-500"
-                      : "border-l-2 border-transparent hover:bg-zinc-900"
+                       : "border-l-2 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900"
                   }`}
                   onClick={() => onSelect(conv.id)}
                 >

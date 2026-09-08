@@ -96,13 +96,13 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
       );
     }
     return (
-      <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-zinc-500 border-t-transparent animate-spin" />
+      <span className="inline-block h-3 w-3 shrink-0 rounded-full border-2 border-zinc-400 dark:border-zinc-500 border-t-transparent animate-spin" />
     );
   }
 
   const mdComponents: Components = {
     pre: ({ children }) => (
-      <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-950/70 p-2 text-xs leading-relaxed">
+      <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-xs leading-relaxed">
         {children}
       </pre>
     ),
@@ -132,7 +132,7 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
                       ? "border-emerald-800/40 bg-emerald-950/20"
                       : tc.status === "error"
                         ? "border-red-800/40 bg-red-950/20"
-                        : "border-zinc-700 bg-zinc-800/40"
+                         : "border-zinc-300 dark:border-zinc-700 bg-zinc-200/40 dark:bg-zinc-800/40"
                   }`}
                 >
                   <button
@@ -142,14 +142,14 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
                     className="flex w-full items-center gap-2 text-left"
                   >
                     {renderToolStatusIcon(tc.status)}
-                    <span className="font-medium text-zinc-200">{tc.name}</span>
+                     <span className="font-medium text-zinc-800 dark:text-zinc-200">{tc.name}</span>
                     {tc.durationMs !== undefined && (
-                      <span className="shrink-0 font-mono text-[10px] text-zinc-500">
+                      <span className="shrink-0 font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
                         {(tc.durationMs / 1000).toFixed(1)}s
                       </span>
                     )}
                     {tc.status === "complete" && tc.result && (
-                      <span className="truncate text-zinc-500">{tc.result.slice(0, 60)}</span>
+                      <span className="truncate text-zinc-400 dark:text-zinc-500">{tc.result.slice(0, 60)}</span>
                     )}
                     {tc.status === "error" && (
                       <span className="truncate text-red-400">{tc.error?.slice(0, 60)}</span>
@@ -163,17 +163,17 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
                     </span>
                   </button>
                   <Collapse expanded={isOpen}>
-                    <div className="mt-2 space-y-2 border-t border-zinc-800 pt-2">
+                    <div className="mt-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800 pt-2">
                       <div>
-                        <div className="text-[10px] uppercase tracking-wide text-zinc-500">args</div>
-                        <pre className="mt-1 overflow-x-auto rounded bg-zinc-950/70 p-2 text-[11px] leading-relaxed">
+                        <div className="text-[10px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">args</div>
+                        <pre className="mt-1 overflow-x-auto rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] leading-relaxed">
                           {JSON.stringify(tc.args, null, 2)}
                         </pre>
                       </div>
                       {tc.result && (
                         <div>
                           <div className="text-[10px] uppercase tracking-wide text-emerald-400">result</div>
-                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-zinc-300">
+                           <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] text-zinc-700 dark:text-zinc-300">
                             {tc.result}
                           </pre>
                         </div>
@@ -181,7 +181,7 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
                       {tc.error && (
                         <div>
                           <div className="text-[10px] uppercase tracking-wide text-red-400">error</div>
-                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-red-300">
+                           <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] text-red-300">
                             {tc.error}
                           </pre>
                         </div>
@@ -209,7 +209,7 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
           )}
         </Typography>
         {!isStreaming && (
-          <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-800">
+          <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-200 dark:border-zinc-800">
             <ActionIcon
               variant="subtle"
               size="sm"

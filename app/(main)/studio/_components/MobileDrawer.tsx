@@ -39,7 +39,7 @@ export default function MobileDrawer({ open, onClose, onOpen, children }: Mobile
         }}
         transitionProps={{ duration: 300, timingFunction: "ease-out" }}
       >
-        <div className="h-full overflow-hidden border-r border-zinc-800 bg-zinc-950">
+        <div className="h-full overflow-hidden border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
           {children}
         </div>
       </Drawer>
