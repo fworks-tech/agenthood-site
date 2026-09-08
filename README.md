@@ -15,9 +15,8 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)**
 | `/adr/` | Architecture Decision Records from the agenthood repo |
 | `/docs/*` | Docs pages with floating companion (The Oracle) for inline assistance |
 | `/getting-started/` | Getting started guide with floating companion |
-| `/studio` | Agenthood Studio — chat with Society members, dashboard |
+| `/studio` | Agenthood Studio — hub for the playground and multi-agent workspaces |
 | `/studio/playground` | Interactive chat playground with agent config panel and tools (web fetch, code execution) |
-| `/studio/dashboard` | Runtime dashboard: KPI cards, agent status, activity feed |
 | `/studio/workspaces` | Multi-agent workspaces — pick several Society members (The Mediator auto-included as conductor), give one instruction, and watch them plan → act → retry → handoff in a live shared thread (SSE `workspace.*` events, turn budget, human checkpoints) |
 | `/releases` | Release notes (synced from agenthood repo) |
 
@@ -49,7 +48,6 @@ truth for the version shown by the Footer badge and referenced here). It allows 
 | POST | `/api/studio/chat` | SSE-streamed chat with an agent |
 | POST | `/api/studio/workspaces` | SSE-streamed workspace run — Mediator intake + turn scheduler over selected members (shared thread, `workspace.*` events) |
 | GET | `/api/studio/agents` | List all Society members |
-| GET | `/api/studio/status` | Runtime health (agents online, KV connectivity, errors, activity) |
 
 ### Authentication
 
@@ -84,7 +82,6 @@ Sliding-window rate limiter at the Edge middleware layer with dual-mode backend:
 | `/api/studio/chat` | 20 req/min | 60s |
 | `/api/studio/workspaces` | 20 req/min | 60s |
 | `/api/studio/agents` | 60 req/min | 60s |
-| `/api/studio/status` | 30 req/min | 60s |
 
 Origin validation is performed before rate limiting — cross-origin requests to `/api/studio/chat` are rejected with 403 unless the origin matches `https://agenthood.flabs.tech` (production) or `http://localhost:3000` / `http://127.0.0.1:3000` (development).
 
@@ -242,8 +239,12 @@ The `predev` script runs `sync-docs.mjs`, `sync-news.mjs`, and `sync-skills.mjs`
 
 ## Architecture Decision Records
 
-- **ADR-001** — Build-time documentation sync (`docs/adr/001-build-time-docs-sync.md`)
-- **ADR-002** — Studio architecture and provider routing (`docs/adr/002-studio-architecture.md`), covers SSRF protection, rate limiting (Upstash + in-memory), CSP headers, model validation, hydration strategy, logger redaction, server-side tool execution (web_fetch, code_execution)
+The full set lives in [`docs/adr/`](docs/adr/) — currently 12 records covering
+build-time docs sync, Studio architecture & provider routing, playground trace
+emission, the log model & SSE telemetry, Turnstile gating, tool-execution replay,
+footer versioning, playground monolith decomposition, Studio persistence
+hardening, the one-shot captcha cookie, and workspace shared memory & the
+auto-synthesizer. Browse them rendered at [`/adr`](https://agenthood.flabs.tech/adr).
 
 ---
 
@@ -251,7 +252,7 @@ The `predev` script runs `sync-docs.mjs`, `sync-news.mjs`, and `sync-skills.mjs`
 
 | Repo | Purpose |
 |------|---------|
-| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 19 agent skill files, TypeScript runtime, CI workflows |
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 20 agent skill files, TypeScript runtime, CI workflows |
 | [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
 ---
