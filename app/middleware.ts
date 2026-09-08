@@ -7,6 +7,19 @@ const ALLOWED_ORIGINS = process.env.NODE_ENV === "development"
   ? ["http://localhost:3000", "http://127.0.0.1:3000"]
   : ["https://agenthood.flabs.tech"];
 
+// State-changing / private studio endpoints must be same-origin. `agents` is a
+// public read-only list and is intentionally excluded.
+const ORIGIN_PROTECTED_PREFIXES = [
+  "/api/studio/chat",
+  "/api/studio/tools",
+  "/api/studio/feedback",
+  "/api/studio/workspaces",
+];
+
+function isOriginProtected(pathname: string): boolean {
+  return ORIGIN_PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 function validateOrigin(request: NextRequest): void {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
@@ -194,7 +207,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/api/studio/chat") || pathname.startsWith("/api/studio/tools")) {
+  if (isOriginProtected(pathname)) {
     try {
       validateOrigin(request);
     } catch {

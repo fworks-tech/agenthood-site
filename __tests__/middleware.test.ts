@@ -105,6 +105,32 @@ describe("middleware origin validation", () => {
     expect(body.code).toBe("FORBIDDEN");
   });
 
+  it("rejects foreign origins for the feedback endpoint", async () => {
+    const res = await callMiddleware(
+      makeRequest("/api/studio/feedback", { origin: "https://evil.example" }),
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).code).toBe("FORBIDDEN");
+  });
+
+  it("rejects foreign origins for the workspaces sub-routes", async () => {
+    const res = await callMiddleware(
+      makeRequest("/api/studio/workspaces/synthesize", { origin: "https://evil.example" }),
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("allows same-origin feedback and workspaces requests", async () => {
+    const fb = await callMiddleware(
+      makeRequest("/api/studio/feedback", { origin: "https://agenthood.flabs.tech" }),
+    );
+    expect(fb.status).toBe(200);
+    const ws = await callMiddleware(
+      makeRequest("/api/studio/workspaces", { origin: "https://agenthood.flabs.tech" }),
+    );
+    expect(ws.status).toBe(200);
+  });
+
   it("allows localhost origins in development mode", async () => {
     (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "development";
     const res = await callMiddleware(
