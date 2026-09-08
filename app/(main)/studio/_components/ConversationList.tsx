@@ -87,6 +87,8 @@ export default function ConversationList({
               return (
                 <div
                   key={conv.id}
+                  data-conversation-item
+                  data-active={isActive}
                   className={`group flex items-center gap-2 px-4 py-1.5 cursor-pointer transition-colors ${
                     isActive
                       ? "bg-emerald-950/30 border-l-2 border-emerald-500"

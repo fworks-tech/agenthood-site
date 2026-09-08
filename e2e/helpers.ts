@@ -265,7 +265,7 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
     const sidebar = page.locator("[data-conversation-list='sidebar']").last();
     if (await sidebar.count() === 0) return entries;
     
-    const items = sidebar.locator("[class*='cursor-pointer']");
+    const items = sidebar.locator("[data-conversation-item]");
     const itemCount = await items.count();
     if (itemCount === 0) return entries;
     for (let i = 0; i < itemCount; i++) {
@@ -273,8 +273,7 @@ export async function getConversationEntries(page: Page): Promise<{ title: strin
       const titleLocator = item.locator("div.flex-1 .mantine-Text-root").first();
       await titleLocator.waitFor({ state: "attached", timeout: 10000 });
       const title = await titleLocator.innerText();
-      const classAttr = await item.getAttribute("class") || "";
-      const active = classAttr.includes("border-emerald-500");
+      const active = (await item.getAttribute("data-active")) === "true";
       entries.push({ title, active });
     }
     return entries;
