@@ -1,8 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockStreamImpl = vi.fn();
-const mockSetModel = vi.fn();
-const mockFromConfig = vi.fn();
+const {
+  mockStreamImpl,
+  mockSetModel,
+  mockFromConfig,
+  mockGetToolSchemas,
+  mockExecuteTool,
+} = vi.hoisted(() => ({
+  mockStreamImpl: vi.fn(),
+  mockSetModel: vi.fn(),
+  mockFromConfig: vi.fn(),
+  mockGetToolSchemas: vi.fn(),
+  mockExecuteTool: vi.fn(),
+}));
 
 vi.mock("agenthood/dist/llm", () => ({
   LLMRouter: {
@@ -14,6 +24,14 @@ vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
   agentSkills: {
     "the-scribe": "You are a commit message writer.",
   },
+}));
+
+vi.mock("../app/(main)/studio/_lib/tools", () => ({
+  getToolSchemas: mockGetToolSchemas,
+  executeTool: mockExecuteTool,
+  MAX_TOOL_ITERATIONS: 25,
+  classifyToolResult: (result: string) =>
+    /^Error: /.test(result) ? { error: result } : { result },
 }));
 
 import { LightweightAdapter } from "../app/(main)/studio/_lib/agenthood-adapter";
@@ -72,6 +90,8 @@ describe("LightweightAdapter", () => {
     adapter = new LightweightAdapter();
     vi.clearAllMocks();
     mockLLMRouter();
+    mockGetToolSchemas.mockReset();
+    mockExecuteTool.mockReset();
   });
 
   it("accepts opencode-go as a valid provider", async () => {
@@ -409,5 +429,79 @@ describe("LightweightAdapter", () => {
     // input/output counters survive).
     expect(traceLog).not.toHaveProperty("input");
     expect(traceLog).not.toHaveProperty("output");
+  });
+
+  it("emits a success trace with output = finalText after tool loop", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockGetToolSchemas.mockReturnValue([
+      { name: "code_execution", description: "Run code", parameters: { type: "object", properties: {} } },
+    ]);
+    mockExecuteTool.mockResolvedValue("tool output done");
+    mockFromConfig.mockImplementation(async () => ({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete: vi.fn().mockResolvedValueOnce({
+        content: "",
+        toolCalls: [{ id: "tc-1", name: "code_execution", args: { code: "1+1" } }],
+      }).mockResolvedValueOnce({
+        content: "The answer is 2.",
+        toolCalls: undefined,
+      }),
+    }));
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "what is 1+1?" }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile", enabledTools: ["code_execution"] },
+      correlationId: "corr-tool-1",
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(traces[0]).toMatchObject({
+      status: "success",
+      source: "playground",
+      correlationId: "corr-tool-1",
+      output: "The answer is 2.",
+    });
+  });
+
+  it("emits exactly one trace event for a successful plain-stream call", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "Hello", done: false }, { delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "test" }],
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(traces[0].status).toBe("success");
+  });
+
+  it("emits exactly one trace event when the provider errors", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    mockStreamImpl.mockRejectedValue(new Error("Provider exploded"));
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "test" }],
+    });
+
+    await collectStream(stream);
+    const traces = traceLogs(consoleSpy);
+    consoleSpy.mockRestore();
+
+    expect(traces).toHaveLength(1);
+    expect(traces[0].status).toBe("error");
   });
 });
