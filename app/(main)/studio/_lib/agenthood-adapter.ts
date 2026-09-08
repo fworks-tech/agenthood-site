@@ -5,6 +5,7 @@ import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
 import type { ToolCall } from "./tools";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
+import { generateId } from "./ids";
 
 type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
@@ -75,7 +76,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const enabledTools = req.config?.enabledTools ?? [];
 
     const startTime = performance.now();
-    const correlationId = req.correlationId ?? crypto.randomUUID?.() ?? `pg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const correlationId = req.correlationId ?? `pg-${generateId()}`;
     const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0) + systemPrompt.length;
     logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER, tools: enabledTools, correlationId });
 

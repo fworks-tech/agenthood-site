@@ -9,6 +9,7 @@ import {
   parseCaptchaCookie,
 } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
+import { generateId } from "@/app/(main)/studio/_lib/ids";
 import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
 import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
 
@@ -26,10 +27,6 @@ type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "max
   apiKey?: string;
   enabledTools?: string[];
 };
-
-function generateId(): string {
-  return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
 
 const CORRELATION_ID_MAX_LENGTH = 128;
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
