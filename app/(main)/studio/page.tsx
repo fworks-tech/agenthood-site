@@ -4,11 +4,16 @@ import { Text, Badge, Group, SimpleGrid } from "@mantine/core";
 import { IconPlayerPlay, IconCode, IconShieldCheck, IconMessages, IconUsersGroup } from "@tabler/icons-react";
 import HelpTip from "./_components/HelpTip";
 import FadeIn from "../../_components/FadeIn";
+import { agentRegistry } from "./_data/registry.generated";
 
-export const metadata: Metadata = {
-  title: "Agenthood Studio — Try AI agents in your browser",
-  description: "Chat with 19 specialized AI agents live. Select your provider and start a conversation.",
-};
+const memberCount = agentRegistry.length;
+
+export function generateMetadata(): Metadata {
+  return {
+    title: "Agenthood Studio — Try AI agents in your browser",
+    description: `Chat with ${memberCount} specialized AI agents live. Select your provider and start a conversation.`,
+  };
+}
 
 export default function StudioHubPage() {
   return (
@@ -25,7 +30,7 @@ export default function StudioHubPage() {
               Try the Society live
             </h1>
             <Text className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" c="dimmed">
-              Select any of the 19 AI agent members and start a conversation right away —
+              Select any of the {memberCount} AI agent members and start a conversation right away —
               no API key or setup required. All requests are routed server-side through the
               agenthood runtime.
             </Text>
@@ -68,7 +73,7 @@ export default function StudioHubPage() {
                 <HelpTip text="Each member's system prompt is synced from its SKILL.md file at build time." />
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                Each of the 19 Society members has its own system prompt synced from its SKILL.md file.
+                Each of the {memberCount} Society members has its own system prompt synced from its SKILL.md file.
                 Select one and start a conversation with their exact agent persona.
               </p>
             </div>
