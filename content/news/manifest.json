@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-08"
+    ],
+    "path": "news/whats-new-2026-09-08.md",
+    "title": "Agenthood Release Digest: September 8, 2026",
+    "date": "2026-09-08",
+    "author": "Agenthood Team",
+    "summary": "New skill registry, checkpointing, and CLI tools, plus security and reliability fixes across v3.49.0–v3.56.6."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-05"
     ],
     "path": "news/whats-new-2026-09-05.md",
