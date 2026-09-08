@@ -250,24 +250,6 @@ describe("middleware Upstash rate limiting", () => {
     expect(body.code).toBe("RATE_LIMITED");
   });
 
-  it("routes /api/studio/status to its own Upstash limiter", async () => {
-    const { middleware } = await import("../app/middleware");
-    const status = ratelimitInstances.find((r) => r.prefix === "ratelimit:status");
-    const chat = ratelimitInstances.find((r) => r.prefix === "ratelimit:chat");
-    expect(status).toBeDefined();
-    status!.limit.mockResolvedValueOnce({
-      success: true,
-      limit: 30,
-      remaining: 29,
-      reset: Date.now() + 60_000,
-    });
-    const res = await middleware(makeRequest("/api/studio/status"));
-    expect(res.status).toBe(200);
-    expect(res.headers.get("RateLimit-Limit")).toBe("30");
-    expect(status!.limit).toHaveBeenCalledTimes(1);
-    expect(chat!.limit).not.toHaveBeenCalled();
-  });
-
   it("routes /api/studio/tools/execute to the tools Upstash limiter", async () => {
     const { middleware } = await import("../app/middleware");
     const tools = ratelimitInstances.find((r) => r.prefix === "ratelimit:tools");

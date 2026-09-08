@@ -33,7 +33,6 @@ const RATE_LIMITS: RateLimits = {
   "/api/studio/workspaces": { max: 120, windowMs: 60_000 },
   "/api/studio/tools": { max: 100, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
-  "/api/studio/status": { max: 30, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },
   "/api/news/comments": { max: 30, windowMs: 60_000 },
 };
@@ -85,11 +84,6 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/agents"].max, `${RATE_LIMITS["/api/studio/agents"].windowMs}ms`),
     prefix: "ratelimit:agents",
   });
-  const status = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/status"].max, `${RATE_LIMITS["/api/studio/status"].windowMs}ms`),
-    prefix: "ratelimit:status",
-  });
   const feedback = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/feedback"].max, `${RATE_LIMITS["/api/studio/feedback"].windowMs}ms`),
@@ -101,7 +95,7 @@ function createUpstashRatelimiter() {
     prefix: "ratelimit:workspaces",
   });
 
-  return { chat, tools, agents, status, feedback, workspaces };
+  return { chat, tools, agents, feedback, workspaces };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -122,11 +116,10 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limitKey) return null;
   const limits = RATE_LIMITS[limitKey];
 
-  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "status" | "feedback" | "workspaces"> = {
+  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "feedback" | "workspaces"> = {
     "/api/studio/chat": "chat",
     "/api/studio/tools": "tools",
     "/api/studio/agents": "agents",
-    "/api/studio/status": "status",
     "/api/studio/feedback": "feedback",
     "/api/studio/workspaces": "workspaces",
   };
