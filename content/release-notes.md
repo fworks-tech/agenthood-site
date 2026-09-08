@@ -5,6 +5,134 @@
 
 ---
 
+## v3.59.2 — September 8, 2026
+
+### 🐛 Bug Fixes
+
+- **Packaging:** export dist/checkpoint/RunCheckpoint.js for host CheckpointStore use (#772)
+
+---
+
+## v3.59.1 — September 8, 2026
+
+### 🐛 Bug Fixes
+
+- **Runtime:** resume restores loop state and answers the pending ask_human call (#768)
+
+---
+
+## v3.59.0 — September 8, 2026
+
+### ✨ Features
+
+- **Runtime:** accept an injectable CheckpointStore for host-managed persistence (#766)
+
+---
+
+## v3.57.0 — September 8, 2026
+
+### ✨ Features
+
+- **Evals:** add assertion-based output grading to the eval harness (#763)
+
+---
+
+## v3.56.6 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** tolerate whitespace before the decision marker's --> (#757) #756
+
+---
+
+## v3.56.5 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** import chain providers concurrently to stop cold-start timeouts (#754) #465
+
+---
+
+## v3.56.4 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Verify:** unify member-path resolution and add a lockfile CI integrity gate (#752)
+
+---
+
+## v3.56.3 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **React-loop:** emit tool.approval instead of a duplicate tool.called (#751)
+
+---
+
+## v3.56.2 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Skills:** strip UTF-8 BOM so frontmatter parses on Windows-authored files (#750)
+
+---
+
+## v3.56.1 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Exports:** re-expose ./dist/llm and ./dist/core for programmatic consumers (#749) #739
+
+---
+
+## v3.56.0 — September 7, 2026
+
+### ✨ Features
+
+- **Skill:** validate SKILL.md against the agentskills.io spec (#746)
+
+---
+
+## v3.55.7 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Skill:** converge lockfile regeneration and make --update-lock actually work (#745)
+
+---
+
+## v3.55.6 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Core:** graceful SIGINT shutdown for long-running agent sessions (#744)
+
+---
+
+## v3.55.5 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Security:** delimit untrusted task and tool output against prompt injection (#743)
+
+---
+
+## v3.55.4 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Security:** broaden SafetyGuard catastrophic command patterns (#742)
+
+---
+
+## v3.55.3 — September 7, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** redact secrets from outbound provider requests (#741)
+
+---
+
 ## v3.55.2 — September 7, 2026
 
 ### 🐛 Bug Fixes

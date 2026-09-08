@@ -71,7 +71,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
   };
 
   return (
-    <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+    <div className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
       {imageWarning && (
         <div className="mx-auto mb-2 max-w-3xl">
           <Alert
@@ -131,13 +131,13 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
                   <button
                     type="button"
                     onClick={onRetryCaptcha}
-                    className="rounded border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-300 hover:bg-zinc-800 transition-colors"
+                     className="rounded border border-zinc-300 dark:border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                   >
                     Retry CAPTCHA
                   </button>
                 </Group>
               ) : (
-                <span className="text-[10px] whitespace-nowrap text-zinc-600 animate-pulse">Verifying...</span>
+                <span className="text-[10px] whitespace-nowrap text-zinc-400 dark:text-zinc-600 animate-pulse">Verifying...</span>
               ))}
             <ActionIcon
               onClick={handleSend}

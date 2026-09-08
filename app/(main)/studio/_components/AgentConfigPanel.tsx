@@ -54,7 +54,7 @@ function SectionHeader({
       </Group>
       <IconChevronDown
         size={14}
-        className="text-zinc-600 transition-transform duration-200 group-hover:text-zinc-400"
+        className="text-zinc-400 dark:text-zinc-600 transition-transform duration-200 group-hover:text-zinc-600 dark:group-hover:text-zinc-400"
         style={{ transform: isOpen ? undefined : "rotate(-90deg)" }}
       />
     </UnstyledButton>
@@ -139,8 +139,8 @@ export default function AgentConfigPanel({
   };
 
   return (
-    <Stack className="flex flex-col z-0 overflow-hidden border border-zinc-800 bg-zinc-950">
-      <Group justify="space-between" px="md" py="sm" className="border-b border-zinc-800">
+    <Stack className="flex flex-col z-0 overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+      <Group justify="space-between" px="md" py="sm" className="border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <Group gap="xs">
             <Text size="sm" fw={600} c="gray.2">
@@ -412,7 +412,7 @@ export default function AgentConfigPanel({
             onToggle={() => setLimitsOpen((o) => !o)}
           />
           <Collapse expanded={limitsOpen}>
-            <Paper p="sm" className="border border-zinc-800 bg-zinc-900/50 mt-sm">
+            <Paper p="sm" className="border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 mt-sm">
               <Stack gap={6}>
                 <Group justify="space-between">
                   <Text size="xs" c="dimmed">Rate limit (chat)</Text>

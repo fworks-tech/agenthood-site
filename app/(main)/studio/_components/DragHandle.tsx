@@ -86,7 +86,7 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
       <div
         className={`transition-colors ${
           isHorizontal ? "h-8 w-px" : "h-px w-8"
-        } bg-zinc-700 group-hover:bg-emerald-500 group-active:bg-emerald-400`}
+        } bg-zinc-300 dark:bg-zinc-700 group-hover:bg-emerald-500 group-active:bg-emerald-400`}
       />
     </Box>
   );

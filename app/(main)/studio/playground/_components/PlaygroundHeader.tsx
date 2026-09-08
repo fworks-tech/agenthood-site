@@ -29,17 +29,17 @@ export default function PlaygroundHeader({
   onClear,
 }: PlaygroundHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-800 px-4 py-2.5">
+    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800">
       <div className="flex min-w-0 items-center gap-3">
         <div>
-          <h1 className="text-sm font-semibold text-zinc-200">Playground</h1>
+          <h1 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Playground</h1>
           <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
         </div>
         <div className="hidden md:flex items-center gap-1">
           <button
             type="button"
             onClick={onToggleConfig}
-            className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors border border-zinc-800"
+            className="rounded px-2 py-0.5 text-[11px] text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors border border-zinc-200 dark:border-zinc-800"
             title={configOpen ? 'Hide config panel' : 'Show config panel'}
             aria-label={configOpen ? 'Close config panel' : 'Open config panel'}
           >
@@ -55,12 +55,12 @@ export default function PlaygroundHeader({
       {selectedAgent && (
         <div key={selectedAgent.id} className="flex min-w-0 items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
           {selectedAgent.icon && <span className="shrink-0 text-base">{selectedAgent.icon}</span>}
-          <span className="truncate text-sm font-medium text-zinc-300">{selectedAgent.name}</span>
-          <span className="hidden truncate text-xs text-zinc-600 sm:inline">
+          <span className="truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">{selectedAgent.name}</span>
+          <span className="hidden truncate text-xs text-zinc-400 sm:inline dark:text-zinc-600">
             · {config.provider} · {config.model}
           </span>
           {totalTokens > 0 && (
-            <span className="flex shrink-0 items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[11px] font-mono text-zinc-400">
+            <span className="flex shrink-0 items-center gap-1 rounded bg-zinc-200 px-2 py-0.5 text-[11px] font-mono text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               ~{totalTokens} tok
               <HelpTip text="Approximate total tokens consumed in this conversation." />
             </span>
@@ -71,7 +71,7 @@ export default function PlaygroundHeader({
                 <Menu.Target>
                   <button
                     type="button"
-                    className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+                    className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
                     title="Export conversation"
                     aria-label="Export conversation"
                   >
@@ -87,7 +87,7 @@ export default function PlaygroundHeader({
               <button
                 type="button"
                 onClick={onClear}
-                className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-800 transition-colors"
+                className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                 title="Clear conversation"
               >
                 Clear

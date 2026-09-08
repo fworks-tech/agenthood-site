@@ -27,7 +27,7 @@ export default function PlaygroundChatArea({
     return (
       <div className="flex h-full items-center justify-center">
         <div className="max-w-lg text-center px-6">
-          <h2 className="text-lg font-semibold text-zinc-300">Welcome to Agenthood Studio</h2>
+          <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">Welcome to Agenthood Studio</h2>
           <p className="mt-2 text-sm text-zinc-500 mb-8">
             Select a Society member from the left panel to start testing.
           </p>
@@ -52,7 +52,7 @@ export default function PlaygroundChatArea({
     <div className="flex h-full items-center justify-center">
       <div className="max-w-md text-center px-6">
         <span className="text-4xl">{selectedAgent.icon}</span>
-        <h2 className="mt-3 text-lg font-semibold text-zinc-200">{selectedAgent.name}</h2>
+        <h2 className="mt-3 text-lg font-semibold text-zinc-800 dark:text-zinc-200">{selectedAgent.name}</h2>
         <p className="mt-1 text-sm text-zinc-500">{selectedAgent.role}</p>
         <div className="mt-6 space-y-2">
           {(agentPrompts[selectedAgent.id] ?? []).slice(0, 3).map((prompt) => (
@@ -60,7 +60,7 @@ export default function PlaygroundChatArea({
               key={prompt}
               type="button"
               onClick={() => onSendMessage(prompt)}
-              className="block w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-left text-sm text-zinc-400 hover:border-emerald-800 hover:text-zinc-200 transition-colors"
+              className="block w-full rounded-lg border border-zinc-200 bg-zinc-100/50 px-4 py-2.5 text-left text-sm text-zinc-600 hover:border-emerald-800 hover:text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
             >
               {prompt}
             </button>

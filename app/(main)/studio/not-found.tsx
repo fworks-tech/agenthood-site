@@ -3,10 +3,10 @@ import HelpTip from "./_components/HelpTip";
 
 export default function StudioNotFound() {
   return (
-    <div className="flex h-[calc(100vh-57px)] items-center justify-center bg-zinc-950">
+    <div className="flex h-[calc(100vh-57px)] items-center justify-center bg-zinc-50 dark:bg-zinc-950">
       <div className="text-center max-w-md px-6">
         <div className="text-4xl mb-4">404</div>
-        <h2 className="flex items-center justify-center gap-1 text-lg font-semibold text-zinc-300">
+        <h2 className="flex items-center justify-center gap-1 text-lg font-semibold text-zinc-700 dark:text-zinc-300">
           Page not found
           <HelpTip text="This URL does not exist in the Studio." />
         </h2>
@@ -15,7 +15,7 @@ export default function StudioNotFound() {
         </p>
         <Link
           href="/studio"
-          className="mt-4 inline-block rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-500 transition-colors"
+          className="mt-4 inline-block rounded-md border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors"
         >
           Back to Studio
         </Link>

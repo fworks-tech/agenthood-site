@@ -100,10 +100,10 @@ export default function LiveLogs({
   };
 
   return (
-    <div className="border border-zinc-800 bg-zinc-950">
+    <div className="border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
       <UnstyledButton
         onClick={onToggle}
-        className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-900 transition-colors"
+        className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
       >
         <Group gap="xs">
           <IconChevronDown
@@ -120,7 +120,7 @@ export default function LiveLogs({
           {renderedLogs.length}/{logs.length} events
         </Text>
       </UnstyledButton>
-      <div className="flex items-center gap-2 border-t border-zinc-800/50 px-3 py-1">
+      <div className="flex items-center gap-2 border-t border-zinc-200/50 dark:border-zinc-800/50 px-3 py-1">
         <ActionIcon
           variant="subtle"
           size="sm"
@@ -159,7 +159,7 @@ export default function LiveLogs({
       <Collapse expanded={open}>
         <div
           ref={scrollRef}
-          className="h-20 md:h-28 overflow-y-auto border-t border-zinc-800/50"
+          className="h-20 md:h-28 overflow-y-auto border-t border-zinc-200/50 dark:border-zinc-800/50"
         >
           <div className="px-3 py-2 font-mono text-[11px] leading-relaxed">
             {renderedLogs.length === 0 ? (

@@ -9,7 +9,7 @@ interface Props {
 }
 
 const STATUS_DOT: Record<WorkspaceStatus, string> = {
-  idle: 'bg-zinc-600',
+  idle: 'bg-zinc-400 dark:bg-zinc-600',
   thinking: 'bg-yellow-400 animate-pulse',
   working: 'bg-indigo-500 animate-pulse',
   waiting: 'bg-orange-400',
@@ -26,13 +26,13 @@ export default function WorkspaceSidebar({ selected, statusMap }: Props) {
         return (
           <div
             key={id}
-            className="group flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-800/70 hover:translate-x-[2px] hover:shadow-md animate-in fade-in slide-in-from-left-2"
+            className="group flex items-center gap-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 transition-all duration-300 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/70 hover:translate-x-[2px] hover:shadow-md animate-in fade-in slide-in-from-left-2"
             style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' } as React.CSSProperties}
           >
             <span className="text-base transition-transform duration-300 group-hover:scale-110">{agent?.icon ?? '•'}</span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium text-zinc-100 transition-colors group-hover:text-white">{agent?.name ?? id}</div>
-              <div className="text-xs capitalize text-zinc-500 transition-colors group-hover:text-zinc-400">{status}</div>
+              <div className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 transition-colors group-hover:text-black dark:group-hover:text-white">{agent?.name ?? id}</div>
+              <div className="text-xs capitalize text-zinc-500 transition-colors group-hover:text-zinc-600 dark:group-hover:text-zinc-400">{status}</div>
             </div>
             <span className={`h-2.5 w-2.5 shrink-0 rounded-full transition-all duration-300 ${STATUS_DOT[status]} group-hover:scale-125`} />
           </div>

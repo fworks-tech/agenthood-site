@@ -85,14 +85,14 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
     // wrap long lines — screenshots showed code_execution results with 120+ char lines
     // overflowing the Paper; wrap + max-h keeps the thread scannable
     pre: ({ children }) => (
-      <pre className="my-2 max-w-full overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-950/70 p-3 text-xs leading-relaxed [overflow-wrap:anywhere] max-h-[420px]">{children}</pre>
+      <pre className="my-2 max-w-full overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-3 text-xs leading-relaxed [overflow-wrap:anywhere] max-h-[420px]">{children}</pre>
     ),
     code: ({ children, className }) => {
       const isBlock = !!className
       return isBlock ? (
         <code className={className}>{children}</code>
       ) : (
-        <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs break-words [overflow-wrap:anywhere]">{children}</code>
+        <code className="rounded bg-zinc-200 dark:bg-zinc-800 px-1 py-0.5 text-xs break-words [overflow-wrap:anywhere]">{children}</code>
       )
     },
     h1: ({ children }) => (
@@ -110,7 +110,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
         {children}
       </Title>
     ),
-    strong: ({ children }) => <strong className="font-semibold text-zinc-100">{children}</strong>,
+    strong: ({ children }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{children}</strong>,
     a: ({ children, href }) => (
       <a href={href} target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
         {children}
@@ -128,7 +128,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
       >
         <div className="mb-2 flex items-center gap-2">
           <span className="text-base">{isSynthesizer ? '✨' : (agent?.icon ?? '•')}</span>
-          <span className="text-sm font-semibold text-zinc-100">{isSynthesizer ? 'Synthesis' : (agent?.name ?? memberId)}</span>
+          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{isSynthesizer ? 'Synthesis' : (agent?.name ?? memberId)}</span>
           <Badge size="xs" variant={isSynthesizer ? 'filled' : 'light'} color={isSynthesizer ? 'violet' : 'gray'} className="uppercase tracking-wide">
             {isSynthesizer ? 'final' : `turn ${turnIndex}`}
           </Badge>
@@ -141,9 +141,9 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
           const clamped = showToggle && !expanded
           return (
             <>
-              <div className={`break-words text-sm leading-relaxed text-zinc-200 ${clamped ? 'relative max-h-[520px] overflow-hidden' : ''}`}>
+              <div className={`break-words text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 ${clamped ? 'relative max-h-[520px] overflow-hidden' : ''}`}>
                 {thinkingOnly ? (
-                  <div className="flex items-center gap-2 py-1 text-zinc-400">
+                  <div className="flex items-center gap-2 py-1 text-zinc-600 dark:text-zinc-400">
                     <span className="inline-flex gap-1">
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
                       <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
@@ -176,7 +176,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                     </span>
                   </Text>
                 )}
-                {clamped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[rgb(24,24,27)] to-transparent" />}
+                 {clamped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-100 dark:from-[rgb(24,24,27)] to-transparent" />}
               </div>
               {showToggle && (
                 <button
@@ -201,7 +201,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
           )
         })()}
 
-        <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-800">
+        <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-200 dark:border-zinc-800">
           <ActionIcon
             variant="subtle"
             size="sm"
@@ -268,7 +268,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                     ? 'border-emerald-800/40 bg-emerald-950/20'
                     : tc.status === 'error'
                       ? 'border-red-800/40 bg-red-950/20'
-                      : 'border-zinc-700 bg-zinc-800/40'
+                       : 'border-zinc-300 dark:border-zinc-700 bg-zinc-200/40 dark:bg-zinc-800/40'
                 const dot =
                   tc.status === 'complete' ? 'bg-emerald-400' : tc.status === 'error' ? 'bg-red-400' : 'bg-zinc-500 animate-pulse'
                 return (
@@ -279,7 +279,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                       className="flex w-full items-center gap-2 text-left"
                     >
                       <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-                      <span className="font-medium text-zinc-200">{tc.name}</span>
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">{tc.name}</span>
                       <span className="truncate text-zinc-500">
                         {tc.args?.url
                           ? String(tc.args.url).slice(0, 80)
@@ -290,17 +290,17 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                       <span className={`ml-auto shrink-0 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                     </button>
                     <Collapse expanded={isOpen}>
-                      <div className="mt-2 space-y-2 border-t border-zinc-800 pt-2">
+                      <div className="mt-2 space-y-2 border-t border-zinc-200 dark:border-zinc-800 pt-2">
                         <div>
                           <div className="text-[10px] uppercase tracking-wide text-zinc-500">args</div>
-                          <pre className="mt-1 overflow-x-auto rounded bg-zinc-950/70 p-2 text-[11px] leading-relaxed">
+                          <pre className="mt-1 overflow-x-auto rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] leading-relaxed">
                             {JSON.stringify(tc.args, null, 2)}
                           </pre>
                         </div>
                         {tc.result && (
                           <div>
                             <div className="text-[10px] uppercase tracking-wide text-emerald-400">result</div>
-                            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-zinc-300">
+                            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] text-zinc-700 dark:text-zinc-300">
                               {tc.result.slice(0, 4000)}
                             </pre>
                           </div>
@@ -308,7 +308,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                         {tc.error && (
                           <div>
                             <div className="text-[10px] uppercase tracking-wide text-red-400">error</div>
-                            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-950/70 p-2 text-[11px] text-red-300">
+                            <pre className="mt-1 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-[11px] text-red-700 dark:text-red-300">
                               {tc.error}
                             </pre>
                           </div>
@@ -329,7 +329,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
             <Text size="sm" fw={600} mb={4}>
               Polished content
             </Text>
-            <div className="rounded bg-zinc-950/70 p-3 text-xs leading-relaxed text-zinc-300">
+            <div className="rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-3 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                 {polished || '_empty_'}
               </ReactMarkdown>
@@ -340,7 +340,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
             <Text size="sm" fw={600} mb={4}>
               Raw content (debug)
             </Text>
-            <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-950 p-2 text-[11px] text-zinc-400">
+            <pre className="max-h-60 overflow-auto whitespace-pre-wrap rounded bg-zinc-50 dark:bg-zinc-950 p-2 text-[11px] text-zinc-600 dark:text-zinc-400">
               {content.slice(0, 6000) || '(empty)'}
             </pre>
           </div>
