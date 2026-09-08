@@ -21,10 +21,10 @@ function isKeySensitive(key: string): boolean {
 }
 
 const VALUE_PATTERNS = [
-  /sk-[a-zA-Z0-9]{20,}/,
-  /[Bb]earer\s+[a-zA-Z0-9._-]+/,
-  /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
-  /https?:\/\/[^\s]+/,
+  /sk-[a-zA-Z0-9]{20,}/g,
+  /[Bb]earer\s+[a-zA-Z0-9._-]+/g,
+  /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/g,
+  /https?:\/\/[^\s]+/g,
 ];
 
 // Field allowlist for metadata bridged to the client over SSE. Depth-0 children
@@ -54,16 +54,24 @@ const SAFE_LOG_KEYS = new Set([
   "reason",
 ]);
 
-export function pickSafeLogMeta(meta: Record<string, unknown> = {}, depth = 0): Record<string, unknown> {
+export function pickSafeLogMeta(meta: Record<string, unknown> = {}, depth = 0, seen: Set<unknown> = new Set()): Record<string, unknown> {
+  if (depth > 5) return { '[truncated]': '[REDACTED]' };
+  seen.add(meta);
   const safe: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(meta)) {
     if (depth === 0 && !SAFE_LOG_KEYS.has(key)) continue;
-    if (Array.isArray(value)) {
-      safe[key] = value;
-    } else if (typeof value === "object" && value !== null) {
-      safe[key] = pickSafeLogMeta(value as Record<string, unknown>, depth + 1);
+    if (isKeySensitive(key)) {
+      safe[key] = '[REDACTED]';
+    } else if (Array.isArray(value)) {
+      safe[key] = value.map((v) => {
+        if (typeof v !== 'object' || v === null) return redactValue(v);
+        if (seen.has(v)) return '[REDACTED]';
+        return pickSafeLogMeta(v as Record<string, unknown>, depth + 1, seen);
+      });
+    } else if (typeof value === 'object' && value !== null) {
+      safe[key] = seen.has(value) ? '[REDACTED]' : pickSafeLogMeta(value as Record<string, unknown>, depth + 1, seen);
     } else {
-      safe[key] = value;
+      safe[key] = redactValue(value);
     }
   }
   return safe;
@@ -80,20 +88,21 @@ function redactValue(value: unknown): unknown {
   return value;
 }
 
-function sanitize(meta: Record<string, unknown>, depth = 0): Record<string, unknown> {
-  if (depth > 5) return meta;
+function sanitize(meta: Record<string, unknown>, depth = 0, seen: Set<unknown> = new Set()): Record<string, unknown> {
+  if (depth > 5) return { '[truncated]': '[REDACTED]' };
+  seen.add(meta);
   const safe: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(meta)) {
     if (isKeySensitive(key)) {
-      safe[key] = "[REDACTED]";
+      safe[key] = '[REDACTED]';
     } else if (Array.isArray(value)) {
-      safe[key] = value.map((v) =>
-        typeof v === "object" && v !== null
-          ? sanitize(v as Record<string, unknown>, depth + 1)
-          : redactValue(v),
-      );
-    } else if (typeof value === "object" && value !== null) {
-      safe[key] = sanitize(value as Record<string, unknown>, depth + 1);
+      safe[key] = value.map((v) => {
+        if (typeof v !== 'object' || v === null) return redactValue(v);
+        if (seen.has(v)) return '[REDACTED]';
+        return sanitize(v as Record<string, unknown>, depth + 1, seen);
+      });
+    } else if (typeof value === 'object' && value !== null) {
+      safe[key] = seen.has(value) ? '[REDACTED]' : sanitize(value as Record<string, unknown>, depth + 1, seen);
     } else {
       safe[key] = redactValue(value);
     }
