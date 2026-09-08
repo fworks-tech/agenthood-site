@@ -3,6 +3,7 @@
 import { Menu } from '@mantine/core';
 import { IconDownload } from '@tabler/icons-react';
 import HelpTip from '../../_components/HelpTip';
+import ThemeToggle from '../../_components/ThemeToggle';
 import type { AgentEntry } from '../../_data/agents';
 import type { ChatConfig } from '../../_types/studio';
 
@@ -49,6 +50,7 @@ export default function PlaygroundHeader({
             side="right"
           />
         </div>
+        <ThemeToggle />
       </div>
       {selectedAgent && (
         <div key={selectedAgent.id} className="flex min-w-0 items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">

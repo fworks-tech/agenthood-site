@@ -1,6 +1,7 @@
 'use client';
 
 import HelpTip from '../../_components/HelpTip';
+import ThemeToggle from '../../_components/ThemeToggle';
 
 interface MobileNavBarProps {
   onOpenConversations: () => void;
@@ -62,6 +63,10 @@ export default function MobileNavBar({ onOpenConversations, onOpenConfig, onTogg
             <span className="text-[10px]">Logs</span>
           </button>
           <HelpTip text="Toggles the live event log panel to view request routing and system messages." side="top" />
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <ThemeToggle />
+          <span className="text-[10px] text-zinc-400">Theme</span>
         </div>
       </div>
     </div>
