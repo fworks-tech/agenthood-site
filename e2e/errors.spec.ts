@@ -18,7 +18,8 @@ test.describe("Playground — Error & Log States", () => {
     await waitForStreamComplete(page);
 
     await expect(page.locator("text=completed in").first()).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/→ .*The Scribe/).first()).toBeVisible({ timeout: 5000 });
+    const agentName = "the-scribe".split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    await expect(page.getByText(new RegExp(`→ .*${agentName}`)).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("creates error log entry on chat error", async ({ page, mockChatError }) => {
