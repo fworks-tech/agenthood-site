@@ -15,7 +15,7 @@ const geistSans = Geist({
 const SITE_URL = "https://agenthood.flabs.tech";
 const TITLE = "Agenthood — A full AI engineering team as plain Markdown files";
 const DESCRIPTION =
-  "14 specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more — each a single Markdown skill file any agent runtime can load into any project. No lock-in. No configuration.";
+  "20+ specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more — each a single Markdown skill file any agent runtime can load into any project. No lock-in. No configuration.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
