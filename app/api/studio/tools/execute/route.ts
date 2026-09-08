@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const BUILT_IN_TOOLS = new Set(["web_fetch", "code_execution"]);
-const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,62}$/;
+const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 const MAX_ARGS_CHARS = 100_000;
 const CORRELATION_ID_MAX_LENGTH = 128;
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
