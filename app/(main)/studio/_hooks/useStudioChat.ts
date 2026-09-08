@@ -7,6 +7,7 @@ import type { ChatMessage, ToolCallInfo } from "../_lib/studio-api";
 import { applyToolReplayOutcome } from "../_lib/tool-outcome";
 import type { ChatConfig } from "../_types/studio";
 import { STORAGE_KEYS } from "../_lib/constants";
+import { generateId } from "../_lib/ids";
 
 const MAX_CONVERSATIONS = 50;
 const MAX_CONVERSATION_AGE_MS = 30 * 24 * 60 * 60 * 1000;
@@ -72,10 +73,6 @@ interface UseStudioChatReturn {
   newConversation: (agentId: string, config?: Partial<ChatConfig>) => void;
   switchConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
-}
-
-function generateId(): string {
-  return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function migrateConversation(c: Record<string, unknown>): Conversation {
