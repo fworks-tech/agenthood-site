@@ -1,7 +1,7 @@
 import { agentSkills } from "../_data/agents.generated";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm/types";
+import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm";
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
 import type { ToolCall } from "./tools";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";

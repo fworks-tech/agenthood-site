@@ -6,7 +6,7 @@ import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './tr
 import { getDefaultModel } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
 import { CLI_PROVIDER_CHAIN } from './agenthood-adapter'
-import type { Message } from 'agenthood/dist/llm/types'
+import type { Message } from 'agenthood/dist/llm'
 
 export interface WorkspaceTurnRequest {
   workspaceId: string

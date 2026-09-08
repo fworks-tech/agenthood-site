@@ -49,3 +49,21 @@ package and propagated as a prop to the client Footer:
 - Issue fworks-tech/agenthood-site#135; PR #134 (origin of the review notes);
   `app/_lib/agenthood-version.ts`, `app/components/Footer.tsx`, `app/(main)/layout.tsx`,
   `next.config.ts`, `e2e/footer.spec.ts`.
+
+## Amendment — 2026-09-08 (agenthood 3.56 exports map)
+
+agenthood 3.56.6 added an `exports` field, and it does **not** expose `./package.json`. The
+original mechanism (`import { version } from "agenthood/package.json"`) therefore stopped
+resolving under `moduleResolution: bundler` (TS2307 + runtime `ERR_PACKAGE_PATH_NOT_EXPORTED`),
+breaking `npm run typecheck`.
+
+The version is now derived from the **site's own** `package.json` exact pin
+(`appPkg.dependencies.agenthood`) — the "read from the site's package.json" option previously
+listed under *Alternatives Considered* and rejected on the grounds that "the installed package is
+the truthful source." That objection does not hold once the installed package refuses to expose its
+manifest: with an **exact** pin (the repo's dependency policy — `agenthood@3.56.6`, no range), the
+declared pin and the installed version are identical by construction, and `sync-skills` already
+keys the generated agent data to the installed version, so there is no new drift surface. The
+invariant this ADR protects — badge + README share one build-time constant, no runtime fetch — is
+preserved. If the pin ever moves to a range (`^`/`~`), this source becomes a *declared-floor*
+rather than installed version and would need revisiting.
