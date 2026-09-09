@@ -197,7 +197,6 @@ export default function CustomToolsPanel() {
                   onChange={(e) => setCode(e.currentTarget.value)}
                   minRows={3}
                   maxRows={8}
-                  autosize
                   size="xs"
                 />
               )}
@@ -207,7 +206,6 @@ export default function CustomToolsPanel() {
                 onChange={(e) => setSchema(e.currentTarget.value)}
                 minRows={4}
                 maxRows={10}
-                autosize
                 size="xs"
               />
               {error && (
