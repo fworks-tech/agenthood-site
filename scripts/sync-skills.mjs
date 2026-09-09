@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { fetchWithRetry } from "./lib/fetch-retry.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
@@ -19,9 +20,13 @@ function getInstalledVersion() {
 }
 
 const INSTALLED_VERSION = getInstalledVersion();
-const RAW_BASE = INSTALLED_VERSION
-  ? `https://raw.githubusercontent.com/fworks-tech/agenthood/v${INSTALLED_VERSION}`
-  : "https://raw.githubusercontent.com/fworks-tech/agenthood/main";
+const REF = INSTALLED_VERSION ? `v${INSTALLED_VERSION}` : "main";
+const RAW_BASE = `https://raw.githubusercontent.com/fworks-tech/agenthood/${REF}`;
+const MIRROR_BASE = `https://cdn.jsdelivr.net/gh/fworks-tech/agenthood@${REF}`;
+
+function withMirror(url) {
+  return { mirrors: [url.replace(RAW_BASE, MIRROR_BASE)] };
+}
 
 const MEMBERS = [
   "the-architect", "the-auditor", "the-builder", "the-debugger", "the-doorman",
@@ -33,15 +38,13 @@ const MEMBERS = [
 
 async function fetchSkill(member) {
   const url = `${RAW_BASE}/skills/${member}/SKILL.md`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  const res = await fetchWithRetry(url, undefined, withMirror(url));
   return await res.text();
 }
 
 async function fetchRegistry() {
   const url = `${RAW_BASE}/docs/members/registry.json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  const res = await fetchWithRetry(url, undefined, withMirror(url));
   return res.json();
 }
 
