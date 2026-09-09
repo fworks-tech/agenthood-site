@@ -13,6 +13,7 @@ import {
 } from "../_types/studio";
 import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
 import HelpTip from "./HelpTip";
+import CustomToolsPanel from "./CustomToolsPanel";
 import { TURNSTILE_REQUIRED } from "../_lib/env";
 
 interface AgentConfigPanelProps {
@@ -29,7 +30,7 @@ interface AgentConfigPanelProps {
   captchaToken?: string | null;
 }
 
-function SectionHeader({
+export function SectionHeader({
   label,
   helpText,
   isOpen,
@@ -402,6 +403,9 @@ export default function AgentConfigPanel({
             </Stack>
           </Collapse>
         </div>
+
+        {/* Custom Tools — collapsible */}
+        <CustomToolsPanel />
 
         {/* Safety & Limits — collapsible, default collapsed */}
         <div>
