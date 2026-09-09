@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-09"
+    ],
+    "path": "news/whats-new-2026-09-09.md",
+    "title": "Agenthood Release Digest: September 9, 2026",
+    "date": "2026-09-09",
+    "author": "Agenthood Team",
+    "summary": "Evals gains description optimization, blind A/B, regression testing, and benchmark output; runtime checkpointing and resume improve."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-08"
     ],
     "path": "news/whats-new-2026-09-08.md",
