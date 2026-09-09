@@ -70,6 +70,14 @@ export default function CustomToolsPanel() {
       setError('Description is required');
       return;
     }
+    if (executionType === 'webhook') {
+      try {
+        new URL(webhookUrl);
+      } catch {
+        setError('Webhook URL must be a valid URL');
+        return;
+      }
+    }
 
     let inputSchema: CustomToolDefinition['inputSchema'];
     try {
@@ -96,6 +104,7 @@ export default function CustomToolsPanel() {
   };
 
   const handleDelete = (toolName: string) => {
+    if (!window.confirm(`Delete custom tool "${toolName}"?`)) return;
     unregisterCustomTool(toolName);
     setTools(getCustomTools());
   };

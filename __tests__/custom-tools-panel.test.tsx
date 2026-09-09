@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
 import CustomToolsPanel from '@/app/(main)/studio/_components/CustomToolsPanel'
@@ -31,10 +31,12 @@ const STORAGE_KEY = 'agenthood-studio-custom-tools'
 
 beforeEach(() => {
   localStorage.clear()
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
 afterEach(() => {
   localStorage.clear()
+  vi.restoreAllMocks()
 })
 
 const renderPanel = () => render(<CustomToolsPanel />, { wrapper: MantineProvider })
@@ -45,12 +47,11 @@ describe('CustomToolsPanel', () => {
     expect(screen.getByText('No custom tools yet. Add one to extend agent capabilities.')).toBeTruthy()
   })
 
-  it('toggles the section open and closed', () => {
+  it('toggles the section open', () => {
     renderPanel()
     const header = screen.getByRole('button', { name: /Custom Tools/ })
     fireEvent.click(header)
     expect(screen.getByText('No custom tools yet. Add one to extend agent capabilities.')).toBeTruthy()
-    fireEvent.click(header)
   })
 
   it('shows the add tool form when clicking Add Tool', () => {
@@ -108,7 +109,29 @@ describe('CustomToolsPanel', () => {
     })
   })
 
-  it('deletes a custom tool', async () => {
+  it('rejects invalid webhook URL', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('button', { name: /Custom Tools/ }))
+    fireEvent.click(screen.getByText('Add Tool'))
+
+    fireEvent.change(screen.getByLabelText('Tool Name'), {
+      target: { value: 'custom_weather' },
+    })
+    fireEvent.change(screen.getByLabelText('Description'), {
+      target: { value: 'Get weather' },
+    })
+    fireEvent.change(screen.getByLabelText('Webhook URL'), {
+      target: { value: 'not-a-url' },
+    })
+
+    fireEvent.click(screen.getByText('Add Tool'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Webhook URL must be a valid URL')).toBeTruthy()
+    })
+  })
+
+  it('deletes a custom tool after confirmation', async () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([
@@ -124,16 +147,42 @@ describe('CustomToolsPanel', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: /Custom Tools/ }))
 
-    await waitFor(() => {
-      expect(screen.getByText('custom_weather')).toBeTruthy()
-    })
-
-    const deleteButton = screen.getByRole('button', { name: 'Delete custom_weather' })
+    const deleteButton = screen.getByRole('button', { name: 'Delete custom_weather', hidden: true } as any)
     fireEvent.click(deleteButton)
 
+    expect(window.confirm).toHaveBeenCalledWith('Delete custom tool "custom_weather"?')
+
     await waitFor(() => {
-      expect(screen.getByText('No custom tools yet. Add one to extend agent capabilities.')).toBeTruthy()
+      expect(screen.getByText('No custom tools yet. Add one to extend agent capabilities.', { hidden: true } as any)).toBeTruthy()
     })
+  })
+
+  it('skips deletion when confirmation is declined', async () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        {
+          name: 'custom_weather',
+          description: 'Get weather',
+          inputSchema: { type: 'object', properties: {} },
+          executionType: 'webhook',
+        },
+      ]),
+    )
+
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+
+    renderPanel()
+    fireEvent.click(screen.getByRole('button', { name: /Custom Tools/ }))
+
+    const deleteButton = screen.getByRole('button', { name: 'Delete custom_weather', hidden: true } as any)
+    fireEvent.click(deleteButton)
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete custom tool "custom_weather"?')
+    expect(screen.getByText('custom_weather', { hidden: true } as any)).toBeTruthy()
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')
+    expect(stored).toHaveLength(1)
   })
 
   it('cancels the form when clicking Cancel', () => {
