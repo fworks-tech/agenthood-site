@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fetchWithRetry } from "./lib/fetch-retry.mjs";
 
 const REPO = "fworks-tech/agenthood";
 const BRANCH = "main";
@@ -10,18 +11,13 @@ const CONTENT_DIR = path.join(process.cwd(), "content");
 const token = process.env.GITHUB_TOKEN;
 
 async function api(url) {
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`GitHub API error ${res.status} for ${url}: ${text}`);
-  }
 
   return res.json();
 }
@@ -33,12 +29,13 @@ function encodeRawPath(filePath) {
     .join("/");
 }
 
+function mirrorUrl(filePath) {
+  return `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/${encodeRawPath(filePath)}`;
+}
+
 async function fetchRaw(filePath) {
   const url = `${RAW_BASE}/${encodeRawPath(filePath)}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch raw ${filePath}: ${res.status} ${res.statusText}`);
-  }
+  const res = await fetchWithRetry(url, undefined, { mirrors: [mirrorUrl(filePath)] });
   return res.text();
 }
 
