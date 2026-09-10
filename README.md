@@ -3,7 +3,7 @@
 [![CI](https://github.com/fworks-tech/agenthood-site/actions/workflows/ci.yml/badge.svg)](https://github.com/fworks-tech/agenthood-site/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A full AI engineering team — as plain Markdown skill files any agent runtime can load.
+> A full AI engineering team that earns every merge.
 
 Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)** · [Studio Playground](https://agenthood.flabs.tech/studio/playground) · [Docs](https://agenthood.flabs.tech/docs)
 
@@ -11,19 +11,21 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)** · [Studio Play
 
 ## What is Agenthood?
 
-Agenthood is an open-source collection of 20+ specialized AI agent skill files. Each agent — The Architect, The Reviewer, The Tester, The Auditor, and 16 more — is a single Markdown file that defines a role, its standards, and how it communicates.
+Agenthood is a 20-member AI society — planners, builders, reviewers, auditors, and more — each a portable Markdown skill file, plus a TypeScript runtime that runs them autonomously across your whole software lifecycle.
 
-Load them into **Claude Code, Copilot, Gemini CLI, Cursor, OpenCode**, or any runtime that supports skill files. Or run them autonomously via the TypeScript CLI.
+Load them into **Claude Code, Copilot, Gemini CLI, Cursor, OpenCode**, or any runtime that supports skill files. Hand them a task, or let them run end to end.
 
-No lock-in. No configuration. No vendor-specific format. Just Markdown.
+No lock-in. No vendor-specific format. Setup in ~2 minutes. Every decision auditable.
 
 ---
 
 ## Features
 
-- **20+ specialized agents** — architect, reviewer, tester, auditor, security, DevOps, and more
+- **20 specialized members** — architect, reviewer, tester, auditor, security, DevOps, and more
+- **41 utility skills** — specialist capability files (docker, kubernetes, jira, postgres, and more) that activate on task match
 - **Delegation chains** — chain agents together: tester → builder → reviewer → doorman
 - **Autonomous runtime** — `npx agenthood run the-scribe "write a commit message"`
+- **Multi-agent workspaces** — assemble a team, give one instruction, watch them collaborate; human checkpoints included
 - **Decision intelligence** — tamper-evident audit trail with hash-chain provenance
 - **Conventional commit enforcement** — zero tolerance for `fix stuff`
 - **Agenthood Studio** — browser-based playground with multi-agent workspaces
@@ -49,7 +51,7 @@ No lock-in. No configuration. No vendor-specific format. Just Markdown.
 
 ## Project Status
 
-Agenthood is in **active development** (v3.56.6). The skill file format is stable. The TypeScript runtime is the single supported runtime (see [ADR-008](docs/adr/ADR-008-typescript-runtime-over-python.md)).
+Agenthood is in **active development**. The skill file format is stable. The TypeScript runtime is the single supported runtime (see [ADR-008](docs/adr/ADR-008-typescript-runtime-over-python.md)).
 
 See the [upstream releases](https://github.com/fworks-tech/agenthood/releases) for the latest changelog.
 
@@ -77,7 +79,7 @@ npm run test:e2e  # end-to-end tests (Playwright)
 
 | Suite | Count | What it covers |
 |-------|-------|----------------|
-| Unit | 40+ | Error hierarchy, SSE parsing, secret redaction, provider routing, tool schemas |
+| Unit | 413 | Error hierarchy, SSE parsing, secret redaction, provider routing, tool schemas |
 | E2E | 106 | Config, conversations, playground, responsive layout, companion, error handling |
 
 ---
@@ -122,7 +124,7 @@ The full set lives in [`docs/adr/`](docs/adr/) — covering build-time docs sync
 
 | Repo | Purpose |
 |------|---------|
-| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 20+ agent skill files, TypeScript runtime, CI workflows |
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 20 member skill files, 41 utility skills, TypeScript runtime, CI workflows |
 | [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
 ---
