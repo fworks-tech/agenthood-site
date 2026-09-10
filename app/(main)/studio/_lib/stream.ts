@@ -103,7 +103,14 @@ export async function readSSEStream(
         }
       }
     }
-    safeOnDone();
+    if (signal?.aborted) {
+      safeOnDone();
+      return;
+    }
+    if (!doneCalled) {
+      callbacks.onError(new Error("The connection was interrupted before the response completed"));
+      return;
+    }
   } catch (err) {
     if (signal?.aborted) return;
     callbacks.onError(err instanceof Error ? err : new Error(String(err)));

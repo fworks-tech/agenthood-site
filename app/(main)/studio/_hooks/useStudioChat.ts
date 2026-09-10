@@ -343,9 +343,12 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
           onLog: (log) => onLogRef.current?.(log),
           onError: (err) => {
             streamError = err;
-            const errorMsg = `Error: ${err.message}`;
+            const errorMsg = err.message;
             setConversations((prev) => {
-              const updated = updateMessage(prev, convId, assistantMsgId, errorMsg);
+              const content = streamedContent
+                ? `${streamedContent}\n\n(Error: ${errorMsg})`
+                : `Error: ${errorMsg}`;
+              const updated = updateMessage(prev, convId, assistantMsgId, content);
               const withError = withTokenCount(updated);
               saveConversations(withError);
               return withError;
