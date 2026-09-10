@@ -124,21 +124,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
           if (toolSchemas && toolSchemas.length > 0) {
             const toolCallsRun: ToolCall[] = [];
-            const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal);
+            const emit = (event: Record<string, unknown>) => {
+              controller.enqueue(new TextEncoder().encode(JSON.stringify(event) + "\n"));
+            };
+            const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal, emit);
             output = finalText;
-
-            for (const tc of toolCallsRun) {
-              controller.enqueue(new TextEncoder().encode(
-                JSON.stringify({ type: "tool_call", id: tc.id, name: tc.name, args: tc.args }) + "\n",
-              ));
-              controller.enqueue(new TextEncoder().encode(
-                JSON.stringify({
-                  type: "tool_result", id: tc.id, name: tc.name,
-                  result: tc.result ?? tc.error,
-                  error: tc.error,
-                }) + "\n",
-              ));
-            }
 
             for (const char of finalText) {
               if (signal?.aborted) break;
@@ -210,7 +200,8 @@ async function runToolLoop(
   messages: Message[],
   toolSchemas: ToolSchema[],
   toolCallsRun: ToolCall[],
-  signal?: AbortSignal,
+  signal: AbortSignal | undefined,
+  emit: (event: Record<string, unknown>) => void,
 ): Promise<string> {
   for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
     if (signal?.aborted) return "";
@@ -233,10 +224,16 @@ async function runToolLoop(
     for (const tc of resp.toolCalls) {
       if (signal?.aborted) return "";
       const args = tc.args as Record<string, unknown>;
+      emit({ type: "tool_call", id: tc.id, name: tc.name, args });
       const result = await executeTool(tc.name, args, signal);
       const outcome = classifyToolResult(result);
       toolCallsRun.push({ id: tc.id, name: tc.name, args, result: outcome.result, error: outcome.error });
       messages.push({ role: "tool", content: result, tool_call_id: tc.id, name: tc.name });
+      emit({
+        type: "tool_result", id: tc.id, name: tc.name,
+        result: outcome.result ?? outcome.error,
+        error: outcome.error,
+      });
     }
   }
 

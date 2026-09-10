@@ -117,6 +117,43 @@ describe("readSSEStream", () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it("finishes normally without onError when the signal aborts mid-stream", async () => {
+    const onToken = vi.fn(() => controller.abort());
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    const controller = new AbortController();
+    const encoder = new TextEncoder();
+    const body = new ReadableStream({
+      start(c) {
+        c.enqueue(encoder.encode(JSON.stringify({ type: "token", data: "A" }) + "\n"));
+        c.close();
+      },
+    });
+    const res = new Response(body);
+
+    await readSSEStream(res, { onToken, onDone, onError }, controller.signal);
+
+    expect(onToken).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("calls onError when stream closes without a done event", async () => {
+    const onToken = vi.fn();
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    const res = createStreamResponse([
+      JSON.stringify({ type: "token", data: "partial" }),
+    ]);
+
+    await readSSEStream(res, { onToken, onDone, onError });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
   it("calls onDone only once when done event is received", async () => {
     const onToken = vi.fn();
     const onDone = vi.fn();

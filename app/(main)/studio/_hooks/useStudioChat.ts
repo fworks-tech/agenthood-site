@@ -149,6 +149,21 @@ function withToolResults(
   );
 }
 
+function failPendingToolCalls(convs: Conversation[], convId: string, msgId: string, reason: string): Conversation[] {
+  return convs.map((c) =>
+    c.id === convId
+      ? {
+          ...c,
+          messages: c.messages.map((m) =>
+            m.id === msgId
+              ? { ...m, toolCalls: (m.toolCalls ?? []).map((t) => (t.status === "pending" ? { ...t, status: "error" as const, error: reason, completedAt: Date.now() } : t)) }
+              : m,
+          ),
+        }
+      : c,
+  );
+}
+
 export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatReturn {
   const [hydrated, setHydrated] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -343,9 +358,12 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
           onLog: (log) => onLogRef.current?.(log),
           onError: (err) => {
             streamError = err;
-            const errorMsg = `Error: ${err.message}`;
             setConversations((prev) => {
-              const updated = updateMessage(prev, convId, assistantMsgId, errorMsg);
+              const content = streamedContent
+                ? `${streamedContent}\n\n(Error: ${err.message})`
+                : `Error: ${err.message}`;
+              const withFailedTools = failPendingToolCalls(prev, convId, assistantMsgId, err.message);
+              const updated = updateMessage(withFailedTools, convId, assistantMsgId, content);
               const withError = withTokenCount(updated);
               saveConversations(withError);
               return withError;

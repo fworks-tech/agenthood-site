@@ -469,6 +469,42 @@ describe("LightweightAdapter", () => {
     });
   });
 
+  it("streams tool_call and tool_result live during the tool loop", async () => {
+    mockGetToolSchemas.mockReturnValue([
+      { name: "code_execution", description: "Run code", parameters: { type: "object", properties: {} } },
+    ]);
+    mockExecuteTool.mockImplementation(async () => {
+      await new Promise((r) => setTimeout(r, 5));
+      return "tool output done";
+    });
+    mockFromConfig.mockImplementation(async () => ({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete: vi.fn().mockResolvedValueOnce({
+        content: "",
+        toolCalls: [{ id: "tc-1", name: "code_execution", args: { code: "1+1" } }],
+      }).mockResolvedValueOnce({
+        content: "The answer is 2.",
+        toolCalls: undefined,
+      }),
+    }));
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "what is 1+1?" }],
+      config: { provider: "groq", model: "llama-3.3-70b-versatile", enabledTools: ["code_execution"] },
+    });
+
+    const events = await collectDataEvents(stream);
+    const types = events.map((e) => e.type);
+    expect(types.slice(0, 2)).toEqual(["tool_call", "tool_result"]);
+    expect(types[types.length - 1]).toBe("done");
+    expect(events[0]).toMatchObject({ id: "tc-1", name: "code_execution", args: { code: "1+1" } });
+    expect(events[1]).toMatchObject({ id: "tc-1", result: "tool output done" });
+    const tokens = events.filter((e) => e.type === "token").map((e) => (e as { data: string }).data).join("");
+    expect(tokens).toBe("The answer is 2.");
+  });
+
   it("emits exactly one trace event for a successful plain-stream call", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     mockStreamImpl.mockImplementation(async () =>
