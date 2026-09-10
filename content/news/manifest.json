@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-10"
+    ],
+    "path": "news/whats-new-2026-09-10.md",
+    "title": "Agenthood Release Digest — September 10, 2026",
+    "date": "2026-09-10",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.63.0 adds cost, doctor, rotate-key, ritual, and skill-integrity commands; v3.63.1 cleans up release tooling."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-09"
     ],
     "path": "news/whats-new-2026-09-09.md",
