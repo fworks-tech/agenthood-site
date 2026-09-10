@@ -35,7 +35,7 @@ const categories = [
 
 const features = [
   { icon: IconUsers, label: `${agents.length} agents`, desc: "architect, reviewer, tester, and more", color: "text-emerald-400", tip: `All ${agents.length} Society members available with their full system prompts from SKILL.md.` },
-  { icon: IconCloud, label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode", color: "text-sky-400", tip: "Switch providers per conversation. Each offers different models and pricing." },
+  { icon: IconCloud, label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode, OpenCodeGo", color: "text-sky-400", tip: "Switch providers per conversation. Each offers different models and pricing." },
   { icon: IconServer, label: "SSE streaming", desc: "real-time token-by-token responses", color: "text-cyan-400", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
   { icon: IconKey, label: "BYOK", desc: "use your own API keys", color: "text-amber-400", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
 ];
@@ -57,11 +57,12 @@ export default function Home() {
         </Badge>
         <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
           A full AI engineering team<br />
-          <span className="text-zinc-500">as plain Markdown files.</span>
+          <span className="text-zinc-500">that earns every merge.</span>
         </h1>
         <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-          {agents.length} specialized AI agents — each a single Markdown skill file that works with
-          Claude Code, Copilot, Gemini CLI, or any runtime. No lock-in. No configuration.
+          A {agents.length}-member AI society — planners, builders, reviewers, auditors. Hand
+          them a task or run them autonomously across your entire software lifecycle. 7 LLM
+          providers, any runtime. Every decision auditable.
         </Text>
         <Group justify="center" gap="md">
           <a

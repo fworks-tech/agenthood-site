@@ -6,6 +6,7 @@ import Script from "next/script";
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/core";
 import theme from "../mantine-theme.mjs";
 import "./globals.css";
+import { agents } from "./(main)/studio/_data/agents";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,9 +14,9 @@ const geistSans = Geist({
 });
 
 const SITE_URL = "https://agenthood.flabs.tech";
-const TITLE = "Agenthood — A full AI engineering team as plain Markdown files";
+const TITLE = "Agenthood — A full AI engineering team that earns every merge";
 const DESCRIPTION =
-  "20+ specialized AI agents — architect, reviewer, security expert, DevOps engineer, and more — each a single Markdown skill file any agent runtime can load into any project. No lock-in. No configuration.";
+  `A ${agents.length}-member AI society — planners, builders, reviewers, auditors — that runs your whole software lifecycle. Hand them a task or run them autonomously. 7 LLM providers, any runtime, every decision auditable.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -33,8 +34,8 @@ export const metadata: Metadata = {
   authors: [{ name: "Fabio Ritzel Borges", url: "https://flabs.tech" }],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Agenthood — AI engineering team as Markdown files",
-    description: "14 specialized AI agents any runtime can load into any project. No lock-in. No config.",
+    title: TITLE,
+    description: DESCRIPTION,
     url: SITE_URL,
     siteName: "Agenthood",
     type: "website",
@@ -42,8 +43,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Agenthood — AI engineering team as Markdown files",
-    description: "14 specialized AI agents any runtime can load into any project. No lock-in. No config.",
+    title: TITLE,
+    description: DESCRIPTION,
     images: ["/opengraph-image"],
   },
 };
