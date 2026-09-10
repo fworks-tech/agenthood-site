@@ -9,12 +9,24 @@ import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
 import type { WorkspaceStatus } from '../../_types/workspace'
 import { getAgentById } from '../../_data/agents'
 import { collapseIntermediates } from '../../_lib/workspace-polish'
+import ActivityStatus from '../../_components/ActivityStatus'
 
 interface Props {
   messages: WorkspaceMessage[]
   statusMap?: Record<string, WorkspaceStatus>
   onReact?: (messageId: string, emoji: string) => void
   onReply?: (memberId: string) => void
+}
+
+// Shared typing row: static text is intentional — these rows render when no
+// message exists yet, so there are no toolCalls to derive a label from.
+function TypingRow({ id, className }: { id: string; className: string }) {
+  const agent = getAgentById(id)
+  return (
+    <div className={className}>
+      <ActivityStatus tone="zinc" text={`${agent?.name ?? id} is thinking…`} />
+    </div>
+  )
 }
 
 export default function WorkspaceChatArea({ messages, statusMap, onReact, onReply }: Props) {
@@ -27,14 +39,6 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
     ? Object.entries(statusMap)
         .filter(([, s]) => s === 'working')
         .map(([id]) => id)
-        // don't show typing if their last message is already visible and still streaming
-        .filter((id) => {
-          const last = [...messages].reverse().find((m) => m.memberId === id)
-          // if last message is very recent and still empty, the card itself shows Thinking
-          if (!last) return true
-          // if last message is thinkingOnly, card already shows indicator — still show global typing
-          return true
-        })
     : []
 
   // Group-chat model: only user + member turns. Synthesizer cards (legacy
@@ -44,19 +48,9 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
     if (typingMembers.length > 0) {
       return (
         <div className="space-y-4">
-          {typingMembers.map((id) => {
-            const agent = getAgentById(id)
-            return (
-              <div key={`typing-${id}`} className="flex items-center gap-2 py-2 text-sm text-zinc-500">
-                <span className="inline-flex gap-1">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                </span>
-                {agent?.name ?? id} is typing...
-              </div>
-            )
-          })}
+          {typingMembers.map((id) => (
+            <TypingRow key={`typing-${id}`} id={id} className="flex items-center gap-2 py-2 text-sm text-zinc-500" />
+          ))}
         </div>
       )
     }
@@ -126,16 +120,8 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
         // shows "is thinking..." — don't duplicate, except for the-mediator
         // whose empty/bare-JSON card is hidden (return null in the card).
         if (lastMsg && !lastMsg.content && id !== 'the-mediator') return null
-        const agent = getAgentById(id)
         return (
-          <div key={`typing-${id}`} className="typing-row flex items-center gap-2 py-1 text-sm text-zinc-500">
-            <span className="presence-dot inline-flex gap-1">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-            </span>
-            {agent?.name ?? id} is typing...
-          </div>
+          <TypingRow key={`typing-${id}`} id={id} className="typing-row flex items-center gap-2 py-1 text-sm text-zinc-500" />
         )
       })}
     </div>
