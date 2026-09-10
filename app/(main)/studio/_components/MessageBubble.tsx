@@ -10,6 +10,7 @@ import type { ChatMessage } from "../_lib/studio-api";
 import { STORAGE_KEYS } from "../_lib/constants";
 import { childrenToString } from "../../../_lib/react-children";
 import { isAbsoluteUrl, isSafeHref } from "../../../_lib/markdown-links.mjs";
+import ActivityStatus, { chatStatusLabel } from "./ActivityStatus";
 
 function loadFeedback(): Record<string, "up" | "down"> {
   if (typeof window === "undefined") return {};
@@ -73,15 +74,13 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
     return (
       <div className="flex justify-start">
         <Paper bg="zinc.9" px="xl" py={10}>
-          <span className="inline-flex gap-0.5">
-            <span className="h-2 w-2 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "0ms" }} />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "150ms" }} />
-            <span className="h-2 w-2 animate-bounce rounded-full bg-emerald-400" style={{ animationDelay: "300ms" }} />
-          </span>
+          <ActivityStatus text={chatStatusLabel(true, message.toolCalls)} />
         </Paper>
       </div>
     );
   }
+
+  const streamingToolLabel = chatStatusLabel(isStreaming, message.toolCalls, null);
 
   function renderToolStatusIcon(status: string) {
     if (status === "complete") {
@@ -233,6 +232,11 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
             <span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-text-bottom" />
           )}
         </Typography>
+        {streamingToolLabel && isStreaming && (
+          <div className="mt-1">
+            <ActivityStatus text={streamingToolLabel} />
+          </div>
+        )}
         {!isStreaming && (
           <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-200 dark:border-zinc-800">
             <ActionIcon

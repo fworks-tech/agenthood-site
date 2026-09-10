@@ -9,6 +9,7 @@ import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
 import type { WorkspaceStatus } from '../../_types/workspace'
 import { getAgentById } from '../../_data/agents'
 import { collapseIntermediates } from '../../_lib/workspace-polish'
+import ActivityStatus from '../../_components/ActivityStatus'
 
 interface Props {
   messages: WorkspaceMessage[]
@@ -48,12 +49,7 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
             const agent = getAgentById(id)
             return (
               <div key={`typing-${id}`} className="flex items-center gap-2 py-2 text-sm text-zinc-500">
-                <span className="inline-flex gap-1">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                </span>
-                {agent?.name ?? id} is typing...
+                <ActivityStatus tone="zinc" text={`${agent?.name ?? id} is thinking...`} />
               </div>
             )
           })}
@@ -129,12 +125,7 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
         const agent = getAgentById(id)
         return (
           <div key={`typing-${id}`} className="typing-row flex items-center gap-2 py-1 text-sm text-zinc-500">
-            <span className="presence-dot inline-flex gap-1">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-            </span>
-            {agent?.name ?? id} is typing...
+            <ActivityStatus tone="zinc" text={`${agent?.name ?? id} is thinking...`} />
           </div>
         )
       })}
