@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-13"
+    ],
+    "path": "news/whats-new-2026-09-13.md",
+    "title": "Agenthood Release Digest: September 13, 2026",
+    "date": "2026-09-13",
+    "author": "Agenthood Team",
+    "summary": "Bug fixes for verify placeholder scanning and marked options compatibility."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-10"
     ],
     "path": "news/whats-new-2026-09-10.md",
