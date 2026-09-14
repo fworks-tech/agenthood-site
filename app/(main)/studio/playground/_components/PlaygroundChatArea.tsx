@@ -4,7 +4,7 @@ import MessageList from '../../_components/MessageList';
 import WelcomeTerminal from './WelcomeTerminal';
 import type { AgentEntry } from '../../_data/agents';
 import type { ChatMessage } from '../../_lib/studio-api';
-import { agentPrompts } from '../../_data/agentPrompts.generated';
+import { agentStarters } from '../../_data/agentStarters';
 
 interface PlaygroundChatAreaProps {
   selectedAgent: AgentEntry | null;
@@ -55,7 +55,7 @@ export default function PlaygroundChatArea({
         <h2 className="mt-3 text-lg font-semibold text-zinc-800 dark:text-zinc-200">{selectedAgent.name}</h2>
         <p className="mt-1 text-sm text-zinc-500">{selectedAgent.role}</p>
         <div className="mt-6 space-y-2">
-          {(agentPrompts[selectedAgent.id] ?? []).slice(0, 3).map((prompt) => (
+          {(agentStarters[selectedAgent.id] ?? []).slice(0, 3).map((prompt) => (
             <button
               key={prompt}
               type="button"

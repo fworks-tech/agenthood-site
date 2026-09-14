@@ -66,28 +66,32 @@ test.describe("Playground — Agent Prompt Suggestions", () => {
 
   test("shows clickable prompt suggestions", async ({ page }) => {
     await selectAgent(page, "the-scribe");
-    const suggestions = page.locator("button:has-text('Before every')");
+    const suggestions = page.locator("button:has-text('commit message')");
     const count = await suggestions.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
   test("clicking suggestion sends message", async ({ page }) => {
     await selectAgent(page, "the-reviewer");
-    const suggestion = page.locator("button:has-text('Before merging any PR')");
+    const suggestion = page.locator("button:has-text('Review the open PR')");
     await suggestion.click();
     await waitForStreamComplete(page);
     const messages = await getMessages(page);
     expect(messages.length).toBeGreaterThanOrEqual(2);
     const userMsg = messages.find((m) => m.role === "user");
-    expect(userMsg?.text).toContain("Before merging any PR");
+    expect(userMsg?.text).toContain("Review the open PR");
   });
 
   test("different agents show different prompts", async ({ page }) => {
     await selectAgent(page, "the-scribe");
     await expect(page.locator("text=Commits").first()).toBeVisible();
-    const scribePrompts = page.locator("button:has-text('Before every')");
+    const scribePrompts = page.locator("button:has-text('commit message')");
     const scribeCount = await scribePrompts.count();
     expect(scribeCount).toBeGreaterThanOrEqual(1);
+
+    await selectAgent(page, "the-builder");
+    const builderPrompts = page.locator("button:has-text('session timeout bug')");
+    expect(await builderPrompts.count()).toBeGreaterThanOrEqual(1);
   });
 });
 

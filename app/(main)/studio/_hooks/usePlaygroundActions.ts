@@ -6,6 +6,7 @@ import type { AgentEntry } from '../_data/agents'
 import type { ChatConfig, Provider } from '../_types/studio'
 import { getDefaultModel, getProviderMeta } from '../_types/studio'
 import { agentSkills } from '../_data/agents.generated'
+import { buildSystemPrompt } from '../_lib/system-prompt'
 import type { LogLevel, LogCategory } from '../_lib/log-types'
 import type { useStudioChat } from './useStudioChat'
 
@@ -42,7 +43,7 @@ export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
     (agent: AgentEntry) => {
       const provider: Provider = 'opencode-go'
       const model = getDefaultModel(provider)
-      const prompt = agentSkills[agent.id] ?? defaultSystemPrompt
+      const prompt = buildSystemPrompt(agent.id) || agentSkills[agent.id] || defaultSystemPrompt
       const agentConfig = {
         provider,
         model,
