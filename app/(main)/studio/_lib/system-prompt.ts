@@ -40,7 +40,8 @@ export function buildSystemPrompt(memberId: string): string {
   const skill = agentSkills[memberId];
   if (!skill) return "";
 
-  const parts = [`You are **${memberId.replace(/-/g, " ")}**, a Society Member.`, SKILL_CONTENT_GUARD, skill];
+  const displayName = agentRegistry.find((m) => m.name === memberId)?.displayName ?? memberId;
+  const parts = [`You are **${displayName}**, a Society Member.`, SKILL_CONTENT_GUARD, skill];
   if (sharedConversationalStyle) parts.push("", sharedConversationalStyle);
   parts.push("", ORCHESTRATION_GUIDE);
   return parts.join("\n\n");

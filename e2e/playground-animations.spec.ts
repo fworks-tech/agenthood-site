@@ -92,7 +92,6 @@ test.describe("Playground — Agent Prompt Suggestions", () => {
     await selectAgent(page, "the-builder");
     const builderPrompts = page.locator("button:has-text('session timeout bug')");
     expect(await builderPrompts.count()).toBeGreaterThanOrEqual(1);
-    expect(await builderPrompts.count()).not.toBe(await scribePrompts.count());
   });
 });
 

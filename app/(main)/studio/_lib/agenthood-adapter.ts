@@ -1,4 +1,3 @@
-import { agentSkills } from "../_data/agents.generated";
 import { buildSystemPrompt } from "./system-prompt";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
@@ -63,7 +62,7 @@ function buildLLMConfig(providerName: ProviderName, req: ChatRequest): LLMConfig
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
-    const systemPrompt = buildSystemPrompt(req.agentId) || agentSkills[req.agentId];
+    const systemPrompt = buildSystemPrompt(req.agentId);
     if (!systemPrompt) {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
