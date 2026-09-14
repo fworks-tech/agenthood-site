@@ -1,4 +1,5 @@
 import { agentSkills } from '../_data/agents.generated'
+import { buildSystemPrompt } from './system-prompt'
 import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from './tools'
 import type { ToolCall } from './tools'
 import { logger } from './logger'
@@ -29,7 +30,7 @@ export async function createWorkspaceTurnStream(
   req: WorkspaceTurnRequest,
   signal?: AbortSignal,
 ): Promise<ReadableStream> {
-  const systemPrompt = agentSkills[req.memberId]
+  const systemPrompt = buildSystemPrompt(req.memberId) || agentSkills[req.memberId]
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
   const providerName = 'opencode-go' as const

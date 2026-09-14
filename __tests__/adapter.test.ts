@@ -24,6 +24,14 @@ vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
   agentSkills: {
     "the-scribe": "You are a commit message writer.",
   },
+  sharedConversationalStyle: "",
+  toolSkills: [],
+}));
+
+vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
+  agentRegistry: [
+    { name: "the-scribe", displayName: "The Scribe", tagline: "", role: "commits", stage: [], priority: 0 },
+  ],
 }));
 
 vi.mock("../app/(main)/studio/_lib/tools", () => ({
@@ -316,7 +324,7 @@ describe("LightweightAdapter", () => {
       correlationId: "corr-123",
       model: "llama-3.3-70b-versatile",
     });
-    expect(traces[0].tokenCount).toMatchObject({ input: 11, output: 3, total: 14 });
+    expect(traces[0].tokenCount).toMatchObject({ input: 385, output: 3, total: 388 });
     expect(typeof traces[0].cost).toBe("number");
     expect(traces[0].qualityScore).toBeNull();
   });

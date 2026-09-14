@@ -21,6 +21,14 @@ vi.mock('../app/(main)/studio/_data/agents.generated', () => ({
     'the-mediator': 'You are the-mediator.',
     'the-tester': 'You are the-tester.',
   },
+  sharedConversationalStyle: '',
+  toolSkills: [],
+}))
+
+vi.mock('../app/(main)/studio/_data/registry.generated', () => ({
+  agentRegistry: [
+    { name: 'the-builder', displayName: 'The Builder', tagline: '', role: 'coding', stage: [], priority: 0 },
+  ],
 }))
 
 vi.mock('../app/(main)/studio/_lib/tools', async (importOriginal) => {
