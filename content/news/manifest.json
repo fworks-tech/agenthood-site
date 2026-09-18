@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-18"
+    ],
+    "path": "news/whats-new-2026-09-18.md",
+    "title": "Agenthood Release Digest: September 18, 2026",
+    "date": "2026-09-18",
+    "author": "Agenthood Team",
+    "summary": "Agenthood ships cross-provider eval comparison, packaged skill catalog entries, and a round of LLM, CI, and security fixes."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-13"
     ],
     "path": "news/whats-new-2026-09-13.md",
