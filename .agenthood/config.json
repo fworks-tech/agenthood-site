@@ -26,12 +26,12 @@
   "providers": [
     {
       "name": "opencode",
-      "model": "deepseek-v4-flash",
+      "model": "muse-spark-1.3-contributor",
       "priority": 1
     },
     {
       "name": "opencode-go",
-      "model": "deepseek-v4-flash",
+      "model": "muse-spark-1.3-contributor",
       "priority": 2
     },
     {
