@@ -110,7 +110,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     label: "OpenCode Go",
     requiresKey: false,
     requiresBaseUrl: true,
-    defaultBaseUrl: "https://opencode.ai/zen/go/v1",
+    defaultBaseUrl: "https://opencode.ai/zen/v1",
     models: [
       { id: "mimo-v2.5", label: "MiMo-V2.5 (default)" },
       { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },

@@ -135,7 +135,7 @@ describe("LightweightAdapter", () => {
       config: {
         provider: "opencode-go",
         model: "deepseek-v4-flash",
-        baseUrl: "https://opencode.ai/zen/go/v1",
+        baseUrl: "https://opencode.ai/zen/v1",
         apiKey: "test-key",
       },
     });
@@ -146,7 +146,7 @@ describe("LightweightAdapter", () => {
     expect(llmConfig.providers[0]).toMatchObject({
       name: "opencode-go",
       apiKey: "test-key",
-      baseUrl: "https://opencode.ai/zen/go/v1",
+      baseUrl: "https://opencode.ai/zen/v1",
     });
   });
 
