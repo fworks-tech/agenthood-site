@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-21"
+    ],
+    "path": "news/whats-new-2026-09-21.md",
+    "title": "Agenthood Release Digest: v3.67.0 and v3.66.0",
+    "date": "2026-09-21",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.67.0 adds provider health probes, request timeouts, memory TTL, and tool safety; v3.66.0 improves CLI, init, and skill workflows."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-18"
     ],
     "path": "news/whats-new-2026-09-18.md",
