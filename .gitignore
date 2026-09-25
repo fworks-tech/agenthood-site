@@ -29,6 +29,7 @@
 .agenthood/decisions/
 .agenthood/provenance/
 .agenthood/snapshots/
+.agenthood/checkpoints/
 .agenthood/metrics/
 .agenthood/traces/
 .agenthood/residual.json
@@ -66,3 +67,6 @@ mantine-theme.css
 
 # editor
 .vscode/
+
+# dev server logs
+*.log
