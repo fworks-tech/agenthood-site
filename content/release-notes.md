@@ -5,6 +5,149 @@
 
 ---
 
+## v3.67.0 — September 21, 2026
+
+### ✨ Features
+
+- **Health:** probe providers with a real request (#905)
+- **Llm:** configurable per-request timeout for provider calls (#903)
+- **Memory:** add ttl option to short-term memory, prune residual signals on record (#906)
+- **Safety:** enforce allowed-tools from SKILL.md frontmatter (#904)
+
+---
+
+## v3.66.0 — September 20, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** reviewer empty-tree range (#815) (#888)
+- **Docs:** correct non-existent member references and tool vocabulary (#897)
+
+### ✨ Features
+
+- **Cli:** --json flag with pino structured logging (#647) (#892)
+- **Cli:** add shared CLI error formatter with consistent exit codes (#891)
+- **Create:** scaffold new skills from a template (#879)
+- **Diff:** show drift between installed members and lockfile (#876)
+- **Eject:** sweep lockfiles alongside artifacts (#874)
+- **Init:** add --ci for non-interactive setup with --runtime and --members (#882) #761
+- **Init:** add --target flag for cross-client compatibility (#662) (#895)
+- **Init:** create .agents/skills/ as primary cross-client location (#654) (#894)
+- **Init:** prompt before overwriting an existing setup (#873)
+- **List:** show token counts and context budget (#875)
+- **Remove:** clean uninstall with lock pruning (#877)
+- **Run:** add --sandbox flag with strict local profile (#880) #665
+- **Sandbox:** add Docker container isolation detection (#884) (#896)
+- **Skills:** discover skills in bare skills/ directory (#642) (#893)
+- **Upgrade:** self-upgrade agenthood with config backup (#881)
+
+---
+
+## v3.65.2 — September 18, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** wrap tools in OpenAI function shape for chat-completions providers (#860)
+
+---
+
+## v3.65.1 — September 17, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** poll npm registry instead of fixed sleep in release verify (#857)
+
+---
+
+## v3.65.0 — September 17, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** gate ritual matrix entries in a step instead of job if (#855)
+
+### ✨ Features
+
+- **Eval:** cross-provider comparison with repeatable --provider flags (#849)
+
+---
+
+## v3.64.3 — September 17, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** cross-check blocking verdicts against listed findings (#851)
+
+---
+
+## v3.64.2 — September 17, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** runtime stream guard and structured provider logging (#847) #322
+
+---
+
+## v3.64.1 — September 17, 2026
+
+### 🐛 Bug Fixes
+
+- **Skills:** harden agenthood install against SSRF and path traversal (#843) #842
+
+---
+
+## v3.64.0 — September 16, 2026
+
+### ✨ Features
+
+- **Skills:** include packaged tool skills in runtime catalog (#833)
+
+---
+
+## v3.63.3 — September 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Verify:** narrow placeholder scan to marker form and skip code spans (#830) #753
+
+---
+
+## v3.63.2 — September 12, 2026
+
+### 🐛 Bug Fixes
+
+- **Scripts:** drop removed marked options for v15/v18 compat (#824)
+
+---
+
+## v3.63.1 — September 9, 2026
+
+### 🐛 Bug Fixes
+
+- **Release:** route herald compute through a file, keep stdout json-only
+- **Release:** untrack the herald notes artifact, keep the changelog-derived view
+
+---
+
+## v3.63.0 — September 9, 2026
+
+### 🐛 Bug Fixes
+
+- **Cost:** add missing afterEach import and update docs
+- **Cost:** remove unused vars, fix require(), simplify tests
+- **Release:** keep semantic-release peer and install before pending check
+- **Vitest:** exclude cost command from coverage gate
+
+### ✨ Features
+
+- **Cli:** add cost command with per-provider/per-member breakdown (#676)
+- **Cli:** add doctor command for comprehensive diagnostics
+- **Cli:** add rotate-key command for API key rotation with hot-reload (#678) (#784)
+- **Rituals:** implement ritual command and scheduled rituals workflow (#794)
+- **Skills:** add integrity verification to SkillDiscovery on load (#658) (#785)
+- **Verify:** add --conflicts flag for overlapping skill-description detection
+
+---
+
 ## v3.62.0 — September 9, 2026
 
 ### 🐛 Bug Fixes
