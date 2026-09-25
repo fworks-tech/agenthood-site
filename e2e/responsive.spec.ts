@@ -28,7 +28,7 @@ test.describe("Playground — Responsive Layout", () => {
 
   test("mobile agent selector visible when no agent selected", async ({ page, clearStorage }) => {
     await setup(page, 375, 812, clearStorage);
-    const mobileSelect = page.getByLabel("Select an agent");
+    const mobileSelect = page.getByLabel("Select an agent").first();
     await expect(mobileSelect).toBeVisible({ timeout: 10000 });
   });
 
