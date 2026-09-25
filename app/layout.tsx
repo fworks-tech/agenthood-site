@@ -7,6 +7,7 @@ import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/c
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { NavigationProgress } from "@mantine/nprogress";
+import GlobalSpotlight from "./components/GlobalSpotlight";
 import theme from "../mantine-theme.mjs";
 import "./globals.css";
 import { agents } from "./(main)/studio/_data/agents";
@@ -91,6 +92,7 @@ export default function RootLayout({
           <ModalsProvider>
             <NavigationProgress />
             <Notifications position="bottom-right" />
+            <GlobalSpotlight />
             <a
               href="#main-content"
               className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white focus:outline-none"
