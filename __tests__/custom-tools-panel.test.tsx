@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MantineProvider } from '@mantine/core'
+import { ModalsProvider } from '@mantine/modals'
 import CustomToolsPanel from '@/app/(main)/studio/_components/CustomToolsPanel'
 
 Object.defineProperty(window, 'matchMedia', {
@@ -31,7 +32,6 @@ const STORAGE_KEY = 'agenthood-studio-custom-tools'
 
 beforeEach(() => {
   localStorage.clear()
-  vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
 afterEach(() => {
@@ -39,7 +39,13 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const renderPanel = () => render(<CustomToolsPanel />, { wrapper: MantineProvider })
+const renderPanel = () =>
+  render(
+    <ModalsProvider>
+      <CustomToolsPanel />
+    </ModalsProvider>,
+    { wrapper: MantineProvider },
+  )
 
 describe('CustomToolsPanel', () => {
   it('renders empty state when no tools exist', () => {
@@ -105,7 +111,7 @@ describe('CustomToolsPanel', () => {
     fireEvent.click(screen.getByText('Add Tool'))
 
     await waitFor(() => {
-      expect(screen.getByText(/Invalid tool name/)).toBeTruthy()
+      expect(screen.getByText(/Must match custom_/)).toBeTruthy()
     })
   })
 
@@ -150,14 +156,17 @@ describe('CustomToolsPanel', () => {
     const deleteButton = screen.getByRole('button', { name: 'Delete custom_weather', hidden: true } as any)
     fireEvent.click(deleteButton)
 
-    expect(window.confirm).toHaveBeenCalledWith('Delete custom tool "custom_weather"?')
+    await waitFor(() => {
+      expect(screen.getByText('Delete custom tool?')).toBeTruthy()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
 
     await waitFor(() => {
       expect(screen.getByText('No custom tools yet. Add one to extend agent capabilities.', { hidden: true } as any)).toBeTruthy()
     })
   })
 
-  it('skips deletion when confirmation is declined', async () => {
+  it('skips deletion when confirmation is cancelled', async () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([
@@ -170,15 +179,17 @@ describe('CustomToolsPanel', () => {
       ]),
     )
 
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-
     renderPanel()
     fireEvent.click(screen.getByRole('button', { name: /Custom Tools/ }))
 
     const deleteButton = screen.getByRole('button', { name: 'Delete custom_weather', hidden: true } as any)
     fireEvent.click(deleteButton)
 
-    expect(window.confirm).toHaveBeenCalledWith('Delete custom tool "custom_weather"?')
+    await waitFor(() => {
+      expect(screen.getByText('Delete custom tool?')).toBeTruthy()
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
     expect(screen.getByText('custom_weather', { hidden: true } as any)).toBeTruthy()
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')
