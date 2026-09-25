@@ -84,7 +84,17 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
       .then(() => true)
       .catch(() => false);
     if (mobileVisible) {
-      await mobileSelect.selectOption(agentId, { force: true });
+      const tagName = await mobileSelect.evaluate((el) => el.tagName.toLowerCase()).catch(() => "");
+      if (tagName === "select") {
+        await mobileSelect.selectOption(agentId, { force: true });
+      } else {
+        await mobileSelect.click();
+        await page.waitForTimeout(200);
+        const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        const option = page.locator(`[role="option"]`).filter({ hasText: agentName });
+        await option.waitFor({ state: "visible", timeout: 10000 });
+        await option.click();
+      }
       await page.waitForTimeout(300);
       return;
     }
