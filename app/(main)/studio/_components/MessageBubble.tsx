@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import { Paper, Text, ActionIcon, Group, Typography, Title, Collapse } from "@mantine/core";
+import { CodeHighlight } from "@mantine/code-highlight";
 import { IconThumbUp, IconThumbDown } from "@tabler/icons-react";
 import type { ChatMessage } from "../_lib/studio-api";
 import { STORAGE_KEYS } from "../_lib/constants";
+import { childrenToString } from "../../../_lib/react-children";
 
 function loadFeedback(): Record<string, "up" | "down"> {
   if (typeof window === "undefined") return {};
@@ -101,11 +103,19 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
   }
 
   const mdComponents: Components = {
-    pre: ({ children }) => (
-      <pre className="my-2 max-w-full overflow-x-auto rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-2 text-xs leading-relaxed">
-        {children}
-      </pre>
-    ),
+    pre: ({ children }) => {
+      const code = childrenToString(children);
+      return (
+        <CodeHighlight
+          code={code}
+          language="tsx"
+          withCopyButton
+          withExpandButton
+          maxCollapsedHeight={280}
+          withBorder
+        />
+      );
+    },
     h1: ({ children }) => (
       <Title order={3} size="sm" fw={600} mt="sm" mb={4}>{children}</Title>
     ),
