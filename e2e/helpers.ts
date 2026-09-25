@@ -91,9 +91,7 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
         await mobileSelect.click();
         await page.waitForTimeout(200);
         const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-        const listbox = page.locator('[role="listbox"]').first();
-        await listbox.waitFor({ state: "visible", timeout: 10000 });
-        const option = listbox.locator(`[role="option"]`).filter({ hasText: agentName }).first();
+        const option = page.locator(`[data-combobox-option]`).filter({ hasText: agentName }).first();
         await option.waitFor({ state: "visible", timeout: 10000 });
         await option.click();
       }
@@ -110,9 +108,7 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
     await agentSelect.click();
     await page.waitForTimeout(200);
     const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const listbox = page.locator('[role="listbox"]').first();
-    await listbox.waitFor({ state: "visible", timeout: 10000 });
-    const option = listbox.locator(`[role="option"]`).filter({ hasText: agentName }).first();
+    const option = page.locator(`[data-combobox-option]`).filter({ hasText: agentName }).first();
     await option.waitFor({ state: "visible", timeout: 10000 });
     await option.click();
     await page.waitForTimeout(300);
@@ -135,9 +131,7 @@ export async function selectAgent(page: Page, agentId: string): Promise<void> {
   await agentSelect.click();
   await page.waitForTimeout(200);
   const agentName = agentId.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-  const listbox = page.locator('[role="listbox"]').first();
-  await listbox.waitFor({ state: "visible", timeout: 10000 });
-  const option = listbox.locator(`[role="option"]`).filter({ hasText: agentName }).first();
+  const option = page.locator(`[data-combobox-option]`).filter({ hasText: agentName }).first();
   await option.waitFor({ state: "visible", timeout: 10000 });
   await option.click();
   await page.waitForTimeout(300);
