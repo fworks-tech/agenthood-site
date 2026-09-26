@@ -97,6 +97,16 @@ The `predev` script runs `sync-docs.mjs`, `sync-news.mjs`, and `sync-skills.mjs`
 
 ---
 
+## Staging environment
+
+The `staging` branch maps to the staging deployment on Vercel:
+
+1. Merge feature PRs to `main` as usual — production deploys from `main`.
+2. To promote a change to staging without deploying to production, merge or cherry-pick it to `staging`. CI and E2E run on `staging` pushes, same as `main`.
+3. In Vercel (Project Settings → Git → Production Branch), confirm `main` is production and add a branch alias so `staging` deploys get a stable URL (e.g. `staging.<domain>`).
+
+Preview deployments are unchanged: every PR gets its own preview from Vercel.
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
