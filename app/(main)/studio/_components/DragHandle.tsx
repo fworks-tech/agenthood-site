@@ -74,14 +74,29 @@ export default function DragHandle({ direction, onDrag, className = "" }: DragHa
     };
   }, [direction, isHorizontal]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? 24 : 8;
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      onDragRef.current(-step);
+    } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      onDragRef.current(step);
+    }
+  }, []);
+
   return (
     <Box
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
-      className={`group relative z-30 flex items-center justify-center shrink-0 ${
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="separator"
+      aria-orientation={isHorizontal ? "vertical" : "horizontal"}
+      aria-label={isHorizontal ? "Resize side panel, arrow keys adjust width" : "Resize panel, arrow keys adjust height"}
+      className={`group relative z-30 flex items-center justify-center shrink-0 focus:outline-none focus-visible:bg-emerald-500/20 ${
         isHorizontal ? "w-2.5 sm:w-1.5 cursor-col-resize" : "h-2.5 sm:h-1.5 cursor-row-resize"
       } ${className}`}
-      aria-hidden
     >
       <div
         className={`transition-colors ${

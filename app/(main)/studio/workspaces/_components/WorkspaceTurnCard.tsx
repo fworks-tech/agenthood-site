@@ -5,9 +5,11 @@ import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Paper, Text, ActionIcon, Group, Title, Modal, Collapse, Badge } from '@mantine/core'
+import { CodeHighlight } from '@mantine/code-highlight'
 import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck } from '@tabler/icons-react'
 import { getAgentById } from '../../_data/agents'
 import { STORAGE_KEYS } from '../../_lib/constants'
+import { childrenToString } from '../../../../_lib/react-children'
 import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 import type { WorkspaceToolCall } from '../../_hooks/useWorkspace'
 
@@ -82,10 +84,17 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   }
 
   const mdComponents: Components = {
-    // wrap long lines — screenshots showed code_execution results with 120+ char lines
-    // overflowing the Paper; wrap + max-h keeps the thread scannable
+    // code_execution results showed 120+ char lines overflowing the Paper;
+    // CodeHighlight wraps long lines and collapses tall blocks to keep threads scannable
     pre: ({ children }) => (
-      <pre className="my-2 max-w-full overflow-auto whitespace-pre-wrap break-words rounded bg-zinc-50/70 dark:bg-zinc-950/70 p-3 text-xs leading-relaxed [overflow-wrap:anywhere] max-h-[420px]">{children}</pre>
+      <CodeHighlight
+        code={childrenToString(children)}
+        language="tsx"
+        withCopyButton
+        withExpandButton
+        maxCollapsedHeight={420}
+        withBorder
+      />
     ),
     code: ({ children, className }) => {
       const isBlock = !!className

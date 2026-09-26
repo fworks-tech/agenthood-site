@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { ScrollArea, Group, Text, ActionIcon, Collapse, UnstyledButton } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { openConfirmModal } from "@mantine/modals";
 import { IconChevronDown, IconTrash } from "@tabler/icons-react";
 import type { Conversation } from "../_hooks/useStudioChat";
 import { agents } from "../_data/agents";
@@ -36,7 +37,17 @@ export default function ConversationList({
   onNewConversation,
   onDelete,
 }: ConversationListProps) {
-  const [open, setOpen] = useState(true);
+  const [open, { toggle: toggleOpen }] = useDisclosure(true);
+
+  const confirmDelete = (id: string, title: string) => {
+    openConfirmModal({
+      title: 'Delete conversation?',
+      children: `Delete "${title}"? This cannot be undone.`,
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => onDelete(id),
+    });
+  };
 
   const sorted = [...conversations].sort((a, b) => b.createdAt - a.createdAt);
 
@@ -44,7 +55,9 @@ export default function ConversationList({
     <div className="border border-zinc-200 dark:border-zinc-800">
       <Group justify="space-between" px="lg" py="sm">
         <UnstyledButton
-          onClick={() => setOpen((p) => !p)}
+          onClick={toggleOpen}
+          aria-expanded={open}
+          aria-label="Toggle conversations"
           className="hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
         >
           <Group gap="xs">
@@ -109,8 +122,9 @@ export default function ConversationList({
                       variant="subtle"
                       size="xs"
                       c="zinc.6"
-                      onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }}
-                      className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); confirmDelete(conv.id, conv.title); }}
+                      aria-label={`Delete conversation ${conv.title}`}
+                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-400 transition-opacity"
                       title="Delete conversation"
                     >
                       <IconTrash size={12} />

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { TextInput, Button } from '@mantine/core'
 import { useWorkspace } from '../_hooks/useWorkspace'
 import { useLogs } from '../_hooks/useLogs'
 import WorkspaceComposer from './_components/WorkspaceComposer'
@@ -144,9 +145,9 @@ export default function WorkspacesPage() {
 
             <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
               <div className="mx-auto flex max-w-3xl gap-2">
-                <input
+                <TextInput
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => setInput(e.currentTarget.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
@@ -154,15 +155,15 @@ export default function WorkspacesPage() {
                     }
                   }}
                   placeholder={isRunning ? 'Send a message to intervene...' : 'Send a follow-up instruction...'}
-                  className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 px-3 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:shadow-lg focus:shadow-indigo-500/10"
+                  aria-label="Follow-up message"
+                  className="flex-1"
                 />
-                <button
+                <Button
                   onClick={handleSend}
                   disabled={!input.trim()}
-                  className="cursor-pointer rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
                   Send
-                </button>
+                </Button>
                 {isRunning ? (
                   <button onClick={workspace.stop} className="cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
                     Stop

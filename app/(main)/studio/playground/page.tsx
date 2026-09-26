@@ -16,6 +16,7 @@ import DragHandle from '../_components/DragHandle';
 import MobileDrawer from '../_components/MobileDrawer';
 import MobileBottomSheet from '../_components/MobileBottomSheet';
 import Turnstile from '../../../components/Turnstile';
+import { PENDING_AGENT_KEY } from '../../../components/GlobalSpotlight';
 import type { ChatConfig } from '../_types/studio';
 import { getDefaultModel, getProviderMeta } from '../_types/studio';
 import PlaygroundHeader from './_components/PlaygroundHeader';
@@ -104,6 +105,19 @@ export default function PlaygroundPage() {
     }
   }, []);
   useActiveConfigSync(conversations, activeConversationId, setConfig);
+  useEffect(() => {
+    if (isLoading || agents.length === 0) return;
+    let pending: string | null = null;
+    try {
+      pending = sessionStorage.getItem(PENDING_AGENT_KEY);
+      if (pending) sessionStorage.removeItem(PENDING_AGENT_KEY);
+    } catch {
+      return;
+    }
+    if (!pending) return;
+    const agent = agents.find((a) => a.id === pending);
+    if (agent) handleSelectAgent(agent);
+  }, [isLoading, agents, handleSelectAgent]);
   useEffect(() => {
     if (!isLoading && !error) {
       addLog('info', `Agents loaded: ${agents.length} available`);

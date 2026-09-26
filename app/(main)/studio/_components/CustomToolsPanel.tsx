@@ -11,9 +11,11 @@ import {
   Paper,
   ActionIcon,
   Textarea,
-  Alert,
   Collapse,
 } from '@mantine/core';
+import { useForm, isNotEmpty } from '@mantine/form';
+import { openConfirmModal } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import {
   getCustomTools,
@@ -40,73 +42,79 @@ export default function CustomToolsPanel() {
   const [tools, setTools] = useState<CustomToolDefinition[]>(() => getCustomTools());
   const [isOpen, setIsOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [executionType, setExecutionType] = useState<'webhook' | 'sandbox'>('webhook');
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [code, setCode] = useState('');
-  const [schema, setSchema] = useState(SCHEMA_TEMPLATE);
-  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm({
+    initialValues: {
+      name: '',
+      description: '',
+      executionType: 'webhook' as 'webhook' | 'sandbox',
+      webhookUrl: '',
+      code: '',
+      schema: SCHEMA_TEMPLATE,
+    },
+    validate: {
+      name: (v) => (isValidCustomToolName(v) ? null : 'Must match custom_[a-z][a-z0-9_]{1,62}'),
+      description: isNotEmpty('Description is required'),
+      webhookUrl: (v, values) => {
+        if (values.executionType !== 'webhook') return null;
+        try {
+          new URL(v);
+          return null;
+        } catch {
+          return 'Webhook URL must be a valid URL';
+        }
+      },
+      schema: (v) => {
+        try {
+          JSON.parse(v);
+          return null;
+        } catch {
+          return 'Schema must be valid JSON';
+        }
+      },
+    },
+    validateInputOnBlur: true,
+  });
 
   const resetForm = () => {
-    setName('');
-    setDescription('');
-    setExecutionType('webhook');
-    setWebhookUrl('');
-    setCode('');
-    setSchema(SCHEMA_TEMPLATE);
-    setError(null);
+    form.reset();
     setShowForm(false);
   };
 
   const handleSubmit = () => {
-    setError(null);
-
-    if (!isValidCustomToolName(name)) {
-      setError(`Invalid tool name "${name}". Must match custom_[a-z][a-z0-9_]{1,62}`);
-      return;
-    }
-    if (!description.trim()) {
-      setError('Description is required');
-      return;
-    }
-    if (executionType === 'webhook') {
-      try {
-        new URL(webhookUrl);
-      } catch {
-        setError('Webhook URL must be a valid URL');
-        return;
-      }
-    }
-
-    let inputSchema: CustomToolDefinition['inputSchema'];
-    try {
-      inputSchema = JSON.parse(schema);
-    } catch {
-      return setError('Schema must be valid JSON');
-    }
+    if (form.validate().hasErrors) return;
+    const { name, description, executionType, webhookUrl, code, schema } = form.values;
 
     const def: CustomToolDefinition = {
       name,
       description: description.trim(),
-      inputSchema,
+      inputSchema: JSON.parse(schema),
       executionType,
       ...(executionType === 'webhook' ? { webhookUrl } : { code }),
     };
 
     const result = registerCustomTool(def);
     if (!result.ok) {
-      return setError(result.error);
+      notifications.show({ color: 'red', title: 'Cannot add tool', message: result.error });
+      return;
     }
 
     setTools(getCustomTools());
     resetForm();
+    notifications.show({ color: 'green', title: 'Tool added', message: `"${name}" is ready to use.` });
   };
 
   const handleDelete = (toolName: string) => {
-    if (!window.confirm(`Delete custom tool "${toolName}"?`)) return;
-    unregisterCustomTool(toolName);
-    setTools(getCustomTools());
+    openConfirmModal({
+      title: 'Delete custom tool?',
+      children: `Delete custom tool "${toolName}"? This cannot be undone.`,
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => {
+        unregisterCustomTool(toolName);
+        setTools(getCustomTools());
+      },
+    });
   };
 
   return (
@@ -160,57 +168,48 @@ export default function CustomToolsPanel() {
               <TextInput
                 label="Tool Name"
                 placeholder="custom_my_tool"
-                value={name}
-                onChange={(e) => setName(e.currentTarget.value)}
                 size="xs"
+                {...form.getInputProps('name')}
               />
               <TextInput
                 label="Description"
                 placeholder="What this tool does"
-                value={description}
-                onChange={(e) => setDescription(e.currentTarget.value)}
                 size="xs"
+                {...form.getInputProps('description')}
               />
               <Select
                 label="Execution Type"
-                value={executionType}
-                onChange={(v) => setExecutionType(v as 'webhook' | 'sandbox')}
                 data={[
                   { value: 'webhook', label: 'Webhook' },
                   { value: 'sandbox', label: 'Sandbox' },
                 ]}
                 size="xs"
+                {...form.getInputProps('executionType')}
               />
-              {executionType === 'webhook' ? (
+              {form.values.executionType === 'webhook' ? (
                 <TextInput
                   label="Webhook URL"
                   placeholder="https://api.example.com/endpoint"
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.currentTarget.value)}
                   size="xs"
+                  {...form.getInputProps('webhookUrl')}
                 />
               ) : (
                 <Textarea
                   label="Code"
                   placeholder="JavaScript code to execute"
-                  value={code}
-                  onChange={(e) => setCode(e.currentTarget.value)}
                   minRows={3}
                   maxRows={8}
                   size="xs"
+                  {...form.getInputProps('code')}
                 />
               )}
               <Textarea
                 label="Input Schema (JSON)"
-                value={schema}
-                onChange={(e) => setSchema(e.currentTarget.value)}
                 minRows={4}
                 maxRows={10}
                 size="xs"
+                {...form.getInputProps('schema')}
               />
-              {error && (
-                <Alert color="red" title={error} />
-              )}
               <Group justify="flex-end" gap="xs">
                 <Button size="compact-xs" variant="subtle" onClick={resetForm}>
                   Cancel
