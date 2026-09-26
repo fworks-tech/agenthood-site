@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-26"
+    ],
+    "path": "news/whats-new-2026-09-26.md",
+    "title": "Agenthood v3.68.0: Convert & Trust",
+    "date": "2026-09-26",
+    "author": "Agenthood Team",
+    "summary": "v3.68.0 ships Convert & Trust: onboarding, fail-closed skill trust, cost observability, plus dependency fixes."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-21"
     ],
     "path": "news/whats-new-2026-09-21.md",
