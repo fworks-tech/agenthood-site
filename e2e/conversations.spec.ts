@@ -93,12 +93,14 @@ test.describe("Playground — Conversation Management", () => {
     let entries = await getConversationEntries(page);
     expect(entries.length).toBe(1);
 
-    const deleteBtn = page.locator("[data-conversation-list='sidebar'] button[title='Delete conversation']").first();
-    await deleteBtn.click({ force: true });
-    await page.waitForTimeout(500);
+     const deleteBtn = page.locator("[data-conversation-list='sidebar'] button[title='Delete conversation']").first();
+     await deleteBtn.click({ force: true });
+     await page.waitForTimeout(300);
+     await page.locator('button:has-text("Delete")').first().click();
+     await page.waitForTimeout(300);
 
-    entries = await getConversationEntries(page);
-    expect(entries.length).toBe(0);
+     entries = await getConversationEntries(page);
+     expect(entries.length).toBe(0);
   });
 
   test("auto-title from first user message", async ({ page, mockChat }) => {

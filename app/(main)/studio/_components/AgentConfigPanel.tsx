@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Select, TextInput, PasswordInput, Slider, Switch, Button, Text, Group, Stack, Paper, Alert, Collapse, UnstyledButton } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { IconBolt, IconChevronDown, IconCheck } from "@tabler/icons-react";
 import type { AgentEntry } from "../_data/agents";
 import type { ChatConfig, Provider } from "../_types/studio";
@@ -44,6 +45,8 @@ export function SectionHeader({
   return (
     <UnstyledButton
       onClick={onToggle}
+      aria-expanded={isOpen}
+      aria-label={`Toggle ${label}`}
       className="flex w-full items-center justify-between py-1.5 group"
     >
       <Group gap="xs">
@@ -75,9 +78,9 @@ export default function AgentConfigPanel({
 }: AgentConfigPanelProps) {
   const panelId = useId();
   const meta = getProviderMeta(config.provider);
-  const [modelOpen, setModelOpen] = useState(true);
-  const [toolsOpen, setToolsOpen] = useState(true);
-  const [limitsOpen, setLimitsOpen] = useState(false);
+  const [modelOpen, { toggle: toggleModel }] = useDisclosure(true);
+  const [toolsOpen, { toggle: toggleTools }] = useDisclosure(true);
+  const [limitsOpen, { toggle: toggleLimits }] = useDisclosure(false);
   const [saved, setSaved] = useState(false);
 
   const categories = [
@@ -133,7 +136,28 @@ export default function AgentConfigPanel({
     label: m.label,
   }));
 
+  const baseUrlValue = config.baseUrl ?? meta.defaultBaseUrl ?? "";
+  const baseUrlError = (() => {
+    if (!meta.requiresBaseUrl) return null;
+    if (!baseUrlValue.trim()) return "Base URL is required for this provider";
+    try {
+      const url = new URL(baseUrlValue.trim());
+      if (url.protocol !== "http:" && url.protocol !== "https:") return "Base URL must start with http:// or https://";
+      return null;
+    } catch {
+      return "Base URL must be a valid URL";
+    }
+  })();
+  const apiKeyValue = config.apiKey ?? "";
+  const apiKeyError = (() => {
+    if (!apiKeyValue) return null;
+    if (/\s/.test(apiKeyValue)) return "API key must not contain spaces";
+    if (apiKeyValue.length < 8) return "API key looks too short";
+    return null;
+  })();
+
   const handleSave = () => {
+    if (baseUrlError) return;
     onSave?.(config);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
@@ -222,7 +246,7 @@ export default function AgentConfigPanel({
             label="Model & Behavior"
             helpText="Controls which AI model powers the agent and how it generates responses."
             isOpen={modelOpen}
-            onToggle={() => setModelOpen((o) => !o)}
+            onToggle={toggleModel}
           />
           <Collapse expanded={modelOpen}>
             <Stack gap="sm" pt="sm">
@@ -278,6 +302,7 @@ export default function AgentConfigPanel({
                     value={config.baseUrl ?? meta.defaultBaseUrl ?? ""}
                     onChange={(e) => onChangeConfig({ ...config, baseUrl: e.currentTarget.value })}
                     placeholder={meta.defaultBaseUrl}
+                    error={baseUrlError}
                   />
                 </div>
               )}
@@ -306,6 +331,7 @@ export default function AgentConfigPanel({
                       ? `Uses server ${config.provider} key`
                       : "Not required"
                   }
+                  error={apiKeyError}
                 />
                 <Text size="xs" c="dimmed" mt={4}>
                   {config.provider === "opencode" || config.provider === "opencode-go"
@@ -372,7 +398,7 @@ export default function AgentConfigPanel({
             label="Tools"
             helpText="Enable tools the agent can use during conversations."
             isOpen={toolsOpen}
-            onToggle={() => setToolsOpen((o) => !o)}
+            onToggle={toggleTools}
           />
           <Collapse expanded={toolsOpen}>
             <Stack gap="sm" pt="sm">
@@ -413,7 +439,7 @@ export default function AgentConfigPanel({
             label="Limits"
             helpText="Built-in guardrails that protect against abuse."
             isOpen={limitsOpen}
-            onToggle={() => setLimitsOpen((o) => !o)}
+            onToggle={toggleLimits}
           />
           <Collapse expanded={limitsOpen}>
             <Paper p="sm" className="border border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-900/50 mt-sm">
@@ -449,7 +475,7 @@ export default function AgentConfigPanel({
           <Button
             fullWidth
             onClick={handleSave}
-            disabled={TURNSTILE_REQUIRED && !captchaToken}
+            disabled={(TURNSTILE_REQUIRED && !captchaToken) || !!baseUrlError || !!apiKeyError}
             className={`transition-all duration-200 ${saved ? "bg-emerald-600" : ""}`}
           >
             {saved ? (

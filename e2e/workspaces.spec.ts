@@ -231,7 +231,7 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
 
     await expect(page.getByText('Mobile hello')).toBeVisible({ timeout: 15000 })
     // mobile agents button — drawer
-    const agentsBtn = page.getByRole('button', { name: 'Agents' })
+    const agentsBtn = page.getByRole('button', { name: 'Agents', exact: true })
     await expect(agentsBtn).toBeVisible()
     await agentsBtn.click()
     await expect(page.locator('.mantine-Drawer-content').first()).toBeVisible({ timeout: 5000 })

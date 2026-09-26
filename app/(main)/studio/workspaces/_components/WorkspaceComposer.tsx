@@ -1,5 +1,6 @@
 'use client'
 
+import { Textarea, Button, Text } from '@mantine/core'
 import { agents } from '../../_data/agents'
 
 interface Props {
@@ -64,22 +65,27 @@ export default function WorkspaceComposer({ selected, onToggle, instruction, onI
           selected.length > 0 ? 'opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-2'
         }`}
       >
-        <label className="mb-2 block text-sm font-medium text-zinc-800 dark:text-zinc-200">Instruction</label>
-        <textarea
+        <Text component="label" htmlFor="workspace-instruction" mb={8} size="sm" fw={500}>
+          Instruction
+        </Text>
+        <Textarea
+          id="workspace-instruction"
           value={instruction}
-          onChange={(e) => onInstructionChange(e.target.value)}
+          onChange={(e) => onInstructionChange(e.currentTarget.value)}
           placeholder="e.g. Suggest an area for improvement in https://github.com/fworks-tech/agenthood"
-          rows={4}
-          className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-3 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 transition-all duration-200 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:shadow-lg focus:shadow-indigo-500/10"
+          minRows={4}
+          aria-label="Instruction"
         />
-        <button
+        <Button
           type="button"
           onClick={onStart}
           disabled={!canStart}
-          className="mt-4 w-full cursor-pointer rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-600/20 transition-all duration-200 hover:bg-indigo-500 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-lg"
+          loading={running}
+          fullWidth
+          mt="md"
         >
           {running ? 'Running...' : 'Start Workspace'}
-        </button>
+        </Button>
       </div>
     </div>
   )

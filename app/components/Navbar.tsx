@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { track } from "@vercel/analytics";
-import { Button, Group, Badge, Burger, Drawer, Stack } from "@mantine/core";
+import { Button, Group, Badge, Burger, Drawer, Stack, ActionIcon } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { IconSearch } from "@tabler/icons-react";
+import { openGlobalSpotlight } from "./GlobalSpotlight";
 import HelpTip from "../(main)/studio/_components/HelpTip";
 
 interface NavLink {
@@ -23,7 +26,7 @@ const navLinks: NavLink[] = [
 ];
 
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, { toggle: toggleMenu, close: closeMenu }] = useDisclosure(false);
   const trackNav = useCallback((label: string) => {
     track("nav_click", { target: label.toLowerCase() });
   }, []);
@@ -83,20 +86,39 @@ export default function Navbar() {
           >
             GitHub →
           </Button>
+          <ActionIcon
+            variant="outline"
+            color="gray"
+            size="lg"
+            onClick={openGlobalSpotlight}
+            aria-label="Search pages and agents (Ctrl+K)"
+            title="Search pages and agents (Ctrl+K)"
+          >
+            <IconSearch size={16} />
+          </ActionIcon>
         </Group>
 
-        <Burger
-          opened={menuOpen}
-          onClick={() => setMenuOpen((o) => !o)}
-          hiddenFrom="md"
-          color="gray"
-          aria-label="Toggle menu"
-        />
+        <Group hiddenFrom="md" gap="xs">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            onClick={openGlobalSpotlight}
+            aria-label="Search pages and agents"
+          >
+            <IconSearch size={18} />
+          </ActionIcon>
+          <Burger
+            opened={menuOpen}
+            onClick={toggleMenu}
+            color="gray"
+            aria-label="Toggle menu"
+          />
+        </Group>
       </div>
 
       <Drawer
         opened={menuOpen}
-        onClose={() => setMenuOpen(false)}
+        onClose={closeMenu}
         size="xs"
         padding="md"
         hiddenFrom="md"
@@ -112,7 +134,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => { trackNav(link.label); setMenuOpen(false); }}
+                onClick={() => { trackNav(link.label); closeMenu(); }}
                 className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
@@ -132,7 +154,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => { trackNav(link.label); setMenuOpen(false); }}
+                onClick={() => { trackNav(link.label); closeMenu(); }}
                 className="block text-zinc-400 hover:text-white transition-colors"
               >
                 {link.label}
@@ -147,7 +169,7 @@ export default function Navbar() {
             variant="outline"
             color="emerald"
             fullWidth
-            onClick={() => { trackNav("github"); setMenuOpen(false); }}
+            onClick={() => { trackNav("github"); closeMenu(); }}
           >
             GitHub →
           </Button>

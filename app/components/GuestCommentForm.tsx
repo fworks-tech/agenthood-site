@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { TextInput, Textarea, Button } from '@mantine/core'
+import { useForm, hasLength } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
 import Turnstile from './Turnstile'
 
 const CAPTCHA_REQUIRED =
@@ -16,13 +19,19 @@ interface GuestComment {
 
 export default function GuestCommentForm() {
   const [comments, setComments] = useState<GuestComment[]>([])
-  const [name, setName] = useState('')
-  const [text, setText] = useState('')
   const [token, setToken] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
-  const [error, setError] = useState('')
   const [slug, setSlug] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+
+  const form = useForm({
+    initialValues: { name: '', text: '' },
+    validate: {
+      name: hasLength({ min: 1, max: 50 }, 'Name must be 1-50 characters'),
+      text: hasLength({ min: 1, max: 2000 }, 'Comment must be 1-2000 characters'),
+    },
+    validateInputOnBlur: true,
+  })
 
   useEffect(() => {
     const path = window.location.pathname.replace(/^\/news\//, '')
@@ -38,27 +47,33 @@ export default function GuestCommentForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim() || !text.trim() || (CAPTCHA_REQUIRED && !token)) return
+    if (form.validate().hasErrors) return
+    const { name, text } = { name: form.values.name.trim(), text: form.values.text.trim() }
+    if (!name || !text || (CAPTCHA_REQUIRED && !token)) {
+      if (CAPTCHA_REQUIRED && !token) {
+        notifications.show({ color: 'red', title: 'Verification required', message: 'Please complete the captcha.' })
+      }
+      return
+    }
     setSending(true)
-    setError('')
     try {
       const res = await fetch('/api/news/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), text: text.trim(), token, slug }),
+        body: JSON.stringify({ name, text, token, slug }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? 'Failed to post comment')
+        notifications.show({ color: 'red', title: 'Failed to post comment', message: data.error ?? 'Failed to post comment' })
         return
       }
       setComments((prev) => [...prev, data.comment])
-      setName('')
-      setText('')
+      form.reset()
       setToken(null)
       setRefreshKey((k) => k + 1)
+      notifications.show({ color: 'green', title: 'Comment posted', message: 'Thanks for your comment.' })
     } catch {
-      setError('Network error')
+      notifications.show({ color: 'red', title: 'Network error', message: 'Could not post comment. Try again.' })
     } finally {
       setSending(false)
     }
@@ -101,35 +116,31 @@ export default function GuestCommentForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3 pt-4 border-t border-zinc-800">
+      <form onSubmit={handleSubmit} className="space-y-3 pt-4 border-t border-zinc-800" noValidate>
         <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Leave a guest comment</h3>
-        <input
-          type="text"
+        <TextInput
+          label="Your name"
           placeholder="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
           maxLength={50}
           required
-          className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+          {...form.getInputProps('name')}
         />
-        <textarea
+        <Textarea
+          label="Comment"
           placeholder="Write a comment..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
           maxLength={2000}
           required
           rows={3}
-          className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 resize-none"
+          {...form.getInputProps('text')}
         />
         <Turnstile onToken={setToken} refreshKey={refreshKey} />
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        <button
+        <Button
           type="submit"
-          disabled={sending || !name.trim() || !text.trim() || (CAPTCHA_REQUIRED && !token)}
-          className="px-4 py-1.5 text-sm font-medium bg-zinc-200 text-zinc-900 rounded hover:bg-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          loading={sending}
+          disabled={sending || !form.values.name.trim() || !form.values.text.trim() || (CAPTCHA_REQUIRED && !token)}
         >
           {sending ? 'Posting...' : 'Post comment'}
-        </button>
+        </Button>
       </form>
     </div>
   )

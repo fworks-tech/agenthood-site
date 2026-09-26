@@ -1,8 +1,8 @@
 /**
  * scripts/summarize-news.mjs <article.md> [--write]
  *
- * Drafts a one-sentence summary for a news article using OpenCode Go
- * (https://opencode.ai/zen/go/v1), authenticated with OPENCODE_API_KEY.
+ * Drafts a one-sentence summary for a news article using OpenCode Zen
+ * (https://opencode.ai/zen/v1), authenticated with OPENCODE_API_KEY.
  * Prints the summary to stdout; with --write, inserts it into the article's
  * front matter as `summary: "..."`.
  *
@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { load as parseYaml } from "js-yaml";
 
-const API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/go/v1";
+const API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/v1";
 const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
 const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-summarize-news";
 const MAX_SUMMARY_CHARS = 160;

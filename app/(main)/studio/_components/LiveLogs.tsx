@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Group, Text, Badge, Collapse, UnstyledButton, ActionIcon, Switch, Select } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { IconChevronDown, IconCopy } from "@tabler/icons-react";
 import HelpTip from "./HelpTip";
 import type { LogCategory, LogEntry, LogLevel } from "../_lib/log-types";
@@ -65,14 +66,7 @@ export default function LiveLogs({
   onCategoryFilter,
 }: LiveLogsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
-
-  useEffect(() => {
-    return () => {
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    };
-  }, []);
+  const { copy, copied, error: copyError, reset: resetCopy } = useClipboard({ timeout: 1500 });
 
   useEffect(() => {
     if (open && scrollRef.current) {
@@ -86,23 +80,19 @@ export default function LiveLogs({
       (categoryFilter === "all" || log.category === categoryFilter),
   );
 
-  const handleCopy = async () => {
+  const handleCopy = () => {
     const text = renderedLogs.map(formatForCopy).join("\n");
     if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyState("copied");
-    } catch {
-      setCopyState("error");
-    }
-    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = setTimeout(() => setCopyState("idle"), 1500);
+    resetCopy();
+    copy(text);
   };
 
   return (
     <div className="border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
       <UnstyledButton
         onClick={onToggle}
+        aria-expanded={open}
+        aria-label="Toggle live logs"
         className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
       >
         <Group gap="xs">
@@ -132,10 +122,10 @@ export default function LiveLogs({
         >
           <IconCopy size={14} />
         </ActionIcon>
-        {copyState === "copied" && (
+        {copied && (
           <Text size="xs" c="emerald.5" aria-live="polite">Copied</Text>
         )}
-        {copyState === "error" && (
+        {copyError && (
           <Text size="xs" c="red.5" aria-live="polite">Copy failed — clipboard unavailable</Text>
         )}
         <Switch

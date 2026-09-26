@@ -25,12 +25,12 @@
   ],
   "providers": [
     {
-      "name": "opencode-go",
+      "name": "opencode",
       "model": "deepseek-v4-flash",
       "priority": 1
     },
     {
-      "name": "opencode",
+      "name": "opencode-go",
       "model": "deepseek-v4-flash",
       "priority": 2
     },

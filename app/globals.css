@@ -1,4 +1,8 @@
 @import "tailwind-preset-mantine";
+@import "@mantine/notifications/styles.layer.css";
+@import "@mantine/nprogress/styles.layer.css";
+@import "@mantine/spotlight/styles.layer.css";
+@import "@mantine/code-highlight/styles.layer.css";
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }

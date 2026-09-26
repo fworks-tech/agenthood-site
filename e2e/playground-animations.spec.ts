@@ -437,7 +437,7 @@ test.describe("Playground — Responsive Layout", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
 
-    const selector = page.getByLabel("Select an agent");
+    const selector = page.getByLabel("Select an agent").first();
     await expect(selector).toBeVisible();
   });
 

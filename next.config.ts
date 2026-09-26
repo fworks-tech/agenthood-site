@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
   experimental: {
-    optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
+    optimizePackageImports: ["@mantine/core", "@mantine/hooks", "@mantine/form", "@mantine/modals", "@mantine/notifications", "@mantine/nprogress", "@mantine/spotlight", "@mantine/code-highlight"],
   },
   async headers() {
     return [

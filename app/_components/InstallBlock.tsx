@@ -1,21 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useClipboard } from "@mantine/hooks";
 import { IconCopy, IconCheck } from "@tabler/icons-react";
 
 const COMMANDS = "npm install --save-dev agenthood\nnpx agenthood init";
 
 export default function InstallBlock() {
-  const [copied, setCopied] = useState(false);
+  const { copy, copied } = useClipboard({ timeout: 2000 });
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(COMMANDS);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard API unavailable — silent fail
-    }
+  const handleCopy = () => {
+    copy(COMMANDS);
   };
 
   return (
