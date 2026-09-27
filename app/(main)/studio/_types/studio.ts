@@ -152,7 +152,7 @@ export const DEMO_PROVIDER: Provider = "opencode";
 export const DEMO_MODEL = "gpt-5-nano";
 // Output cap (abuse guard): input bounded by route (50 msgs / 4k chars / 100k total)
 // and rate-limited to 20 req/min ⇒ output was the only open dimension.
-// 20 req/min × 16,384 tokens = 327,680 tokens/min ≈ $0.13/min on gpt-5-nano.
+// 20 req/min × 16,384 tokens = 327,680 tokens/min (worst case at default-tier pricing).
 export const DEMO_MAX_TOKENS = 16384;
 
 export const CODE_AGENTS = new Set([
@@ -164,13 +164,13 @@ export const CODE_AGENTS = new Set([
 ]);
 
 // Tiered demo models: the single pin became a 3-tier map. Selection is a pure
-// heuristic (no LLM call) enforced server-side in the adapter. All three are
+// heuristic (no LLM call) enforced server-side. All three must be
 // chat-completions models on the pinned provider — jev-1.13 was rejected here
 // because it is a System One decision model on /v1/systemone, not prose chat.
-// - Q&A (no tools, no code): gpt-6-luna — $0.10 in / $0.50 out per 1M,
-//   cheapest non-free chat model in the console.
-// - Default (tools on): gpt-5-nano — $0.05 / $0.40 per 1M.
-// - Code (code agent or ``` fences): deepseek-v4-flash — $0.14 / $0.28 per 1M.
+// - Q&A (no tools, no code): cheapest non-free chat model in the console.
+// - Default (tools on): the balanced default.
+// - Code (code agent or ``` fences): the cheap code-capable model.
+// Prices live in the Zen console and rot fast, so they are not quoted here.
 // Worst case stays bounded: 20 req/min × 16,384 tokens per response.
 export const DEMO_QA_MODEL = "gpt-6-luna";
 export const DEMO_CODE_MODEL = "deepseek-v4-flash";

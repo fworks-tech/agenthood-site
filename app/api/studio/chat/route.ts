@@ -10,7 +10,7 @@ import {
 } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
-import { DEMO_MODEL, DEMO_PROVIDER } from "@/app/(main)/studio/_types/studio";
+import { DEMO_PROVIDER } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -118,7 +118,9 @@ export async function POST(request: Request) {
     }
     const response = new Response(stream, { headers });
 
-    logger.info("chat.request", { agentId, agentName: agent.name, provider: DEMO_PROVIDER, model: DEMO_MODEL, messageCount: messages.length, requestId, correlationId });
+    // No model field: the tier is selected in the adapter per request —
+    // the adapter trace is the source of truth for which model ran.
+    logger.info("chat.request", { agentId, agentName: agent.name, provider: DEMO_PROVIDER, messageCount: messages.length, requestId, correlationId });
     return response;
   } catch (err) {
     if (err instanceof StudioError) {

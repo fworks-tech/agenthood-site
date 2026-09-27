@@ -530,15 +530,11 @@ describe("selectDemoModel", () => {
     expect(selectDemoModel("the-scribe", msg("what is an ADR?"), true)).toBe(DEMO_MODEL);
   });
 
-  it("picks the code tier for code agents even without fences", () => {
-    expect(selectDemoModel("the-tester", msg("ship it"), false)).toBe(DEMO_CODE_MODEL);
+  it.each(["the-tester", "the-debugger"])("picks the code tier for code agent %s", (agent) => {
+    expect(selectDemoModel(agent, msg("plain question"), false)).toBe(DEMO_CODE_MODEL);
   });
 
   it("picks the code tier for fenced code from any agent", () => {
     expect(selectDemoModel("the-scribe", msg("explain ```ts\nx()\n```"), false)).toBe(DEMO_CODE_MODEL);
-  });
-
-  it("prefers the code tier over the Q&A tier", () => {
-    expect(selectDemoModel("the-debugger", msg("plain question"), false)).toBe(DEMO_CODE_MODEL);
   });
 });
