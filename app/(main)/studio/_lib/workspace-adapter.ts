@@ -1,11 +1,11 @@
 import { buildSystemPrompt } from './system-prompt'
-import { getToolSchemas, executeTool, PLAYGROUND_MAX_TOOL_ITERATIONS, classifyToolResult } from './tools'
-import type { ToolCall } from './tools'
+import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { DEMO_MAX_TOKENS, selectDemoModel, getMemberTools } from '../_types/studio'
+import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
-import { buildDemoLLMConfig, withProviderRetry } from './agenthood-adapter'
+import { buildDemoLLMConfig } from './agenthood-adapter'
+import { runToolLoop, withProviderRetry } from './tool-loop'
 import type { Message } from 'agenthood/dist/llm'
 
 export interface WorkspaceTurnRequest {
@@ -108,69 +108,53 @@ export async function createWorkspaceTurnStream(
           provider.setModel(model)
         } catch {}
 
-        const toolCallsRun: ToolCall[] = []
         const llmMessages: Message[] = messages.map((m) => ({
           role: m.role,
           content: m.content,
           ...(m.tool_call_id ? { tool_call_id: m.tool_call_id, name: m.name } : {}),
         }))
 
-        let finalText = ''
         let handoffEmitted = false
+        const handoffPayload = {
+          type: 'workspace.handoff',
+          memberId: req.memberId,
+          reason: 'code_execution requested — awaiting human approval',
+          options: ['continue', 'stop'],
+          workspaceId: req.workspaceId,
+          correlationId: req.correlationId,
+        }
 
-        // Same 60s Hobby budget as the playground: short loop, capped
-        // output, one 5xx retry — a 25-iteration turn cannot fit the budget.
-        for (let i = 0; i < PLAYGROUND_MAX_TOOL_ITERATIONS; i++) {
-          if (signal?.aborted) break
-          const resp = await withProviderRetry(() => provider.complete({
-            messages: llmMessages,
-            tools: toolSchemas,
-            temperature: 0.7,
-            maxTokens: DEMO_MAX_TOKENS,
-          }))
-
-          if (!resp.toolCalls || resp.toolCalls.length === 0) {
-            finalText = resp.content
-            break
-          }
-
-          const needsHandoff = resp.toolCalls.some((tc) => shouldRequestHandoff(tc.name))
-          if (needsHandoff && !handoffEmitted) {
-            handoffEmitted = true
-            const handoffPayload = {
-              type: 'workspace.handoff',
-              memberId: req.memberId,
-              reason: 'code_execution requested — awaiting human approval',
-              options: ['continue', 'stop'],
-              workspaceId: req.workspaceId,
-              correlationId: req.correlationId,
+        // Same 60s Hobby budget as the playground: short loop, capped output,
+        // one 5xx retry — a 25-iteration turn cannot fit the budget. The loop
+        // itself is shared with the playground so the cap, the retry and the role
+        // allowlist cannot drift apart again.
+        const loop = await runToolLoop({
+          provider,
+          messages: llmMessages,
+          toolSchemas,
+          maxIterations: PLAYGROUND_MAX_TOOL_ITERATIONS,
+          signal,
+          onToolCall: (tc) => {
+            // Live collaboration: keep iterating even after a handoff is emitted
+            // (the UI surfaces the checkpoint but does not block the agent from
+            // continuing to reason and produce a useful answer).
+            if (!handoffEmitted && shouldRequestHandoff(tc.name)) {
+              handoffEmitted = true
+              encode(controller, handoffPayload)
+              wsLog('info', 'workspace.handoff', { memberId: req.memberId, reason: handoffPayload.reason })
             }
-            encode(controller, handoffPayload)
-            wsLog('info', 'workspace.handoff', { memberId: req.memberId, reason: handoffPayload.reason })
-          }
-
-          llmMessages.push({
-            role: 'assistant',
-            content: resp.content || '',
-            toolCalls: resp.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, args: tc.args })),
-          })
-
-          for (const tc of resp.toolCalls) {
-            if (signal?.aborted) break
-            const args = tc.args as Record<string, unknown>
             encode(controller, {
               type: 'workspace.tool_call',
               memberId: req.memberId,
               id: tc.id,
               name: tc.name,
-              args,
+              args: tc.args,
               workspaceId: req.workspaceId,
               correlationId: req.correlationId,
             })
             wsLog('info', 'workspace.tool_call', { memberId: req.memberId, tool: tc.name })
-            const result = await executeTool(tc.name, args, signal)
-            const outcome = classifyToolResult(result)
-            toolCallsRun.push({ id: tc.id, name: tc.name, args, result: outcome.result, error: outcome.error })
+          },
+          onToolResult: (tc, outcome) => {
             encode(controller, {
               type: 'workspace.tool_result',
               memberId: req.memberId,
@@ -181,18 +165,11 @@ export async function createWorkspaceTurnStream(
               workspaceId: req.workspaceId,
               correlationId: req.correlationId,
             })
-            llmMessages.push({ role: 'tool', content: result, tool_call_id: tc.id, name: tc.name })
-          }
+          },
+        })
 
-          if (i === PLAYGROUND_MAX_TOOL_ITERATIONS - 1) {
-            finalText = resp.content || 'Max tool iterations reached.'
-          } else {
-            // Live collaboration: keep iterating even after a handoff is
-            // emitted (the UI surfaces the checkpoint but does not block the
-            // agent from continuing to reason and produce a useful answer).
-            continue
-          }
-        }
+        const toolCallsRun = loop.calls
+        let finalText = loop.exhausted ? loop.text || 'Max tool iterations reached.' : loop.text
 
         if (!finalText && toolCallsRun.length === 0) {
           const gen = await withProviderRetry(() => provider.stream({ messages: llmMessages, temperature: 0.7, maxTokens: DEMO_MAX_TOKENS }))
