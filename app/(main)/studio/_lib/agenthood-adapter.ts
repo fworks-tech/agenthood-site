@@ -8,8 +8,8 @@ import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
 import {
   DEMO_MAX_TOKENS,
-  DEMO_MODEL,
   DEMO_PROVIDER,
+  selectDemoModel,
   type Provider,
 } from "../_types/studio";
 
@@ -57,11 +57,12 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const llmConfig = buildDemoLLMConfig();
     const enabledTools = req.config?.enabledTools ?? [];
+    const model = selectDemoModel(req.agentId, req.messages, enabledTools.length > 0);
 
     const startTime = performance.now();
     const correlationId = req.correlationId ?? `pg-${generateId()}`;
     const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0) + systemPrompt.length;
-    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: CLI_PROVIDER_CHAIN, tools: enabledTools, correlationId });
+    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, model, fallbacks: CLI_PROVIDER_CHAIN, tools: enabledTools, correlationId });
 
     const messages = buildLLMMessages(req, systemPrompt);
 
@@ -76,7 +77,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
         input: req.messages.map((m) => m.content).join("\n"),
         output,
         durationMs: Math.round(performance.now() - startTime),
-        model: DEMO_MODEL,
+        model,
         correlationId,
         source: "playground",
         status,
@@ -93,6 +94,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
         emitLogEvent(controller, "info", "chat.routing", {
           agentId: req.agentId,
           primary: providerName,
+          model,
           fallbacks: CLI_PROVIDER_CHAIN,
           tools: enabledTools,
           correlationId,
@@ -103,9 +105,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
           // Swallowing this would silently bill the router's default model
           // instead, so surface it — the demo's cost guarantee depends on it.
           try {
-            provider.setModel(DEMO_MODEL);
+            provider.setModel(model);
           } catch (err) {
-            logger.warn("chat.set_model_failed", { model: DEMO_MODEL, error: String(err), correlationId });
+            logger.warn("chat.set_model_failed", { model, error: String(err), correlationId });
           }
 
           if (toolSchemas && toolSchemas.length > 0) {

@@ -43,7 +43,13 @@ vi.mock("../app/(main)/studio/_lib/tools", () => ({
 }));
 
 import { LightweightAdapter } from "../app/(main)/studio/_lib/agenthood-adapter";
-import { DEMO_MAX_TOKENS } from "../app/(main)/studio/_types/studio";
+import {
+  DEMO_CODE_MODEL,
+  DEMO_MAX_TOKENS,
+  DEMO_MODEL,
+  DEMO_QA_MODEL,
+  selectDemoModel,
+} from "../app/(main)/studio/_types/studio";
 
 function collectStream(stream: ReadableStream): Promise<string[]> {
   const reader = stream.getReader();
@@ -121,7 +127,8 @@ describe("LightweightAdapter", () => {
     expect(llmConfig.providers[0]).toEqual({ name: "opencode" });
     expect(llmConfig.providers[0]).not.toHaveProperty("apiKey");
     expect(llmConfig.providers[0]).not.toHaveProperty("baseUrl");
-    expect(mockSetModel).toHaveBeenCalledWith("gpt-5-nano");
+    // plain Q&A with no tools routes to the cheapest tier
+    expect(mockSetModel).toHaveBeenCalledWith("gpt-6-luna");
   });
 
   it("caps output tokens so a request cannot run unbounded", async () => {
@@ -255,7 +262,7 @@ describe("LightweightAdapter", () => {
       member: "the-scribe",
       status: "success",
       correlationId: "corr-123",
-      model: "gpt-5-nano",
+      model: "gpt-6-luna",
     });
     const tokenCount = traces[0].tokenCount as { input: number; total: number };
     expect(tokenCount.input).toBeGreaterThan(11);
@@ -353,7 +360,7 @@ describe("LightweightAdapter", () => {
       source: "playground",
       member: "the-scribe",
       status: "success",
-      model: "gpt-5-nano",
+      model: "gpt-6-luna",
     });
     expect(traceLog?.tokenCount).toMatchObject({
       input: expect.any(Number),
@@ -479,5 +486,59 @@ describe("LightweightAdapter", () => {
 
     expect(traces).toHaveLength(1);
     expect(traces[0].status).toBe("error");
+  });
+
+  it("routes tool-enabled requests to the default tier", async () => {
+    mockGetToolSchemas.mockReturnValue([]);
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "hi" }],
+      config: { enabledTools: ["web_fetch"] },
+    });
+    await collectStream(stream);
+
+    expect(mockSetModel).toHaveBeenCalledWith(DEMO_MODEL);
+  });
+
+  it("routes code-fenced prompts to the code tier", async () => {
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "fix this:\n```ts\nconst x = 1\n```" }],
+    });
+    await collectStream(stream);
+
+    expect(mockSetModel).toHaveBeenCalledWith(DEMO_CODE_MODEL);
+  });
+});
+
+describe("selectDemoModel", () => {
+  const msg = (content: string) => [{ content }];
+
+  it("picks the Q&A tier for plain prompts with no tools", () => {
+    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), false)).toBe(DEMO_QA_MODEL);
+  });
+
+  it("picks the default tier when tools are on", () => {
+    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), true)).toBe(DEMO_MODEL);
+  });
+
+  it("picks the code tier for code agents even without fences", () => {
+    expect(selectDemoModel("the-tester", msg("ship it"), false)).toBe(DEMO_CODE_MODEL);
+  });
+
+  it("picks the code tier for fenced code from any agent", () => {
+    expect(selectDemoModel("the-scribe", msg("explain ```ts\nx()\n```"), false)).toBe(DEMO_CODE_MODEL);
+  });
+
+  it("prefers the code tier over the Q&A tier", () => {
+    expect(selectDemoModel("the-debugger", msg("plain question"), false)).toBe(DEMO_CODE_MODEL);
   });
 });
