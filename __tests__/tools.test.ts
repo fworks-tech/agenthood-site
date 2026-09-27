@@ -99,6 +99,11 @@ describe("tool constants", () => {
   it("caps tool results at 6k characters", () => {
     expect(TOOL_RESULT_MAX_CHARS).toBe(6_000);
   });
+
+  it("slices code_execution output to the tool result cap", async () => {
+    const result = await executeTool("code_execution", { code: "'x'.repeat(20000)" });
+    expect(result.length).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS);
+  });
 });
 
 describe("web_fetch URL allow-list", () => {

@@ -7,10 +7,11 @@ import { getWorkspace, saveWorkspace } from '@/app/(main)/studio/_lib/workspace-
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 120
+export const maxDuration = 60
 
 const MAX_THREAD_MESSAGES = 200
 const MAX_MESSAGE_CHARS = 20_000
+const MAX_THREAD_TOTAL_CHARS = 100_000
 
 export async function GET(req: NextRequest) {
   const workspaceId = req.nextUrl.searchParams.get('workspaceId')
@@ -120,6 +121,13 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
       })
     }
+  }
+  const totalChars = thread.reduce((n, m) => n + (typeof m.content === 'string' ? m.content.length : 0), 0)
+  if (totalChars > MAX_THREAD_TOTAL_CHARS) {
+    return new Response(JSON.stringify({ error: `thread must total at most ${MAX_THREAD_TOTAL_CHARS} chars`, code: 'VALIDATION_ERROR' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   logger.info('workspace.request', { workspaceId, memberId, turnIndex, correlationId, members: memberIds })

@@ -39,10 +39,15 @@ export function fallbackPlan(spec: WorkspaceSpec): MediatorPlan {
 export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_CHARS): ThreadMessage[] {
   let total = messages.reduce((n, m) => n + m.content.length, 0)
   if (total <= maxChars) return messages
+  // Pin messages[0] — it carries the user goal/instruction, which must never
+  // be the first victim of trimming. Evict from index 1 instead.
   const trimmed = [...messages]
+  let idx = 1
   while (trimmed.length > 1 && total > maxChars) {
-    const removed = trimmed.shift()
+    if (idx >= trimmed.length) break
+    const [removed] = trimmed.splice(idx, 1)
     if (removed) total -= removed.content.length
+    // do not advance idx: the next candidate slides into the same slot
   }
   return trimmed
 }

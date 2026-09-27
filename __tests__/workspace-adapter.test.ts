@@ -273,8 +273,8 @@ describe('createWorkspaceTurnStream', () => {
     expect(JSON.stringify(callArgs.messages)).toContain('from thread')
   })
 
-  it('handles MAX_TOOL_ITERATIONS reached', async () => {
-    // every complete returns a tool call, so we hit 25 iterations
+  it('caps the tool loop at 10 iterations (60s Hobby budget)', async () => {
+    // every complete returns a tool call — the loop must stop at 10, not 25
     mockComplete.mockResolvedValue({
       content: '',
       toolCalls: [{ id: 'call_x', name: 'web_fetch', args: { url: 'https://github.com/foo' } }],
@@ -285,7 +285,72 @@ describe('createWorkspaceTurnStream', () => {
       workspaceId: 'ws-iter', correlationId: 'c10', memberId: 'the-builder', instruction: 'loop', thread: [], turnIndex: 0,
     })
     const events = await collectEvents(stream)
-    // should have 25 tool_calls (MAX=25)
-    expect(events.filter((e) => e.type === 'workspace.tool_call').length).toBe(25)
+    expect(events.filter((e) => e.type === 'workspace.tool_call').length).toBe(10)
+  })
+
+  it('passes maxTokens to provider.complete', async () => {
+    setupProvider({ complete: { content: 'final answer', toolCalls: [] } })
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-tok', correlationId: 'c11', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    await collectEvents(stream)
+    expect(mockComplete).toHaveBeenCalled()
+    expect(mockComplete.mock.calls[0][0].maxTokens).toBe(16384)
+  })
+
+  it('passes maxTokens to the stream fallback', async () => {
+    mockComplete.mockResolvedValue({ content: '', toolCalls: [] })
+    const gen = (async function* () {
+      yield { delta: 'hi', done: true }
+    })()
+    mockStream.mockResolvedValue(gen as unknown as AsyncGenerator<unknown>)
+    mockFromConfig.mockResolvedValue({ setModel: mockSetModel, complete: mockComplete, stream: mockStream })
+
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-tok2', correlationId: 'c12', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    await collectEvents(stream)
+    expect(mockStream).toHaveBeenCalled()
+    expect(mockStream.mock.calls[0][0].maxTokens).toBe(16384)
+  })
+
+  it('retries provider.complete once on 503 then succeeds', async () => {
+    mockComplete
+      .mockRejectedValueOnce(new Error('HTTP 503 Service Unavailable'))
+      .mockResolvedValueOnce({ content: 'recovered', toolCalls: [] })
+    mockFromConfig.mockResolvedValue({ setModel: mockSetModel, complete: mockComplete, stream: mockStream })
+
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-retry', correlationId: 'c13', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    const events = await collectEvents(stream)
+    expect(mockComplete).toHaveBeenCalledTimes(2)
+    const tokens = events.filter((e) => e.type === 'workspace.token').map((e) => e.data).join('')
+    expect(tokens).toBe('recovered')
+    expect(events.some((e) => e.type === 'workspace.error')).toBe(false)
+  })
+
+  it('surfaces the error after the retry also fails', async () => {
+    mockComplete.mockRejectedValue(new Error('HTTP 503 Service Unavailable'))
+    mockFromConfig.mockResolvedValue({ setModel: mockSetModel, complete: mockComplete, stream: mockStream })
+
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-retry2', correlationId: 'c14', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    const events = await collectEvents(stream)
+    expect(mockComplete).toHaveBeenCalledTimes(2)
+    expect(events.some((e) => e.type === 'workspace.error')).toBe(true)
+  })
+
+  it('does not retry provider.complete on 4xx', async () => {
+    mockComplete.mockRejectedValue(new Error('HTTP 400 Bad Request'))
+    mockFromConfig.mockResolvedValue({ setModel: mockSetModel, complete: mockComplete, stream: mockStream })
+
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-retry3', correlationId: 'c15', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    const events = await collectEvents(stream)
+    expect(mockComplete).toHaveBeenCalledTimes(1)
+    expect(events.some((e) => e.type === 'workspace.error')).toBe(true)
   })
 })

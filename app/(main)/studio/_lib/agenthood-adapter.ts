@@ -45,6 +45,20 @@ export function buildDemoLLMConfig(): LLMConfig {
   };
 }
 
+// Single retry on 5xx from the LLM provider (mirrors the web_fetch 5xx retry
+// in tools.ts): Zen hosts intermittently 503, and one transient failure
+// should not kill a whole turn. 4xx is the caller's mistake — no retry.
+export async function withProviderRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/5\d\d/.test(msg)) throw err;
+    await new Promise((r) => setTimeout(r, 500));
+    return fn();
+  }
+}
+
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {

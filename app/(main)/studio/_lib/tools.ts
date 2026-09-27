@@ -15,9 +15,9 @@ export interface ToolCall {
 }
 
 export const MAX_TOOL_ITERATIONS = 25;
-// Playground shares a 60s Vercel budget with the LLM calls, and every tool
-// result is re-sent on each loop iteration — keep playground loops short and
-// results small so research-style runs finish inside the budget.
+// Playground and workspace turns share a 60s Vercel budget with the LLM
+// calls, and every tool result is re-sent on each loop iteration — keep
+// budgeted loops short and results small so tool-heavy runs finish in time.
 export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
 export const TOOL_RESULT_MAX_CHARS = 6_000;
 export const FETCH_TIMEOUT_MS = 15_000;
@@ -108,7 +108,10 @@ async function codeExecutionHandler(
     const script = new vm.Script(code, { filename: "user-code.js" });
     const result = script.runInContext(context, { timeout: 5000 });
     if (result === undefined) return "Executed successfully (undefined result)";
-    return typeof result === "string" ? result : JSON.stringify(result, null, 2);
+    // Same cap as web_fetch: large outputs are re-sent on every loop
+    // iteration, so an unsliced dump would blow the context budget.
+    const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+    return text.slice(0, TOOL_RESULT_MAX_CHARS);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : String(err)}`;
   }
