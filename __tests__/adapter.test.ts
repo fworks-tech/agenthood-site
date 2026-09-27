@@ -38,6 +38,7 @@ vi.mock("../app/(main)/studio/_lib/tools", () => ({
   getToolSchemas: mockGetToolSchemas,
   executeTool: mockExecuteTool,
   MAX_TOOL_ITERATIONS: 25,
+  PLAYGROUND_MAX_TOOL_ITERATIONS: 10,
   classifyToolResult: (result: string) =>
     /^Error: /.test(result) ? { error: result } : { result },
 }));
@@ -50,6 +51,7 @@ import {
   DEMO_QA_MODEL,
   selectDemoModel,
 } from "../app/(main)/studio/_types/studio";
+import { PLAYGROUND_MAX_TOOL_ITERATIONS } from "../app/(main)/studio/_lib/tools";
 
 function collectStream(stream: ReadableStream): Promise<string[]> {
   const reader = stream.getReader();
@@ -502,6 +504,35 @@ describe("LightweightAdapter", () => {
     await collectStream(stream);
 
     expect(mockSetModel).toHaveBeenCalledWith(DEMO_MODEL);
+  });
+
+  it("stops the playground tool loop after PLAYGROUND_MAX_TOOL_ITERATIONS", async () => {
+    mockGetToolSchemas.mockReturnValue([
+      { name: "code_execution", description: "Run code", parameters: { type: "object", properties: {} } },
+    ]);
+    mockExecuteTool.mockResolvedValue("ok");
+    const mockComplete = vi.fn().mockResolvedValue({
+      content: "",
+      toolCalls: [{ id: "tc-x", name: "code_execution", args: { code: "1" } }],
+    });
+    mockFromConfig.mockResolvedValue({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete: mockComplete,
+    });
+    mockStreamImpl.mockImplementation(async () =>
+      makeStreamGen([{ delta: "", done: true }]),
+    );
+
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "loop forever" }],
+      config: { enabledTools: ["code_execution"] },
+    });
+    const events = await collectDataEvents(stream);
+
+    expect(mockComplete).toHaveBeenCalledTimes(PLAYGROUND_MAX_TOOL_ITERATIONS);
+    expect(events[events.length - 1].type).toBe("done");
   });
 
   it("routes code-fenced prompts to the code tier", async () => {

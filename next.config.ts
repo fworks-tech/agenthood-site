@@ -30,6 +30,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   trailingSlash: true,
+  // Ship the agenthood trace config into LLM routes: without it, trace
+  // persistence falls back to .agenthood/traces under the read-only
+  // /var/task on Vercel and every provider call logs an ENOENT error.
+  outputFileTracingIncludes: {
+    "/api/studio/chat": ["./.agenthood/config.json"],
+    "/api/studio/workspaces": ["./.agenthood/config.json"],
+    "/api/studio/workspaces/synthesize": ["./.agenthood/config.json"],
+  },
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks", "@mantine/form", "@mantine/modals", "@mantine/notifications", "@mantine/nprogress", "@mantine/spotlight", "@mantine/code-highlight"],
   },

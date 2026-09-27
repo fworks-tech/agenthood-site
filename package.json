@@ -45,7 +45,7 @@
     "summarize-news": "node scripts/summarize-news.mjs",
     "check:deps": "node scripts/check-deps.mjs",
     "postinstall": "patch-package",
-    "prebuild": "npm run sync && npm run sync-news && npm run sync-skills",
+    "prebuild": "npm run sync && npm run sync-news && npm run sync-skills && node scripts/vercel-trace-path.mjs",
     "predev": "npm run sync && npm run sync-news -- --lenient && npm run sync-skills"
   },
   "dependencies": {
