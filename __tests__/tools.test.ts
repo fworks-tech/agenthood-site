@@ -5,6 +5,7 @@ import {
   classifyToolResult,
   MAX_FETCH_SIZE,
   MAX_TOOL_ITERATIONS,
+  TOOL_RESULT_MAX_CHARS,
 } from "../app/(main)/studio/_lib/tools";
 
 function okResponse(body: string, contentType = "text/plain") {
@@ -14,6 +15,16 @@ function okResponse(body: string, contentType = "text/plain") {
     statusText: "OK",
     headers: { get: () => contentType },
     text: async () => body,
+  };
+}
+
+function errResponse(status: number, statusText: string) {
+  return {
+    ok: false,
+    status,
+    statusText,
+    headers: { get: () => "text/plain" },
+    text: async () => "",
   };
 }
 
@@ -143,10 +154,33 @@ describe("web_fetch response handling", () => {
     );
   });
 
-  it("caps the returned content at 15k characters", async () => {
+  it("caps the returned content at TOOL_RESULT_MAX_CHARS", async () => {
     fetchMock.mockResolvedValue(okResponse("abcdef".repeat(5000), "text/plain"));
     const result = await executeTool("web_fetch", { url: "https://github.com/foo" });
-    expect(result).toHaveLength(15_000);
+    expect(result).toHaveLength(TOOL_RESULT_MAX_CHARS);
+  });
+
+  it("retries once on 5xx and returns the recovered body", async () => {
+    fetchMock
+      .mockResolvedValueOnce(errResponse(503, "Service Unavailable"))
+      .mockResolvedValueOnce(okResponse("recovered"));
+    const result = await executeTool("web_fetch", { url: "https://github.com/foo" });
+    expect(result).toBe("recovered");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns the error after a second consecutive 5xx", async () => {
+    fetchMock.mockResolvedValue(errResponse(503, "Service Unavailable"));
+    const result = await executeTool("web_fetch", { url: "https://github.com/foo" });
+    expect(result).toBe("Error: HTTP 503 Service Unavailable");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry on 4xx", async () => {
+    fetchMock.mockResolvedValue(errResponse(404, "Not Found"));
+    const result = await executeTool("web_fetch", { url: "https://github.com/foo" });
+    expect(result).toBe("Error: HTTP 404 Not Found");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns an HTTP error message for non-ok responses", async () => {

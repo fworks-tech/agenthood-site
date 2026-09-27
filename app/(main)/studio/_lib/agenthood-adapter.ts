@@ -2,7 +2,7 @@ import { buildSystemPrompt } from "./system-prompt";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm";
-import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
+import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, PLAYGROUND_MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
 import type { ToolCall } from "./tools";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
@@ -115,7 +115,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
             const emit = (event: Record<string, unknown>) => {
               controller.enqueue(new TextEncoder().encode(JSON.stringify(event) + "\n"));
             };
-            const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal, emit);
+            const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal, emit, PLAYGROUND_MAX_TOOL_ITERATIONS);
             output = finalText;
 
             for (const char of finalText) {
@@ -193,8 +193,9 @@ async function runToolLoop(
   toolCallsRun: ToolCall[],
   signal: AbortSignal | undefined,
   emit: (event: Record<string, unknown>) => void,
+  maxIterations: number = MAX_TOOL_ITERATIONS,
 ): Promise<string> {
-  for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
+  for (let i = 0; i < maxIterations; i++) {
     if (signal?.aborted) return "";
 
     const resp = await provider.complete({

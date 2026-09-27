@@ -15,6 +15,11 @@ export interface ToolCall {
 }
 
 export const MAX_TOOL_ITERATIONS = 25;
+// Playground shares a 60s Vercel budget with the LLM calls, and every tool
+// result is re-sent on each loop iteration — keep playground loops short and
+// results small so research-style runs finish inside the budget.
+export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
+export const TOOL_RESULT_MAX_CHARS = 6_000;
 export const MAX_FETCH_SIZE = 100_000;
 export const FETCH_TIMEOUT_MS = 15_000;
 
@@ -61,11 +66,18 @@ async function webFetchHandler(
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   if (signal) signal.addEventListener("abort", () => ctrl.abort());
 
+  const headers = { "User-Agent": "Agenthood/1.0" };
+  const doFetch = () => fetch(url, { signal: ctrl.signal, headers });
+
   try {
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { "User-Agent": "Agenthood/1.0" },
-    });
+    let res = await doFetch();
+    // Single retry on 5xx: hosts (notably GitHub) intermittently 503
+    // datacenter egress. 4xx is the caller's mistake — no retry.
+    if (res.status >= 500 && res.status < 600) {
+      try { await res.body?.cancel(); } catch { /* drop the error body */ }
+      await new Promise((r) => setTimeout(r, 500));
+      res = await doFetch();
+    }
     if (!res.ok) return `Error: HTTP ${res.status} ${res.statusText}`;
 
     const contentType = res.headers.get("content-type") ?? "";
@@ -73,9 +85,9 @@ async function webFetchHandler(
 
     if (contentType.includes("text/html")) {
       const stripped = stripHtml(text);
-      return stripped.slice(0, 15_000);
+      return stripped.slice(0, TOOL_RESULT_MAX_CHARS);
     }
-    return text.slice(0, 15_000);
+    return text.slice(0, TOOL_RESULT_MAX_CHARS);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : String(err)}`;
   } finally {
