@@ -10,7 +10,6 @@ import {
   DEMO_MAX_TOKENS,
   DEMO_MODEL,
   DEMO_PROVIDER,
-  DEMO_TEMPERATURE,
   type Provider,
 } from "../_types/studio";
 
@@ -28,7 +27,7 @@ export interface AgenthoodAdapter {
 }
 
 // CLI priority chain — mirrors .agenthood/config.json (opencode p1)
-export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode', 'opencode-go', 'anthropic', 'groq', 'ollama']
+export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 
 function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
   return [
@@ -37,7 +36,7 @@ function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
   ];
 }
 
-function buildLLMConfig(): LLMConfig {
+export function buildDemoLLMConfig(): LLMConfig {
   return {
     providers: CLI_PROVIDER_CHAIN.map((name) => ({ name })),
     failureThreshold: 3,
@@ -56,7 +55,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
     const providerName = DEMO_PROVIDER;
 
-    const llmConfig = buildLLMConfig();
+    const llmConfig = buildDemoLLMConfig();
     const enabledTools = req.config?.enabledTools ?? [];
 
     const startTime = performance.now();
@@ -126,7 +125,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           } else {
             const finalRequest: LLMRequest = {
               messages,
-              temperature: DEMO_TEMPERATURE,
+              temperature: 0.7,  // DEMO_TEMPERATURE inlined
               // Abuse guard, not a quality knob: input is already bounded by the
               // route (50 msgs / 4k chars each / 100k total) and requests are
               // rate-limited to 20/min, so output is the only open dimension.

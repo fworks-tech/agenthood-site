@@ -23,6 +23,8 @@ const MAX_TOTAL_CHARS = 100_000;
 // Provider, model, key, base URL, temperature, and max tokens are all pinned
 // server-side — the Studio is a zero-setup demo. Only tool selection is client-
 // controlled, and only against this allowlist.
+// Silent drop (not reject) avoids leaking which providers/models exist and is
+// the correct defensive posture for a public demo endpoint.
 type ChatRequestConfig = { enabledTools?: string[] };
 
 const CORRELATION_ID_MAX_LENGTH = 128;

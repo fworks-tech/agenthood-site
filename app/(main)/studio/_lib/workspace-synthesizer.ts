@@ -1,6 +1,6 @@
 import { DEMO_MODEL } from '../_types/studio'
 import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
-import { CLI_PROVIDER_CHAIN } from './agenthood-adapter'
+import { buildDemoLLMConfig } from './agenthood-adapter'
 
 const SYNTHESIS_SYSTEM = `You are the Workspace Synthesizer — the final voice the user hears, exactly like Claude Work.
 
@@ -29,12 +29,7 @@ export async function createSynthesisStream(
       const startAt = performance.now()
       try {
         const { LLMRouter } = await import('agenthood/dist/llm')
-        const llmConfig = {
-          providers: CLI_PROVIDER_CHAIN.map((name) => ({ name })),
-          failureThreshold: 3,
-          cooldownMs: 60000,
-          probeEnabled: true,
-        }
+        const llmConfig = buildDemoLLMConfig()
         const provider = await LLMRouter.fromConfig(llmConfig)
         try {
           provider.setModel(model)

@@ -136,7 +136,7 @@ describe("LightweightAdapter", () => {
     expect(mockStreamImpl.mock.calls[0][0].maxTokens).toBe(DEMO_MAX_TOKENS);
   });
 
-  it("falls back via the CLI priority chain", async () => {
+  it("uses the single demo provider (no fallback)", async () => {
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "test", done: false }, { delta: "", done: true }]),
     );
@@ -150,7 +150,7 @@ describe("LightweightAdapter", () => {
 
     const llmConfig = mockFromConfig.mock.calls[0][0];
     const providerNames = llmConfig.providers.map((p: { name: string }) => p.name);
-    expect(providerNames).toEqual(['opencode', 'opencode-go', 'anthropic', 'groq', 'ollama']);
+    expect(providerNames).toEqual(['opencode']);
   });
 
   it("throws ValidationError when agent skill is missing", async () => {
