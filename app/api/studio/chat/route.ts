@@ -10,6 +10,7 @@ import {
 } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
+import { BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
 import { DEMO_PROVIDER } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
@@ -58,9 +59,12 @@ function validateMessages(messages: unknown): { role: string; content: string }[
   return (messages as { role: string; content: string }[]);
 }
 
-const BUILT_IN_TOOLS = new Set(["web_fetch", "code_execution"]);
 const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 
+// Shape validation only. The identity grant (which tools this member may use)
+// is enforced once, in the adapter — the single choke point every caller of
+// provider.complete() shares — so it cannot be bypassed by a crafted body and
+// cannot drift out of sync with getMemberTools().
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
   if (!config || typeof config !== "object") return validated;
@@ -68,7 +72,9 @@ function validateConfig(config: unknown): ChatRequestConfig {
   const c = config as Record<string, unknown>;
   if (Array.isArray(c.enabledTools)) {
     validated.enabledTools = (c.enabledTools as unknown[]).filter(
-      (t): t is string => typeof t === "string" && (BUILT_IN_TOOLS.has(t) || CUSTOM_TOOL_PATTERN.test(t)),
+      (t): t is string =>
+        typeof t === "string" &&
+        (CUSTOM_TOOL_PATTERN.test(t) || BUILT_IN_TOOL_NAMES.has(t)),
     );
   }
 

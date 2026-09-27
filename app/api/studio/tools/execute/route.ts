@@ -6,14 +6,13 @@ import {
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
 } from "@/app/(main)/studio/_lib/captcha";
-import { executeTool, classifyToolResult } from "@/app/(main)/studio/_lib/tools";
+import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const BUILT_IN_TOOLS = new Set(["web_fetch", "code_execution"]);
 const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 const MAX_ARGS_CHARS = 100_000;
 const CORRELATION_ID_MAX_LENGTH = 128;
@@ -54,7 +53,7 @@ export async function POST(request: Request) {
     const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
     const isValidCustom = typeof tool === "string" && CUSTOM_TOOL_PATTERN.test(tool);
-    if (typeof tool !== "string" || (!BUILT_IN_TOOLS.has(tool) && !isValidCustom)) {
+    if (typeof tool !== "string" || (!BUILT_IN_TOOL_NAMES.has(tool) && !isValidCustom)) {
       throw new ValidationError(`Unknown tool: "${tool ?? "undefined"}"`);
     }
     if (!args || typeof args !== "object" || Array.isArray(args)) {

@@ -3,7 +3,7 @@ import { getToolSchemas, executeTool, PLAYGROUND_MAX_TOOL_ITERATIONS, classifyTo
 import type { ToolCall } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { DEMO_MAX_TOKENS, selectDemoModel } from '../_types/studio'
+import { DEMO_MAX_TOKENS, selectDemoModel, getMemberTools } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
 import { buildDemoLLMConfig, withProviderRetry } from './agenthood-adapter'
 import type { Message } from 'agenthood/dist/llm'
@@ -32,7 +32,9 @@ export async function createWorkspaceTurnStream(
   const systemPrompt = buildSystemPrompt(req.memberId)
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
-  const enabledTools = ['web_fetch', 'code_execution']
+  // Capability follows identity: prose-lane members get web_fetch only, the
+  // code_execution sandbox is reserved for the code lane.
+  const enabledTools = getMemberTools(req.memberId)
   const allSchemas = getToolSchemas()
   const toolSchemas = allSchemas.filter((s) => enabledTools.includes(s.name))
 

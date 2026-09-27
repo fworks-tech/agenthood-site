@@ -34,7 +34,10 @@ Context economy:
 - When context feels heavy, recommend a session triage (the-steward).
 - Reference prior decisions and conventions instead of re-deriving them.
 
-Tool skills available in this environment (activate by name when relevant): ${toolSkills.join(", ")}.`;
+Reference skills packaged with the Society: ${toolSkills.join(", ")}.
+These are documentation, not tools. To read one, call the activate_skill tool with its
+name — you cannot assume a skill's contents until you have loaded it. A few are marked
+deprecated upstream and simply point at their owning member; prefer the member's own skill.`;
 
 export function buildSystemPrompt(memberId: string): string {
   const skill = agentSkills[memberId];

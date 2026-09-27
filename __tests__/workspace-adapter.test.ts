@@ -182,6 +182,28 @@ describe('createWorkspaceTurnStream', () => {
     expect(mockExecuteTool).toHaveBeenCalledWith('web_fetch', { url: 'https://github.com/foo' }, undefined)
   })
 
+  // Identity gate: the code_execution sandbox is a real Node.js VM, so it must
+  // only reach code-lane members. Prose-lane members keep web_fetch.
+  it('withholds the code_execution sandbox from prose-lane members', async () => {
+    setupProvider({ complete: { content: 'ok', toolCalls: [] } })
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-prose', correlationId: 'c-prose', memberId: 'the-mediator', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    await collectEvents(stream)
+    const tools = mockComplete.mock.calls[0][0].tools as Array<{ name: string }>
+    expect(tools.map((t) => t.name)).toEqual(['web_fetch'])
+  })
+
+  it('grants the code_execution sandbox to code-lane members', async () => {
+    setupProvider({ complete: { content: 'ok', toolCalls: [] } })
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-code', correlationId: 'c-code', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
+    })
+    await collectEvents(stream)
+    const tools = mockComplete.mock.calls[0][0].tools as Array<{ name: string }>
+    expect(tools.map((t) => t.name)).toEqual(['web_fetch', 'code_execution'])
+  })
+
   it('emits handoff for code_execution', async () => {
     mockComplete.mockResolvedValue({
       content: 'run code',
@@ -286,6 +308,21 @@ describe('createWorkspaceTurnStream', () => {
     })
     const events = await collectEvents(stream)
     expect(events.filter((e) => e.type === 'workspace.tool_call').length).toBe(10)
+  })
+
+  // Regression: workspace turns always enable tools, but the balanced default
+  // (gpt-5-nano) rejects the tools protocol on Zen with 400 "Model does not
+  // support this protocol". Every non-CODE_AGENTS member (the-builder,
+  // the-mediator, ...) hit it; the architect worked only because it is in
+  // CODE_AGENTS and got the code tier.
+  it('never routes a tool-enabled turn to the tools-incapable default model', async () => {
+    setupProvider({ complete: { content: 'ok', toolCalls: [] } })
+    const stream = await createWorkspaceTurnStream({
+      workspaceId: 'ws-model', correlationId: 'c-model', memberId: 'the-builder', instruction: 'test', thread: [], turnIndex: 0,
+    })
+    await collectEvents(stream)
+    expect(mockSetModel).toHaveBeenCalled()
+    expect(mockSetModel).not.toHaveBeenCalledWith('gpt-5-nano')
   })
 
   it('passes maxTokens to provider.complete', async () => {

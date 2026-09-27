@@ -9,6 +9,7 @@ import { generateId } from "./ids";
 import {
   DEMO_MAX_TOKENS,
   DEMO_PROVIDER,
+  getMemberTools,
   selectDemoModel,
   type Provider,
 } from "../_types/studio";
@@ -70,7 +71,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const providerName = DEMO_PROVIDER;
 
     const llmConfig = buildDemoLLMConfig();
-    const enabledTools = req.config?.enabledTools ?? [];
+    // Last gate before the provider: intersect with the member's identity
+    // grant. The chat route already does this, but the adapter is the choke
+    // point every caller shares, so the rule is enforced once, here.
+    const granted = new Set(getMemberTools(req.agentId));
+    const enabledTools = (req.config?.enabledTools ?? []).filter((t) => granted.has(t));
     const model = selectDemoModel(req.agentId, req.messages, enabledTools.length > 0);
 
     const startTime = performance.now();

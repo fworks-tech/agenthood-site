@@ -34,9 +34,10 @@ const nextConfig: NextConfig = {
   // persistence falls back to .agenthood/traces under the read-only
   // /var/task on Vercel and every provider call logs an ENOENT error.
   outputFileTracingIncludes: {
-    "/api/studio/chat": ["./.agenthood/config.json"],
-    "/api/studio/workspaces": ["./.agenthood/config.json"],
-    "/api/studio/workspaces/synthesize": ["./.agenthood/config.json"],
+    "/api/studio/chat": ["./.agenthood/config.json", "./node_modules/agenthood/skills/**/*"],
+    "/api/studio/workspaces": ["./.agenthood/config.json", "./node_modules/agenthood/skills/**/*"],
+    "/api/studio/workspaces/synthesize": ["./.agenthood/config.json", "./node_modules/agenthood/skills/**/*"],
+    "/api/studio/tools/execute": ["./node_modules/agenthood/skills/**/*"],
   },
   experimental: {
     optimizePackageImports: ["@mantine/core", "@mantine/hooks", "@mantine/form", "@mantine/modals", "@mantine/notifications", "@mantine/nprogress", "@mantine/spotlight", "@mantine/code-highlight"],

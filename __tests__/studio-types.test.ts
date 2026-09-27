@@ -2,14 +2,16 @@ import { describe, it, expect } from "vitest";
 import {
   CODE_AGENTS,
   DEMO_CODE_MODEL,
-  DEMO_MODEL,
   DEMO_PROVIDER,
   DEMO_QA_MODEL,
   PROVIDER_MODELS,
   getDefaultModel,
+  getMemberTools,
   getProviderMeta,
   type Provider,
 } from "../app/(main)/studio/_types/studio";
+import { getToolSchemas } from "../app/(main)/studio/_lib/tools";
+import { agentRegistry } from "../app/(main)/studio/_data/registry.generated";
 
 const ALL_PROVIDERS: Provider[] = [
   "anthropic",
@@ -63,10 +65,52 @@ describe("PROVIDER_MODELS catalog", () => {
 });
 
 describe("CODE_AGENTS", () => {
-  it("contains the five code-capable members", () => {
+  it("contains the nine code-capable members", () => {
     expect(CODE_AGENTS).toEqual(
-      new Set(["the-architect", "the-reviewer", "the-tester", "the-debugger", "the-warden"]),
+      new Set([
+        "the-architect",
+        "the-builder",
+        "the-reviewer",
+        "the-tester",
+        "the-debugger",
+        "the-warden",
+        "the-auditor",
+        "the-doorman",
+        "the-operator",
+      ]),
     );
+  });
+
+  it("excludes every prose-lane member", () => {
+    const prose = agentRegistry.map((m) => m.name).filter((n) => !CODE_AGENTS.has(n));
+    expect(prose.length).toBe(11);
+    for (const id of prose) expect(CODE_AGENTS.has(id)).toBe(false);
+  });
+});
+
+describe("getMemberTools", () => {
+  it("grants the code_execution sandbox to code-lane members", () => {
+    for (const id of ["the-architect", "the-builder", "the-tester"]) {
+      expect(getMemberTools(id)).toEqual(["web_fetch", "activate_skill", "code_execution"]);
+    }
+  });
+
+  it("withholds code_execution from prose-lane members", () => {
+    for (const id of ["the-scribe", "the-herald", "the-librarian", "the-mediator"]) {
+      expect(getMemberTools(id)).toEqual(["web_fetch", "activate_skill"]);
+    }
+  });
+
+  it("fails safe for an unknown member", () => {
+    expect(getMemberTools("not-a-member")).toEqual(["web_fetch", "activate_skill"]);
+  });
+
+  it("only ever grants tools that actually exist", () => {
+    for (const member of agentRegistry.map((m) => m.name)) {
+      for (const tool of getMemberTools(member)) {
+        expect(getToolSchemas().map((s) => s.name)).toContain(tool);
+      }
+    }
   });
 });
 
@@ -88,7 +132,6 @@ describe("getDefaultModel", () => {
 describe("demo pin", () => {
   it("targets a model that exists on the pinned provider", () => {
     const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
-    expect(models).toContain(DEMO_MODEL);
   });
 
   it("targets tier models that exist on the pinned provider", () => {

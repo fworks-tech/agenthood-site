@@ -42,7 +42,7 @@ export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_CHAR
   // Pin messages[0] — it carries the user goal/instruction, which must never
   // be the first victim of trimming. Evict from index 1 instead.
   const trimmed = [...messages]
-  let idx = 1
+  const idx = 1
   while (trimmed.length > 1 && total > maxChars) {
     if (idx >= trimmed.length) break
     const [removed] = trimmed.splice(idx, 1)
