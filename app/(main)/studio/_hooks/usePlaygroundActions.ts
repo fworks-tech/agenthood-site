@@ -3,8 +3,8 @@
 import { useCallback } from 'react'
 import { track } from '@vercel/analytics'
 import type { AgentEntry } from '../_data/agents'
-import type { ChatConfig, Provider } from '../_types/studio'
-import { getDefaultModel, getProviderMeta } from '../_types/studio'
+import type { ChatConfig } from '../_types/studio'
+import { DEMO_MODEL, DEMO_PROVIDER } from '../_types/studio'
 import { agentSkills } from '../_data/agents.generated'
 import { buildSystemPrompt } from '../_lib/system-prompt'
 import type { LogLevel, LogCategory } from '../_lib/log-types'
@@ -15,7 +15,6 @@ type Chat = ReturnType<typeof useStudioChat>
 interface UsePlaygroundActionsOptions {
   chat: Pick<Chat, 'newConversation' | 'deleteConversation' | 'isStreaming' | 'abortStream'>
   selectedAgent: AgentEntry | null
-  config: Pick<ChatConfig, 'provider' | 'model'>
   setConfig: React.Dispatch<React.SetStateAction<ChatConfig>>
   configOpen: boolean
   setConfigOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -25,7 +24,7 @@ interface UsePlaygroundActionsOptions {
 }
 
 export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
-  const { chat, selectedAgent, config, setConfig, configOpen, setConfigOpen, configStorageKey, defaultSystemPrompt, addLog } = options
+  const { chat, selectedAgent, setConfig, configOpen, setConfigOpen, configStorageKey, defaultSystemPrompt, addLog } = options
 
   const handleSaveConfig = useCallback(
     (cfg: ChatConfig) => {
@@ -41,19 +40,11 @@ export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
 
   const handleSelectAgent = useCallback(
     (agent: AgentEntry) => {
-      const provider: Provider = 'opencode-go'
-      const model = getDefaultModel(provider)
-      const prompt = buildSystemPrompt(agent.id) || agentSkills[agent.id] || defaultSystemPrompt
-      const agentConfig = {
-        provider,
-        model,
-        baseUrl: getProviderMeta(provider).defaultBaseUrl,
-        systemPrompt: prompt,
-      }
+      const agentConfig = { systemPrompt: buildSystemPrompt(agent.id) || agentSkills[agent.id] || defaultSystemPrompt }
       setConfig((prev) => ({ ...prev, ...agentConfig }))
       chat.newConversation(agent.id, agentConfig)
-      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${provider}/${model}`)
-      track('agent_selected', { agentId: agent.id, provider, model })
+      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${DEMO_PROVIDER}/${DEMO_MODEL}`)
+      track('agent_selected', { agentId: agent.id, provider: DEMO_PROVIDER, model: DEMO_MODEL })
       if (!configOpen && window.innerWidth >= 768) setConfigOpen(true)
     },
     [chat, addLog, configOpen, defaultSystemPrompt, setConfig, setConfigOpen],
@@ -75,22 +66,6 @@ export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
     [chat, selectedAgent?.id],
   )
 
-  const handleConfigChange = useCallback(
-    (newConfig: ChatConfig) => {
-      if (newConfig.provider !== config.provider || newConfig.model !== config.model) {
-        addLog('info', `Config: ${newConfig.provider} · ${newConfig.model}`)
-        track('config_changed', {
-          provider: newConfig.provider,
-          model: newConfig.model,
-          temperature: newConfig.temperature,
-          maxTokens: newConfig.maxTokens,
-        })
-      }
-      setConfig(newConfig)
-    },
-    [config.provider, config.model, addLog, setConfig],
-  )
-
   const handleAbortStream = useCallback(() => {
     if (chat.isStreaming && selectedAgent) {
       addLog('warn', '⏹ Streaming cancelled by user')
@@ -103,7 +78,6 @@ export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
     handleSelectAgent,
     handleNewConversation,
     handleDeleteConversation,
-    handleConfigChange,
     handleAbortStream,
   }
 }

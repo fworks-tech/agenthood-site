@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
-import { mockTurnstile, selectAgent, selectMantineOption, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
+import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
 
 test.describe("Playground — Core UI", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -81,31 +81,37 @@ test.describe("Playground — Core UI", () => {
     expect(counter).toBeNull();
   });
 
-  test("code agent defaults to opencode-go with no setup", async ({ page }) => {
+  test("runs on the pinned demo model with no setup", async ({ page }) => {
     await selectAgent(page, "the-architect");
-    await openConfigPanel(page);
-    await expect(page.getByLabel("Provider", { exact: true }).first()).toHaveValue("OpenCode Go");
+    await expect(page.locator("text=· opencode · gpt-5-nano").first()).toBeVisible();
   });
 
-  test("code agent shows opencode affinity hint when on a non-opencode provider", async ({ page }) => {
+  test("no provider, model, or API key controls remain in the panel", async ({ page }) => {
     await selectAgent(page, "the-architect");
     await openConfigPanel(page);
-    await selectMantineOption(page, "Provider", "Anthropic");
-    await page.waitForTimeout(200);
-    await expect(page.getByText("Code-optimized provider available", { exact: true })).toBeVisible();
-    const configDialog = page
-      .getByRole("dialog")
-      .filter({ has: page.getByText("Agent Configuration") })
-      .first();
-    const isMobileSheet = await configDialog.isVisible().catch(() => false);
-    const scope = isMobileSheet
-      ? configDialog
-      : page.locator("[data-config-panel]");
-    const switchBtn = scope.getByRole("button", { name: "Switch to OpenCode" }).first();
-    await expect(switchBtn).toBeVisible();
-    await switchBtn.click();
-    await page.waitForTimeout(200);
-    await expect(scope.getByLabel("Provider", { exact: true }).first()).toHaveValue("OpenCode Zen");
+    await expect(page.locator("text=Model & Behavior")).toHaveCount(0);
+    await expect(page.getByLabel("Provider", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Model", { exact: true })).toHaveCount(0);
+    await expect(page.locator("input[type=password]")).toHaveCount(0);
+  });
+
+  test("Web Fetch is on by default in the outgoing request", async ({ page }) => {
+    const bodies: Array<{ config?: { enabledTools?: string[] } }> = [];
+    await page.route("**/api/studio/chat/**", async (route) => {
+      bodies.push(route.request().postDataJSON());
+      await route.fulfill({
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+        body: JSON.stringify({ type: "done" }) + "\n",
+      });
+    });
+
+    await selectAgent(page, "the-architect");
+    await sendMessage(page, "review https://github.com/fworks-tech/agenthood");
+    await waitForStreamComplete(page);
+
+    expect(bodies.length).toBeGreaterThan(0);
+    expect(bodies[0].config?.enabledTools).toEqual(["web_fetch"]);
   });
 
   test("thumbs up sends feedback to server", async ({ page }) => {

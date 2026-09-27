@@ -37,7 +37,7 @@ afterEach(() => {
 const VALID_BODY = {
   agentId: "the-scribe",
   messages: [{ role: "user", content: "hello" }],
-  config: { provider: "anthropic", model: "claude-sonnet-4-20250514" },
+  config: { enabledTools: ["web_fetch"] },
 };
 
 function streamWith(...lines: string[]): ReadableStream<Uint8Array> {
@@ -148,110 +148,24 @@ describe("chat route validation", () => {
     await expectValidationError({ ...VALID_BODY, messages }, "100000 characters");
   });
 
-  it("rejects an unknown provider", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "gptchat" } },
-      'Unknown provider: "gptchat"',
-    );
-  });
-
-  it("rejects an unknown model for a known provider", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "anthropic", model: "claude-nonexistent" } },
-      'Unknown model "claude-nonexistent"',
-    );
-  });
-
-  it("rejects a model that does not belong to the selected provider", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "openai", model: "claude-sonnet-4-20250514" } },
-      'Unknown model "claude-sonnet-4-20250514" for provider "openai"',
-    );
-  });
-
-  it("rejects any model for a provider with no listed models", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "openrouter", model: "claude-sonnet-4-20250514" } },
-      'Unknown model "claude-sonnet-4-20250514"',
-    );
-  });
-
-  it("rejects temperature outside the 0-2 range by dropping it silently", async () => {
-    chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
-    const res = await postRoute({
-      ...VALID_BODY,
-      config: { provider: "anthropic", model: "claude-sonnet-4-20250514", temperature: 5 },
-    });
-    expect(res.status).toBe(200);
-    expect(chatMock.mock.calls[0][0].config).not.toHaveProperty("temperature");
-  });
-
-  it("rejects maxTokens above 100k by dropping it silently", async () => {
-    chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
-    const res = await postRoute({
-      ...VALID_BODY,
-      config: { provider: "anthropic", model: "claude-sonnet-4-20250514", maxTokens: 200_000 },
-    });
-    expect(res.status).toBe(200);
-    expect(chatMock.mock.calls[0][0].config).not.toHaveProperty("maxTokens");
-  });
-});
-
-describe("chat route baseUrl validation", () => {
-  it("rejects a baseUrl for cloud providers", async () => {
-    await expectValidationError(
-      {
-        ...VALID_BODY,
-        config: { provider: "anthropic", model: "claude-sonnet-4-20250514", baseUrl: "https://api.anthropic.com" },
-      },
-      "baseUrl is not supported",
-    );
-  });
-
-  it("rejects an invalid baseUrl format", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "ollama", model: "llama3.2", baseUrl: "not-a-url" } },
-      "Invalid baseUrl format",
-    );
-  });
-
-  it("rejects non-http baseUrl protocols", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "ollama", model: "llama3.2", baseUrl: "file:///etc/passwd" } },
-      "http or https protocol",
-    );
-  });
-
-  it("rejects an http baseUrl for non-local hosts", async () => {
-    await expectValidationError(
-      { ...VALID_BODY, config: { provider: "ollama", model: "llama3.2", baseUrl: "http://evil.example:11434" } },
-      "only allowed for localhost",
-    );
-  });
-
-  it("accepts an http baseUrl for localhost hosts", async () => {
+  it("drops client provider, model, key, and baseUrl instead of routing on them", async () => {
     chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
     const res = await postRoute({
       ...VALID_BODY,
       config: {
-        provider: "ollama",
-        model: "llama3.2",
-        baseUrl: "http://127.0.0.1:11434",
-        temperature: 0.5,
-        maxTokens: 512,
+        provider: "not-a-provider",
+        model: "not-a-model",
+        baseUrl: "https://evil.example",
+        apiKey: "sk-injected",
+        temperature: 5,
+        maxTokens: 200_000,
+        enabledTools: ["web_fetch", "evil_tool", "custom_ok"],
       },
     });
     expect(res.status).toBe(200);
-    expect(chatMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        config: expect.objectContaining({
-          baseUrl: "http://127.0.0.1:11434",
-          temperature: 0.5,
-          maxTokens: 512,
-        }),
-      }),
-      expect.anything(),
-    );
+    expect(chatMock.mock.calls[0][0].config).toEqual({
+      enabledTools: ["web_fetch", "custom_ok"],
+    });
   });
 });
 

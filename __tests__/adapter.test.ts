@@ -43,6 +43,7 @@ vi.mock("../app/(main)/studio/_lib/tools", () => ({
 }));
 
 import { LightweightAdapter } from "../app/(main)/studio/_lib/agenthood-adapter";
+import { DEMO_MAX_TOKENS } from "../app/(main)/studio/_types/studio";
 
 function collectStream(stream: ReadableStream): Promise<string[]> {
   const reader = stream.getReader();
@@ -102,29 +103,7 @@ describe("LightweightAdapter", () => {
     mockExecuteTool.mockReset();
   });
 
-  it("accepts opencode-go as a valid provider", async () => {
-    mockStreamImpl.mockImplementation(async () =>
-      makeStreamGen([
-        { delta: "Hello", done: false },
-        { delta: " world", done: false },
-        { delta: "", done: true },
-      ]),
-    );
-
-    const stream = await adapter.chat({
-      agentId: "the-scribe",
-      messages: [{ role: "user", content: "test" }],
-      config: { provider: "opencode-go", model: "deepseek-v4-flash" },
-    });
-
-    const events = await collectDataEvents(stream);
-    expect(events).toHaveLength(3);
-    expect(events[0]).toEqual({ type: "token", data: "Hello" });
-    expect(events[1]).toEqual({ type: "token", data: " world" });
-    expect(events[2]).toEqual({ type: "done" });
-  });
-
-  it("passes opencode-go config to LLMRouter", async () => {
+  it("pins the demo provider and model regardless of what the client sends", async () => {
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "", done: true }]),
     );
@@ -132,49 +111,32 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "hi" }],
-      config: {
-        provider: "opencode-go",
-        model: "deepseek-v4-flash",
-        baseUrl: "https://opencode.ai/zen/v1",
-        apiKey: "test-key",
-      },
+      // The route drops these, but the adapter must not honour them either.
+      config: { provider: "openai", model: "gpt-4o", apiKey: "sk-leak" } as never,
     });
 
     await collectStream(stream);
 
     const llmConfig = mockFromConfig.mock.calls[0][0];
-    expect(llmConfig.providers[0]).toMatchObject({
-      name: "opencode-go",
-      apiKey: "test-key",
-      baseUrl: "https://opencode.ai/zen/v1",
-    });
+    expect(llmConfig.providers[0]).toEqual({ name: "opencode" });
+    expect(llmConfig.providers[0]).not.toHaveProperty("apiKey");
+    expect(llmConfig.providers[0]).not.toHaveProperty("baseUrl");
+    expect(mockSetModel).toHaveBeenCalledWith("gpt-5-nano");
   });
 
-  it("accepts openrouter as a valid provider", async () => {
-    mockStreamImpl.mockImplementation(async () =>
-      makeStreamGen([
-        { delta: "Hello", done: false },
-        { delta: "", done: true },
-      ]),
-    );
+  it("caps output tokens so a request cannot run unbounded", async () => {
+    mockStreamImpl.mockImplementation(async () => makeStreamGen([{ delta: "", done: true }]));
 
     const stream = await adapter.chat({
       agentId: "the-scribe",
-      messages: [{ role: "user", content: "test" }],
-      config: { provider: "openrouter", model: "openai/gpt-4o-mini", apiKey: "test-key" },
+      messages: [{ role: "user", content: "hi" }],
     });
+    await collectStream(stream);
 
-    const events = await collectDataEvents(stream);
-    expect(events[0]).toEqual({ type: "token", data: "Hello" });
-
-    const llmConfig = mockFromConfig.mock.calls[0][0];
-    expect(llmConfig.providers[0]).toMatchObject({
-      name: "openrouter",
-      apiKey: "test-key",
-    });
+    expect(mockStreamImpl.mock.calls[0][0].maxTokens).toBe(DEMO_MAX_TOKENS);
   });
 
-  it("falls back via CLI priority chain when primary is configured", async () => {
+  it("falls back via the CLI priority chain", async () => {
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "test", done: false }, { delta: "", done: true }]),
     );
@@ -182,40 +144,13 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "test" }],
-      config: { provider: "anthropic" },
     });
 
     await collectStream(stream);
 
     const llmConfig = mockFromConfig.mock.calls[0][0];
     const providerNames = llmConfig.providers.map((p: { name: string }) => p.name);
-    expect(providerNames).toEqual(['anthropic', 'opencode-go', 'opencode', 'groq', 'ollama']);
-  });
-
-  it("sets model on provider when model is specified", async () => {
-    mockStreamImpl.mockImplementation(async () =>
-      makeStreamGen([{ delta: "", done: true }]),
-    );
-
-    const stream = await adapter.chat({
-      agentId: "the-scribe",
-      messages: [{ role: "user", content: "hi" }],
-      config: { provider: "opencode-go", model: "deepseek-v4-pro" },
-    });
-
-    await collectStream(stream);
-
-    expect(mockSetModel).toHaveBeenCalledWith("deepseek-v4-pro");
-  });
-
-  it("throws ValidationError for unknown provider", async () => {
-    await expect(
-      adapter.chat({
-        agentId: "the-scribe",
-        messages: [{ role: "user", content: "test" }],
-        config: { provider: "nonexistent-provider" } as Record<string, unknown>,
-      }),
-    ).rejects.toThrow(/Unknown provider/);
+    expect(providerNames).toEqual(['opencode', 'opencode-go', 'anthropic', 'groq', 'ollama']);
   });
 
   it("throws ValidationError when agent skill is missing", async () => {
@@ -227,20 +162,19 @@ describe("LightweightAdapter", () => {
     ).rejects.toThrow(/No system prompt/);
   });
 
-  it("sends error event when api key is missing for key-required provider", async () => {
-    mockFromConfig.mockRejectedValue(new Error("MissingApiKeyError: ANTHROPIC_API_KEY not set"));
+  it("sends error event when the server has no API key", async () => {
+    mockFromConfig.mockRejectedValue(new Error("MissingApiKeyError: OPENCODE_API_KEY not set"));
 
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "test" }],
-      config: { provider: "anthropic" },
     });
 
     const events = await collectDataEvents(stream);
     expect(events).toHaveLength(1);
     const parsed = events[0];
     expect(parsed.type).toBe("error");
-    expect(parsed.data).toContain("No API key configured");
+    expect(parsed.data).toContain("no API key configured on the server");
   });
 
   it("respects abort signal and closes cleanly", async () => {
@@ -308,7 +242,6 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "test message" }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
       correlationId: "corr-123",
     });
 
@@ -322,7 +255,7 @@ describe("LightweightAdapter", () => {
       member: "the-scribe",
       status: "success",
       correlationId: "corr-123",
-      model: "llama-3.3-70b-versatile",
+      model: "gpt-5-nano",
     });
     const tokenCount = traces[0].tokenCount as { input: number; total: number };
     expect(tokenCount.input).toBeGreaterThan(11);
@@ -357,7 +290,6 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "use key sk-abcdefghijklmnopqrstuvwxyz012345" }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
     });
 
     await collectStream(stream);
@@ -377,7 +309,6 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "x".repeat(10000) }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
     });
 
     await collectStream(stream);
@@ -399,7 +330,6 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "secret content sk-abcdefghijklmnopqrstuvwxyz012345" }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile" },
       correlationId: "corr-logtest",
     });
 
@@ -411,7 +341,7 @@ describe("LightweightAdapter", () => {
       type: "log",
       level: "info",
       event: "chat.routing",
-      primary: "groq",
+      primary: "opencode",
       correlationId: "corr-logtest",
     });
 
@@ -423,7 +353,7 @@ describe("LightweightAdapter", () => {
       source: "playground",
       member: "the-scribe",
       status: "success",
-      model: "llama-3.3-70b-versatile",
+      model: "gpt-5-nano",
     });
     expect(traceLog?.tokenCount).toMatchObject({
       input: expect.any(Number),
@@ -462,7 +392,7 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "what is 1+1?" }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile", enabledTools: ["code_execution"] },
+      config: { enabledTools: ["code_execution"] },
       correlationId: "corr-tool-1",
     });
 
@@ -502,7 +432,7 @@ describe("LightweightAdapter", () => {
     const stream = await adapter.chat({
       agentId: "the-scribe",
       messages: [{ role: "user", content: "what is 1+1?" }],
-      config: { provider: "groq", model: "llama-3.3-70b-versatile", enabledTools: ["code_execution"] },
+      config: { enabledTools: ["code_execution"] },
     });
 
     const events = await collectDataEvents(stream);

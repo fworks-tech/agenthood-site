@@ -1,18 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Select, TextInput, PasswordInput, Slider, Switch, Button, Text, Group, Stack, Paper, Alert, Collapse, UnstyledButton } from "@mantine/core";
+import { Select, Switch, Button, Text, Group, Stack, Paper, Collapse, UnstyledButton } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { IconBolt, IconChevronDown, IconCheck } from "@tabler/icons-react";
+import { IconChevronDown, IconCheck } from "@tabler/icons-react";
 import type { AgentEntry } from "../_data/agents";
-import type { ChatConfig, Provider } from "../_types/studio";
-import {
-  PROVIDER_MODELS,
-  getDefaultModel,
-  getProviderMeta,
-  CODE_AGENTS,
-} from "../_types/studio";
-import OllamaConnectivityCheck from "./OllamaConnectivityCheck";
+import type { ChatConfig } from "../_types/studio";
 import HelpTip from "./HelpTip";
 import CustomToolsPanel from "./CustomToolsPanel";
 import { TURNSTILE_REQUIRED } from "../_lib/env";
@@ -77,8 +70,6 @@ export default function AgentConfigPanel({
   captchaToken,
 }: AgentConfigPanelProps) {
   const panelId = useId();
-  const meta = getProviderMeta(config.provider);
-  const [modelOpen, { toggle: toggleModel }] = useDisclosure(true);
   const [toolsOpen, { toggle: toggleTools }] = useDisclosure(true);
   const [limitsOpen, { toggle: toggleLimits }] = useDisclosure(false);
   const [saved, setSaved] = useState(false);
@@ -89,23 +80,6 @@ export default function AgentConfigPanel({
     { key: "lifecycle", label: "Lifecycle" },
     { key: "knowledge", label: "Knowledge" },
   ];
-
-  const handleProviderChange = (provider: string) => {
-    const p = provider as Provider;
-    const m = getProviderMeta(p);
-    onChangeConfig({
-      ...config,
-      provider: p,
-      model: getDefaultModel(p),
-      baseUrl: m.defaultBaseUrl ?? config.baseUrl,
-    });
-  };
-
-  const isCodeAgent = selectedAgent && CODE_AGENTS.has(selectedAgent.id);
-  const isOpenCodeSuggestion =
-    isCodeAgent &&
-    config.provider !== "opencode" &&
-    config.provider !== "opencode-go";
 
   const agentOptions = isLoading
     ? [{ value: "", label: "Loading agents...", disabled: true }]
@@ -127,37 +101,7 @@ export default function AgentConfigPanel({
           }),
         ];
 
-  const providerOptions = (Object.entries(PROVIDER_MODELS) as [Provider, typeof meta][]).map(
-    ([key, m]) => ({ value: key, label: m.label })
-  );
-
-  const modelOptions = meta.models.map((m) => ({
-    value: m.id,
-    label: m.label,
-  }));
-
-  const baseUrlValue = config.baseUrl ?? meta.defaultBaseUrl ?? "";
-  const baseUrlError = (() => {
-    if (!meta.requiresBaseUrl) return null;
-    if (!baseUrlValue.trim()) return "Base URL is required for this provider";
-    try {
-      const url = new URL(baseUrlValue.trim());
-      if (url.protocol !== "http:" && url.protocol !== "https:") return "Base URL must start with http:// or https://";
-      return null;
-    } catch {
-      return "Base URL must be a valid URL";
-    }
-  })();
-  const apiKeyValue = config.apiKey ?? "";
-  const apiKeyError = (() => {
-    if (!apiKeyValue) return null;
-    if (/\s/.test(apiKeyValue)) return "API key must not contain spaces";
-    if (apiKeyValue.length < 8) return "API key looks too short";
-    return null;
-  })();
-
   const handleSave = () => {
-    if (baseUrlError) return;
     onSave?.(config);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
@@ -172,7 +116,7 @@ export default function AgentConfigPanel({
               Agent Configuration
             </Text>
             <HelpTip
-              text="Configuration panel for agent selection, provider, model, and safety limits."
+              text="Configuration panel for agent selection, tools, and safety limits."
               side="bottom"
             />
           </Group>
@@ -216,182 +160,6 @@ export default function AgentConfigPanel({
           )}
         </div>
 
-        {/* OpenCode affinity hint */}
-        {isOpenCodeSuggestion && (
-          <Alert variant="outline" color="emerald" icon={<IconBolt size={16} />}>
-            <Group gap="xs" mb={4}>
-              <Text size="xs" fw={600} c="emerald.3">
-                Code-optimized provider available
-              </Text>
-              <HelpTip text="This code-focused agent is optimized for OpenCode providers offering lower latency and better coding performance." />
-            </Group>
-            <Text size="xs" c="emerald.5">
-              {selectedAgent!.name} works best with a code-optimized provider.
-            </Text>
-            <Button
-              size="compact-xs"
-              variant="outline"
-              color="emerald"
-              mt={6}
-              onClick={() => handleProviderChange("opencode")}
-            >
-              Switch to OpenCode
-            </Button>
-          </Alert>
-        )}
-
-        {/* Model & Behavior — collapsible */}
-        <div>
-          <SectionHeader
-            label="Model & Behavior"
-            helpText="Controls which AI model powers the agent and how it generates responses."
-            isOpen={modelOpen}
-            onToggle={toggleModel}
-          />
-          <Collapse expanded={modelOpen}>
-            <Stack gap="sm" pt="sm">
-              <div>
-                <Group gap="xs" mb={4}>
-                  <Text component="label" htmlFor={`${panelId}-provider`} size="xs" c="dimmed">
-                    Provider
-                  </Text>
-                  <HelpTip
-                    text="Choose which LLM service (Anthropic, OpenAI, Groq, Ollama, OpenCode) powers the agent."
-                    side="right"
-                  />
-                </Group>
-                <Select
-                  id={`${panelId}-provider`}
-                  data={providerOptions}
-                  value={config.provider}
-                  onChange={(value) => value && handleProviderChange(value)}
-                />
-              </div>
-
-              <div>
-                <Group gap="xs" mb={4}>
-                  <Text component="label" htmlFor={`${panelId}-model`} size="xs" c="dimmed">
-                    Model
-                  </Text>
-                  <HelpTip
-                    text="Select the specific AI model version. Models vary in capability, speed, and cost."
-                    side="right"
-                  />
-                </Group>
-                <Select
-                  id={`${panelId}-model`}
-                  data={modelOptions}
-                  value={config.model}
-                  onChange={(value) => value && onChangeConfig({ ...config, model: value })}
-                />
-              </div>
-
-              {meta.requiresBaseUrl && (
-                <div>
-                  <Group gap="xs" mb={4}>
-                    <Text component="label" htmlFor={`${panelId}-baseurl`} size="xs" c="dimmed">
-                      Base URL
-                    </Text>
-                    <HelpTip
-                      text="The server endpoint for self-hosted providers (Ollama, OpenCode)."
-                      side="right"
-                    />
-                  </Group>
-                  <TextInput
-                    id={`${panelId}-baseurl`}
-                    value={config.baseUrl ?? meta.defaultBaseUrl ?? ""}
-                    onChange={(e) => onChangeConfig({ ...config, baseUrl: e.currentTarget.value })}
-                    placeholder={meta.defaultBaseUrl}
-                    error={baseUrlError}
-                  />
-                </div>
-              )}
-
-              <div>
-                <Group gap="xs" mb={4}>
-                  <Text component="label" htmlFor={`${panelId}-apikey`} size="xs" c="dimmed">
-                    API Key <Text component="span" size="xs" c="dimmed">(optional)</Text>
-                  </Text>
-                  <HelpTip
-                    text="Provide your own API key. If left blank, the servers default key is used."
-                    side="right"
-                  />
-                </Group>
-                <PasswordInput
-                  id={`${panelId}-apikey`}
-                  value={config.apiKey ?? ""}
-                  onChange={(e) =>
-                    onChangeConfig({
-                      ...config,
-                      apiKey: e.currentTarget.value || undefined,
-                    })
-                  }
-                  placeholder={
-                    meta.requiresKey
-                      ? `Uses server ${config.provider} key`
-                      : "Not required"
-                  }
-                  error={apiKeyError}
-                />
-                <Text size="xs" c="dimmed" mt={4}>
-                  {config.provider === "opencode" || config.provider === "opencode-go"
-                    ? "No setup needed — this provider uses the server's OpenCode key. Add your own only if you prefer."
-                    : "Sent server-side for this request only. Never logged or stored."}
-                </Text>
-              </div>
-
-              <div>
-                <Group gap="xs" mb={4}>
-                  <Text component="label" htmlFor={`${panelId}-temp`} size="xs" c="dimmed">
-                    Temperature: {config.temperature.toFixed(1)}
-                  </Text>
-                  <HelpTip
-                    text="Controls randomness. Lower = focused, higher = creative."
-                    side="right"
-                  />
-                </Group>
-                <Slider
-                  id={`${panelId}-temp`}
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={config.temperature}
-                  onChange={(val) => onChangeConfig({ ...config, temperature: val })}
-                  label={(val) => val.toFixed(1)}
-                />
-              </div>
-
-              <div>
-                <Group gap="xs" mb={4}>
-                  <Text component="label" htmlFor={`${panelId}-tokens`} size="xs" c="dimmed">
-                    Max Tokens: {config.maxTokens.toLocaleString()}
-                  </Text>
-                  <HelpTip
-                    text="Limits response length. Larger values allow longer responses."
-                    side="right"
-                  />
-                </Group>
-                <Slider
-                  id={`${panelId}-tokens`}
-                  min={256}
-                  max={16384}
-                  step={256}
-                  value={config.maxTokens}
-                  onChange={(val) => onChangeConfig({ ...config, maxTokens: val })}
-                  label={(val) => val.toLocaleString()}
-                />
-              </div>
-            </Stack>
-          </Collapse>
-        </div>
-
-        {/* Ollama connectivity check */}
-        {config.provider === "ollama" && (
-          <OllamaConnectivityCheck
-            baseUrl={config.baseUrl ?? "http://localhost:11434"}
-          />
-        )}
-
         {/* Tools — collapsible */}
         <div>
           <SectionHeader
@@ -404,7 +172,7 @@ export default function AgentConfigPanel({
             <Stack gap="sm" pt="sm">
               <Switch
                 label="Web Fetch"
-                description="fetch URL content"
+                description="fetch URL content (github.com, raw.githubusercontent.com, gist.github.com)"
                 checked={config.enabledTools?.includes("web_fetch") ?? false}
                 onChange={(e) => {
                   const tools = config.enabledTools ?? [];
@@ -475,7 +243,7 @@ export default function AgentConfigPanel({
           <Button
             fullWidth
             onClick={handleSave}
-            disabled={(TURNSTILE_REQUIRED && !captchaToken) || !!baseUrlError || !!apiKeyError}
+            disabled={TURNSTILE_REQUIRED && !captchaToken}
             className={`transition-all duration-200 ${saved ? "bg-emerald-600" : ""}`}
           >
             {saved ? (

@@ -91,6 +91,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
       { id: "gpt-5.4", label: "GPT-5.4" },
       { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
       { id: "gpt-5.4-nano", label: "GPT-5.4 Nano" },
+      { id: "gpt-5-nano", label: "GPT-5 Nano (default)" },
       { id: "claude-fable-5", label: "Claude Fable 5" },
       { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
       { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
@@ -136,6 +137,14 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     ],
   },
 };
+
+// The Studio is a zero-setup demo: one provider, one cheap model, enforced
+// server-side. Clients cannot override these — the chat route drops provider,
+// model, key, and base URL from the request body before the adapter sees it.
+export const DEMO_PROVIDER: Provider = "opencode";
+export const DEMO_MODEL = "gpt-5-nano";
+export const DEMO_TEMPERATURE = 0.7;
+export const DEMO_MAX_TOKENS = 16384;
 
 export const CODE_AGENTS = new Set([
   "the-architect",

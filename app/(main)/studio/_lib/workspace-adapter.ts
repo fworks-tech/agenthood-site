@@ -3,7 +3,7 @@ import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } 
 import type { ToolCall } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { getDefaultModel } from '../_types/studio'
+import { DEMO_MODEL, DEMO_PROVIDER } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
 import { CLI_PROVIDER_CHAIN } from './agenthood-adapter'
 import type { Message } from 'agenthood/dist/llm'
@@ -32,8 +32,8 @@ export async function createWorkspaceTurnStream(
   const systemPrompt = buildSystemPrompt(req.memberId)
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
-  const providerName = 'opencode-go' as const
-  const model = getDefaultModel('opencode-go')
+  const providerName = DEMO_PROVIDER
+  const model = DEMO_MODEL
   const enabledTools = ['web_fetch', 'code_execution']
   const allSchemas = getToolSchemas()
   const toolSchemas = allSchemas.filter((s) => enabledTools.includes(s.name))
