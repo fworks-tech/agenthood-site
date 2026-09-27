@@ -112,6 +112,15 @@ The chat API route (`app/api/studio/chat/route.ts`) validates all custom `baseUr
 
 This is enforced before any provider library is instantiated, preventing SSRF via malicious config injection.
 
+### 10a. Message role allowlist
+
+Client messages may only carry `role: "user"` or `role: "assistant"`, declared once as `CLIENT_MESSAGE_ROLES` in `app/(main)/studio/_types/studio.ts` and enforced twice:
+
+- the chat route rejects any other role with a 400, and
+- `buildLLMMessages` in the adapter re-checks before the array reaches the provider, so a future caller cannot reopen the hole by skipping the route.
+
+`system` is excluded because the member's own system prompt is prepended before the client messages, so a forged system message lands after it and overrides it — prompt injection into a member's identity. `tool` is excluded because the playground rebuilds tool results server-side each turn and the client never needs to send one; accepting it would only let a client forge a tool result. The workspace routes use the wider `user, assistant, tool` set because their client genuinely round-trips tool messages in the thread.
+
 ### 11. Content Security Policy
 
 A `Content-Security-Policy` header is applied to all routes via `next.config.ts`:
@@ -225,6 +234,7 @@ After the tool loop, the final text is streamed character-by-character (with `to
 - SSRF protection guards against malicious `baseUrl` injection — only localhost http:// and any https:// are allowed
 - CSP blocks inline script execution and restricts resource loading to known origins
 - Model validation catches typos and injection attempts before they reach the provider SDK
+- The role allowlist is narrower than the workspace routes' — the playground client never sends `tool` messages, so a forged one would be pure attack surface
 - Hydration strategy uses `useEffect` + `hydrated` flag to prevent SSR/CSR mismatches — no console hydration errors in production
 - Skill prompts are frozen at build time — updates to member skills require a site rebuild
 - `scripts/sync-skills.mjs` fetches from the `main` branch of the agenthood repo — a supply-chain consideration documented in the code

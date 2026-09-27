@@ -9,6 +9,7 @@ import { generateId } from "./ids";
 import {
   DEMO_MAX_TOKENS,
   DEMO_PROVIDER,
+  CLIENT_MESSAGE_ROLES,
   getMemberTools,
   selectDemoModel,
   type Provider,
@@ -30,7 +31,17 @@ export interface AgenthoodAdapter {
 // CLI priority chain — mirrors .agenthood/config.json (opencode p1)
 export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 
+// The route rejects other roles, but this is the last code that touches the
+// array before the provider — a caller reaching the adapter directly must not
+// be able to slip a forged system prompt in behind the member's own.
 function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
+  for (const m of req.messages) {
+    if (!(CLIENT_MESSAGE_ROLES as readonly string[]).includes(m.role)) {
+      throw new ValidationError(
+        `Message role "${m.role}" is not allowed (${CLIENT_MESSAGE_ROLES.join(", ")})`,
+      );
+    }
+  }
   return [
     { role: "system", content: systemPrompt },
     ...req.messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
@@ -152,7 +163,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
               // rate-limited to 20/min, so output is the only open dimension.
               maxTokens: DEMO_MAX_TOKENS,
             };
-            const asyncGen = await provider.stream(finalRequest);
+            const asyncGen = await withProviderRetry(() => provider.stream(finalRequest));
 
             for await (const chunk of asyncGen) {
               if (signal?.aborted) break;
@@ -217,10 +228,17 @@ async function runToolLoop(
   for (let i = 0; i < maxIterations; i++) {
     if (signal?.aborted) return "";
 
-    const resp = await provider.complete({
-      messages,
-      tools: toolSchemas,
-    });
+    // Same cap as the plain path and the workspace adapter. Without it the
+    // abuse guard only covered tool-free turns, so every tool-enabled turn —
+    // the ones a visitor triggers by ticking a box — ran uncapped.
+    const resp = await withProviderRetry(() =>
+      provider.complete({
+        messages,
+        tools: toolSchemas,
+        temperature: 0.7,
+        maxTokens: DEMO_MAX_TOKENS,
+      }),
+    );
 
     if (!resp.toolCalls || resp.toolCalls.length === 0) {
       return resp.content;
