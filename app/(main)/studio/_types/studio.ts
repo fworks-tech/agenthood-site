@@ -93,6 +93,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     models: [
       { id: "deepseek-v4-flash", label: "DeepSeek V4 Flash" },
       { id: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
+      { id: "gpt-6-luna", label: "GPT-6 Luna" },
       { id: "gpt-5.5", label: "GPT-5.5" },
       { id: "gpt-5.4", label: "GPT-5.4" },
       { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
@@ -151,7 +152,7 @@ export const DEMO_PROVIDER: Provider = "opencode";
 export const DEMO_MODEL = "gpt-5-nano";
 // Output cap (abuse guard): input bounded by route (50 msgs / 4k chars / 100k total)
 // and rate-limited to 20 req/min ⇒ output was the only open dimension.
-// 20 req/min × 16,384 tokens = 327,680 tokens/min ≈ $0.13/min on gpt-5-nano.
+// 20 req/min × 16,384 tokens = 327,680 tokens/min (worst case at default-tier pricing).
 export const DEMO_MAX_TOKENS = 16384;
 
 export const CODE_AGENTS = new Set([
@@ -161,6 +162,29 @@ export const CODE_AGENTS = new Set([
   "the-debugger",
   "the-warden",
 ]);
+
+// Tiered demo models: the single pin became a 3-tier map. Selection is a pure
+// heuristic (no LLM call) enforced server-side. All three must be
+// chat-completions models on the pinned provider — jev-1.13 was rejected here
+// because it is a System One decision model on /v1/systemone, not prose chat.
+// - Q&A (no tools, no code): cheapest non-free chat model in the console.
+// - Default (tools on): the balanced default.
+// - Code (code agent or ``` fences): the cheap code-capable model.
+// Prices live in the Zen console and rot fast, so they are not quoted here.
+// Worst case stays bounded: 20 req/min × 16,384 tokens per response.
+export const DEMO_QA_MODEL = "gpt-6-luna";
+export const DEMO_CODE_MODEL = "deepseek-v4-flash";
+
+export function selectDemoModel(
+  agentId: string,
+  messages: { content: string }[],
+  toolsOn: boolean,
+): string {
+  const hasCode = messages.some((m) => m.content.includes("```"));
+  if (CODE_AGENTS.has(agentId) || hasCode) return DEMO_CODE_MODEL;
+  if (!toolsOn) return DEMO_QA_MODEL;
+  return DEMO_MODEL;
+}
 
 export function getProviderMeta(provider: Provider): ProviderMeta {
   return PROVIDER_MODELS[provider];

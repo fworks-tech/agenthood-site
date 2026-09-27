@@ -3,7 +3,7 @@ import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } 
 import type { ToolCall } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { DEMO_MODEL } from '../_types/studio'
+import { selectDemoModel } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
 import { buildDemoLLMConfig } from './agenthood-adapter'
 import type { Message } from 'agenthood/dist/llm'
@@ -32,7 +32,6 @@ export async function createWorkspaceTurnStream(
   const systemPrompt = buildSystemPrompt(req.memberId)
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
-  const model = DEMO_MODEL
   const enabledTools = ['web_fetch', 'code_execution']
   const allSchemas = getToolSchemas()
   const toolSchemas = allSchemas.filter((s) => enabledTools.includes(s.name))
@@ -49,6 +48,10 @@ export async function createWorkspaceTurnStream(
     req.thread.length === 0
       ? [{ role: 'user', content: req.instruction }]
       : req.thread
+
+  // Workspace turns always carry tools, so the Q&A tier never applies here —
+  // code members and code-bearing threads get the code tier, rest default.
+  const model = selectDemoModel(req.memberId, threadWithInstruction, true)
 
   const messages = buildMemberMessages(systemPrompt, threadWithInstruction)
 

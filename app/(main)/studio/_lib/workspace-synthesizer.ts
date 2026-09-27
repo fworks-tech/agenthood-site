@@ -1,4 +1,4 @@
-import { DEMO_MODEL } from '../_types/studio'
+import { selectDemoModel } from '../_types/studio'
 import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
 import { buildDemoLLMConfig } from './agenthood-adapter'
 
@@ -18,7 +18,9 @@ export async function createSynthesisStream(
   workspaceMeta: { workspaceId: string; correlationId: string },
   signal?: AbortSignal,
 ): Promise<ReadableStream> {
-  const model = DEMO_MODEL
+  // Synthesis carries no tools: plain threads get the Q&A tier,
+  // code-bearing threads get the code tier.
+  const model = selectDemoModel('workspace-synthesizer', thread, false)
 
   // Build messages: system + full thread
   const messages = buildMemberMessages(SYNTHESIS_SYSTEM, thread)

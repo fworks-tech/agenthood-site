@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   CODE_AGENTS,
+  DEMO_CODE_MODEL,
   DEMO_MODEL,
   DEMO_PROVIDER,
+  DEMO_QA_MODEL,
   PROVIDER_MODELS,
   getDefaultModel,
   getProviderMeta,
@@ -87,5 +89,11 @@ describe("demo pin", () => {
   it("targets a model that exists on the pinned provider", () => {
     const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
     expect(models).toContain(DEMO_MODEL);
+  });
+
+  it("targets tier models that exist on the pinned provider", () => {
+    const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
+    expect(models).toContain(DEMO_QA_MODEL);
+    expect(models).toContain(DEMO_CODE_MODEL);
   });
 });
