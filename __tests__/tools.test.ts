@@ -39,11 +39,50 @@ afterEach(() => {
 });
 
 describe("getToolSchemas", () => {
-  it("returns the web_fetch and code_execution tool schemas", () => {
+  it("returns the three built-in tool schemas", () => {
     const schemas = getToolSchemas();
-    expect(schemas.map((s) => s.name)).toEqual(["web_fetch", "code_execution"]);
+    expect(schemas.map((s) => s.name)).toEqual([
+      "web_fetch",
+      "code_execution",
+      "activate_skill",
+    ]);
     expect(schemas[0].inputSchema.required).toEqual(["url"]);
     expect(schemas[1].inputSchema.required).toEqual(["code"]);
+    expect(schemas[2].inputSchema.required).toEqual(["skill_name"]);
+  });
+});
+
+describe("activate_skill", () => {
+  it("loads a packaged skill document", async () => {
+    const result = await executeTool("activate_skill", { skill_name: "commit-messages" });
+    expect(result).not.toMatch(/^Error: /);
+    expect(result.length).toBeGreaterThan(100);
+    expect(result.toLowerCase()).toContain("conventional");
+  });
+
+  it("returns an error for an unknown skill", async () => {
+    await expect(executeTool("activate_skill", { skill_name: "not-a-real-skill" })).resolves.toBe(
+      'Error: skill "not-a-real-skill" not found',
+    );
+  });
+
+  it("rejects a missing or malformed skill_name", async () => {
+    await expect(executeTool("activate_skill", {})).resolves.toMatch(/^Error: skill_name/);
+    await expect(executeTool("activate_skill", { skill_name: 42 })).resolves.toMatch(
+      /^Error: skill_name/,
+    );
+  });
+
+  it("refuses path traversal", async () => {
+    for (const bad of ["../../package", "..", "a/b", "./commit-messages", "a\\b"]) {
+      const result = await executeTool("activate_skill", { skill_name: bad });
+      expect(result).toMatch(/^Error: /);
+    }
+  });
+
+  it("caps the returned document at the tool result limit", async () => {
+    const result = await executeTool("activate_skill", { skill_name: "commit-messages" });
+    expect(result.length).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS);
   });
 });
 
@@ -98,6 +137,11 @@ describe("tool constants", () => {
 
   it("caps tool results at 6k characters", () => {
     expect(TOOL_RESULT_MAX_CHARS).toBe(6_000);
+  });
+
+  it("slices code_execution output to the tool result cap", async () => {
+    const result = await executeTool("code_execution", { code: "'x'.repeat(20000)" });
+    expect(result.length).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS);
   });
 });
 
@@ -247,5 +291,37 @@ describe("code_execution sandbox", () => {
     await expect(executeTool("code_execution", { code: "typeof require" })).resolves.toBe(
       "undefined",
     );
+  });
+
+  // The escape that actually worked: a bare createContext({}) contextifies a
+  // HOST-realm object, so a constructor chain reached the real `process` and
+  // exfiltrated process.env through the tool result. One vector per mechanism.
+  it.each([
+    ["prototype chain", "this.constructor.constructor('return typeof process')()"],
+    ["Reflect.construct", "Reflect.construct(Function, ['return typeof process'])()"],
+    ["indirect eval", "(0, eval)('typeof process')"],
+  ])("blocks host-realm escape via %s", async (_name, code) => {
+    const result = await executeTool("code_execution", { code });
+    expect(result).not.toContain("object");
+  });
+
+  it("does not leak process.env through a constructor chain", async () => {
+    const result = await executeTool("code_execution", {
+      code: "(() => { const p = this.constructor.constructor('return process')(); return JSON.stringify(p.env); })()",
+    });
+    expect(result).not.toContain("PATH");
+    expect(result).not.toContain("API_KEY");
+  });
+
+  // The hardening must not cost real capability.
+  it("still runs ordinary JavaScript after hardening", async () => {
+    await expect(
+      executeTool("code_execution", {
+        code: "class A { constructor() { this.x = 1 } } class B extends A { constructor() { super(); this.y = 2 } } JSON.stringify(new B())",
+      }),
+    ).resolves.toBe('{"x":1,"y":2}');
+    await expect(
+      executeTool("code_execution", { code: "const f = (n) => (n <= 1 ? 1 : n * f(n - 1)); f(5)" }),
+    ).resolves.toBe("120");
   });
 });

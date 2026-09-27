@@ -22,6 +22,22 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: 'thread too large' }), { status: 400 })
   }
 
+  // Same trust boundary as the turn route: no forged system messages
+  // (prompt injection) and a bounded total size.
+  const VALID_ROLES = ['user', 'assistant', 'tool']
+  for (const m of thread) {
+    if (typeof m.role !== 'string' || !VALID_ROLES.includes(m.role)) {
+      return new Response(JSON.stringify({ error: 'thread contains an invalid role' }), { status: 400 })
+    }
+    if (typeof m.content !== 'string') {
+      return new Response(JSON.stringify({ error: 'thread messages must be strings' }), { status: 400 })
+    }
+  }
+  const totalChars = thread.reduce((n, m) => n + m.content.length, 0)
+  if (totalChars > 100_000) {
+    return new Response(JSON.stringify({ error: 'thread must total at most 100000 chars' }), { status: 400 })
+  }
+
   const stream = await createSynthesisStream(thread, { workspaceId, correlationId }, req.signal)
   return new Response(stream, {
     headers: {

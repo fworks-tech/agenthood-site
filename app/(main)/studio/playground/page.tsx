@@ -18,7 +18,7 @@ import MobileBottomSheet from '../_components/MobileBottomSheet';
 import Turnstile from '../../../components/Turnstile';
 import { PENDING_AGENT_KEY } from '../../../components/GlobalSpotlight';
 import type { ChatConfig } from '../_types/studio';
-import { DEMO_MAX_TOKENS, DEMO_MODEL, DEMO_PROVIDER } from '../_types/studio';
+import { DEMO_MAX_TOKENS, DEMO_CODE_MODEL, DEMO_PROVIDER } from '../_types/studio';
 import PlaygroundHeader from './_components/PlaygroundHeader';
 import PlaygroundSidebar from './_components/PlaygroundSidebar';
 import PlaygroundChatArea from './_components/PlaygroundChatArea';
@@ -50,7 +50,7 @@ export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [config, setConfig] = useState<ChatConfig>({
     provider: DEMO_PROVIDER,
-    model: DEMO_MODEL,
+    model: DEMO_CODE_MODEL,
     temperature: 0.7,
     maxTokens: DEMO_MAX_TOKENS,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
@@ -127,7 +127,7 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (!isLoading && !error) {
       addLog('info', `Agents loaded: ${agents.length} available`);
-      addLog('info', `Config: ${DEMO_PROVIDER} · ${DEMO_MODEL}`);
+      addLog('info', `Config: ${DEMO_PROVIDER} · ${DEMO_CODE_MODEL}`);
     }
   }, [isLoading, error, agents.length, addLog]);
 

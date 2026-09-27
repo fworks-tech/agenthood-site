@@ -131,6 +131,24 @@ describe('POST /api/studio/workspaces validation', () => {
     expect((await res.json()).error).toContain('at most 200')
   })
 
+  it('rejects threads over 100k total chars', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    // 6 × 19k = 114k > 100k cap; each under MAX_MESSAGE_CHARS(20k) so per-msg check passes
+    const thread = Array.from({ length: 6 }, (_, i) => ({ role: 'user' as const, content: `m${i}-`.concat('x'.repeat(19_000)) }))
+    const res = await POST(postBody({
+      memberIds: ['the-builder'],
+      instruction: 'hi',
+      thread,
+    }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('total')
+  })
+
+  it('pins maxDuration to the 60s Hobby budget', async () => {
+    const route = await import('../app/api/studio/workspaces/route')
+    expect(route.maxDuration).toBe(60)
+  })
+
   it('accepts a valid conversational thread', async () => {
     const { POST } = await import('../app/api/studio/workspaces/route')
     const res = await POST(postBody({

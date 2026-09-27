@@ -23,6 +23,7 @@ vi.mock("agenthood/dist/llm", () => ({
 vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
   agentSkills: {
     "the-scribe": "You are a commit message writer.",
+    "the-builder": "You are the implementation hand.",
   },
   sharedConversationalStyle: "",
   toolSkills: [],
@@ -31,6 +32,7 @@ vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
 vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
   agentRegistry: [
     { name: "the-scribe", displayName: "The Scribe", tagline: "", role: "commits", stage: [], priority: 0 },
+    { name: "the-builder", displayName: "The Builder", tagline: "", role: "coding", stage: [], priority: 0 },
   ],
 }));
 
@@ -47,7 +49,6 @@ import { LightweightAdapter } from "../app/(main)/studio/_lib/agenthood-adapter"
 import {
   DEMO_CODE_MODEL,
   DEMO_MAX_TOKENS,
-  DEMO_MODEL,
   DEMO_QA_MODEL,
   selectDemoModel,
 } from "../app/(main)/studio/_types/studio";
@@ -130,7 +131,7 @@ describe("LightweightAdapter", () => {
     expect(llmConfig.providers[0]).not.toHaveProperty("apiKey");
     expect(llmConfig.providers[0]).not.toHaveProperty("baseUrl");
     // plain Q&A with no tools routes to the cheapest tier
-    expect(mockSetModel).toHaveBeenCalledWith("gpt-6-luna");
+    expect(mockSetModel).toHaveBeenCalledWith(DEMO_QA_MODEL);
   });
 
   it("caps output tokens so a request cannot run unbounded", async () => {
@@ -264,7 +265,7 @@ describe("LightweightAdapter", () => {
       member: "the-scribe",
       status: "success",
       correlationId: "corr-123",
-      model: "gpt-6-luna",
+      model: DEMO_QA_MODEL,
     });
     const tokenCount = traces[0].tokenCount as { input: number; total: number };
     expect(tokenCount.input).toBeGreaterThan(11);
@@ -362,7 +363,7 @@ describe("LightweightAdapter", () => {
       source: "playground",
       member: "the-scribe",
       status: "success",
-      model: "gpt-6-luna",
+      model: DEMO_QA_MODEL,
     });
     expect(traceLog?.tokenCount).toMatchObject({
       input: expect.any(Number),
@@ -399,7 +400,7 @@ describe("LightweightAdapter", () => {
     }));
 
     const stream = await adapter.chat({
-      agentId: "the-scribe",
+      agentId: "the-builder",
       messages: [{ role: "user", content: "what is 1+1?" }],
       config: { enabledTools: ["code_execution"] },
       correlationId: "corr-tool-1",
@@ -439,7 +440,7 @@ describe("LightweightAdapter", () => {
     }));
 
     const stream = await adapter.chat({
-      agentId: "the-scribe",
+      agentId: "the-builder",
       messages: [{ role: "user", content: "what is 1+1?" }],
       config: { enabledTools: ["code_execution"] },
     });
@@ -490,7 +491,53 @@ describe("LightweightAdapter", () => {
     expect(traces[0].status).toBe("error");
   });
 
-  it("routes tool-enabled requests to the default tier", async () => {
+  it("withholds a tool the member's identity does not grant", async () => {
+    mockGetToolSchemas.mockReturnValue([
+      { name: "web_fetch", description: "f", inputSchema: { type: "object", properties: {} } },
+      { name: "code_execution", description: "c", inputSchema: { type: "object", properties: {} } },
+    ]);
+    const complete = vi.fn().mockResolvedValue({ content: "done", toolCalls: undefined });
+    mockFromConfig.mockImplementation(async () => ({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete,
+    }));
+
+    // the-scribe is prose-lane: the adapter is the last gate before the
+    // provider, so a caller asking for code_execution must not get it.
+    const stream = await adapter.chat({
+      agentId: "the-scribe",
+      messages: [{ role: "user", content: "run it" }],
+      config: { enabledTools: ["web_fetch", "code_execution"] },
+    });
+    await collectStream(stream);
+    const names = (complete.mock.calls[0][0].tools ?? []).map((t: { name: string }) => t.name);
+    expect(names).toEqual(["web_fetch"]);
+  });
+
+  it("grants the full tool set to a code-lane member", async () => {
+    mockGetToolSchemas.mockReturnValue([
+      { name: "web_fetch", description: "f", inputSchema: { type: "object", properties: {} } },
+      { name: "code_execution", description: "c", inputSchema: { type: "object", properties: {} } },
+    ]);
+    const complete = vi.fn().mockResolvedValue({ content: "done", toolCalls: undefined });
+    mockFromConfig.mockImplementation(async () => ({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete,
+    }));
+
+    const stream = await adapter.chat({
+      agentId: "the-builder",
+      messages: [{ role: "user", content: "run it" }],
+      config: { enabledTools: ["web_fetch", "code_execution"] },
+    });
+    await collectStream(stream);
+    const names = (complete.mock.calls[0][0].tools ?? []).map((t: { name: string }) => t.name);
+    expect(names).toEqual(["web_fetch", "code_execution"]);
+  });
+
+  it("routes tool-enabled requests to the tool-capable tier", async () => {
     mockGetToolSchemas.mockReturnValue([]);
     mockStreamImpl.mockImplementation(async () =>
       makeStreamGen([{ delta: "", done: true }]),
@@ -503,7 +550,7 @@ describe("LightweightAdapter", () => {
     });
     await collectStream(stream);
 
-    expect(mockSetModel).toHaveBeenCalledWith(DEMO_MODEL);
+    expect(mockSetModel).toHaveBeenCalledWith(DEMO_CODE_MODEL);
   });
 
   it("stops the playground tool loop after PLAYGROUND_MAX_TOOL_ITERATIONS", async () => {
@@ -525,7 +572,7 @@ describe("LightweightAdapter", () => {
     );
 
     const stream = await adapter.chat({
-      agentId: "the-scribe",
+      agentId: "the-builder",
       messages: [{ role: "user", content: "loop forever" }],
       config: { enabledTools: ["code_execution"] },
     });
@@ -557,8 +604,9 @@ describe("selectDemoModel", () => {
     expect(selectDemoModel("the-scribe", msg("what is an ADR?"), false)).toBe(DEMO_QA_MODEL);
   });
 
-  it("picks the default tier when tools are on", () => {
-    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), true)).toBe(DEMO_MODEL);
+  it("picks the tool-capable tier when tools are on (gpt-5-nano cannot serve tools)", () => {
+    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), true)).toBe(DEMO_CODE_MODEL);
+    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), true)).not.toBe("gpt-5-nano");
   });
 
   it.each(["the-tester", "the-debugger"])("picks the code tier for code agent %s", (agent) => {

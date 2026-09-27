@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { track } from '@vercel/analytics'
 import type { AgentEntry } from '../_data/agents'
 import type { ChatConfig } from '../_types/studio'
-import { DEMO_MODEL, DEMO_PROVIDER } from '../_types/studio'
+import { DEMO_CODE_MODEL, DEMO_PROVIDER } from '../_types/studio'
 import { agentSkills } from '../_data/agents.generated'
 import { buildSystemPrompt } from '../_lib/system-prompt'
 import type { LogLevel, LogCategory } from '../_lib/log-types'
@@ -43,8 +43,8 @@ export function usePlaygroundActions(options: UsePlaygroundActionsOptions) {
       const agentConfig = { systemPrompt: buildSystemPrompt(agent.id) || agentSkills[agent.id] || defaultSystemPrompt }
       setConfig((prev) => ({ ...prev, ...agentConfig }))
       chat.newConversation(agent.id, agentConfig)
-      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${DEMO_PROVIDER}/${DEMO_MODEL}`)
-      track('agent_selected', { agentId: agent.id, provider: DEMO_PROVIDER, model: DEMO_MODEL })
+      addLog('info', `Selected: ${agent.icon ?? ''} ${agent.name} · ${agent.role} · ${DEMO_PROVIDER}/${DEMO_CODE_MODEL}`)
+      track('agent_selected', { agentId: agent.id, provider: DEMO_PROVIDER, model: DEMO_CODE_MODEL })
       if (!configOpen && window.innerWidth >= 768) setConfigOpen(true)
     },
     [chat, addLog, configOpen, defaultSystemPrompt, setConfig, setConfigOpen],

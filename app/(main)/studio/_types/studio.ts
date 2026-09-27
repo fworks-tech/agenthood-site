@@ -3,7 +3,7 @@ export type Provider = "anthropic" | "openai" | "groq" | "ollama" | "opencode" |
 export interface ChatConfig {
   /** @deprecated Pinned server-side to DEMO_PROVIDER. Kept for localStorage migration. */
   provider: Provider;
-  /** @deprecated Pinned server-side to DEMO_MODEL. Kept for localStorage migration. */
+  /** @deprecated Pinned server-side to the tier map. Kept for localStorage migration. */
   model: string;
   /** @deprecated Pinned server-side to 0.7. Kept for localStorage migration. */
   temperature: number;
@@ -149,30 +149,51 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
 // server-side. Clients cannot override these — the chat route drops provider,
 // model, key, and base URL from the request body before the adapter sees it.
 export const DEMO_PROVIDER: Provider = "opencode";
-export const DEMO_MODEL = "gpt-5-nano";
 // Output cap (abuse guard): input bounded by route (50 msgs / 4k chars / 100k total)
 // and rate-limited to 20 req/min ⇒ output was the only open dimension.
 // 20 req/min × 16,384 tokens = 327,680 tokens/min (worst case at default-tier pricing).
 export const DEMO_MAX_TOKENS = 16384;
 
+// Members whose lane writes, reviews or operates code. This is the identity
+// signal for capability, not a model heuristic: it decides who gets the
+// code_execution sandbox. The 11 prose-lane members (scribe, herald,
+// librarian, oracle, mediator, ...) write no code artifacts and must not be
+// handed a JS VM — see getMemberTools().
 export const CODE_AGENTS = new Set([
   "the-architect",
+  "the-builder",
   "the-reviewer",
   "the-tester",
   "the-debugger",
   "the-warden",
+  "the-auditor",
+  "the-doorman",
+  "the-operator",
 ]);
 
-// Tiered demo models: the single pin became a 3-tier map. Selection is a pure
-// heuristic (no LLM call) enforced server-side. All three must be
-// chat-completions models on the pinned provider — jev-1.13 was rejected here
-// because it is a System One decision model on /v1/systemone, not prose chat.
-// - Q&A (no tools, no code): cheapest non-free chat model in the console.
-// - Default (tools on): the balanced default.
-// - Code (code agent or ``` fences): the cheap code-capable model.
+// Capability follows identity. web_fetch is cross-cutting (any member may need
+// to read a source); activate_skill is how a member loads its own operating
+// manual, so every member gets it; the code_execution VM is code-lane only.
+export function getMemberTools(memberId: string): string[] {
+  return CODE_AGENTS.has(memberId)
+    ? ["web_fetch", "activate_skill", "code_execution"]
+    : ["web_fetch", "activate_skill"];
+}
+
+// Tiered demo models: a 2-tier map. Selection is a pure heuristic (no LLM
+// call) enforced server-side. All tiers must be chat-completions models on the
+// pinned provider that can actually serve the request shape they are given.
+// jev-1.13 was rejected because it is a System One decision model on
+// /v1/systemone, not prose chat. gpt-5-nano was rejected as the balanced
+// default because it does not support the tools protocol on Zen — it answered
+// 400 "Model does not support this protocol" for every tool-enabled turn
+// (every workspace member outside CODE_AGENTS, e.g. the-builder), while the
+// code tier served the same requests fine.
+// - Q&A (no tools): cheapest non-free chat model in the console.
+// - Code (tools on, or a code agent / ``` fences): the tool-capable model.
 // Prices live in the Zen console and rot fast, so they are not quoted here.
 // Worst case stays bounded: 20 req/min × 16,384 tokens per response.
-export const DEMO_QA_MODEL = "gpt-6-luna";
+export const DEMO_QA_MODEL = "deepseek-v4-flash";
 export const DEMO_CODE_MODEL = "deepseek-v4-flash";
 
 export function selectDemoModel(
@@ -181,9 +202,12 @@ export function selectDemoModel(
   toolsOn: boolean,
 ): string {
   const hasCode = messages.some((m) => m.content.includes("```"));
-  if (CODE_AGENTS.has(agentId) || hasCode) return DEMO_CODE_MODEL;
-  if (!toolsOn) return DEMO_QA_MODEL;
-  return DEMO_MODEL;
+  // Deepseek-v4-flash is currently the only tier verified to serve both the
+  // prose and the tools protocol, so the no-tools branch returns the same
+  // value. Merge it into the tool-capable branch; re-split here when a second
+  // model passes a live turn probe.
+  if (CODE_AGENTS.has(agentId) || hasCode || toolsOn) return DEMO_CODE_MODEL;
+  return DEMO_QA_MODEL;
 }
 
 export function getProviderMeta(provider: Provider): ProviderMeta {

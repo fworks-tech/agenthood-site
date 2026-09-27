@@ -167,6 +167,20 @@ describe("chat route validation", () => {
       enabledTools: ["web_fetch", "custom_ok"],
     });
   });
+
+  it("passes built-in tool names through for shape validation", async () => {
+    chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
+    const res = await postRoute({
+      ...VALID_BODY,
+      config: { enabledTools: ["web_fetch", "code_execution", "evil_tool"] },
+    });
+    expect(res.status).toBe(200);
+    // The identity grant is enforced in the adapter, not here.
+    expect(chatMock.mock.calls[0][0].config.enabledTools).toEqual([
+      "web_fetch",
+      "code_execution",
+    ]);
+  });
 });
 
 describe("chat route streaming response", () => {

@@ -108,10 +108,19 @@ async function main() {
   const sharedStyle = existsSync(sharedStylePath) ? readFileSync(sharedStylePath, "utf8").trim() : "";
 
   const pkgSkillsDir = join(PROJECT_ROOT, "node_modules", "agenthood", "skills");
+  // Deprecated aliases advertise themselves as "Deprecated alias for the-X. Do
+  // not select directly", so listing them in a member's prompt only invites the
+  // model to pick the one option it was told not to pick.
+  const isDeprecatedAlias = (dir) => {
+    const doc = join(pkgSkillsDir, dir, "SKILL.md");
+    if (!existsSync(doc)) return false;
+    return /^description:\s*Deprecated alias/im.test(readFileSync(doc, "utf8"));
+  };
   const toolSkills = existsSync(pkgSkillsDir)
     ? readdirSync(pkgSkillsDir, { withFileTypes: true })
         .filter((e) => e.isDirectory() && !e.name.startsWith("the-") && e.name !== "_shared")
         .map((e) => e.name)
+        .filter((name) => !isDeprecatedAlias(name))
         .sort()
     : [];
 

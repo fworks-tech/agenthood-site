@@ -9,6 +9,7 @@ import { generateId } from "./ids";
 import {
   DEMO_MAX_TOKENS,
   DEMO_PROVIDER,
+  getMemberTools,
   selectDemoModel,
   type Provider,
 } from "../_types/studio";
@@ -45,6 +46,20 @@ export function buildDemoLLMConfig(): LLMConfig {
   };
 }
 
+// Single retry on 5xx from the LLM provider (mirrors the web_fetch 5xx retry
+// in tools.ts): Zen hosts intermittently 503, and one transient failure
+// should not kill a whole turn. 4xx is the caller's mistake — no retry.
+export async function withProviderRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/5\d\d/.test(msg)) throw err;
+    await new Promise((r) => setTimeout(r, 500));
+    return fn();
+  }
+}
+
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
@@ -56,7 +71,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const providerName = DEMO_PROVIDER;
 
     const llmConfig = buildDemoLLMConfig();
-    const enabledTools = req.config?.enabledTools ?? [];
+    // Last gate before the provider: intersect with the member's identity
+    // grant. The chat route already does this, but the adapter is the choke
+    // point every caller shares, so the rule is enforced once, here.
+    const granted = new Set(getMemberTools(req.agentId));
+    const enabledTools = (req.config?.enabledTools ?? []).filter((t) => granted.has(t));
     const model = selectDemoModel(req.agentId, req.messages, enabledTools.length > 0);
 
     const startTime = performance.now();

@@ -1,11 +1,11 @@
 import { buildSystemPrompt } from './system-prompt'
-import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } from './tools'
+import { getToolSchemas, executeTool, PLAYGROUND_MAX_TOOL_ITERATIONS, classifyToolResult } from './tools'
 import type { ToolCall } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { selectDemoModel } from '../_types/studio'
+import { DEMO_MAX_TOKENS, selectDemoModel, getMemberTools } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
-import { buildDemoLLMConfig } from './agenthood-adapter'
+import { buildDemoLLMConfig, withProviderRetry } from './agenthood-adapter'
 import type { Message } from 'agenthood/dist/llm'
 
 export interface WorkspaceTurnRequest {
@@ -32,7 +32,9 @@ export async function createWorkspaceTurnStream(
   const systemPrompt = buildSystemPrompt(req.memberId)
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
-  const enabledTools = ['web_fetch', 'code_execution']
+  // Capability follows identity: prose-lane members get web_fetch only, the
+  // code_execution sandbox is reserved for the code lane.
+  const enabledTools = getMemberTools(req.memberId)
   const allSchemas = getToolSchemas()
   const toolSchemas = allSchemas.filter((s) => enabledTools.includes(s.name))
 
@@ -116,13 +118,16 @@ export async function createWorkspaceTurnStream(
         let finalText = ''
         let handoffEmitted = false
 
-        for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
+        // Same 60s Hobby budget as the playground: short loop, capped
+        // output, one 5xx retry — a 25-iteration turn cannot fit the budget.
+        for (let i = 0; i < PLAYGROUND_MAX_TOOL_ITERATIONS; i++) {
           if (signal?.aborted) break
-          const resp = await provider.complete({
+          const resp = await withProviderRetry(() => provider.complete({
             messages: llmMessages,
             tools: toolSchemas,
             temperature: 0.7,
-          })
+            maxTokens: DEMO_MAX_TOKENS,
+          }))
 
           if (!resp.toolCalls || resp.toolCalls.length === 0) {
             finalText = resp.content
@@ -179,7 +184,7 @@ export async function createWorkspaceTurnStream(
             llmMessages.push({ role: 'tool', content: result, tool_call_id: tc.id, name: tc.name })
           }
 
-          if (i === MAX_TOOL_ITERATIONS - 1) {
+          if (i === PLAYGROUND_MAX_TOOL_ITERATIONS - 1) {
             finalText = resp.content || 'Max tool iterations reached.'
           } else {
             // Live collaboration: keep iterating even after a handoff is
@@ -190,7 +195,7 @@ export async function createWorkspaceTurnStream(
         }
 
         if (!finalText && toolCallsRun.length === 0) {
-          const gen = await provider.stream({ messages: llmMessages, temperature: 0.7 })
+          const gen = await withProviderRetry(() => provider.stream({ messages: llmMessages, temperature: 0.7, maxTokens: DEMO_MAX_TOKENS }))
           for await (const chunk of gen) {
             if (signal?.aborted) break
             if (chunk.delta) {

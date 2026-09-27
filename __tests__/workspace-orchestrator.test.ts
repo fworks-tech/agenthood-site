@@ -100,7 +100,7 @@ describe('trimThread', () => {
     expect(trimThread(msgs, 100)).toEqual(msgs)
   })
 
-  it('drops oldest messages until under limit', () => {
+  it('drops oldest messages until under limit but pins the first (user goal)', () => {
     const msgs: ThreadMessage[] = [
       { role: 'user', content: 'a'.repeat(50) },
       { role: 'assistant', content: 'b'.repeat(50) },
@@ -108,7 +108,18 @@ describe('trimThread', () => {
     ]
     const trimmed = trimThread(msgs, 100)
     expect(trimmed.length).toBe(2)
-    expect(trimmed[0].content).toBe('b'.repeat(50))
+    expect(trimmed[0].content).toBe('a'.repeat(50))
+    expect(trimmed[1].content).toBe('c'.repeat(50))
+  })
+
+  it('never evicts the user goal even when it alone exceeds the limit', () => {
+    const msgs: ThreadMessage[] = [
+      { role: 'user', content: 'goal:'.concat('x'.repeat(200)) },
+      { role: 'assistant', content: 'y'.repeat(50) },
+    ]
+    const trimmed = trimThread(msgs, 100)
+    expect(trimmed[0].role).toBe('user')
+    expect(trimmed[0].content).toContain('goal:')
   })
 
   it('keeps at least one message', () => {

@@ -15,12 +15,14 @@ export interface CustomToolDefinition {
 }
 
 const NAME_PATTERN = /^custom_[a-z][a-z0-9_]*$/;
-const RESERVED_NAMES = new Set(["web_fetch", "code_execution"]);
 const MAX_TOOLS = 50;
 const MAX_NAME_LENGTH = 64;
 
+// No reserved-name list: NAME_PATTERN forces the custom_ prefix, so a custom
+// tool can never collide with a built-in name. The old RESERVED_NAMES set was a
+// fourth hand-typed copy of the tool list and could never reject anything.
 export function isValidCustomToolName(name: string): boolean {
-  return NAME_PATTERN.test(name) && name.length <= MAX_NAME_LENGTH && !RESERVED_NAMES.has(name);
+  return NAME_PATTERN.test(name) && name.length <= MAX_NAME_LENGTH;
 }
 
 function loadCustomTools(): CustomToolDefinition[] {

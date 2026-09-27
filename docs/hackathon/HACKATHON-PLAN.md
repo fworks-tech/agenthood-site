@@ -46,7 +46,7 @@ Every section of this plan answers one of these: §3 answers 1-2, §4-§5 answer
 | 01 | Build with tools and components you already know | We reuse the Agenthood runtime + Studio (member skills, LLMRouter, tool loop). |
 | 02 | Make it clear what existed before the competition and what you added | Explicit boundary line below + README declares it. |
 | 03 | Use every tool/component according to license and service terms | Public repos, no new third-party runtime deps. |
-| 04 | Keep consequential actions controlled through a sandbox or simulation. Add human approval before the action happens | `code_execution` already runs in a node:vm sandbox; orchestrator emits `workspace.handoff` (stop/continue) before consequential turns. |
+| 04 | Keep consequential actions controlled through a sandbox or simulation. Add human approval before the action happens | `code_execution` runs in an isolated `node:vm` context (null-prototype sandbox, code generation disabled) and is granted only to code-lane members; the orchestrator emits `workspace.handoff` (stop/continue) before consequential turns. |
 | 05 | Make a qualified human reviewer part of any solution that could significantly affect someone | Eval rubric includes a human reviewer grading the final artifact; Reviewer member as a gate. |
 | 06 | Choose a legal and ethical use case | Building software features with tests — benign. |
 | 07 | Use information you are allowed to share | Eval cases are synthetic snippets in this public repo. |

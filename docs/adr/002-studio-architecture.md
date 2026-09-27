@@ -167,14 +167,22 @@ A `hydrated` boolean flag prevents the `ConversationList` from rendering until d
 
 ### 14. Server-side tool execution loop
 
-The Studio supports two tools that agents can use during chat: `web_fetch` and `code_execution`.
+The Studio supports three built-in tools that agents can use during chat: `web_fetch`, `code_execution` and `activate_skill`. A member's grant is decided by its identity, not by the client — see `getMemberTools()` in `app/studio/_types/studio.ts`:
+
+| Lane | Grant |
+|------|-------|
+| Code lane (9 members) | `web_fetch`, `activate_skill`, `code_execution` |
+| Prose lane (11 members) | `web_fetch`, `activate_skill` |
+
+`code_execution` is withheld from prose-lane members because it is a real code-execution capability, and the chat route intersects the client's `enabledTools` with this grant so a crafted request cannot widen it.
 
 **Tool definitions** live in `app/studio/_lib/tools.ts`:
 
 | Tool | Schema | Execution |
 |------|--------|-----------|
 | `web_fetch` | `url: string` (required) | Fetches URL content via HTTPS. Allowed hosts: `github.com`, `raw.githubusercontent.com`, `gist.github.com`. Strips HTML, returns text. 15s timeout, 100KB limit. |
-| `code_execution` | `code: string` (required) | Runs JavaScript in sandboxed `node:vm` with 5s timeout. Returns JSON-stringified result. |
+| `code_execution` | `code: string` (required) | Runs JavaScript in an isolated `node:vm` context with 5s timeout. Returns JSON-stringified result. |
+| `activate_skill` | `skill_name: string` (required) | Returns the packaged `SKILL.md` for one skill, capped at the tool-result limit. |
 
 **Agentic loop** in `app/studio/_lib/agenthood-adapter.ts`:
 

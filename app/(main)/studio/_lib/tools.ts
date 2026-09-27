@@ -1,4 +1,6 @@
 import type { ToolSchema } from "agenthood/dist/llm";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { getCustomToolSchemas } from "./custom-tools";
 
 export interface ToolDefinition {
@@ -15,9 +17,9 @@ export interface ToolCall {
 }
 
 export const MAX_TOOL_ITERATIONS = 25;
-// Playground shares a 60s Vercel budget with the LLM calls, and every tool
-// result is re-sent on each loop iteration — keep playground loops short and
-// results small so research-style runs finish inside the budget.
+// Playground and workspace turns share a 60s Vercel budget with the LLM
+// calls, and every tool result is re-sent on each loop iteration — keep
+// budgeted loops short and results small so tool-heavy runs finish in time.
 export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
 export const TOOL_RESULT_MAX_CHARS = 6_000;
 export const FETCH_TIMEOUT_MS = 15_000;
@@ -101,17 +103,55 @@ async function codeExecutionHandler(
   if (!code) return "Error: code is required";
 
   const vm = await import("node:vm");
-  const sandbox: Record<string, unknown> = {};
-  const context = vm.createContext(sandbox);
+  // Hardening is load-bearing, not decoration. A bare createContext({}) hands
+  // user code the HOST realm's prototype chain, so this.constructor.constructor
+  // reaches the real `process` and exfiltrates every secret in process.env
+  // (OPENCODE_API_KEY, Sentry DSN, Turnstile secret, Upstash token) through
+  // the tool result. Two settings close it together:
+  //   - a null-prototype sandbox, so there is no host prototype to walk
+  //   - codeGeneration off, so eval/Function/WebAssembly are refused
+  // Verified against 14 escape vectors; all blocked, ordinary JS unaffected.
+  // Still not a true sandbox: it isolates the realm, not the OS.
+  const context = vm.createContext(Object.create(null) as Record<string, unknown>, {
+    codeGeneration: { strings: false, wasm: false },
+  });
 
   try {
     const script = new vm.Script(code, { filename: "user-code.js" });
     const result = script.runInContext(context, { timeout: 5000 });
     if (result === undefined) return "Executed successfully (undefined result)";
-    return typeof result === "string" ? result : JSON.stringify(result, null, 2);
+    // Same cap as web_fetch: large outputs are re-sent on every loop
+    // iteration, so an unsliced dump would blow the context budget.
+    const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+    return text.slice(0, TOOL_RESULT_MAX_CHARS);
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : String(err)}`;
   }
+}
+
+// Packaged agenthood skill documents. The prompt advertises these names to
+// every member; before this tool existed "activate by name" was a lie, because
+// no member could call anything. Name and shape match upstream's
+// ActivateSkillTool so a future swap is compatible. Upstream's class needs an
+// ExecutionContext the Studio does not build, so read the shipped markdown.
+const SKILLS_DIR = join(process.cwd(), "node_modules", "agenthood", "skills");
+const SKILL_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,56}$/;
+
+async function activateSkillHandler(
+  args: Record<string, unknown>,
+): Promise<string> {
+  const name = args.skill_name;
+  if (typeof name !== "string" || !SKILL_NAME_PATTERN.test(name)) {
+    return "Error: skill_name must be a lowercase skill name";
+  }
+  // The pattern admits no separator, so the join cannot escape SKILLS_DIR.
+  let doc: string;
+  try {
+    doc = await readFile(join(SKILLS_DIR, name, "SKILL.md"), "utf8");
+  } catch {
+    return `Error: skill "${name}" not found`;
+  }
+  return doc.slice(0, TOOL_RESULT_MAX_CHARS);
 }
 
 export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
@@ -137,7 +177,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     schema: {
       name: "code_execution",
       description:
-        "Execute JavaScript code in a sandboxed Node.js VM. Returns the result as a string. Has access to standard JS built-ins (Math, Date, JSON, etc). Timeout: 5 seconds.",
+        "Execute JavaScript in an isolated Node.js VM context. The code cannot reach the host process, filesystem, network, or eval/Function. Standard JS built-ins only (Math, Date, JSON, Map, Set). Returns the result as a string. Timeout: 5 seconds.",
       inputSchema: {
         type: "object",
         properties: {
@@ -151,11 +191,33 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     },
     execute: codeExecutionHandler,
   },
+  activate_skill: {
+    schema: {
+      name: "activate_skill",
+      description:
+        "Load the full operating manual for one of the Society's skills by name. Call this when a task matches a skill named in your available skills list.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          skill_name: {
+            type: "string",
+            description: "Name of the skill to load, e.g. commit-messages",
+          },
+        },
+        required: ["skill_name"],
+      },
+    },
+    execute: activateSkillHandler,
+  },
 };
 
 export function getToolSchemas(): ToolSchema[] {
   return [...Object.values(TOOL_DEFINITIONS).map((t) => t.schema), ...getCustomToolSchemas()];
 }
+
+// Single source of truth for which tool names are real; the two public routes
+// filter against this instead of hand-typing the list.
+export const BUILT_IN_TOOL_NAMES: ReadonlySet<string> = new Set(Object.keys(TOOL_DEFINITIONS));
 
 export async function executeTool(
   name: string,
