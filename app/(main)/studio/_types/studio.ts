@@ -196,6 +196,15 @@ export function getMemberTools(memberId: string): string[] {
 export const DEMO_QA_MODEL = "deepseek-v4-flash";
 export const DEMO_CODE_MODEL = "deepseek-v4-flash";
 
+// Roles a client may put in a playground message. `system` is excluded because
+// a forged system message lands after the member's real system prompt and
+// overrides it (prompt injection). `tool` is excluded because the playground
+// rebuilds tool results server-side each turn, so the client never needs to
+// send one — accepting it would only let a client forge a tool result.
+// The chat route rejects these and the adapter enforces them again, so the
+// rule holds no matter which caller reaches the provider.
+export const CLIENT_MESSAGE_ROLES = ["user", "assistant"] as const;
+
 export function selectDemoModel(
   agentId: string,
   messages: { content: string }[],

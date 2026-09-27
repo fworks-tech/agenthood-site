@@ -11,7 +11,7 @@ import {
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
 import { BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
-import { DEMO_PROVIDER } from "@/app/(main)/studio/_types/studio";
+import { DEMO_PROVIDER, CLIENT_MESSAGE_ROLES } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +49,11 @@ function validateMessages(messages: unknown): { role: string; content: string }[
   let totalChars = 0;
   for (const msg of messages) {
     if (!msg.role || typeof msg.role !== "string") throw new ValidationError("Each message must have a role string");
+    if (!(CLIENT_MESSAGE_ROLES as readonly string[]).includes(msg.role)) {
+      throw new ValidationError(
+        `Each message must have a valid role (${CLIENT_MESSAGE_ROLES.join(", ")})`,
+      );
+    }
     if (typeof msg.content !== "string") throw new ValidationError("Each message must have a content string");
     if (msg.content.length > MAX_MESSAGE_LENGTH) throw new ValidationError(`Message content exceeds ${MAX_MESSAGE_LENGTH} characters`);
     totalChars += msg.content.length;
