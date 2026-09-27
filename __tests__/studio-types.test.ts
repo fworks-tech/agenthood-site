@@ -4,10 +4,8 @@ import {
   DEMO_CODE_MODEL,
   DEMO_PROVIDER,
   DEMO_QA_MODEL,
-  PROVIDER_MODELS,
-  getDefaultModel,
+  CLIENT_MESSAGE_ROLES,
   getMemberTools,
-  getProviderMeta,
   type Provider,
 } from "../app/(main)/studio/_types/studio";
 import { getToolSchemas } from "../app/(main)/studio/_lib/tools";
@@ -23,44 +21,11 @@ const ALL_PROVIDERS: Provider[] = [
   "openrouter",
 ];
 
-describe("PROVIDER_MODELS catalog", () => {
-  it("defines every supported provider", () => {
-    expect(Object.keys(PROVIDER_MODELS).sort()).toEqual([...ALL_PROVIDERS].sort());
-  });
-
-  it("gives every provider a label and at least one model", () => {
-    for (const p of ALL_PROVIDERS) {
-      const meta = PROVIDER_MODELS[p];
-      expect(typeof meta.label).toBe("string");
-      expect(meta.label.length).toBeGreaterThan(0);
-      expect(meta.models.length).toBeGreaterThan(0);
-    }
-  });
-
-  it("keeps model ids unique within each provider", () => {
-    for (const p of ALL_PROVIDERS) {
-      const ids = PROVIDER_MODELS[p].models.map((m) => m.id);
-      expect(new Set(ids).size).toBe(ids.length);
-    }
-  });
-
-  it("gives self-hosted providers a default base URL", () => {
-    for (const p of ALL_PROVIDERS) {
-      if (PROVIDER_MODELS[p].requiresBaseUrl) {
-        expect(PROVIDER_MODELS[p].defaultBaseUrl).toBeTruthy();
-      }
-    }
-  });
-
-  it("marks cloud providers as requiring a key and no base URL", () => {
-    for (const p of ["anthropic", "openai", "groq", "openrouter"] as Provider[]) {
-      expect(PROVIDER_MODELS[p].requiresKey).toBe(true);
-      expect(PROVIDER_MODELS[p].requiresBaseUrl).toBe(false);
-    }
-    for (const p of ["ollama", "opencode", "opencode-go"] as Provider[]) {
-      expect(PROVIDER_MODELS[p].requiresKey).toBe(false);
-      expect(PROVIDER_MODELS[p].requiresBaseUrl).toBe(true);
-    }
+describe("Provider", () => {
+  it("still enumerates the providers the deprecated ChatConfig shape can hold", () => {
+    // The picker is gone and nothing renders these, but ChatConfig keeps the
+    // field for localStorage migration, so the union must stay intact.
+    expect(ALL_PROVIDERS).toContain(DEMO_PROVIDER);
   });
 });
 
@@ -114,29 +79,17 @@ describe("getMemberTools", () => {
   });
 });
 
-describe("getProviderMeta", () => {
-  it.each(ALL_PROVIDERS)("resolves metadata for %s", (p) => {
-    expect(getProviderMeta(p)).toBe(PROVIDER_MODELS[p]);
-  });
-});
-
-describe("getDefaultModel", () => {
-  it.each(ALL_PROVIDERS)("returns the first listed model for %s", (p) => {
-    expect(getDefaultModel(p)).toBe(PROVIDER_MODELS[p].models[0].id);
-  });
-
-  it("falls back to deepseek-v4-flash for unknown providers", () => {
-    expect(getDefaultModel("not-a-provider" as Provider)).toBe("deepseek-v4-flash");
-  });
-});
 describe("demo pin", () => {
-  it("targets a model that exists on the pinned provider", () => {
-    const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
+  it("is a single non-empty model id on the pinned provider", () => {
+    // Whether the pin actually *works* is a live question, answered by
+    // `npm run test:live`. Offline there is only the shape to assert — the old
+    // cross-check against PROVIDER_MODELS is gone with the catalogue.
+    expect(DEMO_PROVIDER).toBe("opencode");
+    expect(DEMO_QA_MODEL).toBeTruthy();
+    expect(DEMO_CODE_MODEL).toBeTruthy();
   });
 
-  it("targets tier models that exist on the pinned provider", () => {
-    const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
-    expect(models).toContain(DEMO_QA_MODEL);
-    expect(models).toContain(DEMO_CODE_MODEL);
+  it("keeps the role allowlist narrow", () => {
+    expect([...CLIENT_MESSAGE_ROLES]).toEqual(["user", "assistant"]);
   });
 });

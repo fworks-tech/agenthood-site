@@ -140,20 +140,18 @@ A `Content-Security-Policy` header is applied to all routes via `next.config.ts`
 
 The `connect-src` directive covers the known provider API endpoints and the Sentry ingest URL. Ollama URLs (`http://localhost:11434`) are not listed because they are user-configurable and dynamic — CSP violations are non-blocking warnings in this context.
 
-### 12. Model validation
+### 12. Model pinning and validation
 
-The chat API builds a `KNOWN_MODELS` set from `PROVIDER_MODELS` at startup and validates all `model` values before forwarding to the provider:
+The model is **pinned server-side** and the client cannot influence it. The chat route reads no `model` field at all: provider, model, key, base URL, temperature, and max tokens are server constants (`DEMO_PROVIDER`, `DEMO_QA_MODEL` / `DEMO_CODE_MODEL`, `DEMO_MAX_TOKENS`), and the adapter selects the tier per request. Client-supplied values are dropped rather than rejected, so a crafted body cannot widen what runs.
 
-```typescript
-const KNOWN_MODELS = new Set(
-  Object.values(PROVIDER_MODELS).flatMap((meta) => meta.models.map((m) => m.id)),
-);
-```
+An earlier design validated client model ids against a `KNOWN_MODELS` set built from `PROVIDER_MODELS`. That was removed with the model picker: the catalogue had no remaining consumer, and validating an input the server then ignores is theatre.
 
-Unknown model IDs trigger a `ValidationError` with status 400. This prevents:
-- Model injection via manipulated client payloads
-- Typos causing unexpected provider behavior
-- Deprecated model IDs that no longer exist at the provider
+What replaced it is two checks, because the failure they guard against is silent:
+
+- `npm run check:models` (add `--online` with a key) confirms the pin is still listed upstream.
+- `npm run test:live` runs a real turn through the Studio's own code paths. Being *listed* is not the same as *working* — `gpt-5-nano` and `gpt-6-luna` are both listed upstream and both reject the chat-completions request shape this site sends, which is what broke every tool-enabled turn in production.
+
+Neither check can be a unit test: the first depends on upstream state, the second on a live provider and a funded key.
 
 ### 13. Hydration strategy
 
@@ -233,7 +231,7 @@ After the tool loop, the final text is streamed character-by-character (with `to
 - Config is scoped to the browser tab (sessionStorage) — user preferences are lost when the browser closes, but API keys are never persisted (stripped before save)
 - SSRF protection guards against malicious `baseUrl` injection — only localhost http:// and any https:// are allowed
 - CSP blocks inline script execution and restricts resource loading to known origins
-- Model validation catches typos and injection attempts before they reach the provider SDK
+- The model is pinned server-side and client values are dropped, so there is no client-model validation to bypass; a bad pin is caught by `check:models` and `test:live`, not by the request path
 - The role allowlist is narrower than the workspace routes' — the playground client never sends `tool` messages, so a forged one would be pure attack surface
 - Hydration strategy uses `useEffect` + `hydrated` flag to prevent SSR/CSR mismatches — no console hydration errors in production
 - Skill prompts are frozen at build time — updates to member skills require a site rebuild
