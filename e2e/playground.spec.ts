@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "./fixtures";
 import { mockTurnstile, selectAgent, sendMessage, getMessages, getTokenCounter, waitForStreamComplete, getConversationEntries, closeConfigPanel, openConfigPanel, waitForHydration } from "./helpers";
+import { DEMO_CODE_MODEL, DEMO_PROVIDER } from "../app/(main)/studio/_types/studio";
 
 test.describe("Playground — Core UI", () => {
   test.beforeEach(async ({ page, clearStorage, mockChat }) => {
@@ -83,7 +84,7 @@ test.describe("Playground — Core UI", () => {
 
   test("runs on the pinned demo model with no setup", async ({ page }) => {
     await selectAgent(page, "the-architect");
-    await expect(page.locator("text=· opencode · gpt-5-nano").first()).toBeVisible();
+    await expect(page.locator(`text=· ${DEMO_PROVIDER} · ${DEMO_CODE_MODEL}`).first()).toBeVisible();
   });
 
   test("no provider, model, or API key controls remain in the panel", async ({ page }) => {
