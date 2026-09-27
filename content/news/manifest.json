@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-27"
+    ],
+    "path": "news/whats-new-2026-09-27.md",
+    "title": "Agenthood Release Digest: v3.68.1–v3.68.3",
+    "date": "2026-09-27",
+    "author": "Agenthood Team",
+    "summary": "Herald release-note fixes, safer Dependabot grouping, and a Vitest 5 upgrade across three patch releases."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-26"
     ],
     "path": "news/whats-new-2026-09-26.md",
