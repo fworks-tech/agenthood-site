@@ -3,7 +3,6 @@ import {
   executeTool,
   getToolSchemas,
   classifyToolResult,
-  MAX_FETCH_SIZE,
   MAX_TOOL_ITERATIONS,
   TOOL_RESULT_MAX_CHARS,
 } from "../app/(main)/studio/_lib/tools";
@@ -97,8 +96,8 @@ describe("tool constants", () => {
     expect(MAX_TOOL_ITERATIONS).toBe(25);
   });
 
-  it("caps the fetch buffer at 100k characters", () => {
-    expect(MAX_FETCH_SIZE).toBe(100_000);
+  it("caps tool results at 6k characters", () => {
+    expect(TOOL_RESULT_MAX_CHARS).toBe(6_000);
   });
 });
 

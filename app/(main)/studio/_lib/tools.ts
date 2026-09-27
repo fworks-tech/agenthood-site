@@ -20,7 +20,6 @@ export const MAX_TOOL_ITERATIONS = 25;
 // results small so research-style runs finish inside the budget.
 export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
 export const TOOL_RESULT_MAX_CHARS = 6_000;
-export const MAX_FETCH_SIZE = 100_000;
 export const FETCH_TIMEOUT_MS = 15_000;
 
 const ALLOWED_FETCH_HOSTS = [
@@ -48,7 +47,7 @@ function stripHtml(html: string): string {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, MAX_FETCH_SIZE);
+    .slice(0, TOOL_RESULT_MAX_CHARS);
 }
 
 async function webFetchHandler(
