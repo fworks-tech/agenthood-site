@@ -63,16 +63,6 @@ export async function mockTurnstile(page: Page, opts: { autoVerify?: boolean } =
   });
 }
 
-export async function selectMantineOption(page: Page, label: string, optionText: string): Promise<void> {
-  const input = page.getByLabel(label, { exact: true });
-  await input.click();
-  const option = page.locator(`[role="option"]`).filter({ hasText: optionText }).or(
-    page.locator(`[data-combobox-option]`).filter({ hasText: optionText }).first()
-  );
-  await option.waitFor({ state: "visible", timeout: 5000 });
-  await option.click();
-}
-
 export async function selectAgent(page: Page, agentId: string): Promise<void> {
   const vs = page.viewportSize();
   const isMobile = vs !== null && vs.width < 768;

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   CODE_AGENTS,
+  DEMO_MODEL,
+  DEMO_PROVIDER,
   PROVIDER_MODELS,
   getDefaultModel,
   getProviderMeta,
@@ -79,5 +81,11 @@ describe("getDefaultModel", () => {
 
   it("falls back to deepseek-v4-flash for unknown providers", () => {
     expect(getDefaultModel("not-a-provider" as Provider)).toBe("deepseek-v4-flash");
+  });
+});
+describe("demo pin", () => {
+  it("targets a model that exists on the pinned provider", () => {
+    const models = PROVIDER_MODELS[DEMO_PROVIDER].models.map((m) => m.id);
+    expect(models).toContain(DEMO_MODEL);
   });
 });

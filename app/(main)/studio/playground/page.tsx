@@ -18,7 +18,7 @@ import MobileBottomSheet from '../_components/MobileBottomSheet';
 import Turnstile from '../../../components/Turnstile';
 import { PENDING_AGENT_KEY } from '../../../components/GlobalSpotlight';
 import type { ChatConfig } from '../_types/studio';
-import { getDefaultModel, getProviderMeta } from '../_types/studio';
+import { DEMO_MAX_TOKENS, DEMO_MODEL, DEMO_PROVIDER } from '../_types/studio';
 import PlaygroundHeader from './_components/PlaygroundHeader';
 import PlaygroundSidebar from './_components/PlaygroundSidebar';
 import PlaygroundChatArea from './_components/PlaygroundChatArea';
@@ -36,7 +36,11 @@ function loadSavedConfig(): Partial<ChatConfig> {
   if (typeof window === 'undefined') return {};
   try {
     const raw = sessionStorage.getItem(CONFIG_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const saved = JSON.parse(raw) as Partial<ChatConfig>;
+    // Provider and model are pinned server-side — restoring a stale copy would
+    // only make the header lie about what is actually serving the request.
+    return { systemPrompt: saved.systemPrompt, enabledTools: saved.enabledTools };
   } catch {
     return {};
   }
@@ -45,12 +49,14 @@ function loadSavedConfig(): Partial<ChatConfig> {
 export default function PlaygroundPage() {
   const { agents, isLoading, error } = useAgentDirectory();
   const [config, setConfig] = useState<ChatConfig>({
-    provider: 'opencode-go',
-    model: getDefaultModel('opencode-go'),
-    baseUrl: getProviderMeta('opencode-go').defaultBaseUrl,
+    provider: DEMO_PROVIDER,
+    model: DEMO_MODEL,
     temperature: 0.7,
-    maxTokens: 4096,
+    maxTokens: DEMO_MAX_TOKENS,
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    // Web fetch is on by default: handing an agent a GitHub URL is the most
+    // common thing visitors do, and it is a read-only, host-allowlisted tool.
+    enabledTools: ['web_fetch'],
   });
   const [configOpen, setConfigOpen] = useState(true);
   const [configPanelOpen, setConfigPanelOpen] = useState(true);
@@ -83,22 +89,22 @@ export default function PlaygroundPage() {
   const exportConv = useConversationExport({ conversations, activeConversationId, addLog });
   const toolReplay = useToolReplay({ chat, captcha, addLog });
   const { handleSendMessage } = useSendMessage({ chat, selectedAgent, config, activeConversationId, captcha, addLog });
-  const { handleSaveConfig, handleSelectAgent, handleNewConversation, handleDeleteConversation, handleConfigChange, handleAbortStream } =
+    const { handleSaveConfig, handleSelectAgent, handleNewConversation, handleDeleteConversation, handleAbortStream } =
     usePlaygroundActions({
       chat,
       selectedAgent,
-      config,
       setConfig,
       configOpen,
       setConfigOpen,
       configStorageKey: CONFIG_STORAGE_KEY,
       defaultSystemPrompt: DEFAULT_SYSTEM_PROMPT,
       addLog,
-    });
+    })
+;
 
   useEffect(() => {
     const saved = loadSavedConfig();
-    if (saved.provider) {
+    if (saved.systemPrompt || saved.enabledTools) {
       /* eslint-disable react-hooks/set-state-in-effect */
       setConfig((prev) => ({ ...prev, ...saved }));
       /* eslint-enable react-hooks/set-state-in-effect */
@@ -121,11 +127,9 @@ export default function PlaygroundPage() {
   useEffect(() => {
     if (!isLoading && !error) {
       addLog('info', `Agents loaded: ${agents.length} available`);
-      if (config.provider) {
-        addLog('info', `Config: ${config.provider} · ${config.model}`);
-      }
+      addLog('info', `Config: ${DEMO_PROVIDER} · ${DEMO_MODEL}`);
     }
-  }, [isLoading, error, agents.length, addLog, config.model, config.provider]);
+  }, [isLoading, error, agents.length, addLog]);
 
 
   useEffect(() => {
@@ -153,7 +157,7 @@ export default function PlaygroundPage() {
           error={error}
           selectedAgent={selectedAgent}
           config={config}
-          onChangeConfig={handleConfigChange}
+          onChangeConfig={setConfig}
           onChangeAgent={handleSelectAgent}
           onSave={handleSaveConfig}
           captchaToken={captcha.token}
@@ -258,7 +262,7 @@ export default function PlaygroundPage() {
           error={error}
           selectedAgent={selectedAgent}
           config={config}
-          onChangeConfig={handleConfigChange}
+          onChangeConfig={setConfig}
           onChangeAgent={handleSelectAgent}
           onSave={handleSaveConfig}
           captchaToken={captcha.token}

@@ -85,13 +85,13 @@ export default function StudioHubPage() {
                 <IconCode size={20} />
               </div>
               <div className="flex items-center gap-1 text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                Choose your provider
-                <HelpTip text="Switch between 7 providers. A free OpenCode provider is preconfigured out of the box. Adjust temperature, max tokens, and model per conversation." />
+                Nothing to configure
+                <HelpTip text="The Studio runs on a preconfigured OpenCode Zen model. No API key, no provider picker, no setup." />
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                Chat instantly on the preconfigured OpenCode provider, or switch to Anthropic,
-                OpenAI, Groq, Ollama, or your own OpenCode server.
-                Adjust temperature, max tokens, and model per conversation.
+                Every member runs on the same preconfigured OpenCode Zen model, so you can
+                go straight to the conversation. Web fetch is on by default — hand an agent a
+                GitHub URL and it reads the repo.
               </p>
             </div>
           </FadeIn>

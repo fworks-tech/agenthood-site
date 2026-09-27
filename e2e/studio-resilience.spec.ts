@@ -3,20 +3,11 @@ import { test } from "./fixtures";
 import {
   mockTurnstile,
   selectAgent,
-  selectMantineOption,
   sendMessage,
   waitForHydration,
   waitForStreamComplete,
   getConversationEntries,
-  openConfigPanel,
 } from "./helpers";
-
-function skipOnMobile(page: { viewportSize: () => { width: number } | null }) {
-  const vs = page.viewportSize();
-  if (vs && vs.width < 768) {
-    test.skip(true, "Requires desktop viewport");
-  }
-}
 
 test.describe("Playground — Resilience", () => {
   test.beforeEach(async ({ page, clearStorage }) => {
@@ -167,60 +158,4 @@ test.describe("Playground — Resilience", () => {
     expect(entries[0].title).toContain("Fresh chat");
   });
 
-  test("shows Ollama connected when the tags endpoint responds", async ({ page }) => {
-    skipOnMobile(page);
-    // Playwright cannot intercept loopback fetches to :11434 (network-layer block),
-    // so the probe targets a same-origin stand-in URL that passes the URL validator.
-    await page.route(/\/api\/tags$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify({ models: [] }),
-      });
-    });
-    await openConfigPanel(page);
-    await selectMantineOption(page, "Provider", "Ollama (local)");
-    const baseUrlInput = page.locator("input[placeholder*='localhost']");
-    await expect(baseUrlInput).toBeVisible({ timeout: 10000 });
-    await baseUrlInput.fill("http://localhost:3000");
-
-    await expect(page.locator("text=Ollama connected at http://localhost:3000")).toBeVisible({
-      timeout: 10000,
-    });
-  });
-
-  test("shows Ollama not detected when the tags endpoint fails", async ({ page }) => {
-    skipOnMobile(page);
-    let tagsReached = false;
-    await page.route(/\/api\/tags$/, async (route) => {
-      tagsReached = true;
-      await route.fulfill({
-        status: 500,
-        contentType: "application/json",
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: "{}",
-      });
-    });
-    await openConfigPanel(page);
-    await selectMantineOption(page, "Provider", "Ollama (local)");
-    const baseUrlInput = page.locator("input[placeholder*='localhost']");
-    await expect(baseUrlInput).toBeVisible({ timeout: 10000 });
-    await baseUrlInput.fill("http://localhost:3000");
-
-    await expect(page.locator("text=Ollama not detected").first()).toBeVisible({ timeout: 10000 });
-    expect(tagsReached).toBe(true);
-  });
-
-  test("flags an invalid external http Ollama URL", async ({ page }) => {
-    skipOnMobile(page);
-    await openConfigPanel(page);
-    await selectMantineOption(page, "Provider", "Ollama (local)");
-
-    const baseUrlInput = page.locator("input[placeholder*='localhost']");
-    await expect(baseUrlInput).toBeVisible({ timeout: 10000 });
-    await baseUrlInput.fill("http://evil.example:11434");
-
-    await expect(page.locator("text=Invalid Ollama URL").first()).toBeVisible({ timeout: 10000 });
-  });
 });

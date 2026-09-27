@@ -10,8 +10,7 @@ import {
 } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
-import type { ChatConfig } from "@/app/(main)/studio/_types/studio";
-import { PROVIDER_MODELS } from "@/app/(main)/studio/_types/studio";
+import { DEMO_MODEL, DEMO_PROVIDER } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,13 +19,13 @@ export const maxDuration = 60;
 const MAX_MESSAGES = 50;
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_TOTAL_CHARS = 100_000;
-const MAX_TOKENS = 100_000;
 
-type ChatRequestConfig = Partial<Pick<ChatConfig, "model" | "temperature" | "maxTokens" | "baseUrl">> & {
-  provider?: string;
-  apiKey?: string;
-  enabledTools?: string[];
-};
+// Provider, model, key, base URL, temperature, and max tokens are all pinned
+// server-side — the Studio is a zero-setup demo. Only tool selection is client-
+// controlled, and only against this allowlist.
+// Silent drop (not reject) avoids leaking which providers/models exist and is
+// the correct defensive posture for a public demo endpoint.
+type ChatRequestConfig = { enabledTools?: string[] };
 
 const CORRELATION_ID_MAX_LENGTH = 128;
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
@@ -59,72 +58,21 @@ function validateMessages(messages: unknown): { role: string; content: string }[
   return (messages as { role: string; content: string }[]);
 }
 
-const CLOUD_PROVIDERS = new Set(["anthropic", "openai", "groq"]);
-const VALID_PROVIDERS = new Set(Object.keys(PROVIDER_MODELS));
+const BUILT_IN_TOOLS = new Set(["web_fetch", "code_execution"]);
+const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 
 function validateConfig(config: unknown): ChatRequestConfig {
   const validated: ChatRequestConfig = {};
   if (!config || typeof config !== "object") return validated;
 
   const c = config as Record<string, unknown>;
-  if (typeof c.model === "string") validated.model = c.model;
-  if (typeof c.temperature === "number" && c.temperature >= 0 && c.temperature <= 2) {
-    validated.temperature = c.temperature;
-  }
-  if (typeof c.maxTokens === "number" && c.maxTokens > 0 && c.maxTokens <= MAX_TOKENS) {
-    validated.maxTokens = c.maxTokens;
-  }
-  if (typeof c.provider === "string") {
-    if (!VALID_PROVIDERS.has(c.provider)) {
-      throw new ValidationError(`Unknown provider: "${c.provider}"`);
-    }
-    validated.provider = c.provider;
-  }
-  if (typeof c.baseUrl === "string") {
-    if (c.provider && CLOUD_PROVIDERS.has(c.provider as string)) {
-      throw new ValidationError(`baseUrl is not supported for ${c.provider}. Use the default API endpoint.`);
-    }
-    validateBaseUrl(c.baseUrl);
-    validated.baseUrl = c.baseUrl;
-  }
-  if (typeof c.apiKey === "string") {
-    validated.apiKey = c.apiKey;
-  }
   if (Array.isArray(c.enabledTools)) {
-    const builtIn = new Set(["web_fetch", "code_execution"]);
-    const customPattern = /^custom_[a-z][a-z0-9_]{0,56}$/;
     validated.enabledTools = (c.enabledTools as unknown[]).filter(
-      (t): t is string => typeof t === "string" && (builtIn.has(t) || customPattern.test(t)),
+      (t): t is string => typeof t === "string" && (BUILT_IN_TOOLS.has(t) || CUSTOM_TOOL_PATTERN.test(t)),
     );
   }
 
-  if (validated.provider && validated.model) {
-    const providerModels =
-      PROVIDER_MODELS[validated.provider as keyof typeof PROVIDER_MODELS]?.models ?? [];
-    if (!providerModels.some((m) => m.id === validated.model)) {
-      throw new ValidationError(`Unknown model "${validated.model}" for provider "${validated.provider}"`);
-    }
-  }
-
   return validated;
-}
-
-function validateBaseUrl(baseUrl: string): void {
-  let parsed: URL;
-  try {
-    parsed = new URL(baseUrl);
-  } catch {
-    throw new ValidationError("Invalid baseUrl format");
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw new ValidationError("baseUrl must use http or https protocol");
-  }
-  if (parsed.protocol === "http:") {
-    const hostname = parsed.hostname.toLowerCase();
-    if (!["localhost", "127.0.0.1", "host.docker.internal"].includes(hostname)) {
-      throw new ValidationError("http baseUrl is only allowed for localhost");
-    }
-  }
 }
 
 export async function POST(request: Request) {
@@ -170,7 +118,7 @@ export async function POST(request: Request) {
     }
     const response = new Response(stream, { headers });
 
-    logger.info("chat.request", { agentId, agentName: agent.name, provider: config.provider, model: config.model, messageCount: messages.length, requestId, correlationId });
+    logger.info("chat.request", { agentId, agentName: agent.name, provider: DEMO_PROVIDER, model: DEMO_MODEL, messageCount: messages.length, requestId, correlationId });
     return response;
   } catch (err) {
     if (err instanceof StudioError) {

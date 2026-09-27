@@ -1,12 +1,18 @@
 export type Provider = "anthropic" | "openai" | "groq" | "ollama" | "opencode" | "opencode-go" | "openrouter";
 
 export interface ChatConfig {
+  /** @deprecated Pinned server-side to DEMO_PROVIDER. Kept for localStorage migration. */
   provider: Provider;
+  /** @deprecated Pinned server-side to DEMO_MODEL. Kept for localStorage migration. */
   model: string;
+  /** @deprecated Pinned server-side to 0.7. Kept for localStorage migration. */
   temperature: number;
+  /** @deprecated Pinned server-side to DEMO_MAX_TOKENS. Kept for localStorage migration. */
   maxTokens: number;
   systemPrompt: string;
+  /** @deprecated No longer set by clients; server never uses it. Kept for localStorage migration. */
   baseUrl?: string;
+  /** @deprecated No longer set by clients; server never uses it. Kept for localStorage migration. */
   apiKey?: string;
   enabledTools?: string[];
 }
@@ -91,6 +97,7 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
       { id: "gpt-5.4", label: "GPT-5.4" },
       { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
       { id: "gpt-5.4-nano", label: "GPT-5.4 Nano" },
+      { id: "gpt-5-nano", label: "GPT-5 Nano (default)" },
       { id: "claude-fable-5", label: "Claude Fable 5" },
       { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
       { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
@@ -136,6 +143,16 @@ export const PROVIDER_MODELS: ProviderModelsMap = {
     ],
   },
 };
+
+// The Studio is a zero-setup demo: one provider, one cheap model, enforced
+// server-side. Clients cannot override these — the chat route drops provider,
+// model, key, and base URL from the request body before the adapter sees it.
+export const DEMO_PROVIDER: Provider = "opencode";
+export const DEMO_MODEL = "gpt-5-nano";
+// Output cap (abuse guard): input bounded by route (50 msgs / 4k chars / 100k total)
+// and rate-limited to 20 req/min ⇒ output was the only open dimension.
+// 20 req/min × 16,384 tokens = 327,680 tokens/min ≈ $0.13/min on gpt-5-nano.
+export const DEMO_MAX_TOKENS = 16384;
 
 export const CODE_AGENTS = new Set([
   "the-architect",

@@ -137,32 +137,6 @@ test.describe("Playground — Config Panel Collapsible Sections", () => {
     await waitForHydration(page);
   });
 
-  test("Model & Behavior section can be collapsed", async ({ page }) => {
-    const vs = page.viewportSize();
-    if (vs !== null && vs.width < 768) return;
-
-    const toggle = page.locator("text=Model & Behavior").first();
-    await toggle.click();
-    await page.waitForTimeout(300);
-
-    const providerLabel = page.locator("label:has-text('Provider')");
-    await expect(providerLabel).not.toBeVisible();
-  });
-
-  test("Model & Behavior section can be expanded", async ({ page }) => {
-    const vs = page.viewportSize();
-    if (vs !== null && vs.width < 768) return;
-
-    const toggle = page.locator("text=Model & Behavior").first();
-    await toggle.click();
-    await page.waitForTimeout(300);
-    await toggle.click();
-    await page.waitForTimeout(300);
-
-    const providerLabel = page.locator("label:has-text('Provider')");
-    await expect(providerLabel).toBeVisible();
-  });
-
   test("Tools section can be collapsed and expanded", async ({ page }) => {
     const vs = page.viewportSize();
     if (vs !== null && vs.width < 768) return;

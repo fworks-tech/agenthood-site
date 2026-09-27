@@ -6,19 +6,17 @@ import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, classifyToolResult } 
 import type { ToolCall } from "./tools";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
-
-type ProviderName = "anthropic" | "groq" | "openai" | "ollama" | "opencode" | "opencode-go" | "openrouter";
+import {
+  DEMO_MAX_TOKENS,
+  DEMO_MODEL,
+  DEMO_PROVIDER,
+  type Provider,
+} from "../_types/studio";
 
 export interface ChatRequest {
   agentId: string;
   messages: { role: string; content: string }[];
   config?: {
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-    provider?: string;
-    baseUrl?: string;
-    apiKey?: string;
     enabledTools?: string[];
   };
   correlationId?: string;
@@ -28,15 +26,8 @@ export interface AgenthoodAdapter {
   chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream>;
 }
 
-const FALLBACK_ORDER: ProviderName[] = ["groq", "openai", "ollama"]
-
-// CLI priority chain — mirrors .agenthood/config.json (opencode-go p1)
-// kept in sync by sync-skills; Studio reuses it so chat fallbacks are not hard-coded
-export const CLI_PROVIDER_CHAIN: readonly ProviderName[] = ['opencode-go', 'opencode', 'anthropic', 'groq', 'ollama']
-
-function isKnownProvider(name: string): name is ProviderName {
-  return ["anthropic", "groq", "openai", "ollama", "opencode", "opencode-go", "openrouter"].includes(name);
-}
+// CLI priority chain — mirrors .agenthood/config.json (opencode p1)
+export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 
 function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
   return [
@@ -45,14 +36,9 @@ function buildLLMMessages(req: ChatRequest, systemPrompt: string): Message[] {
   ];
 }
 
-function buildLLMConfig(providerName: ProviderName, req: ChatRequest): LLMConfig {
-  // preference beats priority — requested provider first, then CLI chain order
-  const fallbacks = CLI_PROVIDER_CHAIN.filter((p) => p !== providerName)
+export function buildDemoLLMConfig(): LLMConfig {
   return {
-    providers: [
-      { name: providerName, apiKey: req.config?.apiKey, baseUrl: req.config?.baseUrl },
-      ...fallbacks.map((name) => ({ name })),
-    ],
+    providers: CLI_PROVIDER_CHAIN.map((name) => ({ name })),
     failureThreshold: 3,
     cooldownMs: 60000,
     probeEnabled: true,
@@ -67,18 +53,15 @@ export class LightweightAdapter implements AgenthoodAdapter {
       throw new ValidationError(`No system prompt available for agent "${req.agentId}". Run sync-skills to generate prompts.`);
     }
 
-    const providerName = req.config?.provider || "opencode-go";
-    if (!isKnownProvider(providerName)) {
-      throw new ValidationError(`Unknown provider: "${providerName}"`);
-    }
+    const providerName = DEMO_PROVIDER;
 
-    const llmConfig = buildLLMConfig(providerName, req);
+    const llmConfig = buildDemoLLMConfig();
     const enabledTools = req.config?.enabledTools ?? [];
 
     const startTime = performance.now();
     const correlationId = req.correlationId ?? `pg-${generateId()}`;
     const inputChars = req.messages.reduce((n, m) => n + m.content.length, 0) + systemPrompt.length;
-    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: FALLBACK_ORDER, tools: enabledTools, correlationId });
+    logger.info("chat.routing", { agentId: req.agentId, primary: providerName, fallbacks: CLI_PROVIDER_CHAIN, tools: enabledTools, correlationId });
 
     const messages = buildLLMMessages(req, systemPrompt);
 
@@ -88,13 +71,12 @@ export class LightweightAdapter implements AgenthoodAdapter {
       : undefined;
 
     function emitTrace(controller: ReadableStreamDefaultController<Uint8Array>, status: "success" | "error", output: string): void {
-      const model = req.config?.model ?? "unknown";
       const envelope = buildTraceEnvelope({
         member: req.agentId,
         input: req.messages.map((m) => m.content).join("\n"),
         output,
         durationMs: Math.round(performance.now() - startTime),
-        model,
+        model: DEMO_MODEL,
         correlationId,
         source: "playground",
         status,
@@ -111,15 +93,19 @@ export class LightweightAdapter implements AgenthoodAdapter {
         emitLogEvent(controller, "info", "chat.routing", {
           agentId: req.agentId,
           primary: providerName,
-          fallbacks: FALLBACK_ORDER,
+          fallbacks: CLI_PROVIDER_CHAIN,
           tools: enabledTools,
           correlationId,
         });
         try {
           const { LLMRouter } = await import("agenthood/dist/llm");
           const provider = await LLMRouter.fromConfig(llmConfig);
-          if (req.config?.model) {
-            try { provider.setModel(req.config.model); } catch { }
+          // Swallowing this would silently bill the router's default model
+          // instead, so surface it — the demo's cost guarantee depends on it.
+          try {
+            provider.setModel(DEMO_MODEL);
+          } catch (err) {
+            logger.warn("chat.set_model_failed", { model: DEMO_MODEL, error: String(err), correlationId });
           }
 
           if (toolSchemas && toolSchemas.length > 0) {
@@ -139,8 +125,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
           } else {
             const finalRequest: LLMRequest = {
               messages,
-              temperature: req.config?.temperature,
-              maxTokens: req.config?.maxTokens,
+              temperature: 0.7,  // DEMO_TEMPERATURE inlined
+              // Abuse guard, not a quality knob: input is already bounded by the
+              // route (50 msgs / 4k chars each / 100k total) and requests are
+              // rate-limited to 20/min, so output is the only open dimension.
+              maxTokens: DEMO_MAX_TOKENS,
             };
             const asyncGen = await provider.stream(finalRequest);
 
@@ -183,7 +172,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
 
           const isMissingKey = /(?:api[_-]?key|not set|auth)/i.test(msg) || msg.includes("MissingApiKeyError");
           const errorMessage = isMissingKey
-            ? "No API key configured for the selected provider. Provide a key in the config panel, or ensure the server has the provider's API key set."
+            ? "The model provider has no API key configured on the server."
             : msg;
 
           controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: errorMessage }) + "\n"));

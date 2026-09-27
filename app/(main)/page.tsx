@@ -35,9 +35,9 @@ const categories = [
 
 const features = [
   { icon: IconUsers, label: `${agents.length} agents`, desc: "architect, reviewer, tester, and more", color: "text-emerald-400", tip: `All ${agents.length} Society members available with their full system prompts from SKILL.md.` },
-  { icon: IconCloud, label: "7 providers", desc: "Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode, OpenCodeGo", color: "text-sky-400", tip: "Switch providers per conversation. Each offers different models and pricing." },
+  { icon: IconCloud, label: "Zero setup", desc: "preconfigured OpenCode Zen model, no API key needed", color: "text-sky-400", tip: "Every member runs on the same pinned OpenCode Zen model. Nothing to configure before your first message." },
   { icon: IconServer, label: "SSE streaming", desc: "real-time token-by-token responses", color: "text-cyan-400", tip: "Responses stream progressively via Server-Sent Events for instant feedback." },
-  { icon: IconKey, label: "BYOK", desc: "use your own API keys", color: "text-amber-400", tip: "Bring Your Own Key — provide an API key per request or use the server default." },
+  { icon: IconKey, label: "Web fetch", desc: "point an agent at a GitHub URL", color: "text-amber-400", tip: "Web fetch is on by default, restricted to GitHub hosts. Hand an agent a repo URL and it reads the code." },
 ];
 
 const steps = [
