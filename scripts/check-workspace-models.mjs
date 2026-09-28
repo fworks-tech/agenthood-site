@@ -1,22 +1,23 @@
 /**
  * scripts/check-workspace-models.mjs
  *
- * Checks that the pinned models still exist in the provider catalogue.
+ * Checks that the pinned models are still listed by the provider.
  *
  * Why this is a script and not a test: the invariants that can be asserted
  * offline (granted tools are real tools, every member routes somewhere) live in
  * __tests__/studio-types.test.ts, where they import the real functions and so
  * cannot drift. What cannot be a test is the upstream fact — a pinned model can
- * be delisted at any time, and that is exactly how gpt-5-nano shipped and broke
- * every Workspace turn with "400 Model does not support this protocol".
+ * be removed at any time.
  *
  * Usage:
- *   node scripts/check-workspace-models.mjs            # offline: pins are readable
+ *   node scripts/check-workspace-models.mjs            # offline: pins readable, tiers agree
  *   OPENCODE_API_KEY=... node scripts/check-workspace-models.mjs --online
  *
- * The catalogue exposes no pricing and no capability/protocol metadata, so this
- * cannot tell you whether a model is cheap or whether it serves tools. A listed
- * model can still answer 400. Confirm those with a live turn probe.
+ * This is a necessary check, not a sufficient one. The catalogue exposes no
+ * pricing and no capability/protocol metadata, so a listed model can still
+ * answer 400 — gpt-5-nano and gpt-6-luna are both listed upstream and both
+ * reject the request shape this site sends. Confirm that a pin actually works
+ * with `npm run test:live`, which runs a real turn.
  */
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
@@ -32,12 +33,6 @@ const pin = (name) => src.match(new RegExp(`export const ${name} = "([^"]+)"`))?
 const qa = pin("DEMO_QA_MODEL");
 const code = pin("DEMO_CODE_MODEL");
 
-// Only the pinned provider's list matters; the other provider blocks are inert
-// picker entries.
-const listed = [
-  ...(src.match(/\n  opencode: \{[\s\S]*?\n  \},/)?.[0] ?? "").matchAll(/\{\s*id:\s*"([^"]+)"/g),
-].map((m) => m[1]);
-
 if (!qa || !code) {
   console.error("Could not read the tier pins from _types/studio.ts");
   process.exit(1);
@@ -47,12 +42,13 @@ console.log(`qa    ${qa}`);
 console.log(`code  ${code}`);
 
 if (!online) {
-  const unknown = [qa, code].filter((m) => !listed.includes(m));
-  if (unknown.length) {
-    console.error(`\nPinned but absent from PROVIDER_MODELS: ${unknown.join(", ")}`);
+  if (qa !== code) {
+    console.error(`\nTiers have diverged: qa=${qa} code=${code}.`);
+    console.error("The QA tier only ever serves tool-free turns, so this is safe —");
+    console.error("but it means the QA pin needs its own live probe (npm run test:live).");
     process.exit(1);
   }
-  console.log("\nOK — both pins are listed. Re-run with --online to check the catalogue.");
+  console.log("\nOK — one pin for both tiers. Re-run with --online to check it upstream.");
   process.exit(0);
 }
 
@@ -82,15 +78,8 @@ console.log(`\nprovider catalogue: ${live.size} models\n`);
 const problems = [];
 for (const [tier, id] of [["qa", qa], ["code", code]]) {
   const ok = live.has(id);
-  console.log(`  ${tier.padEnd(5)} ${id.padEnd(24)} ${ok ? "in catalogue" : "DELISTED"}`);
-  if (!ok) problems.push(`DEMO_${tier.toUpperCase()}_MODEL "${id}" is delisted upstream.`);
-}
-
-const dead = listed.filter((id) => !live.has(id));
-if (dead.length) {
-  console.log(`\n  ${dead.length}/${listed.length} models in PROVIDER_MODELS are delisted:`);
-  console.log(`  ${dead.join(", ")}`);
-  problems.push(`${dead.length} models in PROVIDER_MODELS.opencode no longer exist upstream.`);
+  console.log(`  ${tier.padEnd(5)} ${id.padEnd(24)} ${ok ? "listed" : "NOT LISTED"}`);
+  if (!ok) problems.push(`DEMO_${tier.toUpperCase()}_MODEL "${id}" is not in the catalogue.`);
 }
 
 if (problems.length) {
@@ -98,4 +87,5 @@ if (problems.length) {
   for (const p of problems) console.log(`  - ${p}`);
   process.exit(1);
 }
-console.log("\nOK — both pins are in the catalogue.\n");
+console.log("\nOK — the pin is listed. Listed is not the same as working;");
+console.log("run `npm run test:live` to confirm a real turn.\n");

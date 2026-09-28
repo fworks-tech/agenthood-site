@@ -133,7 +133,7 @@ It turns the Studio from a single-agent REPL into a small "engineering org" you 
   - `{ type: "done" }` and `{ type: "error", data }`
   - `{ type: "log", level, event, ...pickSafeLogMeta(meta) }` — safe-key filtered structured logs
     for the LiveLogs panel; `chat.routing` / `chat.complete` / `chat.aborted` / `chat.error` / `trace`.
-- **Types:** `_types/studio.ts` — `Provider` (7), `ChatConfig`, `PROVIDER_MODELS`, `CODE_AGENTS`
+- **Types:** `_types/studio.ts` — `Provider` (7), `ChatConfig`, `CODE_AGENTS`, `CLIENT_MESSAGE_ROLES`, demo pins
   (the-architect, the-reviewer, the-tester, the-debugger, the-warden), `getProviderMeta`,
   `getDefaultModel`. No exported SSE type union or `StudioRole` — role is free-text on
   `AgentEntry.role` (SITE_CONFIG in `_data/agents.ts`) plus a `stage[]` array on
