@@ -5,7 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    exclude: ["e2e/**", "node_modules/**", "dist/**"],
+    // __tests__/live hits the real provider and costs money — `npm run test:live` only.
+    exclude: ["e2e/**", "node_modules/**", "dist/**", "__tests__/live/**"],
     testTimeout: 10000,
     coverage: {
       provider: "v8",
