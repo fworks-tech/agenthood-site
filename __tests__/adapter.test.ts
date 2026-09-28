@@ -485,7 +485,7 @@ describe("LightweightAdapter", () => {
     expect(tokens).toHaveLength(Math.ceil(long.length / 128));
     expect(tokens.join("")).toBe(long);
     // Sums slice lengths, so a partial final chunk is counted exactly. An
-    // earlier `+= TOKEN_CHUNK` overcounted 300 chars as 312 and nothing caught it.
+    // earlier `+= TOKEN_CHUNK` overcounted 300 chars as 384 and nothing caught it.
     expect(events.find((e) => e.event === "chat.complete")).toMatchObject({ outputChars: long.length });
   });
 
