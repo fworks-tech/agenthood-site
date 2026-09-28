@@ -1,9 +1,9 @@
 import { buildSystemPrompt } from "./system-prompt";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { LLMRequest, LLMConfig, Message, ToolSchema } from "agenthood/dist/llm";
-import { getToolSchemas, executeTool, MAX_TOOL_ITERATIONS, PLAYGROUND_MAX_TOOL_ITERATIONS, classifyToolResult } from "./tools";
-import type { ToolCall } from "./tools";
+import type { LLMRequest, LLMConfig, Message } from "agenthood/dist/llm";
+import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from "./tools";
+import { runToolLoop, withProviderRetry } from "./tool-loop";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
 import {
@@ -56,21 +56,6 @@ export function buildDemoLLMConfig(): LLMConfig {
     probeEnabled: true,
   };
 }
-
-// Single retry on 5xx from the LLM provider (mirrors the web_fetch 5xx retry
-// in tools.ts): Zen hosts intermittently 503, and one transient failure
-// should not kill a whole turn. 4xx is the caller's mistake — no retry.
-export async function withProviderRetry<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!/5\d\d/.test(msg)) throw err;
-    await new Promise((r) => setTimeout(r, 500));
-    return fn();
-  }
-}
-
 
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
@@ -141,14 +126,30 @@ export class LightweightAdapter implements AgenthoodAdapter {
           }
 
           if (toolSchemas && toolSchemas.length > 0) {
-            const toolCallsRun: ToolCall[] = [];
             const emit = (event: Record<string, unknown>) => {
               controller.enqueue(new TextEncoder().encode(JSON.stringify(event) + "\n"));
             };
-            const finalText = await runToolLoop(provider, messages, toolSchemas, toolCallsRun, signal, emit, PLAYGROUND_MAX_TOOL_ITERATIONS);
-            output = finalText;
+            const loop = await runToolLoop({
+              provider,
+              messages,
+              toolSchemas,
+              maxIterations: PLAYGROUND_MAX_TOOL_ITERATIONS,
+              signal,
+              onToolCall: (tc) => emit({ type: "tool_call", id: tc.id, name: tc.name, args: tc.args }),
+              onToolResult: (tc, outcome) =>
+                emit({
+                  type: "tool_result",
+                  id: tc.id,
+                  name: tc.name,
+                  result: outcome.result ?? outcome.error,
+                  error: outcome.error,
+                }),
+            });
+            output = loop.exhausted
+              ? loop.text || "I've reached the maximum number of tool operations for this request. Please refine your question."
+              : loop.text;
 
-            for (const char of finalText) {
+            for (const char of output) {
               if (signal?.aborted) break;
               outputChars++;
               controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: char }) + "\n"));
@@ -214,57 +215,4 @@ export class LightweightAdapter implements AgenthoodAdapter {
       },
     });
   }
-}
-
-async function runToolLoop(
-  provider: { complete: (req: LLMRequest) => Promise<{ content: string; toolCalls?: { id: string; name: string; args: unknown }[] }> },
-  messages: Message[],
-  toolSchemas: ToolSchema[],
-  toolCallsRun: ToolCall[],
-  signal: AbortSignal | undefined,
-  emit: (event: Record<string, unknown>) => void,
-  maxIterations: number = MAX_TOOL_ITERATIONS,
-): Promise<string> {
-  for (let i = 0; i < maxIterations; i++) {
-    if (signal?.aborted) return "";
-
-    // Same cap as the plain path and the workspace adapter. Without it the
-    // abuse guard only covered tool-free turns, so every tool-enabled turn —
-    // the ones a visitor triggers by ticking a box — ran uncapped.
-    const resp = await withProviderRetry(() =>
-      provider.complete({
-        messages,
-        tools: toolSchemas,
-        temperature: 0.7,
-        maxTokens: DEMO_MAX_TOKENS,
-      }),
-    );
-
-    if (!resp.toolCalls || resp.toolCalls.length === 0) {
-      return resp.content;
-    }
-
-    messages.push({
-      role: "assistant",
-      content: resp.content || "",
-      toolCalls: resp.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, args: tc.args })),
-    });
-
-    for (const tc of resp.toolCalls) {
-      if (signal?.aborted) return "";
-      const args = tc.args as Record<string, unknown>;
-      emit({ type: "tool_call", id: tc.id, name: tc.name, args });
-      const result = await executeTool(tc.name, args, signal);
-      const outcome = classifyToolResult(result);
-      toolCallsRun.push({ id: tc.id, name: tc.name, args, result: outcome.result, error: outcome.error });
-      messages.push({ role: "tool", content: result, tool_call_id: tc.id, name: tc.name });
-      emit({
-        type: "tool_result", id: tc.id, name: tc.name,
-        result: outcome.result ?? outcome.error,
-        error: outcome.error,
-      });
-    }
-  }
-
-  return "I've reached the maximum number of tool operations for this request. Please refine your question.";
 }
