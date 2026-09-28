@@ -34,6 +34,10 @@ export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 // The tool loop hands back the final text, so this path has no live delta to
 // forward. Slicing it keeps the per-chunk enqueue cost of the plain path
 // instead of paying one enqueue and one render per character.
+//
+// A slice boundary can bisect a surrogate pair. That is safe only because the
+// client appends chunks into one string buffer; rendering each chunk as its
+// own node would show U+FFFD for any emoji straddling a boundary.
 const TOKEN_CHUNK = 128
 
 // The route rejects other roles, but this is the last code that touches the

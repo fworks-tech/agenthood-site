@@ -480,10 +480,13 @@ describe("LightweightAdapter", () => {
       config: { enabledTools: ["code_execution"] },
     });
 
-    const events = await collectDataEvents(stream);
+    const events = (await collectStream(stream)).map((line) => JSON.parse(line));
     const tokens = events.filter((e) => e.type === "token").map((e) => (e as { data: string }).data);
     expect(tokens).toHaveLength(Math.ceil(long.length / 128));
     expect(tokens.join("")).toBe(long);
+    // Sums slice lengths, so a partial final chunk is counted exactly. An
+    // earlier `+= TOKEN_CHUNK` overcounted 300 chars as 312 and nothing caught it.
+    expect(events.find((e) => e.event === "chat.complete")).toMatchObject({ outputChars: long.length });
   });
 
   it("emits exactly one trace event for a successful plain-stream call", async () => {
