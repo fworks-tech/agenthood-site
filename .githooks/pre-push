@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+# Pre-push gate. The checks below are the ones a human reviewer cannot be
+# relied on to remember, so they run mechanically before anything leaves the
+# machine. Activated via `git config core.hooksPath .githooks`, so this file
+# is committed and travels with the repo instead of living in .git/hooks.
+#
+# Deliberately excluded: `test:e2e` (3m) and `test:live` (needs a funded key).
+# Both run in CI. A hook slow enough that people reach for --no-verify
+# defeats its own purpose.
+
+fail() {
+  echo ""
+  echo "pre-push: $1 FAILED — not pushing."
+  echo "  Fix it and push again."
+  echo "  If the failure is a known flake, re-run before assuming so:"
+  echo "  git push  # second run, and note it if it passes"
+  echo "  Bypass with --no-verify only if you have a reason."
+  exit 1
+}
+
+echo "pre-push: typecheck"
+npm run typecheck || fail "typecheck"
+
+echo "pre-push: lint"
+npm run lint || fail "lint"
+
+echo "pre-push: unit tests"
+npm test || fail "unit tests"
+
+echo "pre-push: all green"
