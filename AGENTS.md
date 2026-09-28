@@ -32,6 +32,7 @@ to understand the Society's standards before taking any action in a repository.
 
 - Always create a branch before making changes
 - Always run tests before considering a task complete
+- Never push without the Pre-Push Review Gate passing
 - Always prefer editing existing files over creating new ones
 - Never add comments that explain *what* — only *why* when non-obvious
 - Never introduce abstractions beyond what the task requires
@@ -62,6 +63,26 @@ Load skills from `skills/` to activate specialized agents:
 - `the-mailman` — message delivery, content scheduling, notification dispatch, cross-posting
 - `the-mediator` — conflict mediation, consensus facilitation, delegation integrity (added in agenthood 3.38.0)
 - `the-inspector` — visual-reasoning benchmarking, pixel-level analysis, multi-panel correspondence
+
+## Pre-Push Review Gate
+
+No commit reaches the remote until all five members have reviewed the change
+locally, in this order. Each hands off to the next.
+
+1. **The Tester** — the suite passes, and the new check fails without the fix
+2. **The Reviewer** — correctness, readability, architecture, performance
+3. **The Auditor** — security, secrets, dependency risk
+4. **The Warden** — code smell, complexity, dead code
+5. **The Librarian** — docs and ADRs match the change
+
+Review the diff, not the branch: `git diff main...HEAD`.
+
+A blocking finding stops the push. Fix it, then re-run the gate from The
+Tester. A member with nothing to add says so and hands off — it is never
+skipped silently.
+
+This gate is about quality. The explicit confirmation in *Agent Behavior
+Rules* is separate, and is still required.
 
 ## Autonomous Runtime (agenthood run)
 
