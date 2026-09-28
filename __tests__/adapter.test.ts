@@ -455,6 +455,37 @@ describe("LightweightAdapter", () => {
     expect(tokens).toBe("The answer is 2.");
   });
 
+  it("chunks the tool-path token stream instead of emitting one event per character", async () => {
+    // 300 chars: 300 enqueues when iterating characters, 3 when sliced at 128.
+    const long = "x".repeat(300);
+    mockGetToolSchemas.mockReturnValue([
+      { name: "code_execution", description: "Run code", parameters: { type: "object", properties: {} } },
+    ]);
+    mockExecuteTool.mockResolvedValue("tool output done");
+    mockFromConfig.mockImplementation(async () => ({
+      stream: mockStreamImpl,
+      setModel: mockSetModel,
+      complete: vi.fn().mockResolvedValueOnce({
+        content: "",
+        toolCalls: [{ id: "tc-1", name: "code_execution", args: { code: "1+1" } }],
+      }).mockResolvedValueOnce({
+        content: long,
+        toolCalls: undefined,
+      }),
+    }));
+
+    const stream = await adapter.chat({
+      agentId: "the-builder",
+      messages: [{ role: "user", content: "what is 1+1?" }],
+      config: { enabledTools: ["code_execution"] },
+    });
+
+    const events = await collectDataEvents(stream);
+    const tokens = events.filter((e) => e.type === "token").map((e) => (e as { data: string }).data);
+    expect(tokens).toHaveLength(Math.ceil(long.length / 128));
+    expect(tokens.join("")).toBe(long);
+  });
+
   it("emits exactly one trace event for a successful plain-stream call", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     mockStreamImpl.mockImplementation(async () =>

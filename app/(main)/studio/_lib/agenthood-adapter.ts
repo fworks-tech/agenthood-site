@@ -31,6 +31,11 @@ export interface AgenthoodAdapter {
 // CLI priority chain — mirrors .agenthood/config.json (opencode p1)
 export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 
+// The tool loop hands back the final text, so this path has no live delta to
+// forward. Slicing it keeps the per-chunk enqueue cost of the plain path
+// instead of paying one enqueue and one render per character.
+const TOKEN_CHUNK = 128
+
 // The route rejects other roles, but this is the last code that touches the
 // array before the provider — a caller reaching the adapter directly must not
 // be able to slip a forged system prompt in behind the member's own.
@@ -149,10 +154,11 @@ export class LightweightAdapter implements AgenthoodAdapter {
               ? loop.text || "I've reached the maximum number of tool operations for this request. Please refine your question."
               : loop.text;
 
-            for (const char of output) {
+            for (let i = 0; i < output.length; i += TOKEN_CHUNK) {
               if (signal?.aborted) break;
-              outputChars++;
-              controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: char }) + "\n"));
+              const chunk = output.slice(i, i + TOKEN_CHUNK);
+              outputChars += chunk.length;
+              controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: chunk }) + "\n"));
             }
             controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "done" }) + "\n"));
           } else {
