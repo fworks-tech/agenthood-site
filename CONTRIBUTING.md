@@ -72,6 +72,29 @@ npm run test:e2e  # end-to-end tests (Playwright)
 
 All tests must pass before a PR can be merged.
 
+## Pre-push gate
+
+`npm install` arms a git hook that runs typecheck, lint and the unit tests
+before anything leaves your machine. It is committed under `.githooks/` and
+activated by `npm install`, so a fresh clone gets it without any manual step.
+
+```bash
+git config core.hooksPath .githooks   # what npm install sets for you
+```
+
+To confirm it is live before you rely on it:
+
+```bash
+git push --dry-run     # should print "pre-push: typecheck" and friends
+```
+
+The hook is a subset of CI, not a copy of it. E2E, `build` and `npm audit`
+run in the workflows, not here, so a push can pass the hook and still fail CI.
+If you add a check to the hook, add it to the workflow too.
+
+`--no-verify` skips all of it. Reach for it only when you have a reason, and
+say so in the PR.
+
 ## PR review
 
 Every PR requires review. The reviewer checks:

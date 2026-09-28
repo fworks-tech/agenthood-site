@@ -1,20 +1,28 @@
 #!/usr/bin/env sh
 # Pre-push gate. The checks below are the ones a human reviewer cannot be
 # relied on to remember, so they run mechanically before anything leaves the
-# machine. Activated via `git config core.hooksPath .githooks`, so this file
-# is committed and travels with the repo instead of living in .git/hooks.
+# machine. Armed by `npm install` (scripts/install-git-hooks.mjs), because
+# core.hooksPath lives in .git/config and a fresh clone does not inherit it.
 #
-# Deliberately excluded: `test:e2e` (3m) and `test:live` (needs a funded key).
-# Both run in CI. A hook slow enough that people reach for --no-verify
-# defeats its own purpose.
+# Deliberately excluded: `test:e2e` (3m), `build`, and `npm audit`. All three
+# run in CI (.github/workflows/ci.yml, e2e.yml). This hook is a subset of CI,
+# not a copy of it — if you add a check here, add it there too, or the two
+# definitions drift and the weaker one wins.
+#
+# A hook slow enough that people reach for --no-verify is not a gate.
+
+set -e
 
 fail() {
   echo ""
   echo "pre-push: $1 FAILED — not pushing."
-  echo "  Fix it and push again."
-  echo "  If the failure is a known flake, re-run before assuming so:"
-  echo "  git push  # second run, and note it if it passes"
-  echo "  Bypass with --no-verify only if you have a reason."
+  echo "  Fix it and push again, or push with --no-verify if you have a reason."
+  if [ "$1" = "unit tests" ]; then
+    echo ""
+    echo "  This suite has a known intermittent failure, roughly 1 run in 16, in"
+    echo "  the route and captcha tests. Re-run to confirm whether it is related"
+    echo "  to your change before you assume it is not."
+  fi
   exit 1
 }
 
