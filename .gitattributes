@@ -1,0 +1,4 @@
+# The pre-push hook is executed by sh. A CRLF line ending leaves a stray
+# carriage return on the shebang and breaks it, which fails open: no output,
+# no block, no error at push time.
+.githooks/** text eol=lf

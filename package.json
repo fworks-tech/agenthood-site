@@ -47,6 +47,7 @@
     "check:deps": "node scripts/check-deps.mjs",
     "check:models": "node scripts/check-workspace-models.mjs",
     "postinstall": "patch-package",
+    "prepare": "node scripts/install-git-hooks.mjs",
     "prebuild": "npm run sync && npm run sync-news && npm run sync-skills && node scripts/vercel-trace-path.mjs",
     "predev": "npm run sync && npm run sync-news -- --lenient && npm run sync-skills"
   },
