@@ -88,6 +88,12 @@ To confirm it is live before you rely on it:
 git push --dry-run     # should print "pre-push: typecheck" and friends
 ```
 
+It also refuses a push whose destination is `main`, including
+`git push origin HEAD:main` from a feature branch and a push that updates
+`main` alongside another ref. `AGENTS.md` asks for one branch per issue, and
+this is the part of that rule a hook can enforce. Deleting a stale `main` is
+refused on the same grounds.
+
 The hook is a subset of CI, not a copy of it. E2E, `build` and `npm audit`
 run in the workflows, not here, so a push can pass the hook and still fail CI.
 If you add a check to the hook, add it to the workflow too.
