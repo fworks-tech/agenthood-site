@@ -13,6 +13,21 @@
 
 set -e
 
+# Git hands a pre-push hook one line per ref on stdin:
+#   <local ref> <local sha> <remote ref> <remote sha>
+# The check keys off the remote ref rather than the current branch, so
+# `git push origin HEAD:main` from a feature branch is caught as well.
+# Runs first: there is no point spending 40s on tests for a push already refused.
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo ""
+    echo "pre-push: refusing to push to main."
+    echo "  AGENTS.md: one branch per issue, and never commit directly to main."
+    echo "  Push a feature branch and open a PR instead."
+    exit 1
+  fi
+done
+
 fail() {
   echo ""
   echo "pre-push: $1 FAILED — not pushing."
