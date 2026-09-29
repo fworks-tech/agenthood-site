@@ -19,6 +19,19 @@ updates:
     # issue #176, so Dependabot ignores it.
     ignore:
       - dependency-name: agenthood
+      # ESLint 10 cannot load this repo's config, so every such PR fails in
+      # seconds and none can be merged. eslint-config-next@16.3.6 hard-depends
+      # on eslint-plugin-react ^7.37.0, and 7.37.5 is that plugin's newest
+      # release with a peer range of `^3 || ... || ^9.7`. Its rules call
+      # context.getFilename(), which ESLint 10 removed, so the config dies on the
+      # first .tsx with "Error while loading rule 'react/display-name'" and exit
+      # 2 — not one bad rule, no lint at all.
+      # eslint-plugin-react-hooks@7.1.1 already accepts ^10, so the ecosystem is
+      # mid-migration and this plugin is the holdout. Remove this entry when
+      # eslint-config-next stops depending on eslint-plugin-react, or when a
+      # plugin release widens its peer range past ^9.7.
+      - dependency-name: eslint
+        versions: ['>=10']
     groups:
       patch-dependencies:
         patterns:
