@@ -34,9 +34,18 @@ fail() {
   echo "  Fix it and push again, or push with --no-verify if you have a reason."
   if [ "$1" = "unit tests" ]; then
     echo ""
-    echo "  This suite has a known intermittent failure, roughly 1 run in 16, in"
-    echo "  the route and captcha tests. Re-run to confirm whether it is related"
-    echo "  to your change before you assume it is not."
+    echo "  Four tests time out on a cold module cache, in chat-route,"
+    echo "  correlation, tools-execute-route and turnstile. They are always the"
+    echo "  first test in the file, because it is the one that does the first"
+    echo "  await import of a route: that import transforms the whole graph, and"
+    echo "  cold it takes longer than testTimeout (10s). Re-run without"
+    echo "  reinstalling and it should pass."
+    echo ""
+    echo "  A cold cache means any change to what needs transforming: a fresh"
+    echo "  npm ci, a dependency bump, or a pull that brings in new source."
+    echo "  That last one is why CI never hits this — it runs lint, typecheck"
+    echo "  and build before the tests. If the re-run also fails, it is yours:"
+    echo "  check for an assertion error rather than a timeout."
   fi
   exit 1
 }
