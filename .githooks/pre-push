@@ -41,7 +41,7 @@ fail() {
     echo "  cold it takes longer than testTimeout (10s). Re-run without"
     echo "  reinstalling and it should pass."
     echo ""
-    echo "  A cold cache means a fresh npm ci or any package.json change, which"
+    echo "  A cold cache means a fresh npm ci or any change to dependencies, which"
     echo "  is why CI never hits this: it runs lint, typecheck and build before"
     echo "  the tests. If the re-run also fails, it is yours — check for an"
     echo "  assertion error rather than a timeout."
