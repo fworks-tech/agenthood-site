@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-29"
+    ],
+    "path": "news/whats-new-2026-09-29.md",
+    "title": "Agenthood v3.71.0: Goal command, concurrency arbitration, and trajectory persistence",
+    "date": "2026-09-29",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.71.0 adds a goal command, origin-based concurrency arbitration, and one-step trajectory persistence."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-28"
     ],
     "path": "news/whats-new-2026-09-28.md",
