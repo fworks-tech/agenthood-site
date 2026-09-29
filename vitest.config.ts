@@ -8,6 +8,8 @@ export default defineConfig({
     // __tests__/live hits the real provider and costs money — `npm run test:live` only.
     exclude: ["e2e/**", "node_modules/**", "dist/**", "__tests__/live/**"],
     testTimeout: 10000,
+    // Warms the route module graphs once per run; see __tests__/global-setup.ts.
+    globalSetup: ["__tests__/global-setup.ts"],
     coverage: {
       provider: "v8",
       include: [
