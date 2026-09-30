@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-09-30"
+    ],
+    "path": "news/whats-new-2026-09-30.md",
+    "title": "Agenthood v3.71.1: Opencode plugin specifier fix",
+    "date": "2026-09-30",
+    "author": "Agenthood Team",
+    "summary": "v3.71.1 fixes an Opencode bug where bare plugin specifiers could crash the host process."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-29"
     ],
     "path": "news/whats-new-2026-09-29.md",
