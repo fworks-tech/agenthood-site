@@ -60,7 +60,7 @@
     "@mantine/notifications": "^9.6.2",
     "@mantine/nprogress": "^9.6.2",
     "@mantine/spotlight": "^9.6.2",
-    "@sentry/nextjs": "^11.0.0",
+    "@sentry/nextjs": "^11.2.0",
     "@tabler/icons-react": "^3.48.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
