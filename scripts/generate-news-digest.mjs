@@ -254,7 +254,9 @@ export function validateArticle(text, postDate) {
   }
 
   const heading = titleFromMarkdown(parsed.body);
-  if (typeof title === "string" && heading && heading !== title) {
+  if (!heading) {
+    errors.push('article body must start with a "# " heading matching the front matter "title"');
+  } else if (typeof title === "string" && heading !== title) {
     errors.push(
       `front matter "title" (${JSON.stringify(title)}) does not match the "# " heading (${JSON.stringify(heading)})`,
     );

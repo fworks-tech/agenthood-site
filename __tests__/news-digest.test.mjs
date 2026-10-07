@@ -106,6 +106,13 @@ We've shipped several improvements across the v3.13 line.
     expect(result.ok).toBe(true);
   });
 
+  it("rejects an article with no H1 heading", () => {
+    const bad = validArticle.replace("# Agenthood v3.13: Packaging Fixes and Faster RAG\n\n", "");
+    const result = validateArticle(bad, postDate);
+    expect(result.ok).toBe(false);
+    expect(result.errors.join(" ")).toContain('"# " heading');
+  });
+
   it("rejects a mismatched title/heading", () => {
     const bad = validArticle.replace(
       "# Agenthood v3.13: Packaging Fixes and Faster RAG",
