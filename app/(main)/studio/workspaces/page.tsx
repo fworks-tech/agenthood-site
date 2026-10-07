@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { TextInput, Button } from '@mantine/core'
 import { useWorkspace } from '../_hooks/useWorkspace'
 import { useLogs } from '../_hooks/useLogs'
+import { getCompletions, applyCompletion } from '../_lib/workspace-complete'
 import WorkspaceComposer from './_components/WorkspaceComposer'
 import WorkspaceSidebar from './_components/WorkspaceSidebar'
 import WorkspaceChatArea from './_components/WorkspaceChatArea'
@@ -15,6 +16,18 @@ export default function WorkspacesPage() {
   const [instruction, setInstruction] = useState('')
   const [input, setInput] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null)
+
+  // Token-aware autocomplete: / commands need no roster, @ mentions use the
+  // workspace roster (composer selection). Tab or click applies, Enter sends.
+  const completions = input === dismissedFor ? [] : getCompletions(input, selected).slice(0, 7)
+
+  const applyFirstCompletion = useCallback(() => {
+    const first = getCompletions(input, selected)[0]
+    if (!first) return false
+    setInput(applyCompletion(input, first.value))
+    return true
+  }, [input, selected])
 
   const workspace = useWorkspace()
   const { logs, logsOpen, setLogsOpen, debugVisible, setDebugVisible, logCategoryFilter, setLogCategoryFilter, liveLogsHeight } = useLogs()
@@ -144,18 +157,49 @@ export default function WorkspacesPage() {
             </div>
 
             <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
-              <div className="mx-auto flex max-w-3xl gap-2">
+              <div className="relative mx-auto flex max-w-3xl gap-2">
+                {completions.length > 0 && (
+                  <div
+                    role="listbox"
+                    aria-label="Suggestions"
+                    className="absolute bottom-full left-0 right-0 z-10 mb-1 overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl"
+                  >
+                    {completions.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        onClick={() => setInput(applyCompletion(input, c.value))}
+                        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-sm text-zinc-700 dark:text-zinc-300 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <span className="font-mono">{c.label}</span>
+                        <span className="text-xs text-zinc-400">{c.kind === 'command' ? 'command' : 'mention'}</span>
+                      </button>
+                    ))}
+                    <div className="border-t border-zinc-200 dark:border-zinc-800 px-3 py-1 text-[11px] text-zinc-400">
+                      Tab to apply, Enter to send, Esc to dismiss
+                    </div>
+                  </div>
+                )}
                 <TextInput
                   value={input}
                   onChange={(e) => setInput(e.currentTarget.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Tab' && completions.length > 0) {
+                      e.preventDefault()
+                      applyFirstCompletion()
+                    } else if (e.key === 'Escape') {
+                      setDismissedFor(input)
+                    } else if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
                       handleSend()
                     }
                   }}
-                  placeholder={isRunning ? 'Send a message to intervene...' : 'Send a follow-up instruction...'}
+                  placeholder={isRunning ? 'Send a message, /command, or @member...' : 'Send a follow-up, /command, or @member...'}
                   aria-label="Follow-up message"
+                  aria-expanded={completions.length > 0}
+                  aria-autocomplete="list"
                   className="flex-1"
                 />
                 <Button

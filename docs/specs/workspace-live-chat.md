@@ -43,6 +43,9 @@ auto-continues. Commands and mentions are parsed locally in the composer.
    synthesize + stop.
 6. **Notify** — local `Notification` API on ask-inline / `@user` / done, only
    when `document.hidden`, permission toggle next to composer, default off.
+7. **Autocomplete** — pure `workspace-complete.ts` suggests valid `/`
+   commands and `@` roster members for the trailing token as the input
+   changes; Tab or click applies, Enter still sends, Esc dismisses.
 
 ## Out of Scope
 
@@ -60,6 +63,7 @@ auto-continues. Commands and mentions are parsed locally in the composer.
 - [ ] `@member` skips the mediator in the trace; unknown `@`/`/` never hits LLM.
 - [ ] `@user` pauses, notifies, nudges once after 90s, then synthesizes + stops.
 - [ ] `/summarize` mid-chain returns a card without appending to the thread.
+- [ ] Typing `/` or `@` suggests only valid commands/members; Tab applies.
 - [ ] `npm test`, `npm run lint`, `tsc --noEmit` green.
 
 ## Testing Strategy
