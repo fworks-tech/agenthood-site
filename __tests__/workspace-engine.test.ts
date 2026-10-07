@@ -8,6 +8,7 @@ import {
   clearPause,
   resetEngineState,
   findUserQuestion,
+  hasUserMention,
   type EngineCtx,
   type EngineState,
 } from '../app/(main)/studio/_lib/workspace-engine'
@@ -92,6 +93,11 @@ I'm not going to start refining the goal myself. Want me to hand this off to the
     expect(findUserQuestion('```js\nconst t = your_token ? a : b\n```\nDone. Want me to proceed?', ids)).toContain(
       'Want me to proceed?',
     )
+  })
+
+  it('ignores code in a truncated unclosed fence and keeps prose between fences', () => {
+    expect(findUserQuestion('Starting.\n```py\nx = you ? a : b', ids)).toBeNull()
+    expect(findUserQuestion('Run ```x``` Want me to proceed? ```y```', ids)).toContain('Want me to proceed?')
   })
 
   it('skips display-name vocatives but hears asks past passing mentions', () => {
@@ -249,6 +255,55 @@ describe('afterTurn', () => {
     })
     expect(r).toBe('done')
     expect(state.awaiting).toBeNull()
+  })
+
+  it('does not pause on @user inside code or on an email address', async () => {
+    const outputs = [
+      'Added the route.\n```py\n@user.route("/x")\ndef f(): pass\n```\nAll wired.',
+      'Reach the maintainer at contact@user.com when ready.',
+    ]
+    for (const raw of outputs) {
+      const { state, ids } = fresh()
+      const { ctx, handoffs, nudges } = mockEngine(ids)
+      const r = await afterTurn(state, 'the-builder', raw, RUN.wId, RUN.correlationId, RUN.session, ctx)
+      expect(r).toBe('done')
+      expect(state.awaiting).toBeNull()
+      expect(handoffs).toHaveLength(0)
+      expect(nudges).toHaveLength(0)
+    }
+  })
+
+  it('takes the handoff reason from the real @user line, not a code line', async () => {
+    const { state, ids } = fresh()
+    const { ctx, handoffs } = mockEngine(ids)
+    const raw = 'Scaffolded it.\n```py\n@user.route("/x")\n```\n@user which region should this deploy to?'
+    const r = await afterTurn(state, 'the-builder', raw, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('paused')
+    expect(handoffs[0].reason).toBe('which region should this deploy to?')
+  })
+})
+
+describe('hasUserMention', () => {
+  it('hears every legitimate way to address the user', () => {
+    expect(hasUserMention('@user which region?')).toBe(true)
+    expect(hasUserMention('@user, which region?')).toBe(true)
+    expect(hasUserMention('Blocked. Hi @user. Which region?')).toBe(true)
+    expect(hasUserMention('Need `@user` to pick a region')).toBe(true)
+    expect(hasUserMention('Done.\n@user pick one')).toBe(true)
+    expect(hasUserMention('Still @USER input here')).toBe(true)
+  })
+
+  it('ignores fenced code, unclosed fences, emails and member access', () => {
+    expect(hasUserMention('```py\n@user.route("/x")\n```')).toBe(false)
+    expect(hasUserMention('```js\n// ask @user later\n```')).toBe(false)
+    expect(hasUserMention('Starting.\n```py\n@user')).toBe(false)
+    expect(hasUserMention('mail contact@user.com please')).toBe(false)
+    expect(hasUserMention('see @user.profile for details')).toBe(false)
+    expect(hasUserMention('uses @user_id and @username')).toBe(false)
+  })
+
+  it('keeps a real mention that follows a code block', () => {
+    expect(hasUserMention('```py\nx = 1\n```\n@user which region?')).toBe(true)
   })
 })
 
