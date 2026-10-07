@@ -1,5 +1,6 @@
 // `@` mentions for direct member routing. Pure parse only — execution
-// calls runTurn(target) with the mediator skipped (confidence 100).
+// calls runTurn(target) with the mediator skipped (explicit user delegation,
+// shown as a 100% heuristic routing score).
 
 export type ParsedMentions = {
   targets: string[]

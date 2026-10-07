@@ -103,9 +103,12 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
         <AnimatedMessage key={m.id}>
           {m.memberId === 'router' && m.route ? (
             <div className="flex items-center justify-center gap-2 py-1 text-xs text-zinc-500">
-              <span className="rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-1">
+              <span
+                className="rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-1"
+                title="Heuristic routing score — fixed decision weights, not a calibrated probability"
+              >
                 {getAgentById(m.route.from)?.name ?? m.route.from} → {getAgentById(m.route.to)?.name ?? m.route.to}
-                <span className="ml-2 font-mono font-semibold text-indigo-400">{m.route.confidence}%</span>
+                <span className="ml-2 font-mono font-semibold text-indigo-400">{m.route.confidence}% heuristic</span>
               </span>
             </div>
           ) : m.memberId === 'command' ? (

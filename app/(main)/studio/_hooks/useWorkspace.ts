@@ -355,10 +355,10 @@ export function useWorkspace() {
         const name = getAgentById(scored.nextId)?.name ?? scored.nextId
         setHandoff({
           memberId: scored.nextId,
-          reason: `${name} should continue (confidence ${scored.confidence}%) — ${scored.reason}. Continue or stop?`,
+          reason: `${name} should continue (heuristic routing score ${scored.confidence}%) — ${scored.reason}. Continue or stop?`,
         })
         setWorkspaceState('handoff')
-        ping(`Continue with ${name}? Confidence ${scored.confidence}%.`)
+        ping(`Continue with ${name}? Heuristic routing score ${scored.confidence}%.`)
         return 'paused'
       }
       return 'done'
