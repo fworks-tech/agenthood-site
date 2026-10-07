@@ -7,6 +7,7 @@ import {
   settle,
   clearPause,
   resetEngineState,
+  findUserQuestion,
   type EngineCtx,
   type EngineState,
 } from '../app/(main)/studio/_lib/workspace-engine'
@@ -64,7 +65,61 @@ function fresh(ids: string[] = ['the-architect', 'the-builder']): { state: Engin
   return { state: createEngineState(30), ids }
 }
 
+describe('findUserQuestion', () => {
+  const ids = ['the-builder', 'the-strategist']
+  it('catches the closing ask from the production incident', () => {
+    const raw = `Classification: planning goal. So my handoff would be the Strategist, then the Architect.
+I'm not going to start refining the goal myself. Want me to hand this off to them? Or if you'd rather just start talking specifics, that's fine too.`
+    expect(findUserQuestion(raw, ids)).toContain('Want me to hand this off to them?')
+  })
+
+  it('ignores member-directed and rhetorical questions', () => {
+    expect(findUserQuestion('Can you review this, the-builder?', ids)).toBeNull()
+    expect(findUserQuestion('Should we use X or Y? I picked X.', ids)).toBeNull()
+    expect(findUserQuestion('What does done look like?', ids)).toBeNull()
+    expect(findUserQuestion('You know what, should we do X?', ids)).toBeNull()
+    expect(findUserQuestion('Steady progress, no questions.', ids)).toBeNull()
+    expect(findUserQuestion('talk to the-builder — will you take it?', ids)).toBeNull()
+  })
+
+  it('prefers the last question but still hears an earlier ask', () => {
+    expect(findUserQuestion('Done. Want me to proceed?', ids)).toContain('Want me to proceed?')
+    expect(findUserQuestion('Want me to proceed? Should we use X or Y, team?', ids)).toBe('Want me to proceed?')
+  })
+})
+
 describe('afterTurn', () => {
+  it('pauses on a detected user question exactly like @user', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, nudges } = mockEngine(ids)
+    const r = await afterTurn(state, 'the-builder', 'Made good progress. Want me to keep going with this approach?', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('paused')
+    expect(ctx.streamTurn).not.toHaveBeenCalled()
+    expect(state.awaiting).toEqual({ memberId: 'the-builder' })
+    expect(handoffs[0].reason).toContain('Want me to keep going with this approach?')
+    expect(nudges).toHaveLength(1)
+  })
+
+  it('keeps routing past rhetorical questions', async () => {
+    const { state, ids } = fresh()
+    const { ctx } = mockEngine(ids)
+    const r = await afterTurn(state, 'the-architect', 'Plan drafted — talk to the-builder for the code. Should we use X or Y? I chose X.', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('continue')
+    expect(state.queue[0].id).toBe('the-builder')
+  })
+
+  it('pauses when the mediator fallback asks the user', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs } = mockEngine(ids, ['Hmm, hard to route. Want me to bring in outside help?'])
+    const r = await afterTurn(state, 'the-builder', 'Steady progress.', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('paused')
+    expect(handoffs[0].memberId).toBe('the-mediator')
+    expect(handoffs[0].reason).toContain('Want me to bring in outside help?')
+    expect(state.queue).toHaveLength(0)
+  })
+
   it('auto-continues an explicit lane handoff', async () => {
     const { state, ids } = fresh()
     const { ctx, routes } = mockEngine(ids)

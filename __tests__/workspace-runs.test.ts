@@ -100,6 +100,18 @@ describe('startRun', () => {
     expect(m2.turns[2].member).toBe('the-builder')
   })
 
+  it('pauses when the unplannable mediator asks the user instead of falling back', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, turns } = mockEngine(ids, ['Vague goal. Want me to start with the Strategist?'])
+    await startRun(state, { memberIds: ids, instruction: 'build a bot for chat' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns).toHaveLength(1)
+    expect(state.queue).toHaveLength(0)
+    expect(handoffs[0].memberId).toBe('the-mediator')
+    expect(handoffs[0].reason).toContain('Want me to start with the Strategist?')
+    expect(ctx.setDone).not.toHaveBeenCalled()
+  })
+
   it('pauses on abort instead of failing', async () => {
     const ids = ['the-builder']
     const state = createEngineState(30)
@@ -150,6 +162,17 @@ describe('intervene', () => {
     await intervene(s2, 'what now', 'ws-1', 'c-1', 1, m2.ctx)
     expect(m2.turns[0].member).toBe('the-mediator')
     expect(m2.turns[1]).toMatchObject({ member: 'the-architect', task: 'design' })
+  })
+
+  it('pauses when the re-plan asks the user instead of guessing', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, turns } = mockEngine(ids, ['Not sure yet. Want me to dig deeper first?'])
+    await intervene(state, 'what now', 'ws-1', 'c-1', 1, ctx)
+    expect(turns).toHaveLength(1)
+    expect(state.queue).toHaveLength(0)
+    expect(handoffs[0].memberId).toBe('the-mediator')
+    expect(ctx.setDone).not.toHaveBeenCalled()
   })
 })
 
