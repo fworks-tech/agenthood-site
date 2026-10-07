@@ -1,0 +1,289 @@
+import { parseMediatorPlan, type ThreadMessage } from './workspace-orchestrator'
+import { scoreNext, applyThreshold, shouldContinue, type ScoredNext } from './workspace-router'
+import { toPolished, isEmptyTurn } from './workspace-polish'
+import type { ThreadMode } from './workspace-command-run'
+import type { WorkspaceSpec } from '../_types/workspace'
+
+export const NUDGE_MS = 90_000
+const ROUTE_TASK_CHARS = 2000
+
+export type EngineTurn = { id: string; task: string }
+export type EnginePendingRoute = EngineTurn & { confidence: number }
+
+export type EngineState = {
+  queue: EngineTurn[]
+  history: string[]
+  hops: number
+  lastTurn: { memberId: string; task: string; raw: string } | null
+  lastTask: string
+  retriedTurn: number | null
+  pendingRoute: EnginePendingRoute | null
+  awaiting: { memberId: string } | null
+  paused: boolean
+  budget: number
+  turnCounter: number
+  thread: ThreadMessage[]
+}
+
+export function createEngineState(budget: number): EngineState {
+  return {
+    queue: [],
+    history: [],
+    hops: 0,
+    lastTurn: null,
+    lastTask: '',
+    retriedTurn: null,
+    pendingRoute: null,
+    awaiting: null,
+    paused: false,
+    budget,
+    turnCounter: 0,
+    thread: [],
+  }
+}
+
+export type NudgePayload = { memberId: string; wId: string; correlationId: string; session: number }
+
+export type EngineCtx = {
+  /** Transport only: runs one member turn, streams UI, returns raw content. No thread writes. */
+  streamTurn: (
+    memberId: string,
+    task: string,
+    turnIndex: number,
+    wId: string,
+    correlationId: string,
+    thread: ThreadMessage[],
+  ) => Promise<string>
+  runSynthesis: (wId: string, correlationId: string) => Promise<string | null>
+  pushRoute: (route: { from: string; to: string; confidence: number; reason: string }) => void
+  /** Dashed command/note bubble — a view, never thread content. */
+  pushNote: (content: string) => void
+  /** User bubble — always shows, even for empty pings and local commands. */
+  pushUserBubble: (content: string) => void
+  showHandoff: (memberId: string, reason: string) => void
+  clearHandoff: () => void
+  setRunning: () => void
+  setDone: () => void
+  fail: (message: string) => void
+  /** Start aborted mid-flight — the stop owns the next step. */
+  pauseOnAbort: () => void
+  requestStop: () => void
+  requestReset: () => void
+  notify: (body: string) => void
+  displayName: (memberId: string) => string
+  getSpec: () => WorkspaceSpec | null
+  scheduleNudge: (ms: number, fire: () => void) => void
+  clearNudge: () => void
+  isAborted: () => boolean
+  isCurrentSession: (s: number) => boolean
+  onNudge: (payload: NudgePayload) => void
+}
+
+// Single turn with bookkeeping for retry + chained continuation. Owns the
+// thread-write policy: mediator plans are raw, routing fallbacks skip, and
+// thinking-only or empty turns never enter the shared thread.
+export async function engineTakeTurn(
+  state: EngineState,
+  memberId: string,
+  task: string,
+  wId: string,
+  correlationId: string,
+  ctx: EngineCtx,
+  opts?: { threadMode?: ThreadMode },
+): Promise<string> {
+  state.lastTask = task
+  const raw = await ctx.streamTurn(memberId, task, ++state.turnCounter, wId, correlationId, [...state.thread])
+  state.lastTurn = { memberId, task, raw }
+  const mode = opts?.threadMode ?? 'filtered'
+  if (mode === 'raw') {
+    state.thread = [...state.thread, { role: 'assistant', content: raw }]
+  } else if (mode === 'filtered' && !isEmptyTurn(raw)) {
+    state.thread = [...state.thread, { role: 'assistant', content: toPolished(raw) }]
+  }
+  return raw
+}
+
+// Mediator fallback for ambiguous hops — constrained to one member at
+// ask-level confidence, so a guess never auto-runs unreviewed.
+export async function mediatorNext(
+  state: EngineState,
+  wId: string,
+  correlationId: string,
+  session: number,
+  ctx: EngineCtx,
+): Promise<ScoredNext | null> {
+  const ids = ctx.getSpec()?.memberIds ?? []
+  const tail = state.thread
+    .map((m) => m.content)
+    .join('\n')
+    .slice(-3000)
+  const raw = await ctx.streamTurn(
+    'the-mediator',
+    `Route this workspace turn. Reply with ONLY this JSON, no prose: {"members":[{"id":"<one of: ${ids.join(', ')}>","task":"<one-sentence handoff task>","order":0}]}\n\nThread tail:\n${tail}`,
+    ++state.turnCounter,
+    wId,
+    correlationId,
+    [...state.thread],
+  )
+  if (!ctx.isCurrentSession(session)) return null
+  const plan = parseMediatorPlan(raw, ids)
+  const first = plan?.members[0]
+  if (!first) return null
+  return { nextId: first.id, confidence: 60, reason: first.task || 'mediator routing' }
+}
+
+export function enterAwaiting(
+  state: EngineState,
+  memberId: string,
+  raw: string,
+  wId: string,
+  correlationId: string,
+  session: number,
+  ctx: EngineCtx,
+): void {
+  const line = raw.split('\n').find((l) => /@user\b/i.test(l)) ?? raw
+  const question = line.replace(/@user\b/i, '').trim().slice(0, 300) || 'needs your input'
+  state.awaiting = { memberId }
+  state.paused = true
+  ctx.showHandoff(memberId, question)
+  ctx.notify(`${ctx.displayName(memberId)} needs your input: ${question.slice(0, 120)}`)
+  ctx.clearNudge()
+  // The resume runs in the nudge consumer — the timer only raises the signal.
+  ctx.scheduleNudge(NUDGE_MS, () => {
+    if (!ctx.isCurrentSession(session) || !state.awaiting) return
+    state.awaiting = null
+    state.paused = false
+    ctx.onNudge({ memberId, wId, correlationId, session })
+  })
+}
+
+export async function afterTurn(
+  state: EngineState,
+  memberId: string,
+  raw: string,
+  wId: string,
+  correlationId: string,
+  session: number,
+  ctx: EngineCtx,
+  opts?: { nudge?: boolean },
+): Promise<'continue' | 'paused' | 'done'> {
+  state.history.push(memberId)
+  // Nothing routable — stop the chain and synthesize from real content.
+  if (isEmptyTurn(raw)) return 'done'
+  // Guards run on every turn, including planned ones — a long mediator
+  // plan never bypasses the hop, repeat, or blocking caps.
+  const guard = shouldContinue({ hops: state.hops, history: state.history, lastOutput: raw })
+  if (guard.stop) return 'done'
+  // HITL: a member addressing @user pauses the loop for a human reply.
+  // Nudge turns are exempt — a re-ask after silence must resolve down the
+  // terminal path, or the single nudge repeats forever.
+  if (!opts?.nudge && /@user\b/i.test(raw)) {
+    enterAwaiting(state, memberId, raw, wId, correlationId, session, ctx)
+    return 'paused'
+  }
+  if (state.queue.length > 0) return 'continue'
+  let scored = scoreNext(raw, memberId, ctx.getSpec()?.memberIds ?? [])
+  if (!scored) {
+    const fb = await mediatorNext(state, wId, correlationId, session, ctx)
+    if (!ctx.isCurrentSession(session)) return 'paused'
+    if (!fb) return 'done'
+    scored = fb
+  }
+  const task = `Continuing from ${memberId} (${scored.reason}). Stay in your lane:\n${toPolished(raw).slice(0, ROUTE_TASK_CHARS)}`
+  const decision = applyThreshold(scored)
+  if (decision === 'auto') {
+    ctx.pushRoute({ from: memberId, to: scored.nextId, confidence: scored.confidence, reason: scored.reason })
+    state.queue.push({ id: scored.nextId, task })
+    return 'continue'
+  }
+  if (decision === 'ask') {
+    state.pendingRoute = { id: scored.nextId, task, confidence: scored.confidence }
+    state.paused = true
+    ctx.pushRoute({ from: memberId, to: scored.nextId, confidence: scored.confidence, reason: scored.reason })
+    const name = ctx.displayName(scored.nextId)
+    ctx.showHandoff(
+      scored.nextId,
+      `${name} should continue (heuristic routing score ${scored.confidence}%) — ${scored.reason}. Continue or stop?`,
+    )
+    ctx.notify(`Continue with ${name}? Heuristic routing score ${scored.confidence}%.`)
+    return 'paused'
+  }
+  return 'done'
+}
+
+export async function pump(
+  state: EngineState,
+  wId: string,
+  correlationId: string,
+  session: number,
+  ctx: EngineCtx,
+): Promise<void> {
+  while (state.budget > 0 && state.queue.length > 0) {
+    if (!ctx.isCurrentSession(session) || ctx.isAborted()) break
+    const next = state.queue.shift()
+    if (!next) break
+    state.budget -= 1
+    state.hops += 1
+    let raw = await engineTakeTurn(state, next.id, next.task, wId, correlationId, ctx)
+    if (!ctx.isCurrentSession(session)) return
+    // One auto-retry for a thinking-only answer — then accept and stop.
+    if (isEmptyTurn(raw) && state.retriedTurn !== state.turnCounter) {
+      state.retriedTurn = state.turnCounter
+      raw = await engineTakeTurn(
+        state,
+        next.id,
+        `${next.task}\n\nDeliver the final answer now — no preamble, no thinking-out-loud.`,
+        wId,
+        correlationId,
+        ctx,
+      )
+      if (!ctx.isCurrentSession(session)) return
+    }
+    const r = await afterTurn(state, next.id, raw, wId, correlationId, session, ctx)
+    if (r !== 'continue') break
+  }
+}
+
+export async function settle(
+  state: EngineState,
+  wId: string,
+  correlationId: string,
+  session: number,
+  ctx: EngineCtx,
+): Promise<void> {
+  // Paused for ask-inline or @user — the human owns the next step.
+  if (state.paused) return
+  if (ctx.isCurrentSession(session)) {
+    await ctx.runSynthesis(wId, correlationId)
+  }
+  if (ctx.isCurrentSession(session)) {
+    ctx.setDone()
+    ctx.notify('Workspace run finished.')
+  }
+}
+
+export function clearPause(
+  state: EngineState,
+  ctx: Pick<EngineCtx, 'clearNudge' | 'clearHandoff'>,
+  opts?: { keepPending?: boolean },
+): void {
+  ctx.clearNudge()
+  if (!opts?.keepPending) state.pendingRoute = null
+  state.awaiting = null
+  state.paused = false
+  ctx.clearHandoff()
+}
+
+export function resetEngineState(state: EngineState, budget: number): void {
+  state.queue = []
+  state.history = []
+  state.hops = 0
+  state.lastTurn = null
+  state.retriedTurn = null
+  state.pendingRoute = null
+  state.awaiting = null
+  state.paused = false
+  state.budget = budget
+  state.turnCounter = 0
+  state.thread = []
+}
