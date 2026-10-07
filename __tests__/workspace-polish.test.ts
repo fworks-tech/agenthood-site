@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toPolished } from '../app/(main)/studio/_lib/workspace-polish'
+import { toPolished, isEmptyTurn } from '../app/(main)/studio/_lib/workspace-polish'
 
 describe('toPolished', () => {
   it('passes through normal prose', () => {
@@ -43,5 +43,27 @@ describe('toPolished', () => {
 
   it('keeps json that is not a mediator plan', () => {
     expect(toPolished('{"foo":1}')).toBe('{"foo":1}')
+  })
+})
+
+describe('isEmptyTurn', () => {
+  it('flags empty output', () => {
+    expect(isEmptyTurn('')).toBe(true)
+    expect(isEmptyTurn('   ')).toBe(true)
+  })
+
+  it('flags dots-only output that survives polishing', () => {
+    expect(isEmptyTurn('...')).toBe(true)
+    expect(isEmptyTurn('…')).toBe(true)
+    expect(isEmptyTurn('... The Builder is thinking...')).toBe(false)
+  })
+
+  it('flags thinking-only preambles', () => {
+    expect(isEmptyTurn('Let me check the repo first')).toBe(true)
+  })
+
+  it('keeps real answers', () => {
+    expect(isEmptyTurn('## Plan\n- item one with enough detail to count as useful')).toBe(false)
+    expect(isEmptyTurn('{"foo":1}')).toBe(false)
   })
 })

@@ -1,5 +1,11 @@
-// Confidence-gated next-member routing for watch-by-default workspaces.
+// Heuristic-gated next-member routing for watch-by-default workspaces.
 // Pure: no LLM, no I/O — the deterministic layer before mediator fallback.
+//
+// The "confidence" values below are fixed heuristic decision scores, not
+// calibrated model probabilities: 95 for an explicit lane mention found in a
+// member's output, 78 for the next member in a Society delegation chain, 60
+// for a mediator fallback routing, 100 for a direct user @-mention. The UI
+// presents them as heuristic routing scores for exactly this reason.
 
 export const AUTO_THRESHOLD = 70
 export const ASK_THRESHOLD = 50
@@ -50,6 +56,14 @@ export function scoreNext(output: string, fromId: string, validIds: string[]): S
     return { nextId: successor, confidence: 78, reason: `chain successor of ${fromId}` }
   }
   return null
+}
+
+export type RouteDecision = 'auto' | 'ask' | 'stop'
+
+export function applyThreshold(scored: ScoredNext | null): RouteDecision {
+  if (!scored || scored.confidence < ASK_THRESHOLD) return 'stop'
+  if (scored.confidence >= AUTO_THRESHOLD) return 'auto'
+  return 'ask'
 }
 
 export function shouldContinue(opts: { hops: number; history: string[]; lastOutput: string }): {

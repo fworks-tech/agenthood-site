@@ -13,8 +13,10 @@ for a question from a member (`@user`).
 ## Proposed Solution
 
 Make watch-by-default the only mode — no on-switch. After every turn a
-lightweight router picks the next member with a confidence score and
+lightweight router picks the next member with a heuristic routing score and
 auto-continues. Commands and mentions are parsed locally in the composer.
+Scores are fixed decision weights (95 lane mention, 78 chain successor, 60
+mediator fallback, 100 direct @-mention) — not calibrated probabilities.
 
 1. **Router** — new pure `workspace-router.ts`: chain successor from the
    existing `ORCHESTRATION_GUIDE` (`system-prompt.ts`), `talk to The X`
@@ -26,14 +28,19 @@ auto-continues. Commands and mentions are parsed locally in the composer.
    `WorkspaceEvent` (`_types/workspace.ts`), emitted from `useWorkspace.ts`
    loop, rendered as a pill in `WorkspaceTurnCard`. Existing
    `turn_start/token/turn_end/status/handoff/synthesized` SSE stream is the
-   watch feed — no new endpoint, no WatchPanel (Vercel-safe).
+   watch feed — no new endpoint, no WatchPanel (Vercel-safe). Thread hygiene
+   (production incident): thinking-only or empty turns never enter the shared
+   thread — one auto-retry with a "final answer only" nudge, then stop and
+   synthesize from real content, so a bare `...` can never read as
+   conversation or be misattributed to the user.
 3. **Commands** — new pure `workspace-commands.ts`, intercepted in
    `workspaces/page.tsx handleSend` before `start/sendIntervention`:
    `/summarize` (existing `runSynthesis`, no thread pollution), `/continue
    [hint]`, `/retry` (re-run last turn), `/stop`+`/new` (aliases),
    `/help` (static), `/plan` (mediator only). Unknown `/` never hits the LLM.
+   Empty pings (blank or only dots) are answered inline, never routed.
 4. **Mentions** — new pure `workspace-mentions.ts`: `@the-builder ...`
-   routes straight to `runTurn(target)` with confidence 100, mediator skipped.
+   routes straight to `runTurn(target)` with a 100 heuristic score, mediator skipped.
    Multi-mention runs in written order under the same budget. Unknown `@`
    errors inline. Autocomplete is a datalist over `selected`, not a new editor.
 5. **HITL `@user`** — member output containing `@user` (or question + low
@@ -56,12 +63,14 @@ auto-continues. Commands and mentions are parsed locally in the composer.
 
 ## Acceptance Criteria
 
-- [ ] One instruction triggers >=2 member turns with routed-confidence pills,
+- [ ] One instruction triggers >=2 member turns with heuristic-score pills,
       zero manual sends.
 - [ ] `>=70` auto-continues, `50-69` shows inline Continue/Stop, `<50` stops +
       synthesizes.
 - [ ] `@member` skips the mediator in the trace; unknown `@`/`/` never hits LLM.
 - [ ] `@user` pauses, notifies, nudges once after 90s, then synthesizes + stops.
+- [ ] Thinking-only turns never enter the thread; one auto-retry, then stop.
+- [ ] Empty pings answered inline with zero LLM calls.
 - [ ] `/summarize` mid-chain returns a card without appending to the thread.
 - [ ] Typing `/` or `@` suggests only valid commands/members; Tab applies.
 - [ ] `npm test`, `npm run lint`, `tsc --noEmit` green.

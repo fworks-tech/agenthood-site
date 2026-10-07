@@ -90,27 +90,15 @@ export default function WorkspacesPage() {
       ) : (
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <aside className="hidden w-64 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-4 md:block">
-            <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
-            {workspace.handoff && (
-              <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm animate-in zoom-in-95 duration-300">
-                <div className="font-medium text-amber-300">Human checkpoint</div>
-                <div className="mt-1 text-xs text-amber-200/80">{workspace.handoff.reason}</div>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    onClick={workspace.continueHandoff}
-                    className="flex-1 cursor-pointer rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white shadow-md transition-all duration-200 hover:bg-amber-500 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    Continue
-                  </button>
-                  <button
-                    onClick={workspace.stop}
-                    className="flex-1 cursor-pointer rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    Stop
-                  </button>
-                </div>
-              </div>
-            )}
+            <WorkspaceSidebar
+              selected={selected}
+              statusMap={workspace.statusMap}
+              handoff={workspace.handoff}
+              onContinue={workspace.continueHandoff}
+              onStop={workspace.stop}
+              notifyEnabled={workspace.notifyEnabled}
+              onNotifyChange={workspace.setNotifyEnabled}
+            />
             {isRunning ? (
               <button
                 onClick={workspace.stop}
@@ -237,7 +225,15 @@ export default function WorkspacesPage() {
 
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onOpen={() => setDrawerOpen(true)}>
         <div className="p-4">
-          <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
+          <WorkspaceSidebar
+            selected={selected}
+            statusMap={workspace.statusMap}
+            handoff={workspace.handoff}
+            onContinue={() => { workspace.continueHandoff(); setDrawerOpen(false) }}
+            onStop={() => { workspace.stop(); setDrawerOpen(false) }}
+            notifyEnabled={workspace.notifyEnabled}
+            onNotifyChange={workspace.setNotifyEnabled}
+          />
           {isRunning ? (
             <button onClick={() => { workspace.stop(); setDrawerOpen(false) }} className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 transition-all hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-800 dark:hover:text-zinc-200">
               Stop workspace
