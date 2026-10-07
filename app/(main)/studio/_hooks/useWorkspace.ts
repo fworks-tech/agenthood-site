@@ -5,6 +5,7 @@ import { readSSEStream } from '../_lib/stream'
 import { parseMediatorPlan, fallbackPlan, type ThreadMessage } from '../_lib/workspace-orchestrator'
 import { scoreNext, applyThreshold, shouldContinue, type ScoredNext } from '../_lib/workspace-router'
 import { parseWorkspaceCommand, isEmptyPing } from '../_lib/workspace-commands'
+import { runWorkspaceCommand } from '../_lib/workspace-command-run'
 import { parseMentions } from '../_lib/workspace-mentions'
 import { notifyWorkspace, loadNotifyPref, saveNotifyPref, requestNotifyPermission } from '../_lib/workspace-notify'
 import { toPolished, isThinkingOnly } from '../_lib/workspace-polish'
@@ -128,7 +129,14 @@ export function useWorkspace() {
   }, [messages, statusMap, workspaceId])
 
   const runTurn = useCallback(
-    async (memberId: string, instruction: string, turnIndex: number, wId: string, correlationId: string) => {
+    async (
+      memberId: string,
+      instruction: string,
+      turnIndex: number,
+      wId: string,
+      correlationId: string,
+      opts?: { threadMode?: 'filtered' | 'raw' | 'skip' },
+    ) => {
       const controller = new AbortController()
       abortRef.current = controller
       updateStatus(memberId, 'working')
@@ -217,8 +225,14 @@ export function useWorkspace() {
       // Thinking-only or empty turns never enter the shared thread — a bare
       // "..." or preamble would otherwise read as conversation and confuse the
       // next member (or be misattributed to the user). The card still shows it.
+      // Mediator plans are exempt ('raw'): routing JSON is hidden from the UI
+      // but the plan order is context the next members rely on. Mediator
+      // routing fallbacks pass 'skip' — they are already represented by the pill.
+      const mode = opts?.threadMode ?? 'filtered'
       const polishedTurn = toPolished(currentContent)
-      if (polishedTurn && !isThinkingOnly(polishedTurn)) {
+      if (mode === 'raw') {
+        threadRef.current = [...threadRef.current, { role: 'assistant', content: currentContent }]
+      } else if (mode === 'filtered' && polishedTurn && !isThinkingOnly(polishedTurn)) {
         threadRef.current = [...threadRef.current, { role: 'assistant', content: polishedTurn }]
       }
       updateStatus(memberId, 'done')
@@ -229,9 +243,15 @@ export function useWorkspace() {
 
   // Single turn with bookkeeping for retry + chained continuation.
   const takeTurn = useCallback(
-    async (memberId: string, task: string, wId: string, correlationId: string) => {
+    async (
+      memberId: string,
+      task: string,
+      wId: string,
+      correlationId: string,
+      opts?: { threadMode?: 'filtered' | 'raw' | 'skip' },
+    ) => {
       lastTaskRef.current = task
-      const raw = await runTurn(memberId, task, ++turnCounterRef.current, wId, correlationId)
+      const raw = await runTurn(memberId, task, ++turnCounterRef.current, wId, correlationId, opts)
       lastTurnRef.current = { memberId, task, raw }
       return raw
     },
@@ -264,6 +284,7 @@ export function useWorkspace() {
         ++turnCounterRef.current,
         wId,
         correlationId,
+        { threadMode: 'skip' },
       )
       if (session !== sessionRef.current) return null
       const plan = parseMediatorPlan(raw, ids)
@@ -474,6 +495,8 @@ export function useWorkspace() {
     setActiveWorkspaceId(null)
   }, [clearPause])
 
+  // Thin adapter: all command logic lives in workspace-command-run.ts with an
+  // injected context, so every branch is unit-testable without the hook.
   const runCommand = useCallback(
     async (
       name: string,
@@ -483,83 +506,39 @@ export function useWorkspace() {
       correlationId: string,
       session: number,
     ): Promise<'handled' | 'passthrough'> => {
-      if (name === 'stop') {
-        stop()
-        return 'handled'
-      }
-      if (name === 'new') {
-        reset()
-        return 'handled'
-      }
-      if (unknown) {
-        pushCommand(`Unknown command \`/${name}\` — try \`/help\`.`)
-        return 'handled'
-      }
-      if (name === 'summarize') {
-        await runSynthesis(wId, correlationId)
-        return 'handled'
-      }
-      if (name === 'retry') {
-        const last = lastTurnRef.current
-        if (!last) {
-          pushCommand('Nothing to retry yet.')
-          return 'handled'
-        }
-        const raw = await takeTurn(last.memberId, last.task, wId, correlationId)
-        if (session !== sessionRef.current) return 'handled'
-            const r = await afterTurn(last.memberId, raw, wId, correlationId, session)
-            if (r === 'continue') await pump(wId, correlationId, session)
-            if (session === sessionRef.current) await settle(wId, correlationId, session)
-        return 'handled'
-      }
-      if (name === 'help') {
-        const ids = specRef.current?.memberIds ?? []
-        pushCommand(
-          `**Commands** — \`/summarize\` \`/continue [hint]\` \`/retry\` \`/plan\` \`/stop\` \`/new\` \`/help\`\n\n**Mentions** — \`@member\` talks directly (mediator skipped)${
-            ids.length > 0 ? `: ${ids.map((i) => `\`@${i}\``).join(' ')} \`@user\`` : ''
-          }`,
-        )
-        return 'handled'
-      }
-      if (name === 'plan') {
-        const raw = await takeTurn(
-          'the-mediator',
-          `List the execution plan for: ${args || specRef.current?.instruction || 'the current workspace goal'}. Reply with ONLY this JSON, no prose: {"members":[{"id":"<member>","task":"<task>","order":0}]}`,
-          wId,
-          correlationId,
-        )
-        if (session !== sessionRef.current) return 'handled'
-        const plan = parseMediatorPlan(raw, specRef.current?.memberIds ?? [])
-        pushCommand(
-          plan
-            ? `**Plan** — ${plan.members.map((m) => `\`${m.id}\`: ${m.task.slice(0, 120)}`).join('\n')}`
-            : 'The mediator returned no usable plan.',
-        )
-        return 'handled'
-      }
-      if (name === 'continue') {
-        if (pendingRouteRef.current) {
-          const p = pendingRouteRef.current
-          pendingRouteRef.current = null
-          setHandoff(null)
-          setWorkspaceState('running')
-          queueRef.current.push({ id: p.id, task: args ? `${p.task}\n\nUser hint: ${args}` : p.task })
-          await pump(wId, correlationId, session)
-          if (session === sessionRef.current) await settle(wId, correlationId, session)
-          return 'handled'
-        }
-        if (args) threadRef.current = [...threadRef.current, { role: 'user', content: args }]
-        const last = lastTurnRef.current
-        if (!last) {
-          pushCommand('Nothing to continue yet — send an instruction first.')
-          return 'handled'
-        }
-        const r = await afterTurn(last.memberId, last.raw, wId, correlationId, session)
-        if (r === 'continue') await pump(wId, correlationId, session)
-        if (r === 'done' && session === sessionRef.current) await settle(wId, correlationId, session)
-        return 'handled'
-      }
-      return 'passthrough'
+      return runWorkspaceCommand(
+        { name, args, unknown },
+        { wId, correlationId, session },
+        {
+          takeTurn,
+          pump,
+          settle,
+          afterTurn,
+          runSynthesis,
+          pushCommand,
+          stop,
+          reset,
+          setRunning: () => {
+            setHandoff(null)
+            setWorkspaceState('running')
+          },
+          getSpec: () => specRef.current,
+          getLastTurn: () => lastTurnRef.current,
+          takePending: () => {
+            const p = pendingRouteRef.current
+            pendingRouteRef.current = null
+            pausedRef.current = false
+            return p
+          },
+          enqueue: (turn) => {
+            queueRef.current.push(turn)
+          },
+          appendThreadUser: (content) => {
+            threadRef.current = [...threadRef.current, { role: 'user', content }]
+          },
+          isCurrentSession: (s) => s === sessionRef.current,
+        },
+      )
     },
     [pushCommand, runSynthesis, takeTurn, afterTurn, pump, settle, stop, reset],
   )
@@ -616,7 +595,7 @@ export function useWorkspace() {
             queueRef.current.push({ id, task: direct.cleanText || 'continue with your lane' })
           }
         } else {
-          const mediatorOutput = await takeTurn('the-mediator', spec.instruction, wId, correlationId)
+          const mediatorOutput = await takeTurn('the-mediator', spec.instruction, wId, correlationId, { threadMode: 'raw' })
           if (session !== sessionRef.current) return
           const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
           const effective = plan ?? fallbackPlan(spec)
@@ -689,7 +668,7 @@ export function useWorkspace() {
             queueRef.current.push({ id, task: direct.cleanText || content })
           }
         } else {
-          const mediatorOutput = await takeTurn('the-mediator', content, workspaceId, correlationId)
+          const mediatorOutput = await takeTurn('the-mediator', content, workspaceId, correlationId, { threadMode: 'raw' })
           if (session !== sessionRef.current) return
           const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
           if (plan) {
