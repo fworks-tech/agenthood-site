@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-10-07"
+    ],
+    "path": "news/whats-new-2026-10-07.md",
+    "title": "Agenthood Release Digest — October 7, 2026",
+    "date": "2026-10-07",
+    "author": "Agenthood Team",
+    "summary": "VS Code extension reaches v1.0.0 for Marketplace publish; patch v3.72.1 ships with an empty changelog."
+  },
+  {
+    "slug": [
       "whats-new-2026-09-30"
     ],
     "path": "news/whats-new-2026-09-30.md",
