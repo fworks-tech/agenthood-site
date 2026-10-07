@@ -40,6 +40,15 @@ function looksLikeMediatorPlan(text: string): boolean {
   }
 }
 
+/** A turn with nothing routable: empty, dots-only, or thinking-only preamble.
+ *  Bare "..." survives toPolished and matches no thinking prefix, so it gets
+ *  its own check — otherwise it reads as conversation downstream. */
+export function isEmptyTurn(raw: string): boolean {
+  const polished = toPolished(raw).trim()
+  if (!polished) return true
+  if (/^[.…\s]+$/.test(polished)) return true
+  return isThinkingOnly(polished)
+}
 /** A message is "useful" when it contains an actual answer for the user
  *  (not just a thinking preamble). Heuristic: contains a code block,
  *  a markdown heading/list with substantial body, or is long and not

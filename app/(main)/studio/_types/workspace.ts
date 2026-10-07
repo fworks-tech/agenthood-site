@@ -55,8 +55,10 @@ export type WorkspaceEvent =
   | { type: 'workspace.turn_end'; memberId: string; decision: 'pass' | 'handoff' | 'failed'; cost?: number; workspaceId: string; correlationId: string }
   | { type: 'workspace.status'; memberId: string; status: WorkspaceStatus; workspaceId: string; correlationId: string }
   | { type: 'workspace.handoff'; memberId: string; reason: string; options: ['continue', 'stop']; workspaceId: string; correlationId: string }
-  | { type: 'workspace.routed'; from: string; to: string; confidence: number; reason: string; workspaceId: string; correlationId: string }
-  | { type: 'workspace.awaiting_user'; memberId: string; question: string; workspaceId: string; correlationId: string }
+  // NOTE: routing and awaiting-user are client-derived views, not wire events —
+  // routing renders as `WorkspaceMessage.route` pills and awaiting-user as the
+  // handoff checkpoint. They are intentionally absent from this union so no
+  // SSE consumer waits for events the server never emits.
   | { type: 'workspace.done'; totalCost: number; turns: number; result: string; workspaceId: string; correlationId: string }
   | { type: 'workspace.error'; data: string; workspaceId: string; correlationId: string }
   | { type: 'workspace.synthesized'; data: string; workspaceId: string; correlationId: string }
