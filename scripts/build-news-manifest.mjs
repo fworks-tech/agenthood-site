@@ -76,7 +76,10 @@ function buildEntry(file, text) {
   }
 
   const heading = titleFromMarkdown(text);
-  if (heading && heading !== title) {
+  if (!heading) {
+    throw new Error(`article must have a "# " heading matching the front matter "title"`);
+  }
+  if (heading !== title) {
     throw new Error(
       `front matter "title" (${JSON.stringify(title)}) does not match the "# " heading (${JSON.stringify(heading)})`,
     );

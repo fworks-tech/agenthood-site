@@ -63,6 +63,14 @@ describe("news manifest", () => {
     }
   });
 
+  it("each article has an H1 matching its front matter title", () => {
+    for (const entry of readManifest()) {
+      const text = fs.readFileSync(path.join(process.cwd(), "content", entry.path), "utf8");
+      const heading = text.split("\n").find((l) => l.trim().startsWith("# "));
+      expect(heading?.trim().replace(/^#\s+/, ""), entry.path).toBe(entry.title);
+    }
+  });
+
   it("entries have valid ISO date strings", () => {
     const manifest = readManifest();
 
