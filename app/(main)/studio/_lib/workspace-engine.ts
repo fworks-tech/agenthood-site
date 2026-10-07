@@ -79,6 +79,49 @@ export type EngineCtx = {
   onNudge: (payload: NudgePayload) => void
 }
 
+// A member's closing question to the user pauses the chain like @user does.
+// Heuristic, not exact: only the last question in the closing tail counts, it
+// must address the user (not muse aloud), and member-directed questions keep
+// routing — by canonical id anywhere, or by display name in vocative position
+// ("take this, Builder?", "Builder, can you confirm?", "Hey Builder: ...",
+// "@builder", "talk to the builder"). A bare lane word in passing
+// ("The Strategist will dig in") is not an address. Fenced and inline code is
+// ignored so ternaries and your_* names never read as questions.
+const TAIL_CHARS = 600
+const MIN_QUESTION_CHARS = 4
+const MAX_QUESTION_CHARS = 300
+const ASK_RE = /\b(want me to|would you|do you|are you|have you|shall i|should i|can i|let me know|your call|up to you|you decide|you|your|yours)\b/i
+const IDIOM_RE = /\b(you know|thank you|bless you)\b/i
+const QUESTION_RE = new RegExp(`[^?!\\n]{${MIN_QUESTION_CHARS},${MAX_QUESTION_CHARS}}\\?`, 'g')
+
+function mentionsMember(lower: string, validIds: string[]): boolean {
+  if (validIds.some((id) => lower.includes(id))) return true
+  return validIds
+    .map((id) => id.replace(/^the-/, ''))
+    .some((short) => {
+      // `q` can span earlier sentences, so a leading vocative sits after a
+      // sentence boundary, not only at the string start.
+      const marked = `(?:@|talk to\\s+(?:the\\s+)?|,\\s*(?:the\\s+)?)${short}\\b`
+      const leading = `(?:^|[.;:]\\s+)(?:(?:hey|hi|ok|okay|so|and)\\s+)?(?:the\\s+)?${short}\\s*[,:—–-]`
+      return new RegExp(`${marked}|${leading}`).test(lower)
+    })
+}
+
+export function findUserQuestion(output: string, validIds: string[] = []): string | null {
+  const prose = output
+    .replace(/```[\s\S]*?```/g, '```')
+    .replace(/`[^`\n]+`/g, '``')
+  const tail = prose.slice(-TAIL_CHARS)
+  const questions = tail.match(QUESTION_RE) ?? []
+  for (let i = questions.length - 1; i >= 0; i--) {
+    const q = questions[i].trim()
+    if (!ASK_RE.test(q) || IDIOM_RE.test(q)) continue
+    if (mentionsMember(q.toLowerCase(), validIds)) continue
+    return q.slice(0, MAX_QUESTION_CHARS)
+  }
+  return null
+}
+
 // Single turn with bookkeeping for retry + chained continuation. Owns the
 // thread-write policy: mediator plans are raw, routing fallbacks skip, and
 // thinking-only or empty turns never enter the shared thread.
@@ -111,7 +154,7 @@ export async function mediatorNext(
   correlationId: string,
   session: number,
   ctx: EngineCtx,
-): Promise<ScoredNext | null> {
+): Promise<{ next: ScoredNext | null; raw: string }> {
   const ids = ctx.getSpec()?.memberIds ?? []
   const tail = state.thread
     .map((m) => m.content)
@@ -125,11 +168,11 @@ export async function mediatorNext(
     correlationId,
     [...state.thread],
   )
-  if (!ctx.isCurrentSession(session)) return null
+  if (!ctx.isCurrentSession(session)) return { next: null, raw }
   const plan = parseMediatorPlan(raw, ids)
   const first = plan?.members[0]
-  if (!first) return null
-  return { nextId: first.id, confidence: 60, reason: first.task || 'mediator routing' }
+  if (!first) return { next: null, raw }
+  return { next: { nextId: first.id, confidence: 60, reason: first.task || 'mediator routing' }, raw }
 }
 
 export function enterAwaiting(
@@ -141,8 +184,9 @@ export function enterAwaiting(
   session: number,
   ctx: EngineCtx,
 ): void {
-  const line = raw.split('\n').find((l) => /@user\b/i.test(l)) ?? raw
-  const question = line.replace(/@user\b/i, '').trim().slice(0, 300) || 'needs your input'
+  const atLine = raw.split('\n').find((l) => /@user\b/i.test(l))
+  const asked = atLine?.replace(/@user\b/i, '') ?? findUserQuestion(raw, ctx.getSpec()?.memberIds ?? []) ?? raw
+  const question = asked.trim().slice(0, 300) || 'needs your input'
   state.awaiting = { memberId }
   state.paused = true
   ctx.showHandoff(memberId, question)
@@ -174,20 +218,30 @@ export async function afterTurn(
   // plan never bypasses the hop, repeat, or blocking caps.
   const guard = shouldContinue({ hops: state.hops, history: state.history, lastOutput: raw })
   if (guard.stop) return 'done'
-  // HITL: a member addressing @user pauses the loop for a human reply.
-  // Nudge turns are exempt — a re-ask after silence must resolve down the
-  // terminal path, or the single nudge repeats forever.
-  if (!opts?.nudge && /@user\b/i.test(raw)) {
+  // HITL: a member addressing @user — or ending in a direct question to the
+  // user — pauses the loop for a human reply. Nudge turns are exempt — a
+  // re-ask after silence must resolve down the terminal path, or the single
+  // nudge repeats forever.
+  const ids = ctx.getSpec()?.memberIds ?? []
+  if (!opts?.nudge && (/@user\b/i.test(raw) || findUserQuestion(raw, ids))) {
     enterAwaiting(state, memberId, raw, wId, correlationId, session, ctx)
     return 'paused'
   }
   if (state.queue.length > 0) return 'continue'
-  let scored = scoreNext(raw, memberId, ctx.getSpec()?.memberIds ?? [])
+  let scored = scoreNext(raw, memberId, ids)
   if (!scored) {
     const fb = await mediatorNext(state, wId, correlationId, session, ctx)
     if (!ctx.isCurrentSession(session)) return 'paused'
-    if (!fb) return 'done'
-    scored = fb
+    if (fb.next) {
+      scored = fb.next
+    } else if (!opts?.nudge && findUserQuestion(fb.raw, ids)) {
+      // A nudge turn must never re-enter awaiting — one reminder is the limit,
+      // even when the mediator fallback itself asks the user.
+      enterAwaiting(state, 'the-mediator', fb.raw, wId, correlationId, session, ctx)
+      return 'paused'
+    } else {
+      return 'done'
+    }
   }
   const task = `Continuing from ${memberId} (${scored.reason}). Stay in your lane:\n${toPolished(raw).slice(0, ROUTE_TASK_CHARS)}`
   const decision = applyThreshold(scored)

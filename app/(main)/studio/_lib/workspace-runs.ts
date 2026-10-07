@@ -7,6 +7,8 @@ import {
   afterTurn,
   pump,
   settle,
+  enterAwaiting,
+  findUserQuestion,
   type EngineState,
   type EngineCtx,
 } from './workspace-engine'
@@ -84,6 +86,21 @@ function toCommandCtx(state: EngineState, ctx: EngineCtx): CommandCtx {
   }
 }
 
+// Unplannable mediator output that asks the user pauses instead of running
+// the fallback team — the human was addressed, so the human owns the next step.
+function pauseIfMediatorAsked(
+  state: EngineState,
+  spec: WorkspaceSpec,
+  mediatorOutput: string,
+  run: { wId: string; correlationId: string; session: number },
+  ctx: EngineCtx,
+): boolean {
+  if (parseMediatorPlan(mediatorOutput, spec.memberIds)) return false
+  if (!findUserQuestion(mediatorOutput, spec.memberIds)) return false
+  enterAwaiting(state, 'the-mediator', mediatorOutput, run.wId, run.correlationId, run.session, ctx)
+  return true
+}
+
 // Fresh run: guards, queue planning, pump, settle. The hook owns UI setup
 // (bubbles, session token, state init) and abort cleanup; errors map to UI
 // here so drivers stay hook-free.
@@ -130,6 +147,7 @@ export async function startRun(
       })
       if (!ctx.isCurrentSession(session)) return
       const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
+      if (!plan && pauseIfMediatorAsked(state, spec, mediatorOutput, { wId, correlationId, session }, ctx)) return
       const effective = plan ?? fallbackPlan(spec)
       state.queue = effective.members.map((m) => ({ id: m.id, task: m.task }))
     }
@@ -209,6 +227,8 @@ export async function intervene(
       const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
       if (plan) {
         state.queue = plan.members.map((m) => ({ id: m.id, task: m.task }))
+      } else if (pauseIfMediatorAsked(state, spec, mediatorOutput, { wId: workspaceId, correlationId, session }, ctx)) {
+        return
       } else {
         state.queue = fallbackPlan(spec).members.map((m) => ({ id: m.id, task: content }))
       }
