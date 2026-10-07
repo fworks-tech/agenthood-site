@@ -4,13 +4,15 @@ export type CompletionKind = 'command' | 'mention'
 export type Completion = { value: string; label: string; kind: CompletionKind }
 
 // Active token = trailing / or @ word (start or after whitespace), so mid-word
-// emails like foo@bar.com never trigger suggestions.
-const TOKEN_RE = /(?:^|\s)([/@])([a-z-]*)$/
+// emails like foo@bar.com never trigger suggestions. Case-insensitive:
+// typing @BUI still completes @the-builder.
+const TOKEN_RE = /(?:^|\s)([/@])([a-z-]*)$/i
 
 export function getCompletions(input: string, memberIds: string[]): Completion[] {
   const m = input.match(TOKEN_RE)
   if (!m) return []
-  const [, sigil, prefix] = m
+  const sigil = m[1]
+  const prefix = m[2].toLowerCase()
   if (sigil === '/') {
     return WORKSPACE_COMMANDS.filter((c) => c.startsWith(prefix)).map((c) => ({
       value: `/${c}`,
@@ -33,7 +35,7 @@ export function getCompletions(input: string, memberIds: string[]): Completion[]
 }
 
 export function applyCompletion(input: string, value: string): string {
-  return input.replace(/(?:^|\s)[/@][a-z-]*$/, (m) => {
+  return input.replace(/(?:^|\s)[/@][a-z-]*$/i, (m) => {
     const lead = m.startsWith(' ') || m.startsWith('\t') ? m[0] : ''
     return `${lead}${value} `
   })

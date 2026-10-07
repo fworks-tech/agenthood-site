@@ -23,6 +23,11 @@ describe('workspace-complete', () => {
     expect(getCompletions('ask @', IDS).map((c) => c.value)).toContain('@user')
   })
 
+  it('matches case-insensitively', () => {
+    expect(getCompletions('ask @BUI', IDS).map((c) => c.value)).toContain('@the-builder')
+    expect(getCompletions('/SUM', IDS).map((c) => c.value)).toContain('/summarize')
+  })
+
   it('stays silent without an active trailing token', () => {
     expect(getCompletions('hello there', IDS)).toEqual([])
     expect(getCompletions('mail foo@bar.com', IDS)).toEqual([])
