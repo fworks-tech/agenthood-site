@@ -1,4 +1,13 @@
 import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+
+const articles = (
+  JSON.parse(fs.readFileSync(path.join(process.cwd(), "content", "news", "manifest.json"), "utf8")) as {
+    slug: string[];
+    title: string;
+  }[]
+).map((entry) => ({ slug: entry.slug[0], title: entry.title }));
 
 test.describe("News Section", () => {
   test("news index loads and shows at least one post", async ({ page }) => {
@@ -25,13 +34,16 @@ test.describe("News Section", () => {
     await expect(page.locator("h1")).toBeVisible();
   });
 
-  test("all articles render without error", async ({ page }) => {
-    const slugs = ["automated-review-followup", "studio-tools-support", "floating-companion", "ai-trends-july-2026", "playground-hardening", "recent-updates", "vercel-speed-insights", "outage-post-mortem", "docs-audit", "ci-refinement", "init-cleanup"];
-    for (const slug of slugs) {
-      await page.goto(`/news/${slug}`, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("h1")).toBeVisible();
-    }
+  test("manifest lists at least one article so the per-article checks are not vacuous", async () => {
+    expect(articles.length).toBeGreaterThan(0);
   });
+
+  for (const { slug, title } of articles) {
+    test(`article /news/${slug} renders its title as the h1`, async ({ page }) => {
+      await page.goto(`/news/${slug}`, { waitUntil: "domcontentloaded" });
+      await expect(page.locator("h1")).toHaveText(title);
+    });
+  }
 
   test("article pages do not render front matter as content", async ({ page }) => {
     await page.goto("/news/automated-review-followup", { waitUntil: "domcontentloaded" });
