@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import AnimatedMessage from '../../playground/_components/AnimatedMessage'
 import WorkspaceTurnCard from './WorkspaceTurnCard'
 import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
@@ -72,6 +74,7 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
     const keep = new Set<number>()
     messages.forEach((m, i) => {
       if (m.memberId === 'user') keep.add(i)
+      else if (m.memberId === 'command') keep.add(i)
       else if (m.content === '') keep.add(i)
       else if (isUsefulPolished(toPolished(m.content))) keep.add(i)
       else if (i === lastIdx) keep.add(i) // keep latest intermediate for context
@@ -98,7 +101,20 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
       )}
       {(showHidden ? messages : visibleMessages).map((m) => (
         <AnimatedMessage key={m.id}>
-          <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} toolCalls={m.toolCalls} />
+          {m.memberId === 'router' && m.route ? (
+            <div className="flex items-center justify-center gap-2 py-1 text-xs text-zinc-500">
+              <span className="rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-1">
+                {getAgentById(m.route.from)?.name ?? m.route.from} → {getAgentById(m.route.to)?.name ?? m.route.to}
+                <span className="ml-2 font-mono font-semibold text-indigo-400">{m.route.confidence}%</span>
+              </span>
+            </div>
+          ) : m.memberId === 'command' ? (
+            <div className="mx-auto max-w-2xl rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 px-4 py-2 text-center text-xs leading-relaxed text-zinc-500">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+            </div>
+          ) : (
+            <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} toolCalls={m.toolCalls} />
+          )}
         </AnimatedMessage>
       ))}
       {/* when collapsed, also render hidden as collapsed details if user expanded */}

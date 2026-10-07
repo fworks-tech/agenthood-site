@@ -91,6 +91,15 @@ export default function WorkspacesPage() {
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <aside className="hidden w-64 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-4 md:block">
             <WorkspaceSidebar selected={selected} statusMap={workspace.statusMap} />
+            <label className="mt-4 flex cursor-pointer items-center gap-2 text-xs text-zinc-500">
+              <input
+                type="checkbox"
+                checked={workspace.notifyEnabled}
+                onChange={(e) => workspace.setNotifyEnabled(e.currentTarget.checked)}
+                aria-label="Browser notifications"
+              />
+              Notify me when input is needed
+            </label>
             {workspace.handoff && (
               <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm animate-in zoom-in-95 duration-300">
                 <div className="font-medium text-amber-300">Human checkpoint</div>
