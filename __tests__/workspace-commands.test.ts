@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseWorkspaceCommand, WORKSPACE_COMMANDS } from '../app/(main)/studio/_lib/workspace-commands'
+import { parseWorkspaceCommand, WORKSPACE_COMMANDS, isEmptyPing } from '../app/(main)/studio/_lib/workspace-commands'
 
 describe('workspace-commands', () => {
   it('parses known commands with args', () => {
@@ -25,5 +25,15 @@ describe('workspace-commands', () => {
     expect([...WORKSPACE_COMMANDS].sort()).toEqual(
       ['continue', 'help', 'new', 'plan', 'retry', 'stop', 'summarize'].sort(),
     )
+  })
+
+  it('spots empty pings that would burn a round-trip', () => {
+    expect(isEmptyPing('')).toBe(true)
+    expect(isEmptyPing('   ')).toBe(true)
+    expect(isEmptyPing('...')).toBe(true)
+    expect(isEmptyPing('…')).toBe(true)
+    expect(isEmptyPing('hello')).toBe(false)
+    expect(isEmptyPing('@the-builder hi')).toBe(false)
+    expect(isEmptyPing('/summarize')).toBe(false)
   })
 })

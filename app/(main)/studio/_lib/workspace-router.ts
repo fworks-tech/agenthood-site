@@ -52,6 +52,14 @@ export function scoreNext(output: string, fromId: string, validIds: string[]): S
   return null
 }
 
+export type RouteDecision = 'auto' | 'ask' | 'stop'
+
+export function applyThreshold(scored: ScoredNext | null): RouteDecision {
+  if (!scored || scored.confidence < ASK_THRESHOLD) return 'stop'
+  if (scored.confidence >= AUTO_THRESHOLD) return 'auto'
+  return 'ask'
+}
+
 export function shouldContinue(opts: { hops: number; history: string[]; lastOutput: string }): {
   stop: boolean
   reason?: string

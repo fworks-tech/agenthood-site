@@ -26,3 +26,11 @@ export function parseWorkspaceCommand(input: string): ParsedCommand | null {
   }
   return { name: raw || '/', args, unknown: true }
 }
+
+// A message with no content to route: empty or only dots/ellipsis. These burn
+// a full round-trip today and read as "mid-thought" to members — answer inline.
+export function isEmptyPing(input: string): boolean {
+  const t = input.trim()
+  if (!t) return true
+  return /^[.…\s]+$/.test(t)
+}
