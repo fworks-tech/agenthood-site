@@ -31,6 +31,13 @@ describe('workspace-mentions', () => {
     expect(r.error).toMatch(/unknown member/i)
   })
 
+  it('ignores email addresses and other mid-word @', () => {
+    const r = parseMentions('mail me at foo@bar.com please', IDS)
+    expect(r.targets).toEqual([])
+    expect(r.error).toBeUndefined()
+    expect(r.cleanText).toBe('mail me at foo@bar.com please')
+  })
+
   it('returns empty for plain chat', () => {
     const r = parseMentions('hello there', IDS)
     expect(r.targets).toEqual([])

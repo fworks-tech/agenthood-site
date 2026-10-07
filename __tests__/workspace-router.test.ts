@@ -55,6 +55,7 @@ describe('workspace-router', () => {
     expect(shouldContinue({ hops: 8, history: ['a'], lastOutput: 'ok' }).stop).toBe(true)
     expect(shouldContinue({ hops: 1, history: ['a', 'a', 'a'], lastOutput: 'ok' }).stop).toBe(true)
     expect(shouldContinue({ hops: 1, history: ['a'], lastOutput: 'blocking issue found' }).stop).toBe(true)
+    expect(shouldContinue({ hops: 1, history: ['a'], lastOutput: 'the test failed, here is the fix' }).stop).toBe(false)
     expect(shouldContinue({ hops: 1, history: ['a'], lastOutput: 'ok' }).stop).toBe(false)
     expect(ASK_THRESHOLD).toBeLessThan(AUTO_THRESHOLD)
   })

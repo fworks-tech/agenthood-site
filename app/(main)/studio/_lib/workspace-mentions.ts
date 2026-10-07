@@ -11,7 +11,9 @@ export type ParsedMentions = {
 
 export function parseMentions(input: string, validIds: string[]): ParsedMentions {
   const empty = { targets: [], cleanText: input.trim(), userMention: false, skipsMediator: false }
-  const re = /@([a-z][a-z0-9-]*)/g
+  // `@` must start the input or follow whitespace — otherwise addresses
+  // like foo@bar.com would false-positive as member mentions.
+  const re = /(?:^|\s)@([a-z][a-z0-9-]*)/g
   const rawTokens: string[] = []
   let m: RegExpExecArray | null
   while ((m = re.exec(input)) !== null) rawTokens.push(m[1].toLowerCase())
@@ -29,7 +31,7 @@ export function parseMentions(input: string, validIds: string[]): ParsedMentions
   }
   // Strip only member tokens, keep the rest as the delegated prompt.
   const cleanText = input
-    .replace(/@(the-[a-z-]+|[a-z][a-z0-9-]*)/g, ' ')
+    .replace(/(?:^|\s)@(the-[a-z-]+|[a-z][a-z0-9-]*)/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   return { targets, cleanText, userMention, skipsMediator: targets.length > 0 }

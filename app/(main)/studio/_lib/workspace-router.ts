@@ -61,6 +61,8 @@ export function shouldContinue(opts: { hops: number; history: string[]; lastOutp
   if (tail.length === 3 && tail[0] === tail[1] && tail[1] === tail[2]) {
     return { stop: true, reason: 'repeat loop detected' }
   }
-  if (/blocking|failed/i.test(opts.lastOutput)) return { stop: true, reason: 'blocking signal' }
+  // Only an explicit blocking statement stops the loop — a member reporting
+  // that something "failed" (e.g. a test it already fixed) must not halt it.
+  if (/\bblocking\b/i.test(opts.lastOutput)) return { stop: true, reason: 'blocking signal' }
   return { stop: false }
 }
