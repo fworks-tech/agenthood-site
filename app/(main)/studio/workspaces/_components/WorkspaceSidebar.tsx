@@ -6,6 +6,11 @@ import type { WorkspaceStatus } from '../../_types/workspace'
 interface Props {
   selected: string[]
   statusMap: Record<string, WorkspaceStatus>
+  handoff?: { memberId: string; reason: string } | null
+  onContinue?: () => void
+  onStop?: () => void
+  notifyEnabled?: boolean
+  onNotifyChange?: (on: boolean) => void
 }
 
 const STATUS_DOT: Record<WorkspaceStatus, string> = {
@@ -16,7 +21,7 @@ const STATUS_DOT: Record<WorkspaceStatus, string> = {
   done: 'bg-emerald-500',
 }
 
-export default function WorkspaceSidebar({ selected, statusMap }: Props) {
+export default function WorkspaceSidebar({ selected, statusMap, handoff, onContinue, onStop, notifyEnabled, onNotifyChange }: Props) {
   const all = ['the-mediator', ...selected]
   return (
     <div className="space-y-2">
@@ -38,6 +43,40 @@ export default function WorkspaceSidebar({ selected, statusMap }: Props) {
           </div>
         )
       })}
+      {handoff && (
+        <div className="mt-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm animate-in zoom-in-95 duration-300">
+          <div className="font-medium text-amber-300">Human checkpoint</div>
+          <div className="mt-1 text-xs text-amber-200/80">{handoff.reason}</div>
+          <div className="mt-3 flex gap-2">
+            <button
+              type="button"
+              onClick={onContinue}
+              className="flex-1 cursor-pointer rounded bg-amber-600 px-3 py-1.5 text-xs font-medium text-white shadow-md transition-all duration-200 hover:bg-amber-500 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+            >
+              Continue
+            </button>
+            <button
+              type="button"
+              onClick={onStop}
+              className="flex-1 cursor-pointer rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-400"
+            >
+              Stop
+            </button>
+          </div>
+        </div>
+      )}
+      {onNotifyChange && (
+        <label className="mt-4 flex cursor-pointer items-center gap-2 text-xs text-zinc-500">
+          <input
+            type="checkbox"
+            checked={notifyEnabled ?? false}
+            onChange={(e) => onNotifyChange(e.currentTarget.checked)}
+            aria-label="Browser notifications"
+            className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          />
+          Notify me when input is needed
+        </label>
+      )}
     </div>
   )
 }
