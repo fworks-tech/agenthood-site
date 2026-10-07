@@ -86,9 +86,38 @@ I'm not going to start refining the goal myself. Want me to hand this off to the
     expect(findUserQuestion('Done. Want me to proceed?', ids)).toContain('Want me to proceed?')
     expect(findUserQuestion('Want me to proceed? Should we use X or Y, team?', ids)).toBe('Want me to proceed?')
   })
+
+  it('ignores questions inside fenced and inline code', () => {
+    expect(findUserQuestion('Set `your_token` then `cond ? a : b` in config.', ids)).toBeNull()
+    expect(findUserQuestion('```js\nconst t = your_token ? a : b\n```\nDone. Want me to proceed?', ids)).toContain(
+      'Want me to proceed?',
+    )
+  })
+
+  it('skips display-name vocatives but hears asks past passing mentions', () => {
+    expect(findUserQuestion('Can you take this, Builder?', ids)).toBeNull()
+    expect(findUserQuestion('@builder, can you confirm?', ids)).toBeNull()
+    expect(findUserQuestion('talk to Builder about it, will you?', ids)).toBeNull()
+    expect(findUserQuestion('The Strategist will dig into this. Want me to hand it off?', ['the-strategist'])).toContain(
+      'Want me to hand it off?',
+    )
+  })
 })
 
 describe('afterTurn', () => {
+  it('never re-arms awaiting from a mediator fallback on nudge turns', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, nudges } = mockEngine(ids, ['Hmm. Want me to escalate this?'])
+    const r = await afterTurn(state, 'the-builder', 'Proceeding alone with my best guess.', RUN.wId, RUN.correlationId, RUN.session, ctx, {
+      nudge: true,
+    })
+    expect(r).toBe('done')
+    expect(state.awaiting).toBeNull()
+    expect(handoffs).toHaveLength(0)
+    expect(nudges).toHaveLength(0)
+  })
+
   it('pauses on a detected user question exactly like @user', async () => {
     const ids = ['the-builder']
     const state = createEngineState(30)

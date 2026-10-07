@@ -92,14 +92,12 @@ function pauseIfMediatorAsked(
   state: EngineState,
   spec: WorkspaceSpec,
   mediatorOutput: string,
-  wId: string,
-  correlationId: string,
-  session: number,
+  run: { wId: string; correlationId: string; session: number },
   ctx: EngineCtx,
 ): boolean {
   if (parseMediatorPlan(mediatorOutput, spec.memberIds)) return false
   if (!findUserQuestion(mediatorOutput, spec.memberIds)) return false
-  enterAwaiting(state, 'the-mediator', mediatorOutput, wId, correlationId, session, ctx)
+  enterAwaiting(state, 'the-mediator', mediatorOutput, run.wId, run.correlationId, run.session, ctx)
   return true
 }
 
@@ -149,7 +147,7 @@ export async function startRun(
       })
       if (!ctx.isCurrentSession(session)) return
       const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
-      if (!plan && pauseIfMediatorAsked(state, spec, mediatorOutput, wId, correlationId, session, ctx)) return
+      if (!plan && pauseIfMediatorAsked(state, spec, mediatorOutput, { wId, correlationId, session }, ctx)) return
       const effective = plan ?? fallbackPlan(spec)
       state.queue = effective.members.map((m) => ({ id: m.id, task: m.task }))
     }
@@ -229,7 +227,7 @@ export async function intervene(
       const plan = parseMediatorPlan(mediatorOutput, spec.memberIds)
       if (plan) {
         state.queue = plan.members.map((m) => ({ id: m.id, task: m.task }))
-      } else if (pauseIfMediatorAsked(state, spec, mediatorOutput, workspaceId, correlationId, session, ctx)) {
+      } else if (pauseIfMediatorAsked(state, spec, mediatorOutput, { wId: workspaceId, correlationId, session }, ctx)) {
         return
       } else {
         state.queue = fallbackPlan(spec).members.map((m) => ({ id: m.id, task: content }))
