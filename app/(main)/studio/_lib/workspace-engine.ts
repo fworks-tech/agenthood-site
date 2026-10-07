@@ -79,6 +79,22 @@ export type EngineCtx = {
   onNudge: (payload: NudgePayload) => void
 }
 
+// An explicit `@user` address. Fenced code is dropped first (a closed fence,
+// then an unclosed trailing one from a truncated stream), and the mention must
+// not be glued to a word, dot or dash (emails like `a@user.com`) nor followed
+// by `.word` (member access like `@user.route`). Written without lookbehind
+// so older Safari can still parse the bundle. `@user.` ending a sentence and
+// an inline-backticked `@user` still count.
+const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w)/i
+
+function stripFences(text: string): string {
+  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
+}
+
+export function hasUserMention(output: string): boolean {
+  return USER_MENTION_RE.test(stripFences(output))
+}
+
 // A member's closing question to the user pauses the chain like @user does.
 // Heuristic, not exact: only the last question in the closing tail counts, it
 // must address the user (not muse aloud), and member-directed questions keep
@@ -108,9 +124,7 @@ function mentionsMember(lower: string, validIds: string[]): boolean {
 }
 
 export function findUserQuestion(output: string, validIds: string[] = []): string | null {
-  const prose = output
-    .replace(/```[\s\S]*?```/g, '```')
-    .replace(/`[^`\n]+`/g, '``')
+  const prose = stripFences(output).replace(/`[^`\n]+`/g, '``')
   const tail = prose.slice(-TAIL_CHARS)
   const questions = tail.match(QUESTION_RE) ?? []
   for (let i = questions.length - 1; i >= 0; i--) {
@@ -184,8 +198,10 @@ export function enterAwaiting(
   session: number,
   ctx: EngineCtx,
 ): void {
-  const atLine = raw.split('\n').find((l) => /@user\b/i.test(l))
-  const asked = atLine?.replace(/@user\b/i, '') ?? findUserQuestion(raw, ctx.getSpec()?.memberIds ?? []) ?? raw
+  const atLine = stripFences(raw)
+    .split('\n')
+    .find((l) => USER_MENTION_RE.test(l))
+  const asked = atLine?.replace(USER_MENTION_RE, '$1') ?? findUserQuestion(raw, ctx.getSpec()?.memberIds ?? []) ?? raw
   const question = asked.trim().slice(0, 300) || 'needs your input'
   state.awaiting = { memberId }
   state.paused = true
@@ -223,7 +239,7 @@ export async function afterTurn(
   // re-ask after silence must resolve down the terminal path, or the single
   // nudge repeats forever.
   const ids = ctx.getSpec()?.memberIds ?? []
-  if (!opts?.nudge && (/@user\b/i.test(raw) || findUserQuestion(raw, ids))) {
+  if (!opts?.nudge && (hasUserMention(raw) || findUserQuestion(raw, ids))) {
     enterAwaiting(state, memberId, raw, wId, correlationId, session, ctx)
     return 'paused'
   }
