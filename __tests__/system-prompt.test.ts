@@ -28,6 +28,13 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("github, docker");
   });
 
+  it("directs easy-to-digest workspace replies with an explicit user ask", () => {
+    const prompt = buildSystemPrompt("the-scribe");
+    expect(prompt).toContain("Reply shape");
+    expect(prompt).toContain("at most 3 short bullets");
+    expect(prompt).toContain("@user");
+  });
+
   it("returns empty string for unknown members", () => {
     expect(buildSystemPrompt("the-ghost")).toBe("");
   });
