@@ -106,7 +106,7 @@ export function hasUserMention(output: string): boolean {
 const TAIL_CHARS = 600
 // A user mention that is not glued to a word, dot or dash — excludes emails and `user.route`.
 // `@user.` ending a sentence and an inline‑backticked `@user` still count.
-const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w)/i
+const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w|-\w)/i
 function stripFences(text: string) {
   return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
 }
