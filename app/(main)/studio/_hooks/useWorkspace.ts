@@ -406,14 +406,12 @@ export function useWorkspace() {
       setError(null)
       clearPause()
       setWorkspaceState('running')
+      // Full engine reset — a fresh run must not inherit the previous run's
+      // retry marker, or the first thinking-only answer skips its one retry
+      // when the turn counter lands on the same index again.
+      resetEngineState(state, TURN_BUDGET_DEFAULT)
       state.thread = [{ role: 'user', content: spec.instruction }]
-      state.budget = TURN_BUDGET_DEFAULT
       specRef.current = spec
-      state.turnCounter = 0
-      state.queue = []
-      state.history = []
-      state.hops = 0
-      state.lastTurn = null
 
       await startRun(state, spec, wId, correlationId, session, engineCtx)
       if (session === sessionRef.current) abortRef.current = null
