@@ -1,0 +1,261 @@
+import { describe, it, expect, vi } from 'vitest'
+import {
+  createEngineState,
+  engineTakeTurn,
+  afterTurn,
+  pump,
+  settle,
+  clearPause,
+  resetEngineState,
+  type EngineCtx,
+  type EngineState,
+} from '../app/(main)/studio/_lib/workspace-engine'
+
+function mockEngine(memberIds: string[], script: string[] = []) {
+  const routes: { from: string; to: string; confidence: number }[] = []
+  const notes: string[] = []
+  const handoffs: { memberId: string; reason: string }[] = []
+  const notifies: string[] = []
+  const nudges: { ms: number; fire: () => void }[] = []
+  const turns: { member: string; task: string }[] = []
+  const queue = [...script]
+  const ctx: EngineCtx = {
+    streamTurn: vi.fn(async (m: string, t: string) => {
+      turns.push({ member: m, task: t })
+      return queue.length > 0 ? (queue.shift() as string) : 'plain output'
+    }),
+    runSynthesis: vi.fn(async () => 'syn'),
+    pushRoute: vi.fn((r) => {
+      routes.push(r)
+    }),
+    pushNote: vi.fn((c: string) => {
+      notes.push(c)
+    }),
+    pushUserBubble: vi.fn(),
+    showHandoff: vi.fn((memberId: string, reason: string) => {
+      handoffs.push({ memberId, reason })
+    }),
+    clearHandoff: vi.fn(),
+    setRunning: vi.fn(),
+    setDone: vi.fn(),
+    fail: vi.fn(),
+    pauseOnAbort: vi.fn(),
+    requestStop: vi.fn(),
+    requestReset: vi.fn(),
+    notify: vi.fn((b: string) => {
+      notifies.push(b)
+    }),
+    displayName: (id: string) => id,
+    getSpec: () => ({ memberIds, instruction: 'goal' }),
+    scheduleNudge: vi.fn((ms: number, fire: () => void) => {
+      nudges.push({ ms, fire })
+    }),
+    clearNudge: vi.fn(),
+    isAborted: () => false,
+    isCurrentSession: () => true,
+    onNudge: vi.fn(),
+  }
+  return { ctx, routes, notes, handoffs, notifies, nudges, turns }
+}
+
+const RUN = { wId: 'ws-1', correlationId: 'c-1', session: 1 }
+
+function fresh(ids: string[] = ['the-architect', 'the-builder']): { state: EngineState; ids: string[] } {
+  return { state: createEngineState(30), ids }
+}
+
+describe('afterTurn', () => {
+  it('auto-continues an explicit lane handoff', async () => {
+    const { state, ids } = fresh()
+    const { ctx, routes } = mockEngine(ids)
+    const r = await afterTurn(state, 'the-architect', 'Done here — talk to the-builder for the code.', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('continue')
+    expect(state.queue).toHaveLength(1)
+    expect(state.queue[0].id).toBe('the-builder')
+    expect(routes[0]).toMatchObject({ from: 'the-architect', to: 'the-builder', confidence: 95 })
+  })
+
+  it('asks inline on a mediator fallback routing', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, notifies } = mockEngine(ids, ['{"members":[{"id":"the-builder","task":"keep going","order":0}]}'])
+    const r = await afterTurn(state, 'the-builder', 'Steady progress, needs a judgment call.', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('paused')
+    expect(state.paused).toBe(true)
+    expect(state.pendingRoute?.id).toBe('the-builder')
+    expect(handoffs[0].memberId).toBe('the-builder')
+    expect(handoffs[0].reason).toContain('heuristic routing score 60%')
+    expect(notifies[0]).toContain('Heuristic routing score 60%')
+  })
+
+  it('stops when the mediator has no plan', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    const { ctx } = mockEngine(ids, ['just some prose, no JSON'])
+    const r = await afterTurn(state, 'the-builder', 'Steady progress.', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('done')
+    expect(state.queue).toHaveLength(0)
+  })
+
+  it('stops on empty turns before any routing', async () => {
+    const { state, ids } = fresh()
+    const { ctx } = mockEngine(ids)
+    expect(await afterTurn(state, 'the-builder', '...', RUN.wId, RUN.correlationId, RUN.session, ctx)).toBe('done')
+    expect(ctx.streamTurn).not.toHaveBeenCalled()
+  })
+
+  it('enforces hop, repeat and blocking guards', async () => {
+    const { ids } = fresh()
+    const capped = createEngineState(30)
+    capped.hops = 8
+    capped.history = ['the-builder']
+    const m1 = mockEngine(ids)
+    expect(await afterTurn(capped, 'the-builder', 'more work', RUN.wId, RUN.correlationId, RUN.session, m1.ctx)).toBe('done')
+    expect(m1.ctx.streamTurn).not.toHaveBeenCalled()
+
+    const m3 = mockEngine(['the-builder'])
+    const s3 = createEngineState(30)
+    await afterTurn(s3, 'the-builder', 'w1', RUN.wId, RUN.correlationId, RUN.session, m3.ctx)
+    await afterTurn(s3, 'the-builder', 'w2', RUN.wId, RUN.correlationId, RUN.session, m3.ctx)
+    expect(await afterTurn(s3, 'the-builder', 'w3', RUN.wId, RUN.correlationId, RUN.session, m3.ctx)).toBe('done')
+    // two mediator calls for the first turns, zero for the guarded third
+    expect(m3.ctx.streamTurn).toHaveBeenCalledTimes(2)
+
+    const blocked = createEngineState(30)
+    const m4 = mockEngine(ids)
+    expect(await afterTurn(blocked, 'the-builder', 'This is blocking on credentials.', RUN.wId, RUN.correlationId, RUN.session, m4.ctx)).toBe(
+      'done',
+    )
+  })
+
+  it('pauses for @user and arms a single nudge', async () => {
+    const { state, ids } = fresh()
+    const { ctx, handoffs, nudges } = mockEngine(ids)
+    const r = await afterTurn(state, 'the-builder', 'Stuck on the API key — @user which provider?', RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(r).toBe('paused')
+    expect(state.awaiting).toEqual({ memberId: 'the-builder' })
+    expect(handoffs[0].reason).toContain('which provider?')
+    expect(nudges).toHaveLength(1)
+    expect(nudges[0].ms).toBe(90_000)
+    nudges[0].fire()
+    expect(ctx.onNudge).toHaveBeenCalledWith({ memberId: 'the-builder', wId: 'ws-1', correlationId: 'c-1', session: 1 })
+    // firing again after the wait cleared is a no-op
+    nudges[0].fire()
+    expect(ctx.onNudge).toHaveBeenCalledTimes(1)
+  })
+
+  it('never re-arms HITL on nudge turns', async () => {
+    const { state, ids } = fresh()
+    const { ctx } = mockEngine(ids)
+    const r = await afterTurn(state, 'the-builder', 'Still need @user input here.', RUN.wId, RUN.correlationId, RUN.session, ctx, {
+      nudge: true,
+    })
+    expect(r).toBe('done')
+    expect(state.awaiting).toBeNull()
+  })
+})
+
+describe('engineTakeTurn', () => {
+  it('tracks bookkeeping and applies the thread policy', async () => {
+    const { state, ids } = fresh()
+    const { ctx } = mockEngine(ids, ['hello world'])
+    const raw = await engineTakeTurn(state, 'the-builder', 'do it', RUN.wId, RUN.correlationId, ctx)
+    expect(raw).toBe('hello world')
+    expect(state.lastTurn).toEqual({ memberId: 'the-builder', task: 'do it', raw: 'hello world' })
+    expect(state.lastTask).toBe('do it')
+    expect(state.turnCounter).toBe(1)
+    expect(state.thread).toHaveLength(1)
+
+    const skipState = createEngineState(30)
+    const m2 = mockEngine(ids, ['plan json'])
+    await engineTakeTurn(skipState, 'the-mediator', 'route', RUN.wId, RUN.correlationId, m2.ctx, { threadMode: 'skip' })
+    expect(skipState.thread).toHaveLength(0)
+
+    const emptyState = createEngineState(30)
+    const m3 = mockEngine(ids, ['...'])
+    await engineTakeTurn(emptyState, 'the-builder', 'do it', RUN.wId, RUN.correlationId, m3.ctx)
+    expect(emptyState.thread).toHaveLength(0)
+  })
+})
+
+describe('pump', () => {
+  it('drains the queue within budget and stops on done', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    state.queue = [{ id: 'the-architect', task: 'plan' }]
+    const { ctx } = mockEngine(ids, ['Talk to the-builder for code.', 'all done', 'no plan here'])
+    await pump(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(state.queue).toHaveLength(0)
+    expect(state.budget).toBe(28)
+    expect(state.hops).toBe(2)
+  })
+
+  it('retries a thinking-only answer once with the direct prompt', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    state.queue = [{ id: 'the-builder', task: 'work' }]
+    const { ctx, turns } = mockEngine(ids, ['...', 'real work now', 'no plan'])
+    await pump(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns[1].task).toContain('Deliver the final answer now')
+    expect(state.retriedTurn).not.toBeNull()
+  })
+
+  it('breaks on abort without consuming the turn', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    state.queue = [{ id: 'the-builder', task: 'work' }]
+    const { ctx } = mockEngine(ids)
+    ctx.isAborted = () => true
+    await pump(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(ctx.streamTurn).not.toHaveBeenCalled()
+    expect(state.budget).toBe(30)
+  })
+})
+
+describe('settle', () => {
+  it('skips synthesis while paused for a human', async () => {
+    const { state, ids } = fresh()
+    state.paused = true
+    const { ctx } = mockEngine(ids)
+    await settle(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(ctx.runSynthesis).not.toHaveBeenCalled()
+    expect(ctx.setDone).not.toHaveBeenCalled()
+  })
+
+  it('synthesizes then marks done with a notification', async () => {
+    const { state, ids } = fresh()
+    const { ctx, notifies } = mockEngine(ids)
+    await settle(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(ctx.runSynthesis).toHaveBeenCalledWith('ws-1', 'c-1')
+    expect(ctx.setDone).toHaveBeenCalled()
+    expect(notifies).toContain('Workspace run finished.')
+  })
+})
+
+describe('clearPause and resetEngineState', () => {
+  it('clears pause points and optionally keeps the pending proposal', () => {
+    const { state, ids } = fresh()
+    state.pendingRoute = { id: 'the-builder', task: 't', confidence: 60 }
+    state.awaiting = { memberId: 'the-builder' }
+    state.paused = true
+    const { ctx } = mockEngine(ids)
+    clearPause(state, ctx, { keepPending: true })
+    expect(state.pendingRoute).not.toBeNull()
+    expect(state.awaiting).toBeNull()
+    expect(state.paused).toBe(false)
+    expect(ctx.clearNudge).toHaveBeenCalled()
+    clearPause(state, ctx)
+    expect(state.pendingRoute).toBeNull()
+  })
+
+  it('resets the full engine state to a fresh budget', () => {
+    const { state } = fresh()
+    state.queue = [{ id: 'x', task: 'y' }]
+    state.history = ['the-builder']
+    state.hops = 5
+    state.thread = [{ role: 'user', content: 'hi' }]
+    state.turnCounter = 9
+    resetEngineState(state, 30)
+    expect(state).toEqual(createEngineState(30))
+  })
+})

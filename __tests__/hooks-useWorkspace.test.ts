@@ -250,4 +250,29 @@ describe('useWorkspace chain engine', () => {
     expect(calls2.filter((c) => c.body.memberId === 'the-builder')).toHaveLength(1)
     expect(second.result.current.workspaceState).toBe('done')
   })
+
+  it('resets the empty-answer retry budget on a fresh start', async () => {
+    const calls = installFetch(
+      [
+        { text: planOf([{ id: 'the-builder', task: 'build' }]) },
+        { text: '...' },
+        { text: 'recovered work' },
+        { text: 'no plan here' },
+        { text: planOf([{ id: 'the-builder', task: 'build again' }]) },
+        { text: '...' },
+        { text: 'recovered again' },
+        { text: 'no plan here' },
+      ],
+      null,
+    )
+    const { result } = renderHook(() => useWorkspace())
+    await act(async () => {
+      await result.current.start({ memberIds: ['the-builder'], instruction: 'go' })
+    })
+    await act(async () => {
+      await result.current.start({ memberIds: ['the-builder'], instruction: 'go again' })
+    })
+    // one auto-retry per run — the second run must not inherit the first run's marker
+    expect(calls.filter((c) => (c.body.instruction ?? '').includes('Deliver the final answer now'))).toHaveLength(2)
+  })
 })
