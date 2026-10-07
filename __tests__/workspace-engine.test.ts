@@ -102,6 +102,19 @@ I'm not going to start refining the goal myself. Want me to hand this off to the
       'Want me to hand it off?',
     )
   })
+
+  it('skips sentence-start vocatives, including after an earlier sentence', () => {
+    expect(findUserQuestion('Builder, can you confirm?', ids)).toBeNull()
+    expect(findUserQuestion('Plan is done. Builder, can you confirm?', ids)).toBeNull()
+    expect(findUserQuestion('Hey Builder, can you confirm?', ids)).toBeNull()
+    expect(findUserQuestion('Plan is done; the Builder: do you agree?', ids)).toBeNull()
+    expect(findUserQuestion('talk to the builder about it, will you?', ids)).toBeNull()
+  })
+
+  it('still pauses when a lane word is a noun, not an address', () => {
+    expect(findUserQuestion('Builder pattern or a factory — do you want me to pick?', ids)).toContain('want me to pick?')
+    expect(findUserQuestion('We keep the builder idea. Do you want to proceed?', ids)).toContain('Do you want to proceed?')
+  })
 })
 
 describe('afterTurn', () => {

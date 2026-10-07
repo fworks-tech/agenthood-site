@@ -83,7 +83,8 @@ export type EngineCtx = {
 // Heuristic, not exact: only the last question in the closing tail counts, it
 // must address the user (not muse aloud), and member-directed questions keep
 // routing — by canonical id anywhere, or by display name in vocative position
-// ("take this, Builder?", "@builder"). A bare lane word in passing
+// ("take this, Builder?", "Builder, can you confirm?", "Hey Builder: ...",
+// "@builder", "talk to the builder"). A bare lane word in passing
 // ("The Strategist will dig in") is not an address. Fenced and inline code is
 // ignored so ternaries and your_* names never read as questions.
 const TAIL_CHARS = 600
@@ -97,7 +98,13 @@ function mentionsMember(lower: string, validIds: string[]): boolean {
   if (validIds.some((id) => lower.includes(id))) return true
   return validIds
     .map((id) => id.replace(/^the-/, ''))
-    .some((short) => new RegExp(`(@|talk to |,\\s*(the\\s+)?)${short}\\b`, 'i').test(lower))
+    .some((short) => {
+      // `q` can span earlier sentences, so a leading vocative sits after a
+      // sentence boundary, not only at the string start.
+      const marked = `(?:@|talk to\\s+(?:the\\s+)?|,\\s*(?:the\\s+)?)${short}\\b`
+      const leading = `(?:^|[.;:]\\s+)(?:(?:hey|hi|ok|okay|so|and)\\s+)?(?:the\\s+)?${short}\\s*[,:—–-]`
+      return new RegExp(`${marked}|${leading}`).test(lower)
+    })
 }
 
 export function findUserQuestion(output: string, validIds: string[] = []): string | null {
