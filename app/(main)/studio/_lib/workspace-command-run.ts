@@ -5,7 +5,7 @@ export type CommandPendingRoute = { id: string; task: string; confidence: number
 export type ThreadMode = 'filtered' | 'raw' | 'skip'
 
 export type CommandCtx = {
-  takeTurn: (memberId: string, task: string, wId: string, correlationId: string, opts?: { threadMode?: ThreadMode }) => Promise<string>
+  takeTurn: (memberId: string, task: string, wId: string, correlationId: string, opts?: { threadMode?: ThreadMode; onRecorded?: (raw: string) => void }) => Promise<string>
   pump: (wId: string, correlationId: string, session: number) => Promise<void>
   settle: (wId: string, correlationId: string, session: number) => Promise<void>
   afterTurn: (m: string, r: string, w: string, c: string, s: number) => Promise<'continue' | 'paused' | 'done'>
