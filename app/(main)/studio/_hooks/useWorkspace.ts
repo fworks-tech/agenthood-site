@@ -318,14 +318,14 @@ export function useWorkspace() {
         setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: cleaned } : m)))
         for (const match of reactionMatches) {
           const targetId = match[1].replace(/^@/, '')
-          // Find the target message by memberId in the thread
           const targetMsg = messages.find((m) => m.memberId === targetId)
           if (targetMsg) {
             pushReaction(targetMsg.id, [{ emoji: match[2], byMemberId: memberId }])
           }
         }
+        return cleaned
       }
-      return reactionMatches.length > 0 ? currentContent.replace(/\[reaction\]\s+@\S+\s+\S+\n?/g, '').trim() : currentContent
+      return currentContent
     },
     [updateStatus, pushReaction, messages],
   )

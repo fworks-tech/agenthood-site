@@ -6,7 +6,7 @@ import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Paper, Text, ActionIcon, Group, Title, Modal, Collapse, Badge } from '@mantine/core'
 import { CodeHighlight } from '@mantine/code-highlight'
-import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck, IconMessageReply, IconMoodSmile } from '@tabler/icons-react'
+import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck, IconMessageReply } from '@tabler/icons-react'
 import { getAgentById } from '../../_data/agents'
 import { QUICK_EMOJI } from '../../_lib/workspace-reactions'
 import type { WorkspaceReaction } from '../../_types/workspace'
@@ -393,14 +393,6 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                 {onReply && isUser === false && (
                   <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => onReply(memberId)} title="Reply">
                     <IconMessageReply size={14} />
-                  </ActionIcon>
-                )}
-                {onReact && (
-                  <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => {
-                    const emoji = QUICK_EMOJI[Math.floor(Math.random() * QUICK_EMOJI.length)]
-                    onReact(emoji)
-                  }} title="React">
-                    <IconMoodSmile size={14} />
                   </ActionIcon>
                 )}
                 {hasLogs && (

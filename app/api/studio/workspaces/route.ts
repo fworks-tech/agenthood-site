@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
           logger.error('workspace.stream_read_error', { workspaceId, correlationId, error: msg })
         } finally {
           if (!doneSent) {
-            const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: doneSent ? 'ok' : 'interrupted', workspaceId, correlationId }
+            const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'interrupted', workspaceId, correlationId }
             controller.enqueue(enc.encode(JSON.stringify(doneEvt) + '\n'))
           }
           controller.close()
