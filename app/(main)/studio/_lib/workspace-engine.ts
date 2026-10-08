@@ -85,16 +85,6 @@ export type EngineCtx = {
 // by `.word` (member access like `@user.route`). Written without lookbehind
 // so older Safari can still parse the bundle. `@user.` ending a sentence and
 // an inline-backticked `@user` still count.
-const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w)/i
-
-function stripFences(text: string): string {
-  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
-}
-
-export function hasUserMention(output: string): boolean {
-  return USER_MENTION_RE.test(stripFences(output))
-}
-
 // A member's closing question to the user pauses the chain like @user does.
 // Heuristic, not exact: only the last question in the closing tail counts, it
 // must address the user (not muse aloud), and member-directed questions keep
