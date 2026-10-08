@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-10-08"
+    ],
+    "path": "news/whats-new-2026-10-08.md",
+    "title": "Agenthood v3.74.0 Adds OpenCode Client Session Backend",
+    "date": "2026-10-08",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.74.0 adds an OpenCode client session backend for agenthood run, expanding LLM session options."
+  },
+  {
+    "slug": [
       "whats-new-2026-10-07"
     ],
     "path": "news/whats-new-2026-10-07.md",
