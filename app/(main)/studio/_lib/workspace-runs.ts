@@ -29,10 +29,13 @@ function recordTurn(state: EngineState, ctx: EngineCtx, memberId: string, wId: s
   const memberIds = ctx.getSpec()?.memberIds ?? []
   if (memberIds.length === 0) return
   state.thread = appendThreadWithReactionCap(state.thread, reactionThreadLines(raw, memberId, memberIds))
-  ctx.pushReaction?.(
-    `${wId}-${memberId}-${turnIndex}`,
-    suggestReactions({ content: raw, authorId: memberId, memberIds }),
-  )
+  const hasLLMReaction = /\[reaction\]\s+@\S+\s+\S+/.test(raw)
+  if (!hasLLMReaction) {
+    ctx.pushReaction?.(
+      `${wId}-${memberId}-${turnIndex}`,
+      suggestReactions({ content: raw, authorId: memberId, memberIds }),
+    )
+  }
 }
 
 function recordUser(state: EngineState, spec: WorkspaceSpec, content: string): void {
@@ -291,6 +294,13 @@ export async function intervene(
         { onRecorded: (out, turnIndex) => recorded(owner, out, turnIndex) },
       )
       if (!ctx.isCurrentSession(session)) return
+      // If the mediator replied with a plan, route it immediately.
+      if (owner === 'the-mediator') {
+        const plan = parseMediatorPlan(raw, spec.memberIds)
+        if (plan) {
+          queueFromMediatorOutput(state, spec, raw, content, ctx, 'the-mediator')
+        }
+      }
       const r = await afterTurn(state, owner, raw, workspaceId, correlationId, session, ctx)
       if (r === 'continue') await pump(state, workspaceId, correlationId, session, ctx, recorded)
       if (ctx.isCurrentSession(session)) await settle(state, workspaceId, correlationId, session, ctx)

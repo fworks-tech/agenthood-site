@@ -66,7 +66,7 @@ function summarizeArgs(tc: WorkspaceToolCall): string {
 }
 
 function reactorName(byMemberId: string): string {
-  if (byMemberId === 'user') return 'você'
+  if (byMemberId === 'user') return 'You'
   return getAgentById(byMemberId)?.name ?? byMemberId
 }
 
