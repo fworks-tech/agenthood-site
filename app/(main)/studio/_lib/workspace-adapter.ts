@@ -15,6 +15,7 @@ export interface WorkspaceTurnRequest {
   instruction: string
   thread: ThreadMessage[]
   turnIndex: number
+  allowedMembers?: string[]
 }
 
 function encode(controller: ReadableStreamDefaultController<Uint8Array>, payload: Record<string, unknown>) {
@@ -29,7 +30,7 @@ export async function createWorkspaceTurnStream(
   req: WorkspaceTurnRequest,
   signal?: AbortSignal,
 ): Promise<ReadableStream> {
-  const systemPrompt = buildSystemPrompt(req.memberId)
+  const systemPrompt = buildSystemPrompt(req.memberId, req.allowedMembers)
   if (!systemPrompt) throw new Error(`No system prompt for agent "${req.memberId}"`)
 
   // Capability follows identity: prose-lane members get web_fetch only, the

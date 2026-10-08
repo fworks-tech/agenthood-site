@@ -130,6 +130,27 @@ describe('trimThread', () => {
   it('handles empty array', () => {
     expect(trimThread([], 10)).toEqual([])
   })
+
+  it('evicts assistant turns before user messages when over limit', () => {
+    const msgs: ThreadMessage[] = [
+      { role: 'user', content: 'goal' },
+      { role: 'assistant', content: 'a'.repeat(60) },
+      { role: 'user', content: 'follow-up' },
+      { role: 'assistant', content: 'b'.repeat(60) },
+    ]
+    const trimmed = trimThread(msgs, 80)
+    expect(trimmed.map((m) => m.role)).toEqual(['user', 'user', 'assistant'])
+    expect(trimmed[0].content).toBe('goal')
+    expect(trimmed[1].content).toBe('follow-up')
+  })
+
+  it('caps thread length at 200 messages', () => {
+    const msgs: ThreadMessage[] = [{ role: 'user', content: 'goal' }]
+    for (let i = 0; i < 250; i++) msgs.push({ role: 'assistant', content: `m${i}` })
+    const trimmed = trimThread(msgs)
+    expect(trimmed.length).toBeLessThanOrEqual(200)
+    expect(trimmed[0].content).toBe('goal')
+  })
 })
 
 describe('buildMemberMessages', () => {

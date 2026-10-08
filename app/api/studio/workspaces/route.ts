@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     turnIndex?: unknown
     thread?: unknown
     correlationId?: unknown
+    workspaceMemberIds?: unknown
   }
 
   const memberIds = payload.memberIds
@@ -98,6 +99,11 @@ export async function POST(req: NextRequest) {
     typeof payload.memberId === 'string' && payload.memberId.length > 0 ? payload.memberId : memberIds[0]
   const turnIndex = typeof payload.turnIndex === 'number' ? payload.turnIndex : 0
   const thread = Array.isArray(payload.thread) ? (payload.thread as { role: string; content: string }[]) : []
+  const workspaceMemberIds = Array.isArray(payload.workspaceMemberIds)
+    ? (payload.workspaceMemberIds as unknown[]).filter(
+        (id): id is string => typeof id === 'string' && !!getAgentById(id),
+      )
+    : null
 
   // Only conversational roles are allowed from the client — a forged system
   // message could otherwise override the member system prompt (prompt injection).
@@ -169,6 +175,7 @@ export async function POST(req: NextRequest) {
         instruction,
         thread: thread.map((m) => ({ role: m.role as never, content: m.content })),
         turnIndex,
+        allowedMembers: workspaceMemberIds ?? undefined,
       },
       req.signal,
     )

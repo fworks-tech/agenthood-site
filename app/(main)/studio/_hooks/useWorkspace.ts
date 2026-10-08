@@ -12,7 +12,8 @@ import {
   type NudgePayload,
 } from '../_lib/workspace-engine'
 import { startRun, intervene, resumePending, resumeAfterNudge } from '../_lib/workspace-runs'
-import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type WorkspaceMessage } from '../_types/workspace'
+import { suggestReactions, toggleReaction as toggleReactionList } from '../_lib/workspace-reactions'
+import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type WorkspaceMessage, type WorkspaceReaction } from '../_types/workspace'
 import type { ThreadMessage } from '../_lib/workspace-orchestrator'
 import { getAgentById } from '../_data/agents'
 import { getActiveWorkspaceId, getWorkspace, saveWorkspace, setActiveWorkspaceId } from '../_lib/workspace-store'
@@ -65,7 +66,27 @@ export function useWorkspace() {
   }, [])
 
   const pushUserBubble = useCallback((content: string) => {
-    setMessages((prev) => [...prev, { id: `user-${Date.now()}`, memberId: 'user', content, turnIndex: -1 }])
+    const roster = specRef.current?.memberIds ?? []
+    const reactions = roster.length > 0 ? suggestReactions({ content, authorId: 'user', memberIds: roster }) : []
+    setMessages((prev) => [
+      ...prev,
+      { id: `user-${Date.now()}`, memberId: 'user', content, turnIndex: -1, reactions },
+    ])
+  }, [])
+
+  const pushReaction = useCallback((messageId: string, reactions: WorkspaceReaction[]) => {
+    if (reactions.length === 0) return
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, reactions: [...(m.reactions ?? []), ...reactions] } : m,
+      ),
+    )
+  }, [])
+
+  const toggleMessageReaction = useCallback((messageId: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, reactions: toggleReactionList(m.reactions, emoji, 'user') } : m)),
+    )
   }, [])
 
   const showHandoff = useCallback((memberId: string, reason: string) => {
@@ -156,7 +177,8 @@ export function useWorkspace() {
     if (!activeId) return
     const sess = getWorkspace(activeId)
     if (!sess) return
-    setMessages(sess.messages)
+    // Legacy synthesizer cards never render — drop them on hydrate.
+    setMessages(sess.messages.filter((m) => m.memberId !== 'synthesizer'))
     setStatusMap(sess.statusMap)
     setWorkspaceId(sess.workspaceId)
     engineRef.current.thread = sess.thread
@@ -218,6 +240,7 @@ export function useWorkspace() {
           turnIndex,
           thread,
           correlationId,
+          workspaceMemberIds: specRef.current?.memberIds ?? [memberId],
         }),
         signal: controller.signal,
       })
@@ -293,52 +316,10 @@ export function useWorkspace() {
     [updateStatus],
   )
 
-  const runSynthesis = useCallback(
-    async (wId: string, correlationId: string) => {
-      if (engineRef.current.thread.length === 0) return null
-      const synId = `syn-${wId}-${Date.now()}`
-      let current = ''
-      // placeholder card so user sees synthesis in progress
-      setMessages((prev) => [...prev, { id: synId, memberId: 'synthesizer', content: '', turnIndex: 999 }])
-      try {
-        const res = await fetch('/api/studio/workspaces/synthesize', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
-          body: JSON.stringify({ workspaceId: wId, correlationId, thread: engineRef.current.thread }),
-        })
-        if (!res.ok) {
-          setMessages((prev) => prev.filter((m) => m.id !== synId))
-          return null
-        }
-        await readSSEStream(
-          res,
-          {
-            onToken: () => {},
-            onDone: () => {},
-            onError: () => {},
-            onLog: () => {},
-            onWorkspaceEvent: (event) => {
-              if (event.type === 'workspace.synthesized' && typeof event.data === 'string') {
-                current += event.data as string
-                setMessages((prev) => prev.map((m) => (m.id === synId ? { ...m, content: current } : m)))
-              }
-            },
-          },
-          undefined,
-        )
-        if (!current.trim()) {
-          setMessages((prev) => prev.filter((m) => m.id !== synId))
-          return null
-        }
-        // Synthesized content stays out of thread (view, not turn) but debuggable via messages.
-        return current
-      } catch {
-        setMessages((prev) => prev.filter((m) => m.id !== synId))
-        return null
-      }
-    },
-    [],
-  )
+  const runSynthesis = useCallback(async () => {
+    // Synthesis disabled: group-chat model shows only user + member turns.
+    return null
+  }, [])
 
   // Injected engine context: the single seam between React and the chain engine.
   const engineCtx = useMemo(
@@ -346,6 +327,7 @@ export function useWorkspace() {
       streamTurn,
       runSynthesis,
       pushRoute,
+      pushReaction,
       pushNote: pushCommand,
       pushUserBubble,
       showHandoff,
@@ -369,6 +351,7 @@ export function useWorkspace() {
       streamTurn,
       runSynthesis,
       pushRoute,
+      pushReaction,
       pushCommand,
       pushUserBubble,
       showHandoff,
@@ -401,7 +384,8 @@ export function useWorkspace() {
       const session = ++sessionRef.current
       const state = engineRef.current
       setWorkspaceId(wId)
-      setMessages([{ id: `user-${wId}`, memberId: 'user', content: spec.instruction, turnIndex: 0 }])
+      const ack = suggestReactions({ content: spec.instruction, authorId: 'user', memberIds: spec.memberIds })
+      setMessages([{ id: `user-${wId}`, memberId: 'user', content: spec.instruction, turnIndex: 0, reactions: ack }])
       setStatusMap({})
       setError(null)
       clearPause()
@@ -425,9 +409,16 @@ export function useWorkspace() {
       if (!workspaceId || !spec) return
       abortRef.current?.abort()
       const session = ++sessionRef.current
-      // A typed /continue answers the paused ask-inline card — keep the proposal.
+      // Group-chat ownership: never wipe the awaiting owner here — intervene()
+      // routes the reply back to that member first. Only /continue keeps
+      // the ask-inline proposal; everything else is owned by intervene.
+      const awaiting = engineRef.current.awaiting
       const cmdPreview = parseWorkspaceCommand(content)
       clearPause(cmdPreview?.name === 'continue' ? { keepPending: true } : undefined)
+      if (awaiting && cmdPreview?.name !== 'continue') {
+        engineRef.current.awaiting = awaiting
+        engineRef.current.paused = true
+      }
       setWorkspaceState('running')
       setHandoff(null)
       const correlationId = `ws-corr-${Date.now()}`
@@ -488,6 +479,7 @@ export function useWorkspace() {
     setNotifyEnabled,
     start,
     sendIntervention,
+    toggleMessageReaction,
     stop,
     reset,
     continueHandoff,

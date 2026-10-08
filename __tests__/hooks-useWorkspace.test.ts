@@ -120,7 +120,7 @@ describe('useWorkspace chain engine', () => {
     expect(result.current.workspaceState).toBe('done')
   })
 
-  it('pauses for @user, nudges once after 90s, then settles alone', async () => {
+  it('pauses for @user indefinitely until the user replies', async () => {
     vi.useFakeTimers()
     const calls = installFetch(
       [
@@ -141,24 +141,24 @@ describe('useWorkspace chain engine', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(90_000)
     })
-    const nudges = calls.filter((c) => (c.body.instruction ?? '').includes('has not replied'))
-    expect(nudges).toHaveLength(1)
-    expect(result.current.workspaceState).toBe('done')
+    // Group chat: no auto-nudge — the room stays frozen on the owner question.
+    expect(calls.filter((c) => (c.body.instruction ?? '').includes('has not replied'))).toHaveLength(0)
+    expect(result.current.workspaceState).toBe('handoff')
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(180_000)
     })
-    expect(calls.filter((c) => (c.body.instruction ?? '').includes('has not replied'))).toHaveLength(1)
+    expect(calls.filter((c) => (c.body.instruction ?? '').includes('has not replied'))).toHaveLength(0)
+    expect(result.current.workspaceState).toBe('handoff')
   })
 
-  it('cancels the nudge when the user replies in time', async () => {
+  it('routes the reply back to the owner who asked', async () => {
     vi.useFakeTimers()
     const calls = installFetch(
       [
         { text: planOf([{ id: 'the-builder', task: 'deploy' }]) },
         { text: '@user which region? ```js\npick\n```' },
-        { text: planOf([{ id: 'the-builder', task: 'follow up' }]) },
-        { text: 'Done ```js\nok\n```' },
+        { text: 'Deploying to us-east-1 ```js\nok\n```' },
         { text: '' },
       ],
       null,
@@ -176,11 +176,14 @@ describe('useWorkspace chain engine', () => {
       await vi.advanceTimersByTimeAsync(180_000)
     })
     expect(calls.some((c) => (c.body.instruction ?? '').includes('has not replied'))).toBe(false)
+    // Reply went straight to the owner (the-builder), not via the mediator.
+    const ownerCalls = calls.filter((c) => c.body.memberId === 'the-builder')
+    expect(ownerCalls.some((c) => (c.body.instruction ?? '').includes('us-east-1'))).toBe(true)
     expect(result.current.workspaceState).toBe('done')
   })
 
-  it('keeps /summarize out of the synthesis thread but shows the bubble', async () => {
-    const calls = installFetch(
+  it('shows the /summarize bubble with no synthesizer card', async () => {
+    installFetch(
       [
         { text: planOf([{ id: 'the-builder', task: 'build' }]) },
         { text: 'Built ```js\nok\n```' },
@@ -192,17 +195,14 @@ describe('useWorkspace chain engine', () => {
     await act(async () => {
       await result.current.start({ memberIds: ['the-builder'], instruction: 'go' })
     })
-    // Reinstall to capture the synthesis request body cleanly.
+    // Reinstall to capture any follow-up fetch cleanly (synthesis disabled).
     const calls2 = installFetch([{ text: 'unused' }], 'final answer here')
     await act(async () => {
       await result.current.sendIntervention('/summarize')
     })
-    const synth = calls2.find((c) => c.url.includes('/synthesize'))
-    expect(synth).toBeDefined()
-    expect(synth!.body.thread?.some((m) => m.content.includes('/summarize'))).toBe(false)
+    expect(calls2.some((c) => c.url.includes('/synthesize'))).toBe(false)
     expect(result.current.messages.some((m) => m.memberId === 'user' && m.content === '/summarize')).toBe(true)
-    expect(result.current.messages.some((m) => m.memberId === 'synthesizer' && m.content.includes('final answer'))).toBe(true)
-    expect(calls).toBeDefined()
+    expect(result.current.messages.some((m) => m.memberId === 'synthesizer')).toBe(false)
   })
 
   it('caps a long plan at 8 hops', async () => {

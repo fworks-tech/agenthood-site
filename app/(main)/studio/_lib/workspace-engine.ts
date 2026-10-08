@@ -2,7 +2,7 @@ import { parseMediatorPlan, type ThreadMessage } from './workspace-orchestrator'
 import { scoreNext, applyThreshold, shouldContinue, type ScoredNext } from './workspace-router'
 import { toPolished, isEmptyTurn } from './workspace-polish'
 import type { ThreadMode } from './workspace-command-run'
-import type { WorkspaceSpec } from '../_types/workspace'
+import type { WorkspaceReaction, WorkspaceSpec } from '../_types/workspace'
 
 export const NUDGE_MS = 90_000
 const ROUTE_TASK_CHARS = 2000
@@ -56,6 +56,8 @@ export type EngineCtx = {
   ) => Promise<string>
   runSynthesis: (wId: string, correlationId: string) => Promise<string | null>
   pushRoute: (route: { from: string; to: string; confidence: number; reason: string }) => void
+  /** Attach autonomous reactions to a turn bubble — optional transport. */
+  pushReaction?: (messageId: string, reactions: WorkspaceReaction[]) => void
   /** Dashed command/note bubble — a view, never thread content. */
   pushNote: (content: string) => void
   /** User bubble — always shows, even for empty pings and local commands. */
@@ -123,7 +125,9 @@ export function findUserQuestion(output: string, validIds: string[] = []): strin
   const prose = stripFences(output).replace(/`[^`\n]+`/g, '``')
   const tail = prose.slice(-TAIL_CHARS)
   const questions = tail.match(QUESTION_RE) ?? []
-  for (let i = questions.length - 1; i >= 0; i--) {
+  // One question at a time: surface the FIRST user-directed question in the
+  // tail, so a stacked survey still blocks on the most blocking item only.
+  for (let i = 0; i < questions.length; i++) {
     const q = questions[i].trim()
     if (!ASK_RE.test(q) || IDIOM_RE.test(q)) continue
     if (mentionsMember(q.toLowerCase(), validIds)) continue
@@ -146,10 +150,11 @@ export async function engineTakeTurn(
   wId: string,
   correlationId: string,
   ctx: EngineCtx,
-  opts?: { threadMode?: ThreadMode },
+  opts?: { threadMode?: ThreadMode; onRecorded?: (raw: string, turnIndex: number) => void },
 ): Promise<string> {
   state.lastTask = task
-  const raw = await ctx.streamTurn(memberId, task, ++state.turnCounter, wId, correlationId, [...state.thread])
+  const turnIndex = ++state.turnCounter
+  const raw = await ctx.streamTurn(memberId, task, turnIndex, wId, correlationId, [...state.thread])
   state.lastTurn = { memberId, task, raw }
   const mode = opts?.threadMode ?? 'filtered'
   if (mode === 'raw') {
@@ -157,6 +162,8 @@ export async function engineTakeTurn(
   } else if (mode === 'filtered' && !isEmptyTurn(raw)) {
     state.thread = [...state.thread, { role: 'assistant', content: toPolished(raw) }]
   }
+  // Thread write comes first so the reaction line always follows its turn.
+  opts?.onRecorded?.(raw, turnIndex)
   return raw
 }
 
@@ -208,13 +215,8 @@ export function enterAwaiting(
   ctx.showHandoff(memberId, question)
   ctx.notify(`${ctx.displayName(memberId)} needs your input: ${question.slice(0, 120)}`)
   ctx.clearNudge()
-  // The resume runs in the nudge consumer — the timer only raises the signal.
-  ctx.scheduleNudge(NUDGE_MS, () => {
-    if (!ctx.isCurrentSession(session) || !state.awaiting) return
-    state.awaiting = null
-    state.paused = false
-    ctx.onNudge({ memberId, wId, correlationId, session })
-  })
+  // Paused indefinitely — no auto-nudge. The human owns the next step:
+  // reply in chat, or press Continue (best assumption) / Stop.
 }
 
 export async function afterTurn(
@@ -287,6 +289,7 @@ export async function pump(
   correlationId: string,
   session: number,
   ctx: EngineCtx,
+  onRecorded?: (memberId: string, raw: string, turnIndex: number) => void,
 ): Promise<void> {
   while (state.budget > 0 && state.queue.length > 0) {
     if (!ctx.isCurrentSession(session) || ctx.isAborted()) break
@@ -294,7 +297,8 @@ export async function pump(
     if (!next) break
     state.budget -= 1
     state.hops += 1
-    let raw = await engineTakeTurn(state, next.id, next.task, wId, correlationId, ctx)
+    const recorded = onRecorded ? (raw: string, turnIndex: number) => onRecorded(next.id, raw, turnIndex) : undefined
+    let raw = await engineTakeTurn(state, next.id, next.task, wId, correlationId, ctx, { onRecorded: recorded })
     if (!ctx.isCurrentSession(session)) return
     // One auto-retry for a thinking-only answer — then accept and stop.
     if (isEmptyTurn(raw) && state.retriedTurn !== state.turnCounter) {
@@ -306,6 +310,7 @@ export async function pump(
         wId,
         correlationId,
         ctx,
+        { onRecorded: recorded },
       )
       if (!ctx.isCurrentSession(session)) return
     }
@@ -323,9 +328,7 @@ export async function settle(
 ): Promise<void> {
   // Paused for ask-inline or @user — the human owns the next step.
   if (state.paused) return
-  if (ctx.isCurrentSession(session)) {
-    await ctx.runSynthesis(wId, correlationId)
-  }
+  // No synthesizer: group-chat model — only user + member turns are shown.
   if (ctx.isCurrentSession(session)) {
     ctx.setDone()
     ctx.notify('Workspace run finished.')

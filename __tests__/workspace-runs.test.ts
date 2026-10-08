@@ -81,7 +81,7 @@ describe('startRun', () => {
     await startRun(state, { memberIds: ids, instruction: 'hey @the-builder build it' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
     expect(routes[0]).toMatchObject({ from: 'user', to: 'the-builder', confidence: 100 })
     expect(turns[0].member).toBe('the-builder')
-    expect(ctx.runSynthesis).toHaveBeenCalled()
+    expect(ctx.runSynthesis).not.toHaveBeenCalled()
     expect(ctx.setDone).toHaveBeenCalled()
   })
 
@@ -174,6 +174,87 @@ describe('intervene', () => {
     expect(handoffs[0].memberId).toBe('the-mediator')
     expect(ctx.setDone).not.toHaveBeenCalled()
   })
+
+  it('blocks the planned team when the mediator also asks the user', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, handoffs, turns } = mockEngine(ids, [
+      '{"members":[{"id":"the-architect","task":"plan it","order":0}]} Do you already have the API key, @user?',
+    ])
+    await startRun(state, { memberIds: ids, instruction: 'build a bot' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns).toHaveLength(1)
+    expect(turns[0].member).toBe('the-mediator')
+    expect(state.queue).toHaveLength(0)
+    expect(state.awaiting).toEqual({ memberId: 'the-mediator' })
+    expect(handoffs[0].memberId).toBe('the-mediator')
+    expect(ctx.setDone).not.toHaveBeenCalled()
+  })
+
+  it('routes a reply back to the awaiting owner before anyone else', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    state.awaiting = { memberId: 'the-architect' }
+    state.paused = true
+    state.queue = [{ id: 'the-builder', task: 'stale plan' }]
+    const { ctx, turns } = mockEngine(ids, ['Thanks, continuing the plan.', 'no plan'])
+    await intervene(state, 'yes, i have the key', 'ws-1', 'c-1', 1, ctx)
+    expect(turns[0].member).toBe('the-architect')
+    expect(turns[0].task).toContain('yes, i have the key')
+    expect(state.awaiting).toBeNull()
+  })
+
+  it('honors conversational mediator delegation without JSON', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, turns } = mockEngine(ids, [
+      'Got it — talk to the-builder for the implementation.',
+      'built it',
+      'no plan',
+    ])
+    await startRun(state, { memberIds: ids, instruction: 'build a bot' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns[0].member).toBe('the-mediator')
+    expect(turns[1].member).toBe('the-builder')
+    expect(state.queue).toHaveLength(0)
+  })
+
+  it('ignores mediator delegation to members outside the workspace', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, turns } = mockEngine(ids, [
+      'Got it — talk to the-auditor for a security pass.',
+      'a-work',
+      'b-work',
+      'no plan',
+    ])
+    await startRun(state, { memberIds: ids, instruction: 'build a bot' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns[0].member).toBe('the-mediator')
+    expect(turns[1].member).toBe('the-architect')
+  })
+
+  it('mirrors autonomous reactions into the shared thread', async () => {
+    const ids = ['the-architect', 'the-builder']
+    const state = createEngineState(30)
+    const { ctx, turns } = mockEngine(ids, [
+      'Got it — talk to the-builder for the implementation.',
+      'Deployed ```js\nok\n```',
+      'no plan',
+    ])
+    await startRun(state, { memberIds: ids, instruction: 'build a bot' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(turns[1].member).toBe('the-builder')
+    const reactionLines = state.thread.filter((m) => m.content.startsWith('[reaction]'))
+    expect(reactionLines.length).toBeGreaterThan(0)
+    expect(reactionLines[0].content).toContain('the-architect')
+    expect(reactionLines[0].content).toContain('🎉')
+  })
+
+  it('keeps user intent in the thread across a long session', async () => {
+    const ids = ['the-builder']
+    const state = createEngineState(30)
+    state.thread = [{ role: 'user', content: 'build the thing' }]
+    const { ctx } = mockEngine(ids, ['work'])
+    await startRun(state, { memberIds: ids, instruction: 'build the thing' }, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(state.thread[0].content).toBe('build the thing')
+  })
 })
 
 describe('resumePending and resumeAfterNudge', () => {
@@ -187,7 +268,7 @@ describe('resumePending and resumeAfterNudge', () => {
     expect(ctx.setRunning).toHaveBeenCalled()
     expect(turns[0]).toMatchObject({ member: 'the-builder', task: 'go on' })
     expect(state.pendingRoute).toBeNull()
-    expect(ctx.runSynthesis).toHaveBeenCalled()
+    expect(ctx.runSynthesis).not.toHaveBeenCalled()
   })
 
   it('resolves nudge turns terminally without re-pausing', async () => {

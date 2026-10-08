@@ -7,11 +7,18 @@ const SKILL_CONTENT_GUARD =
 // Delegation chains mirror the Society's orchestration standards: context
 // flows forward, chains end at the Doorman (PR) or Scribe (commit/release),
 // and members defer rather than cross lanes.
-const ORCHESTRATION_GUIDE = `## Orchestration
+function buildOrchestrationGuide(allowedIds?: string[]): string {
+  const roster = allowedIds?.length
+    ? agentRegistry.filter((m) => allowedIds.includes(m.name))
+    : agentRegistry;
+  const scopeLine = allowedIds?.length
+    ? `\nWorkspace scope: you may ONLY direct, mention, or hand off to these members: ${allowedIds.join(", ")}. Never name, mention, or route to anyone outside this list — they are not in this chat room.`
+    : "";
+  return `## Orchestration
 
 You are one member of a 20-member Society. You know your lane and stay in it.
 
-Roster: ${agentRegistry.map((m) => `${m.name} (${m.role})`).join(", ")}
+Roster: ${roster.map((m) => `${m.name} (${m.role})`).join(", ")}${scopeLine}
 
 Delegation chains (context flows forward through each handoff):
 - Build (TDD): tester -> builder -> reviewer -> doorman
@@ -28,6 +35,7 @@ Rules:
 - Every chain ends at the doorman (PR involved) or the scribe (commit/release involved).
 - If a chain member finds a blocking issue, stop and report; do not continue past failure.
 - Never merge or push without explicit user confirmation.
+- Planning turns that request JSON output MUST reply with ONLY that JSON — no prose, no analysis, no questions. To ask the user anything, skip the JSON and ask the single @user question instead.
 
 Context economy:
 - Load only what the task requires; defer or summarize the rest.
@@ -35,23 +43,29 @@ Context economy:
 - Reference prior decisions and conventions instead of re-deriving them.
 
 Reply shape (workspace chat is read live — be easy to digest):
-- Lead with the decision, answer, or question — one or two lines first.
+- Budget: ~150 words max, ~900 chars max. Lead with the decision, answer, or question — one or two lines first.
 - Then at most 3 short bullets. No preamble, no throat-clearing, no restating the goal.
 - Details, chains, and alternatives stay out unless asked; offer one follow-up, not five.
-- When you need the user, ask plainly with @user and stop — one question, not a survey.
+- ONE question max per turn. Never stack questions — ask the single most blocking one, then stop.
+- A question to the user MUST contain @user, MUST end with a single question mark, MUST be under 200 chars, and MUST be the last line. Nothing runs after you ask — the chain pauses until the user replies, and only you resume it.
 
 Reference skills packaged with the Society: ${toolSkills.join(", ")}.
 These are documentation, not tools. To read one, call the activate_skill tool with its
 name — you cannot assume a skill's contents until you have loaded it. A few are marked
 deprecated upstream and simply point at their owning member; prefer the member's own skill.`;
+}
 
-export function buildSystemPrompt(memberId: string): string {
+export function buildSystemPrompt(memberId: string, allowedIds?: string[]): string {
   const skill = agentSkills[memberId];
   if (!skill) return "";
 
-  const displayName = agentRegistry.find((m) => m.name === memberId)?.displayName ?? memberId;
-  const parts = [`You are **${displayName}**, a Society Member.`, SKILL_CONTENT_GUARD, skill];
+  const entry = agentRegistry.find((m) => m.name === memberId);
+  const displayName = entry?.displayName ?? memberId;
+  const persona = entry
+    ? `You speak as ${displayName} — ${entry.tagline} (${entry.role}). Keep your fantasy alive in every message: first person, your own voice and rhythm, never a generic assistant. Vary your openers, react to what was just said in the room, and never narrate yourself in the third person.`
+    : `You speak as ${displayName}. Keep your fantasy alive in every message: first person, your own voice, never generic.`;
+  const parts = [`You are **${displayName}**, a Society Member.`, persona, SKILL_CONTENT_GUARD, skill];
   if (sharedConversationalStyle) parts.push("", sharedConversationalStyle);
-  parts.push("", ORCHESTRATION_GUIDE);
+  parts.push("", buildOrchestrationGuide(allowedIds));
   return parts.join("\n\n");
 }
