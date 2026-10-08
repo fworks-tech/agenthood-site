@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   createEngineState,
   engineTakeTurn,
@@ -9,6 +9,7 @@ import {
   resetEngineState,
   findUserQuestion,
   hasUserMention,
+  mediatorNext,
   type EngineCtx,
   type EngineState,
 } from '../app/(main)/studio/_lib/workspace-engine'
@@ -405,5 +406,38 @@ describe('clearPause and resetEngineState', () => {
     state.turnCounter = 9
     resetEngineState(state, 30)
     expect(state).toEqual(createEngineState(30))
+  })
+})
+
+describe('mediatorNext Jev calibration (promote-only)', () => {
+  const planJson = (id: string) => JSON.stringify({ members: [{ id, task: 'advance', order: 0 }] })
+  const mediate = (jev: { ok: boolean; json?: unknown }) => {
+    const { state } = fresh(['the-builder'])
+    state.thread = [{ role: 'user', content: 'go' }]
+    const { ctx } = mockEngine(['the-builder'], [planJson('the-builder')])
+    vi.stubGlobal('fetch', vi.fn(async () => (jev.ok ? Response.json(jev.json) : new Response(null, { status: 204 }))))
+    return mediatorNext(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+  }
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('promotes the hop when Jev agrees with confidence >= 60', async () => {
+    const { next } = await mediate({ ok: true, json: { value: 'the-builder', probability: 80 } })
+    expect(next?.confidence).toBe(80)
+  })
+
+  it('never demotes below 60 when Jev agrees but is unsure', async () => {
+    const { next } = await mediate({ ok: true, json: { value: 'the-builder', probability: 20 } })
+    expect(next?.confidence).toBe(60)
+  })
+
+  it('falls back to 60 when Jev disagrees with the mediator', async () => {
+    const { next } = await mediate({ ok: true, json: { value: 'the-auditor', probability: 90 } })
+    expect(next?.confidence).toBe(60)
+  })
+
+  it('falls back to 60 when the Jev hop is unavailable', async () => {
+    const { next } = await mediate({ ok: false })
+    expect(next?.confidence).toBe(60)
   })
 })

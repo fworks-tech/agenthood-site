@@ -193,7 +193,44 @@ export async function mediatorNext(
   const plan = parseMediatorPlan(raw, ids)
   const first = plan?.members[0]
   if (!first) return { next: null, raw }
-  return { next: { nextId: first.id, confidence: 60, reason: first.task || 'mediator routing' }, raw }
+  const confidence = await jevRoutingConfidence(tail, ids, first.id)
+  return { next: { nextId: first.id, confidence: confidence ?? 60, reason: first.task || 'mediator routing' }, raw }
+}
+
+// Optional calibrated routing confidence for the mediator hop (which is
+// otherwise a flat heuristic 60). Server-internal: the route requires a shared
+// JEV_ROUTING_ENABLED gate plus a JEV_INTERNAL_TOKEN secret, and this caller
+// attaches it. Returns null unless Jev agrees with the mediator's pick AND is at
+// least as confident as the 60 baseline, so it can only promote a hop to `auto`,
+// never demote below today's behaviour. Any error, timeout, or disabled state
+// falls back to the deterministic 60 path unchanged.
+async function jevRoutingConfidence(state: string, ids: string[], chosenId: string): Promise<number | null> {
+  const secret = process.env.JEV_INTERNAL_TOKEN
+  try {
+    const res = await fetch('/api/studio/jev', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(secret ? { 'x-jev-token': secret } : {}),
+      },
+      body: JSON.stringify({
+        state,
+        options: ids,
+        instructions: 'Which Society member should take the next turn to advance this workspace thread?',
+      }),
+    })
+    if (!res.ok) return null
+    const data = (await res.json().catch(() => null)) as { value?: string; probability?: number; unavailable?: boolean } | null
+    if (data?.unavailable) return null
+    // jevChoice returns probability on a 0-100 scale; only override when it meets
+    // the 60 baseline, so an agreeing-but-unsure verdict (e.g. 20) can't demote to stop.
+    if (data && data.value === chosenId && typeof data.probability === 'number' && data.probability >= 60) {
+      return data.probability
+    }
+  } catch {
+    /* Jev unavailable — keep the heuristic 60 */
+  }
+  return null
 }
 
 export function enterAwaiting(
