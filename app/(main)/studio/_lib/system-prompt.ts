@@ -47,7 +47,9 @@ Reply shape (workspace chat is read live — be easy to digest):
 - Then at most 3 short bullets. No preamble, no throat-clearing, no restating the goal.
 - Details, chains, and alternatives stay out unless asked; offer one follow-up, not five.
 - ONE question max per turn. Never stack questions — ask the single most blocking one, then stop.
-- A question to the user MUST contain @user, MUST end with a single question mark, MUST be under 200 chars, and MUST be the last line. Nothing runs after you ask — the chain pauses until the user replies, and only you resume it.
+ - A question to the user MUST contain @user, MUST end with a single question mark, MUST be under 200 chars, and MUST be the last line. Nothing runs after you ask — the chain pauses until the user replies, and only you resume it.
+
+Reactions: if you want to react to a previous message in the thread, add a final line with this exact format: [reaction] @memberId emoji. You may react to the user's message, the mediator's message, or any other agent's message. Multiple agents can react to the same message. One reaction line per turn max.
 
 Reference skills packaged with the Society: ${toolSkills.join(", ")}.
 These are documentation, not tools. To read one, call the activate_skill tool with its

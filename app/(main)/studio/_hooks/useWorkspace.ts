@@ -311,9 +311,23 @@ export function useWorkspace() {
       )
 
       updateStatus(memberId, 'done')
-      return currentContent
+      // Parse [reaction] tags from the raw output and strip them from content.
+      const reactionMatches = [...currentContent.matchAll(/\[reaction\]\s+(@\S+)\s+(\S+)/g)]
+      if (reactionMatches.length > 0) {
+        const cleaned = currentContent.replace(/\[reaction\]\s+@\S+\s+\S+\n?/g, '').trim()
+        setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: cleaned } : m)))
+        for (const match of reactionMatches) {
+          const targetId = match[1].replace(/^@/, '')
+          // Find the target message by memberId in the thread
+          const targetMsg = messages.find((m) => m.memberId === targetId)
+          if (targetMsg) {
+            pushReaction(targetMsg.id, [{ emoji: match[2], byMemberId: memberId }])
+          }
+        }
+      }
+      return reactionMatches.length > 0 ? currentContent.replace(/\[reaction\]\s+@\S+\s+\S+\n?/g, '').trim() : currentContent
     },
-    [updateStatus],
+    [updateStatus, pushReaction, messages],
   )
 
   const runSynthesis = useCallback(async () => {

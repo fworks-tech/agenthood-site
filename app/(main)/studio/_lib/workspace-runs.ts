@@ -147,7 +147,15 @@ function pauseIfMediatorAsked(
 // and attaches a machine-readable plan. Prose stays visible in chat (group
 // chat), JSON is stripped from view but drives the queue.
 function mediatorPrompt(spec: WorkspaceSpec, userText: string): string {
-  return `User goal: ${userText}\n\nYou may ONLY delegate to these workspace members: ${spec.memberIds.join(", ")}. Never name anyone else.\nReply with 1-2 short lines saying who acts next and why (use "talk to the-<name>" for the handoff), then append EXACTLY this JSON with a single member:\n{"members":[{"id":"<one of: ${spec.memberIds.join(", ")}>","task":"<one-sentence handoff task>","order":0}]}`;
+  const askedBefore = countAskedBefore()
+  if (askedBefore >= 3) {
+    return `User goal: ${userText}\n\nYou have enough context. Emit the JSON plan now — no more questions. Use ONLY these members: ${spec.memberIds.join(", ")}. Reply with 1-2 short lines then the JSON.`
+  }
+  return `User goal: ${userText}\n\nYou may ONLY delegate to these workspace members: ${spec.memberIds.join(", ")}. Never name anyone else.\n\nBefore routing, ask the user ONE short question (max 1 line) to clarify what they need. If you already have enough context, skip the question and reply with 1-2 short lines then the JSON plan.`
+}
+
+function countAskedBefore(): number {
+  return 0
 }
 
 // Conversational delegation: "talk to the-X" names a workspace member even
