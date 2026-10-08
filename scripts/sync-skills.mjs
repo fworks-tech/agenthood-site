@@ -70,8 +70,11 @@ async function main() {
 
   if (INSTALLED_VERSION) {
     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
+  } else if (process.argv.includes("--allow-main")) {
+    console.warn("  ! could not detect installed agenthood version, falling back to main (--allow-main)");
   } else {
-    console.warn("  ! could not detect installed agenthood version, falling back to main");
+    console.error("  ✗ cannot determine installed agenthood version; refusing to generate from a moving ref. Install the published package or pass --allow-main.");
+    process.exit(1);
   }
 
   const registry = await fetchRegistry();
@@ -171,7 +174,48 @@ export const agentRegistry: RegistryEntry[] = ${JSON.stringify(registryEntries, 
   console.log(`Generated ${REGISTRY_FILE} (${registryEntries.length} members)`);
 }
 
+async function verify() {
+  if (!INSTALLED_VERSION) {
+    console.error("  ✗ cannot verify: installed agenthood version unknown");
+    process.exit(1);
+  }
+  const pkgSpec = JSON.parse(readFileSync(join(PROJECT_ROOT, "package.json"), "utf8"))?.dependencies?.agenthood ?? "";
+  if (/^(file|link|workspace):/.test(pkgSpec)) {
+    console.error(`  ✗ agenthood dependency is a local path (${pkgSpec}); generated data must come from a published package`);
+    process.exit(1);
+  }
+  const pkgSkillsDir = join(PROJECT_ROOT, "node_modules", "agenthood", "skills");
+  let failed = false;
+  for (const member of MEMBERS) {
+    const local = join(pkgSkillsDir, member, "SKILL.md");
+    if (!existsSync(local)) {
+      console.error(`  ✗ ${member}: missing from installed agenthood package`);
+      failed = true;
+      continue;
+    }
+    const expected = stripFrontmatter(readFileSync(local, "utf8"));
+    const quoted = JSON.stringify(expected).slice(1, -1).slice(0, 120);
+    const out = readFileSync(OUTPUT_FILE, "utf8");
+    if (!out.includes(quoted)) {
+      console.error(`  ✗ ${member}: ${OUTPUT_FILE} does not match the installed agenthood v${INSTALLED_VERSION} source — regenerate with npm run sync-skills`);
+      failed = true;
+    }
+  }
+  if (failed) {
+    console.error("\nsync-skills --verify: drift detected between generated data and the published agenthood package.");
+    process.exit(1);
+  }
+  console.log(`  ✓ sync-skills --verify: generated data matches agenthood v${INSTALLED_VERSION}`);
+}
+
+if (process.argv.includes("--verify")) {
+  verify().catch((err) => {
+    console.error("sync-skills --verify failed:", err.message);
+    process.exit(1);
+  });
+} else {
 main().catch((err) => {
   console.error("sync-skills failed:", err.message);
   process.exit(1);
 });
+}

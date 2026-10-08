@@ -42,6 +42,7 @@
     "test:e2e:report": "playwright show-report",
     "sync": "node scripts/sync-docs.mjs",
     "sync-skills": "node scripts/sync-skills.mjs",
+    "sync-skills:verify": "node scripts/sync-skills.mjs --verify",
     "sync-news": "node scripts/build-news-manifest.mjs",
     "summarize-news": "node scripts/summarize-news.mjs",
     "check:deps": "node scripts/check-deps.mjs",
