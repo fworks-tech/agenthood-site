@@ -24,13 +24,13 @@ import type { WorkspaceSpec } from '../_types/workspace'
 // Per-turn record: mirror the autonomous reaction into the shared thread
 // (so every later turn sees messages AND reactions) and onto the chat bubble.
 // Mediator planning turns and empty/thinking-only turns stay quiet.
-function recordTurn(state: EngineState, ctx: EngineCtx, memberId: string, wId: string, raw: string): void {
+function recordTurn(state: EngineState, ctx: EngineCtx, memberId: string, wId: string, raw: string, turnIndex: number): void {
   if (memberId === 'the-mediator' || isEmptyTurn(raw)) return
   const memberIds = ctx.getSpec()?.memberIds ?? []
   if (memberIds.length === 0) return
   state.thread = appendThreadWithReactionCap(state.thread, reactionThreadLines(raw, memberId, memberIds))
   ctx.pushReaction?.(
-    `${wId}-${memberId}-${state.turnCounter}`,
+    `${wId}-${memberId}-${turnIndex}`,
     suggestReactions({ content: raw, authorId: memberId, memberIds }),
   )
 }
@@ -55,7 +55,7 @@ export async function resumePending(
   state.paused = false
   if (!p) return
   ctx.setRunning()
-  const recorded = (memberId: string, raw: string) => recordTurn(state, ctx, memberId, wId, raw)
+  const recorded = (memberId: string, raw: string, turnIndex: number) => recordTurn(state, ctx, memberId, wId, raw, turnIndex)
   state.queue.push({ id: p.id, task: p.task })
   await pump(state, wId, correlationId, session, ctx, recorded)
   if (ctx.isCurrentSession(session)) await settle(state, wId, correlationId, session, ctx)
@@ -73,9 +73,9 @@ export async function resumeAfterNudge(
   ctx: EngineCtx,
 ): Promise<void> {
   try {
-    const recorded = (id: string, raw: string) => recordTurn(state, ctx, id, wId, raw)
+    const recorded = (id: string, raw: string, turnIndex: number) => recordTurn(state, ctx, id, wId, raw, turnIndex)
     const nudge = await engineTakeTurn(state, memberId, prompt, wId, correlationId, ctx, {
-      onRecorded: (raw) => recorded(memberId, raw),
+      onRecorded: (raw, turnIndex) => recorded(memberId, raw, turnIndex),
     })
     if (!ctx.isCurrentSession(session)) return
     const r = await afterTurn(state, memberId, nudge, wId, correlationId, session, ctx, { nudge: true })
@@ -91,12 +91,12 @@ function toCommandCtx(state: EngineState, ctx: EngineCtx): CommandCtx {
     takeTurn: (m, t, w, c, o) =>
       engineTakeTurn(state, m, t, w, c, ctx, {
         ...o,
-        onRecorded: (raw) => {
-          o?.onRecorded?.(raw)
-          recordTurn(state, ctx, m, w, raw)
+        onRecorded: (raw, turnIndex) => {
+          o?.onRecorded?.(raw, turnIndex)
+          recordTurn(state, ctx, m, w, raw, turnIndex)
         },
       }),
-    pump: (w, c, s) => pump(state, w, c, s, ctx, (m, raw) => recordTurn(state, ctx, m, w, raw)),
+    pump: (w, c, s) => pump(state, w, c, s, ctx, (m, raw, turnIndex) => recordTurn(state, ctx, m, w, raw, turnIndex)),
     settle: (w, c, s) => settle(state, w, c, s, ctx),
     afterTurn: (m, r, w, c, s) => afterTurn(state, m, r, w, c, s, ctx),
     runSynthesis: (w, c) => ctx.runSynthesis(w, c),
@@ -215,7 +215,7 @@ export async function startRun(
       if (pauseIfMediatorAsked(state, spec, mediatorOutput, { wId, correlationId, session }, ctx)) return
       queueFromMediatorOutput(state, spec, mediatorOutput, spec.instruction, ctx, 'the-mediator')
     }
-    const recorded = (memberId: string, raw: string) => recordTurn(state, ctx, memberId, wId, raw)
+    const recorded = (memberId: string, raw: string, turnIndex: number) => recordTurn(state, ctx, memberId, wId, raw, turnIndex)
     await pump(state, wId, correlationId, session, ctx, recorded)
     // Group chat: no synthesizer — member turns are the answer.
     if (ctx.isCurrentSession(session)) {
@@ -280,7 +280,7 @@ export async function intervene(
       state.paused = false
       ctx.clearHandoff()
       ctx.setRunning()
-      const recorded = (memberId: string, raw: string) => recordTurn(state, ctx, memberId, workspaceId, raw)
+      const recorded = (memberId: string, raw: string, turnIndex: number) => recordTurn(state, ctx, memberId, workspaceId, raw, turnIndex)
       const raw = await engineTakeTurn(
         state,
         owner,
@@ -288,7 +288,7 @@ export async function intervene(
         workspaceId,
         correlationId,
         ctx,
-        { onRecorded: (out) => recorded(owner, out) },
+        { onRecorded: (out, turnIndex) => recorded(owner, out, turnIndex) },
       )
       if (!ctx.isCurrentSession(session)) return
       const r = await afterTurn(state, owner, raw, workspaceId, correlationId, session, ctx)
@@ -320,7 +320,7 @@ export async function intervene(
       }
       queueFromMediatorOutput(state, spec, mediatorOutput, content, ctx, 'the-mediator')
     }
-    const recorded = (memberId: string, raw: string) => recordTurn(state, ctx, memberId, workspaceId, raw)
+    const recorded = (memberId: string, raw: string, turnIndex: number) => recordTurn(state, ctx, memberId, workspaceId, raw, turnIndex)
     await pump(state, workspaceId, correlationId, session, ctx, recorded)
     if (ctx.isCurrentSession(session)) {
       await settle(state, workspaceId, correlationId, session, ctx)

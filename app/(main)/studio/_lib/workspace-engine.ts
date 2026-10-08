@@ -150,10 +150,11 @@ export async function engineTakeTurn(
   wId: string,
   correlationId: string,
   ctx: EngineCtx,
-  opts?: { threadMode?: ThreadMode; onRecorded?: (raw: string) => void },
+  opts?: { threadMode?: ThreadMode; onRecorded?: (raw: string, turnIndex: number) => void },
 ): Promise<string> {
   state.lastTask = task
-  const raw = await ctx.streamTurn(memberId, task, ++state.turnCounter, wId, correlationId, [...state.thread])
+  const turnIndex = ++state.turnCounter
+  const raw = await ctx.streamTurn(memberId, task, turnIndex, wId, correlationId, [...state.thread])
   state.lastTurn = { memberId, task, raw }
   const mode = opts?.threadMode ?? 'filtered'
   if (mode === 'raw') {
@@ -162,7 +163,7 @@ export async function engineTakeTurn(
     state.thread = [...state.thread, { role: 'assistant', content: toPolished(raw) }]
   }
   // Thread write comes first so the reaction line always follows its turn.
-  opts?.onRecorded?.(raw)
+  opts?.onRecorded?.(raw, turnIndex)
   return raw
 }
 
@@ -288,7 +289,7 @@ export async function pump(
   correlationId: string,
   session: number,
   ctx: EngineCtx,
-  onRecorded?: (memberId: string, raw: string) => void,
+  onRecorded?: (memberId: string, raw: string, turnIndex: number) => void,
 ): Promise<void> {
   while (state.budget > 0 && state.queue.length > 0) {
     if (!ctx.isCurrentSession(session) || ctx.isAborted()) break
@@ -296,7 +297,7 @@ export async function pump(
     if (!next) break
     state.budget -= 1
     state.hops += 1
-    const recorded = onRecorded ? (raw: string) => onRecorded(next.id, raw) : undefined
+    const recorded = onRecorded ? (raw: string, turnIndex: number) => onRecorded(next.id, raw, turnIndex) : undefined
     let raw = await engineTakeTurn(state, next.id, next.task, wId, correlationId, ctx, { onRecorded: recorded })
     if (!ctx.isCurrentSession(session)) return
     // One auto-retry for a thinking-only answer — then accept and stop.

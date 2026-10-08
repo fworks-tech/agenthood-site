@@ -27,6 +27,9 @@ interface Props {
 // Group-chat accent per agent lane — full literal class strings so the
 // Tailwind scanner keeps them. Avatar carries the fantasy (icon on lane
 // color), the edge marks every follow-up bubble of the same turn.
+// NOTE: always use full literal strings (`'bg-indigo-500/15'`), never
+// compose them dynamically (`'bg-' + color + '-500/15'`) — the Tailwind
+// content scanner cannot find dynamically composed class names.
 export function agentAccent(category?: string) {
   switch (category) {
     case 'engineering':
@@ -191,7 +194,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
   if (isUser) {
     return (
       <div className="flex flex-col items-end gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Você</span>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">You</span>
         <div className="msg-in max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br from-indigo-500 to-indigo-700 px-4 py-2.5 text-sm leading-relaxed text-white shadow-lg shadow-indigo-950/30">
           <span className="break-words whitespace-pre-wrap">{content}</span>
         </div>
@@ -278,7 +281,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                 key={tc.id}
                 type="button"
                 onClick={() => setLogsOpen(true)}
-                title="Ver detalhes da ação"
+                title="View action details"
                 style={{ animationDelay: `${Math.min(ix * 70, 280)}ms` }}
                 className={`action-pop flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-2xl rounded-tl-md border border-dashed px-3 py-1.5 text-left text-xs transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/80 ${
                   failed
@@ -288,7 +291,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
               >
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${failed ? 'bg-red-400' : running ? 'animate-pulse bg-zinc-400' : 'bg-emerald-400'}`} />
                 <span className="shrink-0 font-medium">
-                  {running ? `usando ${tc.name}…` : failed ? `falha em ${tc.name}` : `usou ${tc.name}`}
+                  {running ? `using ${tc.name}…` : failed ? `failed ${tc.name}` : `used ${tc.name}`}
                 </span>
                 <span className="truncate font-mono text-[11px] opacity-70">{summarizeArgs(tc)}</span>
               </button>
@@ -303,7 +306,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
                 </span>
-                {thinkingOnly ? (polished ? polished.slice(0, 90) : 'pensando…') : `${agent?.name ?? memberId} está escrevendo…`}
+                {thinkingOnly ? (polished ? polished.slice(0, 90) : 'thinking…') : `${agent?.name ?? memberId} is typing…`}
               </span>
             </div>
           ) : (
@@ -387,7 +390,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                 )}
                 {hasLogs && (
                   <Text size="xs" c="dimmed" className="ml-1">
-                    {actions.length ? `${actions.length} ações` : 'View logs'}
+                    {actions.length ? `${actions.length} actions` : 'View logs'}
                   </Text>
                 )}
               </Group>

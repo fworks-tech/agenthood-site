@@ -83,7 +83,7 @@ I'm not going to start refining the goal myself. Want me to hand this off to the
     expect(findUserQuestion('talk to the-builder — will you take it?', ids)).toBeNull()
   })
 
-  it('prefers the last question but still hears an earlier ask', () => {
+  it('surfaces the first user-directed question in a stacked survey', () => {
     expect(findUserQuestion('Done. Want me to proceed?', ids)).toContain('Want me to proceed?')
     expect(findUserQuestion('Want me to proceed? Should we use X or Y, team?', ids)).toBe('Want me to proceed?')
   })
