@@ -13,9 +13,10 @@ import { isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 interface Props {
   messages: WorkspaceMessage[]
   statusMap?: Record<string, WorkspaceStatus>
+  onReact?: (messageId: string, emoji: string) => void
 }
 
-export default function WorkspaceChatArea({ messages, statusMap }: Props) {
+export default function WorkspaceChatArea({ messages, statusMap, onReact }: Props) {
   const [showHidden, setShowHidden] = useState(false)
   // Collect members currently thinking/typing but without a fresh message yet
   // Include the-mediator here — while it has no card (empty/routing plan
@@ -35,7 +36,10 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
         })
     : []
 
-  if (messages.length === 0) {
+  // Group-chat model: only user + member turns. Synthesizer cards (legacy
+  // runs) are never rendered.
+  const chatMessages = messages.filter((m) => m.memberId !== 'synthesizer')
+  if (chatMessages.length === 0) {
     if (typingMembers.length > 0) {
       return (
         <div className="space-y-4">
@@ -67,12 +71,12 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
   // streaming placeholder. Hide older thinking/working intermediaries behind
   // a toggle.
   const THRESHOLD = 6
-  let visibleMessages = messages
+  let visibleMessages = chatMessages
   let hiddenMessages: WorkspaceMessage[] = []
-  if (messages.length > THRESHOLD) {
-    const lastIdx = messages.length - 1
+  if (chatMessages.length > THRESHOLD) {
+    const lastIdx = chatMessages.length - 1
     const keep = new Set<number>()
-    messages.forEach((m, i) => {
+    chatMessages.forEach((m, i) => {
       if (m.memberId === 'user') keep.add(i)
       else if (m.memberId === 'command') keep.add(i)
       else if (m.content === '') keep.add(i)
@@ -83,13 +87,13 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
     keep.add(0)
     keep.add(lastIdx)
     if (lastIdx - 1 >= 0) keep.add(lastIdx - 1)
-    visibleMessages = messages.filter((_, i) => keep.has(i))
-    hiddenMessages = messages.filter((_, i) => !keep.has(i))
-    if (hiddenMessages.length === 0) visibleMessages = messages
+    visibleMessages = chatMessages.filter((_, i) => keep.has(i))
+    hiddenMessages = chatMessages.filter((_, i) => !keep.has(i))
+    if (hiddenMessages.length === 0) visibleMessages = chatMessages
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {hiddenMessages.length > 0 && (
         <button
           type="button"
@@ -99,10 +103,13 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
           {showHidden ? 'Hide intermediate updates' : `Show ${hiddenMessages.length} intermediate updates`}
         </button>
       )}
-      {(showHidden ? messages : visibleMessages).map((m) => (
-        <AnimatedMessage key={m.id}>
+      {(showHidden ? chatMessages : visibleMessages).map((m, ix, list) => {
+        // Group-chat rhythm: consecutive turns from the same sender sit closer.
+        const tight = ix > 0 && list[ix - 1].memberId === m.memberId
+        return (
+        <AnimatedMessage key={m.id} className={tight ? '-mt-1.5' : ''}>
           {m.memberId === 'router' && m.route ? (
-            <div className="flex items-center justify-center gap-2 py-1 text-xs text-zinc-500">
+            <div className="route-pill flex items-center justify-center gap-2 py-1 text-xs text-zinc-500">
               <span
                 className="rounded-full border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-1"
                 title="Heuristic routing score — fixed decision weights, not a calibrated probability"
@@ -116,10 +123,18 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
             </div>
           ) : (
-            <WorkspaceTurnCard memberId={m.memberId} content={m.content} turnIndex={m.turnIndex} toolCalls={m.toolCalls} />
+            <WorkspaceTurnCard
+              memberId={m.memberId}
+              content={m.content}
+              turnIndex={m.turnIndex}
+              toolCalls={m.toolCalls}
+              reactions={m.reactions}
+              onReact={onReact ? (emoji) => onReact(m.id, emoji) : undefined}
+            />
           )}
         </AnimatedMessage>
-      ))}
+        )
+      })}
       {/* when collapsed, also render hidden as collapsed details if user expanded */}
       {typingMembers.map((id) => {
         const lastMsg = [...messages].reverse().find((m) => m.memberId === id)
@@ -129,8 +144,8 @@ export default function WorkspaceChatArea({ messages, statusMap }: Props) {
         if (lastMsg && !lastMsg.content && id !== 'the-mediator') return null
         const agent = getAgentById(id)
         return (
-          <div key={`typing-${id}`} className="flex items-center gap-2 py-1 text-sm text-zinc-500">
-            <span className="inline-flex gap-1">
+          <div key={`typing-${id}`} className="typing-row flex items-center gap-2 py-1 text-sm text-zinc-500">
+            <span className="presence-dot inline-flex gap-1">
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
               <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />

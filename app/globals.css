@@ -18,3 +18,56 @@
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
+
+/* Group-chat motion: message entrance, action pills, reaction chips. */
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.7); }
+  70% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes route-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes presence-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(129, 140, 248, 0); }
+}
+
+.msg-in {
+  animation: msg-in 0.32s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+}
+
+.action-pop,
+.react-pop {
+  animation: pop-in 0.22s ease-out both;
+}
+
+.route-pill {
+  animation: route-in 0.25s ease-out both;
+}
+
+.typing-row .presence-dot {
+  animation: presence-ring 1.6s ease-in-out infinite;
+  border-radius: 9999px;
+  padding: 2px 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .msg-in,
+  .action-pop,
+  .react-pop,
+  .route-pill {
+    animation: none;
+  }
+  .typing-row .presence-dot {
+    animation: none;
+  }
+}

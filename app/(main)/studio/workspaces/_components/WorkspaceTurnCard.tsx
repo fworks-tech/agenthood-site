@@ -8,6 +8,8 @@ import { Paper, Text, ActionIcon, Group, Title, Modal, Collapse, Badge } from '@
 import { CodeHighlight } from '@mantine/code-highlight'
 import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck } from '@tabler/icons-react'
 import { getAgentById } from '../../_data/agents'
+import { QUICK_EMOJI } from '../../_lib/workspace-reactions'
+import type { WorkspaceReaction } from '../../_types/workspace'
 import { STORAGE_KEYS } from '../../_lib/constants'
 import { childrenToString } from '../../../../_lib/react-children'
 import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
@@ -18,6 +20,117 @@ interface Props {
   content: string
   turnIndex: number
   toolCalls?: WorkspaceToolCall[]
+  reactions?: WorkspaceReaction[]
+  onReact?: (emoji: string) => void
+}
+
+// Group-chat accent per agent lane — full literal class strings so the
+// Tailwind scanner keeps them. Avatar carries the fantasy (icon on lane
+// color), the edge marks every follow-up bubble of the same turn.
+export function agentAccent(category?: string) {
+  switch (category) {
+    case 'engineering':
+      return { avatar: 'bg-indigo-500/15 text-indigo-200', dot: 'bg-indigo-400', edge: 'border-l-indigo-500/70' }
+    case 'validation':
+      return { avatar: 'bg-amber-500/15 text-amber-200', dot: 'bg-amber-400', edge: 'border-l-amber-500/70' }
+    case 'knowledge':
+      return { avatar: 'bg-violet-500/15 text-violet-200', dot: 'bg-violet-400', edge: 'border-l-violet-500/70' }
+    case 'lifecycle':
+      return { avatar: 'bg-emerald-500/15 text-emerald-200', dot: 'bg-emerald-400', edge: 'border-l-emerald-500/70' }
+    default:
+      return { avatar: 'bg-zinc-500/15 text-zinc-200', dot: 'bg-zinc-400', edge: 'border-l-zinc-500/60' }
+  }
+}
+
+function summarizeArgs(tc: WorkspaceToolCall): string {
+  const url = (tc.args as Record<string, unknown>)?.url
+  if (typeof url === 'string' && url) {
+    try {
+      const u = new URL(url)
+      return (u.hostname + u.pathname).slice(0, 60)
+    } catch {
+      return String(url).slice(0, 60)
+    }
+  }
+  const code = (tc.args as Record<string, unknown>)?.code
+  if (typeof code === 'string' && code) return String(code).slice(0, 50)
+  try {
+    return JSON.stringify(tc.args).slice(0, 60)
+  } catch {
+    return ''
+  }
+}
+
+function reactorName(byMemberId: string): string {
+  if (byMemberId === 'user') return 'você'
+  return getAgentById(byMemberId)?.name ?? byMemberId
+}
+
+function ReactionRow({
+  reactions,
+  onReact,
+  align,
+}: {
+  reactions?: WorkspaceReaction[]
+  onReact?: (emoji: string) => void
+  align: 'start' | 'end'
+}) {
+  const [open, setOpen] = useState(false)
+  if (!onReact && (!reactions || reactions.length === 0)) return null
+  const grouped = new Map<string, string[]>()
+  for (const r of reactions ?? []) grouped.set(r.emoji, [...(grouped.get(r.emoji) ?? []), r.byMemberId])
+  return (
+    <div className={`flex flex-wrap items-center gap-1 ${align === 'end' ? 'justify-end' : 'justify-start'}`}>
+      {[...grouped.entries()].map(([emoji, by]) => {
+        const mine = by.includes('user')
+        return (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => onReact?.(emoji)}
+            title={by.map(reactorName).join(', ')}
+            className={`react-pop cursor-pointer rounded-full border px-2 py-0.5 text-xs transition-transform hover:scale-110 active:scale-95 ${
+              mine
+                ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-100'
+                : 'border-zinc-300 dark:border-zinc-700 bg-zinc-100/70 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300'
+            }`}
+          >
+            <span>{emoji}</span>
+            {by.length > 1 && <span className="ml-1 font-semibold">{by.length}</span>}
+          </button>
+        )
+      })}
+      {onReact && (
+        <span className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            title="Reagir"
+            className="cursor-pointer rounded-full border border-dashed border-zinc-300 dark:border-zinc-700 px-2 py-0.5 text-xs text-zinc-500 transition-transform hover:scale-110 active:scale-95"
+          >
+            ☺ +
+          </button>
+          {open && (
+            <span className="absolute bottom-full z-10 mb-1 flex gap-0.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-1.5 shadow-xl">
+              {QUICK_EMOJI.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => {
+                    onReact(e)
+                    setOpen(false)
+                  }}
+                  className="cursor-pointer rounded-lg px-1.5 py-1 text-base transition-transform hover:scale-125 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-95"
+                >
+                  {e}
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  )
 }
 
 function loadFeedback(): Record<string, 'up' | 'down'> {
@@ -48,7 +161,7 @@ async function submitFeedback(messageId: string, value: 'up' | 'down' | null) {
   }
 }
 
-export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCalls }: Props) {
+export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCalls, reactions, onReact }: Props) {
   const agent = getAgentById(memberId)
   const isUser = memberId === 'user'
   const polished = toPolished(content)
@@ -72,16 +185,24 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
 
   // Hide empty mediator routing messages entirely — they are technical
   if (memberId === 'the-mediator' && !polished) return null
-
-  const isSynthesizer = memberId === 'synthesizer'
+  // Synthesis disabled — legacy synthesizer cards never render.
+  if (memberId === 'synthesizer') return null
 
   if (isUser) {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-lg bg-indigo-600 px-4 py-3 text-sm text-white">{content}</div>
+      <div className="flex flex-col items-end gap-1">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Você</span>
+        <div className="msg-in max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br from-indigo-500 to-indigo-700 px-4 py-2.5 text-sm leading-relaxed text-white shadow-lg shadow-indigo-950/30">
+          <span className="break-words whitespace-pre-wrap">{content}</span>
+        </div>
+        <ReactionRow reactions={reactions} onReact={onReact} align="end" />
       </div>
     )
   }
+
+  const accent = agentAccent(agent?.category)
+  const actions = toolCalls ?? []
+  const showThinking = thinkingOnly || (!polished && !content)
 
   const mdComponents: Components = {
     // code_execution results showed 120+ char lines overflowing the Paper;
@@ -127,65 +248,82 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
     ),
   }
 
+  const isLong = !thinkingOnly && !!polished && (polished.length > 2200 || polished.split('\n').length > 50)
+  const showToggle = isLong && useful
+  const clamped = showToggle && !expanded
+
   return (
     <>
-      <Paper
-        bg={isSynthesizer ? 'violet.9' : 'zinc.9'}
-        px="xl"
-        py={10}
-        className={`max-w-[85%] md:max-w-[75%] transition-all duration-300 hover:shadow-xl hover:shadow-black/20 hover:border-zinc-700/50 animate-in fade-in slide-in-from-bottom-1 ${isSynthesizer ? 'border border-violet-800/50 shadow-violet-900/20' : ''}`}
-      >
-        <div className="mb-2 flex items-center gap-2">
-          <span className="text-base">{isSynthesizer ? '✨' : (agent?.icon ?? '•')}</span>
-          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{isSynthesizer ? 'Synthesis' : (agent?.name ?? memberId)}</span>
-          <Badge size="xs" variant={isSynthesizer ? 'filled' : 'light'} color={isSynthesizer ? 'violet' : 'gray'} className="uppercase tracking-wide">
-            {isSynthesizer ? 'final' : `turn ${turnIndex}`}
-          </Badge>
-          <span className={`ml-auto h-2 w-2 shrink-0 rounded-full ${isSynthesizer ? 'bg-violet-400' : 'bg-indigo-500'}`} title={memberId} />
-        </div>
+      <div className="flex items-start justify-start gap-2.5">
+        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-base ${accent.avatar}`} title={agent?.role ?? memberId}>
+          {agent?.icon ?? '•'}
+        </span>
+        <div className="min-w-0 max-w-[85%] space-y-1.5 md:max-w-[75%]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{agent?.name ?? memberId}</span>
+            {agent?.role && (
+              <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">{agent.role}</span>
+            )}
+            <Badge size="xs" variant="light" color="gray" className="uppercase tracking-wide">
+              {`turn ${turnIndex}`}
+            </Badge>
+            <span className={`h-2 w-2 shrink-0 rounded-full ${accent.dot}`} title={memberId} />
+          </div>
 
-        {(() => {
-          const isLong = !thinkingOnly && !!polished && (polished.length > 2200 || polished.split('\n').length > 50)
-          const showToggle = isLong && useful
-          const clamped = showToggle && !expanded
-          return (
-            <>
+          {actions.map((tc, ix) => {
+            const running = tc.status === 'running'
+            const failed = tc.status === 'error'
+            return (
+              <button
+                key={tc.id}
+                type="button"
+                onClick={() => setLogsOpen(true)}
+                title="Ver detalhes da ação"
+                style={{ animationDelay: `${Math.min(ix * 70, 280)}ms` }}
+                className={`action-pop flex w-fit max-w-full cursor-pointer items-center gap-2 rounded-2xl rounded-tl-md border border-dashed px-3 py-1.5 text-left text-xs transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/80 ${
+                  failed
+                    ? 'border-red-800/50 bg-red-950/20 text-red-300'
+                    : 'border-zinc-300 dark:border-zinc-700 bg-zinc-100/60 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400'
+                }`}
+              >
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${failed ? 'bg-red-400' : running ? 'animate-pulse bg-zinc-400' : 'bg-emerald-400'}`} />
+                <span className="shrink-0 font-medium">
+                  {running ? `usando ${tc.name}…` : failed ? `falha em ${tc.name}` : `usou ${tc.name}`}
+                </span>
+                <span className="truncate font-mono text-[11px] opacity-70">{summarizeArgs(tc)}</span>
+              </button>
+            )
+          })}
+
+          {showThinking ? (
+            <div className="msg-in w-fit rounded-2xl rounded-tl-md border border-dashed border-zinc-300 dark:border-zinc-700 px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400">
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex gap-1">
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
+                </span>
+                {thinkingOnly ? (polished ? polished.slice(0, 90) : 'pensando…') : `${agent?.name ?? memberId} está escrevendo…`}
+              </span>
+            </div>
+          ) : (
+            <Paper
+              bg="zinc.9"
+              px="xl"
+              py={10}
+              className={`msg-in border-l-2 ${accent.edge} transition-all duration-300 hover:shadow-xl hover:shadow-black/20`}
+            >
               <div className={`break-words text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 ${clamped ? 'relative max-h-[520px] overflow-hidden' : ''}`}>
-                {thinkingOnly ? (
-                  <div className="flex items-center gap-2 py-1 text-zinc-600 dark:text-zinc-400">
-                    <span className="inline-flex gap-1">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                    </span>
-                    <Text c="dimmed" size="xs">
-                      {agent?.name ?? memberId} is thinking...
-                    </Text>
-                    <Text c="dimmed" size="xs" className="ml-1 hidden sm:inline">
-                      {polished.slice(0, 80)}
-                    </Text>
-                  </div>
-                ) : polished ? (
+                {polished ? (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                     {polished}
                   </ReactMarkdown>
-                ) : content ? (
+                ) : (
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
                     {toPolished(content) || '_No polished output — see logs_'}
                   </ReactMarkdown>
-                ) : (
-                  <Text c="dimmed" size="sm">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="inline-flex gap-1">
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                      </span>
-                      {agent?.name ?? memberId} is thinking...
-                    </span>
-                  </Text>
                 )}
-                 {clamped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-100 dark:from-[rgb(24,24,27)] to-transparent" />}
+                {clamped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-100 dark:from-[rgb(24,24,27)] to-transparent" />}
               </div>
               {showToggle && (
                 <button
@@ -196,88 +334,84 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                   {expanded ? 'View less' : `View more — ${Math.ceil(polished.length / 1000)}k chars`}
                 </button>
               )}
-              {thinkingOnly && (
-                <Text c="dimmed" size="xs" mt={4} className="italic">
-                  Reasoning in progress — full answer will appear when ready.
-                </Text>
-              )}
-              {polished && !useful && !thinkingOnly && (
+              {polished && !useful && (
                 <Text c="dimmed" size="xs" mt={4} className="italic">
                   Working — gathering context before the final answer.
                 </Text>
               )}
-            </>
-          )
-        })()}
 
-        <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-200 dark:border-zinc-800">
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            color={feedback === 'up' ? 'emerald.4' : 'zinc.6'}
-            onClick={() => {
-              const val = feedback === 'up' ? null : 'up'
-              setFeedback(val)
-              submitFeedback(messageId, val)
-            }}
-            title="Helpful"
-          >
-            <IconThumbUp size={14} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            color={feedback === 'down' ? 'red.4' : 'zinc.6'}
-            onClick={() => {
-              const val = feedback === 'down' ? null : 'down'
-              setFeedback(val)
-              submitFeedback(messageId, val)
-            }}
-            title="Not helpful"
-          >
-            <IconThumbDown size={14} />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            color="zinc.6"
-            onClick={async () => {
-              await navigator.clipboard.writeText(polished || content)
-              setCopied(true)
-              setTimeout(() => setCopied(false), 1200)
-            }}
-            title="Copy"
-          >
-            {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-          </ActionIcon>
-          {hasLogs && (
-            <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => setLogsOpen(true)} title="View logs">
-              <IconEye size={14} />
-            </ActionIcon>
+              <Group gap="xs" mt="sm" pt="sm" className="border-t border-zinc-200 dark:border-zinc-800">
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  color={feedback === 'up' ? 'emerald.4' : 'zinc.6'}
+                  onClick={() => {
+                    const val = feedback === 'up' ? null : 'up'
+                    setFeedback(val)
+                    submitFeedback(messageId, val)
+                  }}
+                  title="Helpful"
+                >
+                  <IconThumbUp size={14} />
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  color={feedback === 'down' ? 'red.4' : 'zinc.6'}
+                  onClick={() => {
+                    const val = feedback === 'down' ? null : 'down'
+                    setFeedback(val)
+                    submitFeedback(messageId, val)
+                  }}
+                  title="Not helpful"
+                >
+                  <IconThumbDown size={14} />
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  color="zinc.6"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(polished || content)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 1200)
+                  }}
+                  title="Copy"
+                >
+                  {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+                </ActionIcon>
+                {hasLogs && (
+                  <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => setLogsOpen(true)} title="View logs">
+                    <IconEye size={14} />
+                  </ActionIcon>
+                )}
+                {hasLogs && (
+                  <Text size="xs" c="dimmed" className="ml-1">
+                    {actions.length ? `${actions.length} ações` : 'View logs'}
+                  </Text>
+                )}
+              </Group>
+            </Paper>
           )}
-          {hasLogs && (
-            <Text size="xs" c="dimmed" className="ml-1">
-              {toolCalls?.length ? `${toolCalls.length} tool calls` : 'View logs'}
-            </Text>
-          )}
-        </Group>
-      </Paper>
+          <ReactionRow reactions={reactions} onReact={onReact} align="start" />
+        </div>
+      </div>
 
       <Modal opened={logsOpen} onClose={() => setLogsOpen(false)} title="View logs" size="lg" centered>
         <div className="space-y-4">
-          {toolCalls && toolCalls.length > 0 ? (
+          {actions.length > 0 ? (
             <div className="space-y-2">
               <Text size="sm" fw={600}>
                 Tool calls
               </Text>
-              {toolCalls.map((tc) => {
+              {actions.map((tc) => {
                 const isOpen = !!expandedTools[tc.id]
                 const statusColor =
                   tc.status === 'complete'
                     ? 'border-emerald-800/40 bg-emerald-950/20'
                     : tc.status === 'error'
                       ? 'border-red-800/40 bg-red-950/20'
-                       : 'border-zinc-300 dark:border-zinc-700 bg-zinc-200/40 dark:bg-zinc-800/40'
+                        : 'border-zinc-300 dark:border-zinc-700 bg-zinc-200/40 dark:bg-zinc-800/40'
                 const dot =
                   tc.status === 'complete' ? 'bg-emerald-400' : tc.status === 'error' ? 'bg-red-400' : 'bg-zinc-500 animate-pulse'
                 return (
@@ -289,13 +423,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                     >
                       <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
                       <span className="font-medium text-zinc-800 dark:text-zinc-200">{tc.name}</span>
-                      <span className="truncate text-zinc-500">
-                        {tc.args?.url
-                          ? String(tc.args.url).slice(0, 80)
-                          : tc.args?.code
-                            ? String(tc.args.code).slice(0, 50)
-                            : JSON.stringify(tc.args).slice(0, 80)}
-                      </span>
+                      <span className="truncate text-zinc-500">{summarizeArgs(tc)}</span>
                       <span className={`ml-auto shrink-0 text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                     </button>
                     <Collapse expanded={isOpen}>

@@ -5,6 +5,7 @@ export { TURN_BUDGET_DEFAULT }
 export type ThreadMessage = { role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_call_id?: string; name?: string }
 
 const MAX_THREAD_CHARS = 100_000
+const MAX_THREAD_MESSAGES = 200
 
 export function parseMediatorPlan(raw: string, validIds: string[]): MediatorPlan | null {
   const stripped = raw
@@ -36,18 +37,31 @@ export function fallbackPlan(spec: WorkspaceSpec): MediatorPlan {
   }
 }
 
-export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_CHARS): ThreadMessage[] {
-  let total = messages.reduce((n, m) => n + m.content.length, 0)
-  if (total <= maxChars) return messages
-  // Pin messages[0] — it carries the user goal/instruction, which must never
-  // be the first victim of trimming. Evict from index 1 instead.
+export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_CHARS, maxMsgs = MAX_THREAD_MESSAGES): ThreadMessage[] {
   const trimmed = [...messages]
-  const idx = 1
-  while (trimmed.length > 1 && total > maxChars) {
-    if (idx >= trimmed.length) break
-    const [removed] = trimmed.splice(idx, 1)
-    if (removed) total -= removed.content.length
-    // do not advance idx: the next candidate slides into the same slot
+  // Pin messages[0] — it carries the user goal/instruction, which must never
+  // be trimmed. Evict oldest assistant turns first, then oldest reaction
+  // lines, then anything else past the pin. User messages go last — intent
+  // must survive the whole session.
+  const over = () =>
+    trimmed.reduce((n, m) => n + m.content.length, 0) > maxChars || trimmed.length > maxMsgs
+  while (trimmed.length > 1 && over()) {
+    const assistantIx = trimmed.findIndex((m, i) => i > 0 && m.role === 'assistant')
+    if (assistantIx > 0) {
+      trimmed.splice(assistantIx, 1)
+      continue
+    }
+    const reactionIx = trimmed.findIndex((m, i) => i > 0 && m.content.startsWith('[reaction]'))
+    if (reactionIx > 0) {
+      trimmed.splice(reactionIx, 1)
+      continue
+    }
+    const userIx = trimmed.findIndex((m, i) => i > 0 && m.role === 'user')
+    if (userIx > 0) {
+      trimmed.splice(userIx, 1)
+      continue
+    }
+    trimmed.splice(1, 1)
   }
   return trimmed
 }

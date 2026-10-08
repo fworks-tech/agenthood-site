@@ -5,6 +5,8 @@ export type WorkspaceSpec = {
   instruction: string
 }
 
+export type WorkspaceReaction = { emoji: string; byMemberId: string }
+
 export type WorkspaceMessage = {
   id: string
   memberId: string
@@ -12,6 +14,7 @@ export type WorkspaceMessage = {
   turnIndex: number
   toolCalls?: { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }[]
   route?: { from: string; to: string; confidence: number; reason: string }
+  reactions?: WorkspaceReaction[]
 }
 
 export type WorkspaceSession = {

@@ -146,7 +146,8 @@ describe('afterTurn', () => {
     expect(ctx.streamTurn).not.toHaveBeenCalled()
     expect(state.awaiting).toEqual({ memberId: 'the-builder' })
     expect(handoffs[0].reason).toContain('Want me to keep going with this approach?')
-    expect(nudges).toHaveLength(1)
+    // Group chat stays paused indefinitely — no auto-nudge.
+    expect(nudges).toHaveLength(0)
   })
 
   it('keeps routing past rhetorical questions', async () => {
@@ -231,20 +232,15 @@ describe('afterTurn', () => {
     )
   })
 
-  it('pauses for @user and arms a single nudge', async () => {
+  it('pauses for @user indefinitely with no auto-nudge', async () => {
     const { state, ids } = fresh()
     const { ctx, handoffs, nudges } = mockEngine(ids)
     const r = await afterTurn(state, 'the-builder', 'Stuck on the API key — @user which provider?', RUN.wId, RUN.correlationId, RUN.session, ctx)
     expect(r).toBe('paused')
     expect(state.awaiting).toEqual({ memberId: 'the-builder' })
     expect(handoffs[0].reason).toContain('which provider?')
-    expect(nudges).toHaveLength(1)
-    expect(nudges[0].ms).toBe(90_000)
-    nudges[0].fire()
-    expect(ctx.onNudge).toHaveBeenCalledWith({ memberId: 'the-builder', wId: 'ws-1', correlationId: 'c-1', session: 1 })
-    // firing again after the wait cleared is a no-op
-    nudges[0].fire()
-    expect(ctx.onNudge).toHaveBeenCalledTimes(1)
+    expect(nudges).toHaveLength(0)
+    expect(ctx.onNudge).not.toHaveBeenCalled()
   })
 
   it('never re-arms HITL on nudge turns', async () => {
@@ -374,11 +370,11 @@ describe('settle', () => {
     expect(ctx.setDone).not.toHaveBeenCalled()
   })
 
-  it('synthesizes then marks done with a notification', async () => {
+  it('marks done with a notification and no synthesis', async () => {
     const { state, ids } = fresh()
     const { ctx, notifies } = mockEngine(ids)
     await settle(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
-    expect(ctx.runSynthesis).toHaveBeenCalledWith('ws-1', 'c-1')
+    expect(ctx.runSynthesis).not.toHaveBeenCalled()
     expect(ctx.setDone).toHaveBeenCalled()
     expect(notifies).toContain('Workspace run finished.')
   })

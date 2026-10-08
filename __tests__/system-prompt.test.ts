@@ -11,7 +11,8 @@ vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
 
 vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
   agentRegistry: [
-    { name: "the-scribe", displayName: "The Scribe", tagline: "", role: "commits & changelogs", stage: [], priority: 0 },
+    { name: "the-scribe", displayName: "The Scribe", tagline: "Turns your diff into prose worth reading", role: "commits & changelogs", stage: [], priority: 0 },
+    { name: "the-builder", displayName: "The Builder", tagline: "Builds the smallest verified change", role: "coding, implementation", stage: [], priority: 1 },
   ],
 }));
 
@@ -37,5 +38,19 @@ describe("buildSystemPrompt", () => {
 
   it("returns empty string for unknown members", () => {
     expect(buildSystemPrompt("the-ghost")).toBe("");
+  });
+
+  it("keeps the member fantasy alive in first person", () => {
+    const prompt = buildSystemPrompt("the-scribe");
+    expect(prompt).toContain("You speak as The Scribe");
+    expect(prompt).toContain("Turns your diff into prose worth reading");
+    expect(prompt).toContain("first person");
+  });
+
+  it("scopes the roster to workspace members only", () => {
+    const prompt = buildSystemPrompt("the-scribe", ["the-scribe", "the-builder"]);
+    expect(prompt).toContain("Workspace scope");
+    expect(prompt).toContain("the-scribe, the-builder");
+    expect(prompt).not.toContain("the-auditor");
   });
 });
