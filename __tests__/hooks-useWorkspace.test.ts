@@ -47,6 +47,10 @@ function installFetch(turns: TurnScript[], synthText: string | null) {
         { type: 'workspace.synthesized_end', workspaceId: 'w', correlationId: 'c' },
       ])
     }
+    // The engine's optional Jev hop returns 204 (disabled) without consuming a turn script.
+    if (url.includes('/api/studio/jev')) {
+      return new Response(null, { status: 204 })
+    }
     const t = turns[Math.min(i++, turns.length - 1)]
     if ('hang' in t) {
       await new Promise((_res, rej) => {
@@ -274,5 +278,27 @@ describe('useWorkspace chain engine', () => {
     })
     // one auto-retry per run — the second run must not inherit the first run's marker
     expect(calls.filter((c) => (c.body.instruction ?? '').includes('Deliver the final answer now'))).toHaveLength(2)
+  })
+
+  it('a failed turn clears "is typing", lands an error, and does not leak the raw provider cause', async () => {
+    let first = true
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      if (first) {
+        first = false
+        return new Response('Provider: Insufficient account funds (HTTP 402)', { status: 500 })
+      }
+      return sse([])
+    }))
+    const { result } = renderHook(() => useWorkspace())
+    await act(async () => {
+      await result.current.start({ memberIds: ['the-builder'], instruction: 'go' })
+    })
+    const cards = result.current.messages.filter((m) => m.content.startsWith('⚠️'))
+    // No member is left stuck "working" and the run terminates in an error state.
+    expect(Object.values(result.current.statusMap).some((s) => s === 'working')).toBe(false)
+    expect(result.current.workspaceState).toBe('error')
+    // The 402 cause is genericized on the card, and never surfaced verbatim on a public demo.
+    expect(cards.length).toBeGreaterThan(0)
+    expect(cards.every((c) => !c.content.includes('Insufficient account funds'))).toBe(true)
   })
 })
