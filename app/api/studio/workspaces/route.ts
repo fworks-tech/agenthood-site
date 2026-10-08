@@ -198,6 +198,7 @@ export async function POST(req: NextRequest) {
         } as unknown as Record<string, unknown>)
 
         const reader = baseStream.getReader()
+        let doneSent = false
         try {
           while (true) {
             const { done, value } = await reader.read()
@@ -206,7 +207,17 @@ export async function POST(req: NextRequest) {
           }
           const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'ok', workspaceId, correlationId }
           controller.enqueue(enc.encode(JSON.stringify(doneEvt) + '\n'))
+          doneSent = true
+        } catch (readErr) {
+          const msg = readErr instanceof Error ? readErr.message : String(readErr)
+          const errEvt = { type: 'workspace.error', data: msg, workspaceId, correlationId }
+          controller.enqueue(enc.encode(JSON.stringify(errEvt) + '\n'))
+          logger.error('workspace.stream_read_error', { workspaceId, correlationId, error: msg })
         } finally {
+          if (!doneSent) {
+            const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'interrupted', workspaceId, correlationId }
+            controller.enqueue(enc.encode(JSON.stringify(doneEvt) + '\n'))
+          }
           controller.close()
         }
       },

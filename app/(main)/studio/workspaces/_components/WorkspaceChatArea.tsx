@@ -14,9 +14,10 @@ interface Props {
   messages: WorkspaceMessage[]
   statusMap?: Record<string, WorkspaceStatus>
   onReact?: (messageId: string, emoji: string) => void
+  onReply?: (memberId: string) => void
 }
 
-export default function WorkspaceChatArea({ messages, statusMap, onReact }: Props) {
+export default function WorkspaceChatArea({ messages, statusMap, onReact, onReply }: Props) {
   const [showHidden, setShowHidden] = useState(false)
   // Collect members currently thinking/typing but without a fresh message yet
   // Include the-mediator here — while it has no card (empty/routing plan
@@ -130,6 +131,7 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact }: Prop
               toolCalls={m.toolCalls}
               reactions={m.reactions}
               onReact={onReact ? (emoji) => onReact(m.id, emoji) : undefined}
+              onReply={onReply}
             />
           )}
         </AnimatedMessage>

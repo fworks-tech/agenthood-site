@@ -1,0 +1,123 @@
+diff --git a/app/(main)/studio/_lib/workspace-engine.ts b/app/(main)/studio/_lib/workspace-engine.ts
+index b7e6816..2ef85ea 100644
+--- a/app/(main)/studio/_lib/workspace-engine.ts
++++ b/app/(main)/studio/_lib/workspace-engine.ts
+@@ -85,16 +85,6 @@ export type EngineCtx = {
+ // by `.word` (member access like `@user.route`). Written without lookbehind
+ // so older Safari can still parse the bundle. `@user.` ending a sentence and
+ // an inline-backticked `@user` still count.
+-const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w)/i
+-
+-function stripFences(text: string): string {
+-  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
+-}
+-
+-export function hasUserMention(output: string): boolean {
+-  return USER_MENTION_RE.test(stripFences(output))
+-}
+-
+ // A member's closing question to the user pauses the chain like @user does.
+ // Heuristic, not exact: only the last question in the closing tail counts, it
+ // must address the user (not muse aloud), and member-directed questions keep
+@@ -104,6 +94,12 @@ export function hasUserMention(output: string): boolean {
+ // ("The Strategist will dig in") is not an address. Fenced and inline code is
+ // ignored so ternaries and your_* names never read as questions.
+ const TAIL_CHARS = 600
++// A user mention that is not glued to a word, dot or dash — excludes emails and `user.route`.
++// `@user.` ending a sentence and an inline‑backticked `@user` still count.
++const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w|-\w)/i
++function stripFences(text: string) {
++  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
++}
+ const MIN_QUESTION_CHARS = 4
+ const MAX_QUESTION_CHARS = 300
+ const ASK_RE = /\b(want me to|would you|do you|are you|have you|shall i|should i|can i|let me know|your call|up to you|you decide|you|your|yours)\b/i
+@@ -136,6 +132,10 @@ export function findUserQuestion(output: string, validIds: string[] = []): strin
+   return null
+ }
+ 
++export function hasUserMention(output: string) {
++  return USER_MENTION_RE.test(stripFences(output))
++}
++
+ // Single turn with bookkeeping for retry + chained continuation. Owns the
+ // thread-write policy: mediator plans are raw, routing fallbacks skip, and
+ // thinking-only or empty turns never enter the shared thread.
+diff --git a/package.json b/package.json
+index ffb0f94..319d6d3 100644
+--- a/package.json
++++ b/package.json
+@@ -42,6 +42,7 @@
+     "test:e2e:report": "playwright show-report",
+     "sync": "node scripts/sync-docs.mjs",
+     "sync-skills": "node scripts/sync-skills.mjs",
++    "sync-skills:verify": "node scripts/sync-skills.mjs --verify",
+     "sync-news": "node scripts/build-news-manifest.mjs",
+     "summarize-news": "node scripts/summarize-news.mjs",
+     "check:deps": "node scripts/check-deps.mjs",
+diff --git a/scripts/sync-skills.mjs b/scripts/sync-skills.mjs
+index 381526c..7432d09 100644
+--- a/scripts/sync-skills.mjs
++++ b/scripts/sync-skills.mjs
+@@ -70,8 +70,11 @@ async function main() {
+ 
+   if (INSTALLED_VERSION) {
+     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
++  } else if (process.argv.includes("--allow-main")) {
++    console.warn("  ! could not detect installed agenthood version, falling back to main (--allow-main)");
+   } else {
+-    console.warn("  ! could not detect installed agenthood version, falling back to main");
++    console.error("  ✗ cannot determine installed agenthood version; refusing to generate from a moving ref. Install the published package or pass --allow-main.");
++    process.exit(1);
+   }
+ 
+   const registry = await fetchRegistry();
+@@ -171,7 +174,48 @@ export const agentRegistry: RegistryEntry[] = ${JSON.stringify(registryEntries,
+   console.log(`Generated ${REGISTRY_FILE} (${registryEntries.length} members)`);
+ }
+ 
++async function verify() {
++  if (!INSTALLED_VERSION) {
++    console.error("  ✗ cannot verify: installed agenthood version unknown");
++    process.exit(1);
++  }
++  const pkgSpec = JSON.parse(readFileSync(join(PROJECT_ROOT, "package.json"), "utf8"))?.dependencies?.agenthood ?? "";
++  if (/^(file|link|workspace):/.test(pkgSpec)) {
++    console.error(`  ✗ agenthood dependency is a local path (${pkgSpec}); generated data must come from a published package`);
++    process.exit(1);
++  }
++  const pkgSkillsDir = join(PROJECT_ROOT, "node_modules", "agenthood", "skills");
++  let failed = false;
++  for (const member of MEMBERS) {
++    const local = join(pkgSkillsDir, member, "SKILL.md");
++    if (!existsSync(local)) {
++      console.error(`  ✗ ${member}: missing from installed agenthood package`);
++      failed = true;
++      continue;
++    }
++    const expected = stripFrontmatter(readFileSync(local, "utf8"));
++    const quoted = JSON.stringify(expected).slice(1, -1).slice(0, 120);
++    const out = readFileSync(OUTPUT_FILE, "utf8");
++    if (!out.includes(quoted)) {
++      console.error(`  ✗ ${member}: ${OUTPUT_FILE} does not match the installed agenthood v${INSTALLED_VERSION} source — regenerate with npm run sync-skills`);
++      failed = true;
++    }
++  }
++  if (failed) {
++    console.error("\nsync-skills --verify: drift detected between generated data and the published agenthood package.");
++    process.exit(1);
++  }
++  console.log(`  ✓ sync-skills --verify: generated data matches agenthood v${INSTALLED_VERSION}`);
++}
++
++if (process.argv.includes("--verify")) {
++  verify().catch((err) => {
++    console.error("sync-skills --verify failed:", err.message);
++    process.exit(1);
++  });
++} else {
+ main().catch((err) => {
+   console.error("sync-skills failed:", err.message);
+   process.exit(1);
+ });
++}

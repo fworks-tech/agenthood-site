@@ -7,6 +7,7 @@ import {
   reactionThreadLines,
   appendThreadWithReactionCap,
 } from '../app/(main)/studio/_lib/workspace-reactions'
+import type { ThreadMessage } from '../app/(main)/studio/_lib/workspace-orchestrator'
 
 const IDS = ['the-mediator', 'the-builder', 'the-tester']
 
@@ -101,8 +102,8 @@ describe('appendThreadWithReactionCap', () => {
   })
 
   it('caps reaction lines at 40, dropping the oldest', () => {
-    const thread: import('../app/(main)/studio/_lib/workspace-orchestrator').ThreadMessage[] = [{ role: 'user', content: 'goal' }]
-    let next = thread
+    const thread: ThreadMessage[] = [{ role: 'user', content: 'goal' }]
+    let next: ThreadMessage[] = thread
     for (let i = 0; i < 45; i++) {
       next = appendThreadWithReactionCap(next, [
         { role: 'user' as const, content: `[reaction] the-tester reacted 👍 #${i}` },

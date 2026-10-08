@@ -6,7 +6,7 @@ import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Paper, Text, ActionIcon, Group, Title, Modal, Collapse, Badge } from '@mantine/core'
 import { CodeHighlight } from '@mantine/code-highlight'
-import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck } from '@tabler/icons-react'
+import { IconThumbUp, IconThumbDown, IconEye, IconCopy, IconCheck, IconMessageReply } from '@tabler/icons-react'
 import { getAgentById } from '../../_data/agents'
 import { QUICK_EMOJI } from '../../_lib/workspace-reactions'
 import type { WorkspaceReaction } from '../../_types/workspace'
@@ -22,6 +22,7 @@ interface Props {
   toolCalls?: WorkspaceToolCall[]
   reactions?: WorkspaceReaction[]
   onReact?: (emoji: string) => void
+  onReply?: (memberId: string) => void
 }
 
 // Group-chat accent per agent lane — full literal class strings so the
@@ -65,7 +66,7 @@ function summarizeArgs(tc: WorkspaceToolCall): string {
 }
 
 function reactorName(byMemberId: string): string {
-  if (byMemberId === 'user') return 'você'
+  if (byMemberId === 'user') return 'You'
   return getAgentById(byMemberId)?.name ?? byMemberId
 }
 
@@ -164,13 +165,14 @@ async function submitFeedback(messageId: string, value: 'up' | 'down' | null) {
   }
 }
 
-export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCalls, reactions, onReact }: Props) {
+export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCalls, reactions, onReact, onReply }: Props) {
   const agent = getAgentById(memberId)
   const isUser = memberId === 'user'
   const polished = toPolished(content)
   const thinkingOnly = isThinkingOnly(polished)
   const useful = isUsefulPolished(polished)
   const hasLogs = (toolCalls && toolCalls.length > 0) || (!polished && !!content)
+  const mentionsUser = /(^|[^\w.-])@user\b/i.test(polished)
 
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const [logsOpen, setLogsOpen] = useState(false)
@@ -314,7 +316,7 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
               bg="zinc.9"
               px="xl"
               py={10}
-              className={`msg-in border-l-2 ${accent.edge} transition-all duration-300 hover:shadow-xl hover:shadow-black/20`}
+              className={`msg-in border-l-2 ${accent.edge} transition-all duration-300 hover:shadow-xl hover:shadow-black/20 ${mentionsUser ? 'ring-1 ring-amber-500/40 bg-amber-500/5' : ''}`}
             >
               <div className={`break-words text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 ${clamped ? 'relative max-h-[520px] overflow-hidden' : ''}`}>
                 {polished ? (
@@ -386,6 +388,11 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
                 {hasLogs && (
                   <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => setLogsOpen(true)} title="View logs">
                     <IconEye size={14} />
+                  </ActionIcon>
+                )}
+                {onReply && isUser === false && (
+                  <ActionIcon variant="subtle" size="sm" color="zinc.6" onClick={() => onReply(memberId)} title="Reply">
+                    <IconMessageReply size={14} />
                   </ActionIcon>
                 )}
                 {hasLogs && (

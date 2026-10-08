@@ -29,10 +29,13 @@ function recordTurn(state: EngineState, ctx: EngineCtx, memberId: string, wId: s
   const memberIds = ctx.getSpec()?.memberIds ?? []
   if (memberIds.length === 0) return
   state.thread = appendThreadWithReactionCap(state.thread, reactionThreadLines(raw, memberId, memberIds))
-  ctx.pushReaction?.(
-    `${wId}-${memberId}-${turnIndex}`,
-    suggestReactions({ content: raw, authorId: memberId, memberIds }),
-  )
+  const hasLLMReaction = /\[reaction\]\s+@\S+\s+\S+/.test(raw)
+  if (!hasLLMReaction) {
+    ctx.pushReaction?.(
+      `${wId}-${memberId}-${turnIndex}`,
+      suggestReactions({ content: raw, authorId: memberId, memberIds }),
+    )
+  }
 }
 
 function recordUser(state: EngineState, spec: WorkspaceSpec, content: string): void {
@@ -147,7 +150,7 @@ function pauseIfMediatorAsked(
 // and attaches a machine-readable plan. Prose stays visible in chat (group
 // chat), JSON is stripped from view but drives the queue.
 function mediatorPrompt(spec: WorkspaceSpec, userText: string): string {
-  return `User goal: ${userText}\n\nYou may ONLY delegate to these workspace members: ${spec.memberIds.join(", ")}. Never name anyone else.\nReply with 1-2 short lines saying who acts next and why (use "talk to the-<name>" for the handoff), then append EXACTLY this JSON with a single member:\n{"members":[{"id":"<one of: ${spec.memberIds.join(", ")}>","task":"<one-sentence handoff task>","order":0}]}`;
+  return `User goal: ${userText}\n\nYou may ONLY delegate to these workspace members: ${spec.memberIds.join(", ")}. Never name anyone else.\n\nBefore routing, ask the user ONE short question (max 1 line) to clarify what they need. If you already have enough context, skip the question and reply with 1-2 short lines then the JSON plan.`
 }
 
 // Conversational delegation: "talk to the-X" names a workspace member even
@@ -291,6 +294,13 @@ export async function intervene(
         { onRecorded: (out, turnIndex) => recorded(owner, out, turnIndex) },
       )
       if (!ctx.isCurrentSession(session)) return
+      // If the mediator replied with a plan, route it immediately.
+      if (owner === 'the-mediator') {
+        const plan = parseMediatorPlan(raw, spec.memberIds)
+        if (plan) {
+          queueFromMediatorOutput(state, spec, raw, content, ctx, 'the-mediator')
+        }
+      }
       const r = await afterTurn(state, owner, raw, workspaceId, correlationId, session, ctx)
       if (r === 'continue') await pump(state, workspaceId, correlationId, session, ctx, recorded)
       if (ctx.isCurrentSession(session)) await settle(state, workspaceId, correlationId, session, ctx)
