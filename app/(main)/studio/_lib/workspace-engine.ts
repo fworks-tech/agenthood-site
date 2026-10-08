@@ -85,16 +85,6 @@ export type EngineCtx = {
 // by `.word` (member access like `@user.route`). Written without lookbehind
 // so older Safari can still parse the bundle. `@user.` ending a sentence and
 // an inline-backticked `@user` still count.
-const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w)/i
-
-function stripFences(text: string): string {
-  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
-}
-
-export function hasUserMention(output: string): boolean {
-  return USER_MENTION_RE.test(stripFences(output))
-}
-
 // A member's closing question to the user pauses the chain like @user does.
 // Heuristic, not exact: only the last question in the closing tail counts, it
 // must address the user (not muse aloud), and member-directed questions keep
@@ -104,6 +94,12 @@ export function hasUserMention(output: string): boolean {
 // ("The Strategist will dig in") is not an address. Fenced and inline code is
 // ignored so ternaries and your_* names never read as questions.
 const TAIL_CHARS = 600
+// A user mention that is not glued to a word, dot or dash — excludes emails and `user.route`.
+// `@user.` ending a sentence and an inline‑backticked `@user` still count.
+const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w|-\w)/i
+function stripFences(text: string) {
+  return text.replace(/```[\s\S]*?```/g, '\n').replace(/```[\s\S]*$/, '')
+}
 const MIN_QUESTION_CHARS = 4
 const MAX_QUESTION_CHARS = 300
 const ASK_RE = /\b(want me to|would you|do you|are you|have you|shall i|should i|can i|let me know|your call|up to you|you decide|you|your|yours)\b/i
@@ -134,6 +130,10 @@ export function findUserQuestion(output: string, validIds: string[] = []): strin
     return q.slice(0, MAX_QUESTION_CHARS)
   }
   return null
+}
+
+export function hasUserMention(output: string) {
+  return USER_MENTION_RE.test(stripFences(output))
 }
 
 // Single turn with bookkeeping for retry + chained continuation. Owns the
