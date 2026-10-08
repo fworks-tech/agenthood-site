@@ -15,6 +15,13 @@ vi.mock('agenthood/dist/llm', () => ({
   },
 }))
 
+// Pin the demo provider onto the chat-completions seam these adapter tests
+// exercise; Zen protocol selection is covered separately in zen.test.ts.
+vi.mock('../app/(main)/studio/_lib/zen', async (io) => ({
+  ...(await io<typeof import('../app/(main)/studio/_lib/zen')>()),
+  zenProtocolForModel: () => 'chat',
+}))
+
 vi.mock('../app/(main)/studio/_data/agents.generated', () => ({
   agentSkills: {
     'the-builder': 'You are the-builder system prompt.',

@@ -1,6 +1,6 @@
 import { selectDemoModel } from '../_types/studio'
 import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
-import { buildDemoLLMConfig } from './agenthood-adapter'
+import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
 
 const SYNTHESIS_SYSTEM = `You are the Workspace Synthesizer — the final voice the user hears, exactly like Claude Work.
 
@@ -30,12 +30,10 @@ export async function createSynthesisStream(
       const enc = new TextEncoder()
       const startAt = performance.now()
       try {
-        const { LLMRouter } = await import('agenthood/dist/llm')
         const llmConfig = buildDemoLLMConfig()
-        const provider = await LLMRouter.fromConfig(llmConfig)
-        try {
-          provider.setModel(model)
-        } catch {}
+        // Route through the shared resolver so a /v1/messages tier (qwen3.8-flash)
+        // reaches the right endpoint; LLMRouter.fromConfig only speaks chat.
+        const provider = await resolveDemoProvider(model, llmConfig, workspaceMeta.correlationId)
 
         controller.enqueue(
           enc.encode(

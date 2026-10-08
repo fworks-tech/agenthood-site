@@ -4,7 +4,7 @@ import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
 import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '../_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
-import { buildDemoLLMConfig } from './agenthood-adapter'
+import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
 import { runToolLoop, withProviderRetry } from './tool-loop'
 import type { Message } from 'agenthood/dist/llm'
 
@@ -102,12 +102,8 @@ export async function createWorkspaceTurnStream(
       })
 
       try {
-        const { LLMRouter } = await import('agenthood/dist/llm')
         const llmConfig = buildDemoLLMConfig()
-        const provider = await LLMRouter.fromConfig(llmConfig)
-        try {
-          provider.setModel(model)
-        } catch {}
+        const provider = await resolveDemoProvider(model, llmConfig, req.correlationId)
 
         const llmMessages: Message[] = messages.map((m) => ({
           role: m.role,
