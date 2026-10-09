@@ -108,3 +108,41 @@ export function isThinkingOnly(polished: string): boolean {
   ]
   return thinkingPrefixes.some((p) => t.startsWith(p))
 }
+
+/** True when the text addresses the user directly (`@user`). Client-safe
+ *  (pure regex, no server deps) so the chat renderer can decide visibility
+ *  without importing the engine. Mirrors the card's own mention check. */
+const USER_MENTION_RE = /(^|[^\w.-])@user\b(?!\.\w|-\w)/i
+export function mentionsUser(text: string): boolean {
+  return USER_MENTION_RE.test(text)
+}
+
+/**
+ * Collapse long threads for display: when there are more than `threshold`
+ * messages, hide older non-useful member intermediates behind a toggle, but
+ * always keep every user/command bubble, streaming placeholder, real answer,
+ * and — critically — any reply that addresses the user (`@user`). A short
+ * conversational question is never an "intermediate update" to hide (#316).
+ */
+export function collapseIntermediates<T extends { memberId: string; content: string }>(
+  chatMessages: T[],
+  threshold = 6,
+): { visible: T[]; hidden: T[] } {
+  if (chatMessages.length <= threshold) return { visible: chatMessages, hidden: [] }
+  const lastIdx = chatMessages.length - 1
+  const keep = new Set<number>()
+  chatMessages.forEach((m, i) => {
+    if (m.memberId === 'user' || m.memberId === 'command' || m.content === '') keep.add(i)
+    else {
+      const pol = toPolished(m.content)
+      if (isUsefulPolished(pol) || mentionsUser(pol)) keep.add(i)
+      else if (i === lastIdx) keep.add(i)
+    }
+  })
+  keep.add(0)
+  keep.add(lastIdx)
+  if (lastIdx - 1 >= 0) keep.add(lastIdx - 1)
+  const visible = chatMessages.filter((_, i) => keep.has(i))
+  const hidden = chatMessages.filter((_, i) => !keep.has(i))
+  return hidden.length === 0 ? { visible: chatMessages, hidden: [] } : { visible, hidden }
+}

@@ -8,7 +8,7 @@ import WorkspaceTurnCard from './WorkspaceTurnCard'
 import type { WorkspaceMessage } from '../../_hooks/useWorkspace'
 import type { WorkspaceStatus } from '../../_types/workspace'
 import { getAgentById } from '../../_data/agents'
-import { isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
+import { collapseIntermediates } from '../../_lib/workspace-polish'
 
 interface Props {
   messages: WorkspaceMessage[]
@@ -71,27 +71,9 @@ export default function WorkspaceChatArea({ messages, statusMap, onReact, onRepl
   // Keep: every user bubble + every useful polished answer + the latest
   // streaming placeholder. Hide older thinking/working intermediaries behind
   // a toggle.
-  const THRESHOLD = 6
-  let visibleMessages = chatMessages
-  let hiddenMessages: WorkspaceMessage[] = []
-  if (chatMessages.length > THRESHOLD) {
-    const lastIdx = chatMessages.length - 1
-    const keep = new Set<number>()
-    chatMessages.forEach((m, i) => {
-      if (m.memberId === 'user') keep.add(i)
-      else if (m.memberId === 'command') keep.add(i)
-      else if (m.content === '') keep.add(i)
-      else if (isUsefulPolished(toPolished(m.content))) keep.add(i)
-      else if (i === lastIdx) keep.add(i) // keep latest intermediate for context
-    })
-    // always keep first and last 2 to avoid empty collapse edge cases
-    keep.add(0)
-    keep.add(lastIdx)
-    if (lastIdx - 1 >= 0) keep.add(lastIdx - 1)
-    visibleMessages = chatMessages.filter((_, i) => keep.has(i))
-    hiddenMessages = chatMessages.filter((_, i) => !keep.has(i))
-    if (hiddenMessages.length === 0) visibleMessages = chatMessages
-  }
+  // Collapse long threads (hide older non-useful intermediates behind a toggle).
+  // Always keeps user bubbles and any `@user` reply — see collapseIntermediates.
+  const { visible: visibleMessages, hidden: hiddenMessages } = collapseIntermediates(chatMessages)
 
   return (
     <div className="space-y-3">
