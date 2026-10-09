@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-10-09"
+    ],
+    "path": "news/whats-new-2026-10-09.md",
+    "title": "v3.75.0: Protocol-Aware OpenCode Zen With Jev System One",
+    "date": "2026-10-09",
+    "author": "Agenthood Team",
+    "summary": "Agenthood v3.75.0 makes the OpenCode Zen provider protocol-aware and adds support for Jev System One."
+  },
+  {
+    "slug": [
       "whats-new-2026-10-08"
     ],
     "path": "news/whats-new-2026-10-08.md",
