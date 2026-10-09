@@ -52,6 +52,14 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("You speak as The Scribe");
     expect(prompt).toContain("Turns your diff into prose worth reading");
     expect(prompt).toContain("first person");
+    expect(prompt).toContain("Stay fully in character");
+  });
+
+  it("directs a conversational, brief tone", () => {
+    const prompt = buildSystemPrompt("the-scribe");
+    expect(prompt).toContain("colleague in a chat, not a report");
+    expect(prompt).toContain("lead with the point and you stop there");
+    expect(prompt).toContain("no preamble");
   });
 
   it("scopes the roster to workspace members only", () => {
