@@ -35,8 +35,12 @@ export function toPolished(content: string): string {
 // front of…", "I don't write the routing record…"). Drop those framing lines
 // from the polished view. If what remains is only the @user question, collapse
 // to that question alone. Code-bearing answers are never touched.
+// Language-agnostic machinery signatures (work across all languages):
+// - arrow chains with member tokens: @a -> @b -> @c
+// - lines addressing a specialist: @member -- / @member:
+// - backticked intent slug + optional %: `ambiguous` (75%)
 const MACHINERY =
-  /first desk|nothing gets to a|to a specialist until|the only specialist|i can put you in front|outside my lane|i'?ll (classify|route|pass|hand|send|get the)|hand it straight|send it up the line|load triaged|i don'?t (write|route)|routing record|nothing to classify|invent an intent|classify and tell|before anyone else walks in|i'?m (a |the )?(desk|gatekeeper|router|triage)|i'?ll hand this up/i
+  /first desk|nothing gets to a|to a specialist until|the only specialist|i can put you in front|outside my lane|i'?ll (classify|route|pass|hand|send|get the)|hand it straight|send it up the line|load triaged|i don'?t (write|route)|routing record|nothing to classify|invent an intent|classify and tell|before anyone else walks in|i'?m (a |the )?(desk|gatekeeper|router|triage)|i'?ll hand this up|`(?:ambiguous|clear-specialist|capacity-sensitive|entry-violation)`\s*\(?\s*\d{1,3}\s*%?\s*\)?|(?:@?the-[\w-]+)\s*(?:->|\\u2192)\s*(?:@?the-)|^\s*@[\w-]+\s*[—:-]/i
 
 export function collapseFraming(text: string): string {
   if (text.includes('```')) return text

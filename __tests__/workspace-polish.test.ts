@@ -189,3 +189,30 @@ describe('collapseIntermediates', () => {
     expect(list.filter((m) => m.memberId === 'user').every((m) => visible.includes(m))).toBe(true)
   })
 })
+
+describe('collapseFraming -- language-agnostic machinery', () => {
+  it('drops Portuguese classification + confidence line', () => {
+    const raw = "Bora. Classifiquei como `ambiguous` (75%) -- a ambicao esta clara"
+    expect(collapseFraming(raw)).toBe('')
+  })
+
+  it('drops arrow-chain routing line', () => {
+    const raw = "Sequencia: @the-strategist -> @the-architect -> @the-builder"
+    expect(collapseFraming(raw)).toBe('')
+  })
+
+  it('drops specialist-addressing line', () => {
+    const raw = "@the-strategist -- assuma a refinação. Um risco pra tratar."
+    expect(collapseFraming(raw)).toBe('')
+  })
+
+  it('preserves genuine short answer with @user', () => {
+    const raw = "Sure! @user What do you need built?"
+    expect(collapseFraming(raw)).toBe("Sure! @user What do you need built?")
+  })
+
+  it('preserves code-bearing answer even with arrow-like chars', () => {
+    const raw = "Here's the fix:\n```ts\nconst a = b => c\n```\nNext step @user?"
+    expect(collapseFraming(raw)).toContain('```')
+  })
+})
