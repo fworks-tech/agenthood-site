@@ -36,6 +36,13 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("@user");
   });
 
+  it("tells members to hide their internal machinery and not present option menus", () => {
+    const prompt = buildSystemPrompt("the-scribe");
+    expect(prompt).toContain("HIDE THE MACHINERY");
+    expect(prompt).toContain("only the OUTCOME");
+    expect(prompt).toContain("Never stack questions or present a list of options");
+  });
+
   it("returns empty string for unknown members", () => {
     expect(buildSystemPrompt("the-ghost")).toBe("");
   });
