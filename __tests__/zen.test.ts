@@ -53,7 +53,9 @@ describe('ZenMessagesProvider.complete', () => {
     expect(res.usage).toMatchObject({ promptTokens: 10, completionTokens: 4, totalTokens: 14 })
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('https://opencode.ai/zen/v1/messages')
-    expect(init.headers).toMatchObject({ authorization: 'Bearer key', 'anthropic-version': '2023-06-01' })
+    // /v1/messages is Anthropic-compatible -> x-api-key (Bearer would 401 "Missing API key")
+    expect(init.headers).toMatchObject({ 'x-api-key': 'key', 'anthropic-version': '2023-06-01' })
+    expect(init.headers).not.toHaveProperty('authorization')
     expect(JSON.parse(init.body).system).toBeUndefined()
   })
 

@@ -36,10 +36,11 @@ export function zenProtocolForModel(model: string): ZenProtocol {
 function messagesClient(apiKey: string) {
   return {
     'content-type': 'application/json',
-    // Zen's proxy authenticates with Bearer (see the /v1/systemone + /v1/models
-    // examples in the Zen docs) even though the payload is Anthropic-shaped —
-    // the native x-api-key header would 401 against opencode.ai/zen.
-    authorization: `Bearer ${apiKey}`,
+    // The /v1/messages endpoint is the Anthropic-compatible API — every model on
+    // it is listed in Zen's docs as `@ai-sdk/anthropic`, which authenticates with
+    // `x-api-key`. Bearer is only for /v1/systemone; sending Bearer here makes Zen
+    // return Anthropic's "Missing API key" (401).
+    'x-api-key': apiKey,
     'anthropic-version': '2023-06-01',
   }
 }
