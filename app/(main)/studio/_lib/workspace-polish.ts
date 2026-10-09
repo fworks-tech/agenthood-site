@@ -27,7 +27,30 @@ export function toPolished(content: string): string {
   })
   const out = filtered.join('\n').replace(/\n{3,}/g, '\n\n').trim()
   if (looksLikeMediatorPlan(out)) return ''
-  return out
+  return collapseFraming(out)
+}
+
+// Members sometimes narrate their role and routing process instead of just
+// answering ("I'm the first desk…", "the only specialist I can put you in
+// front of…", "I don't write the routing record…"). Drop those framing lines
+// from the polished view. If what remains is only the @user question, collapse
+// to that question alone. Code-bearing answers are never touched.
+const MACHINERY =
+  /first desk|nothing gets to a|to a specialist until|the only specialist|i can put you in front|outside my lane|i'?ll (classify|route|pass|hand|send|get the)|hand it straight|send it up the line|load triaged|i don'?t (write|route)|routing record|nothing to classify|invent an intent|classify and tell|before anyone else walks in|i'?m (a |the )?(desk|gatekeeper|router|triage)|i'?ll hand this up/i
+
+export function collapseFraming(text: string): string {
+  if (text.includes('```')) return text
+  // Long replies are substantive answers, not greeting/menu dumps — leave them.
+  if (text.length > 1200) return text
+  const lines = text.split('\n')
+  // @user question lines are never framing, even if they contain "I'll route…".
+  const isFraming = (l: string) => !l.includes('@user') && MACHINERY.test(l)
+  if (!lines.some(isFraming)) return text
+  const kept = lines.filter((l) => !isFraming(l))
+  const content = kept.map((l) => l.trim()).filter(Boolean)
+  const asks = content.filter((l) => l.includes('@user'))
+  if (asks.length && content.length === asks.length) return asks[asks.length - 1]
+  return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 
 function looksLikeMediatorPlan(text: string): boolean {
