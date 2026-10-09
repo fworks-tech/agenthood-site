@@ -229,44 +229,67 @@ export function useWorkspace() {
       abortRef.current = controller
       updateStatus(memberId, 'working')
 
-      const res = await fetch('/api/studio/workspaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
-        body: JSON.stringify({
-          memberIds: [memberId],
-          instruction,
-          workspaceId: wId,
-          memberId,
-          turnIndex,
-          thread,
-          correlationId,
-          workspaceMemberIds: specRef.current?.memberIds ?? [memberId],
-        }),
-        signal: controller.signal,
-      })
-
-      if (!res.ok) {
-        const errText = await res.text()
-        throw new Error(errText || `Workspace turn failed: ${res.status}`)
-      }
-
       let currentContent = ''
       const toolCallsMap = new Map<string, WorkspaceToolCall>()
       const msgId = `${wId}-${memberId}-${turnIndex}`
-
+      let sawTurnEnd = false
+      // Placeholder exists before the request so a failed turn always has a card
+      // to land its error on — otherwise the empty card shows "is typing…" forever.
       setMessages((prev) => [...prev, { id: msgId, memberId, content: '', turnIndex, toolCalls: [] }])
+      let turnFailed = false
+      const markFailed = (message: string) => {
+        turnFailed = true
+        updateStatus(memberId, 'idle')
+        // Surface a safe, actionable detail. Billing/auth/secret leakage is genericized;
+        // the raw error is logged server-side. Ordinary failures (timeout, empty turn,
+        // connection lost) keep their provider text so the user has something to act on.
+        const sensitive = /insufficient|402|401|403|unauthorized|payment|quota|api[_ -]?key|authoriz/i.test(message)
+        const detail = sensitive
+          ? 'Provider unavailable — see server logs'
+          : message.replace(/\[object Object\]/g, '').replace(/\s+/g, ' ').trim() || 'Turn failed — see server logs'
+        setMessages((prev) =>
+          prev.map((m) => (m.id === msgId && !m.content ? { ...m, content: `⚠️ ${detail}` } : m)),
+        )
+      }
 
-      await readSSEStream(
-        res,
-        {
-          onToken: () => {},
-          onDone: () => {},
-          onError: (e) => {
-            setError(e.message)
-            setWorkspaceState('error')
-          },
-          onLog: () => {},
-          onWorkspaceEvent: (event) => {
+      try {
+        const res = await fetch('/api/studio/workspaces', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-correlation-id': correlationId },
+          body: JSON.stringify({
+            memberIds: [memberId],
+            instruction,
+            workspaceId: wId,
+            memberId,
+            turnIndex,
+            thread,
+            correlationId,
+            workspaceMemberIds: specRef.current?.memberIds ?? [memberId],
+          }),
+          signal: controller.signal,
+        })
+
+        if (!res.ok) {
+          const errText = await res.text()
+          throw new Error(errText || `Workspace turn failed: ${res.status}`)
+        }
+
+        await readSSEStream(
+          res,
+          {
+            onToken: () => {},
+            onDone: () => {},
+            onError: (e) => {
+              // readSSEStream emits a trailing "connection interrupted" error once the
+              // stream closes normally after workspace.turn_end — that is not a failure.
+              // Only treat onError as a real provider failure when the turn never completed.
+              if (sawTurnEnd) return
+              setError(e.message)
+              setWorkspaceState('error')
+              markFailed(e.message)
+            },
+            onLog: () => {},
+            onWorkspaceEvent: (event) => {
             if (event.type === 'workspace.token' && typeof event.data === 'string') {
               currentContent += event.data as string
               setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, content: currentContent } : m)))
@@ -303,13 +326,26 @@ export function useWorkspace() {
               updateStatus(event.memberId as string, event.status as WorkspaceStatus)
             }
             if (event.type === 'workspace.turn_end') {
+              sawTurnEnd = true
               updateStatus(event.memberId as string, 'done')
             }
           },
-        },
-        controller.signal,
-      )
+          },
+          controller.signal,
+        )
+      } catch (err) {
+        if ((err as Error).name === 'AbortError') {
+          updateStatus(memberId, 'idle')
+          throw err
+        }
+        markFailed(err instanceof Error ? err.message : String(err))
+        throw err
+      }
 
+      // A workspace.error SSE event lands in onError (not a rejection), so readSSEStream
+      // has already returned. Throw to terminate the turn — returning would resolve with
+      // empty/partial content and pump would retry or route onward after a real failure.
+      if (turnFailed) throw new Error('Workspace turn failed — the provider returned an error')
       updateStatus(memberId, 'done')
       // Parse [reaction] tags from the raw output and strip them from content.
       const reactionMatches = [...currentContent.matchAll(/\[reaction\]\s+(@\S+)\s+(\S+)/g)]

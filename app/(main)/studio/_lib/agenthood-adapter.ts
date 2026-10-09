@@ -1,9 +1,10 @@
 import { buildSystemPrompt } from "./system-prompt";
 import { ValidationError } from "./errors";
 import { logger } from "./logger";
-import type { LLMRequest, LLMConfig, Message } from "agenthood/dist/llm";
+import type { LLMRequest, LLMConfig, Message, ILLMProvider } from "agenthood/dist/llm";
 import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from "./tools";
 import { runToolLoop, withProviderRetry } from "./tool-loop";
+import { zenProtocolForModel, ZenMessagesProvider } from "./zen";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
 import {
@@ -66,6 +67,44 @@ export function buildDemoLLMConfig(): LLMConfig {
   };
 }
 
+// One Zen-compliant seam for both Studio surfaces. The pinned `agenthood`
+// provider only speaks `/v1/chat/completions`, so a `/v1/messages` model
+// (Claude, qwen3.8-flash) is served by ZenMessagesProvider and a Jev model is
+// rejected outright rather than silently 400-ing. Shared so the playground and
+// the workspace can never drift onto different endpoints again.
+//
+// Protocol -> Provider mapping:
+//   'chat'      -> opencodeChatProvider (OpenAI SDK, /v1/chat/completions)
+//   'messages'  -> ZenMessagesProvider      (Anthropic SDK, /v1/messages)
+//   'responses' -> throw (GPT/Grok/Muse on /v1/responses - not implemented)
+//   'systemone' -> throw (Jev on /v1/systemone - use jevChoice)
+export async function resolveDemoProvider(model: string, llmConfig: LLMConfig, correlationId?: string): Promise<ILLMProvider> {
+  const protocol = zenProtocolForModel(model)
+  if (protocol === 'systemone') {
+    throw new ValidationError(`Jev ("${model}") is a System One decision model — it emits no prose. Use it for routing confidence, not a chat turn.`)
+  }
+  if (protocol === 'messages') {
+    const apiKey = process.env.OPENCODE_API_KEY
+    if (!apiKey) {
+      throw new ValidationError(`OPENCODE_API_KEY is not set — required for the Zen /v1/messages model "${model}".`)
+    }
+    return new ZenMessagesProvider(apiKey, model)
+  }
+  if (protocol === 'responses') {
+    throw new ValidationError(`Zen model "${model}" uses /v1/responses, which the OpenCode chat provider does not speak. Choose a /v1/chat/completions or /v1/messages model.`)
+  }
+  const { LLMRouter } = await import("agenthood/dist/llm");
+  const provider = await LLMRouter.fromConfig(llmConfig)
+  // Never swallow: silently keeping the router default (a dead id, e.g. the old
+  // mimo-v2.5) is what turns a bad config into a "typing forever" hang.
+  try {
+    provider.setModel(model)
+  } catch (err) {
+    logger.warn("chat.set_model_failed", { model, error: String(err), correlationId })
+  }
+  return provider
+}
+
 export class LightweightAdapter implements AgenthoodAdapter {
   async chat(req: ChatRequest, signal?: AbortSignal): Promise<ReadableStream> {
     const systemPrompt = buildSystemPrompt(req.agentId);
@@ -124,15 +163,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           correlationId,
         });
         try {
-          const { LLMRouter } = await import("agenthood/dist/llm");
-          const provider = await LLMRouter.fromConfig(llmConfig);
-          // Swallowing this would silently bill the router's default model
-          // instead, so surface it — the demo's cost guarantee depends on it.
-          try {
-            provider.setModel(model);
-          } catch (err) {
-            logger.warn("chat.set_model_failed", { model, error: String(err), correlationId });
-          }
+          const provider = await resolveDemoProvider(model, llmConfig, correlationId);
 
           if (toolSchemas && toolSchemas.length > 0) {
             const emit = (event: Record<string, unknown>) => {

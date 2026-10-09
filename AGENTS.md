@@ -108,8 +108,11 @@ npx agenthood run the-architect "plan the implementation for issue #42"
 
 The runtime reads `.agenthood/config.json` (written by `npx agenthood init`) and respects
 the same `members` configuration. The default LLM provider follows the `providers` list
-in the config (currently opencode, with Groq among the fallbacks). See
-[ADR-008](docs/adr/ADR-008-typescript-runtime-over-python.md)
+in the config — currently **opencode (Zen) only**. There is deliberately no cross-provider
+fallback: Zen model ids (e.g. `glm-5.3-flash`, `qwen3.8-flash`) do not resolve on Groq, so a
+blind failover would 404 the model. Zen is also multi-protocol (`/v1/chat/completions`,
+`/v1/messages`, `/v1/responses`, and Jev on `/v1/systemone`); the provider routes per model.
+See [ADR-008](docs/adr/ADR-008-typescript-runtime-over-python.md)
 and [ADR-009](docs/adr/ADR-009-groq-as-default-llm-provider.md) for design decisions.
 
 Every `agenthood run` records one decision and one provenance entry (success or

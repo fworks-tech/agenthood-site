@@ -49,21 +49,20 @@ export function getMemberTools(memberId: string): string[] {
     : ["web_fetch", "activate_skill"];
 }
 
-// Tiered demo models: a 2-tier map. Selection is a pure heuristic (no LLM
-// call) enforced server-side. All tiers must be chat-completions models on the
-// pinned provider that can actually serve the request shape they are given.
-// jev-1.13 was rejected because it is a System One decision model on
-// /v1/systemone, not prose chat. gpt-5-nano was rejected as the balanced
-// default because it does not support the tools protocol on Zen — it answered
-// 400 "Model does not support this protocol" for every tool-enabled turn
-// (every workspace member outside CODE_AGENTS, e.g. the-builder), while the
-// code tier served the same requests fine.
-// - Q&A (no tools): cheapest non-free chat model in the console.
-// - Code (tools on, or a code agent / ``` fences): the tool-capable model.
-// Prices live in the Zen console and rot fast, so they are not quoted here.
+// Tiered demo models. Selection is a pure heuristic (no LLM call) enforced
+// server-side. Every tier MUST be reachable through the endpoint the site picks
+// for it — see `zen.ts` `zenProtocolForModel`. The pinned `agenthood` opencode
+// provider speaks only /v1/chat/completions, so a /v1/messages model is served
+// by the site's own ZenMessagesProvider (that is the point of `zen.ts`: the
+// site, not the dependency, owns Zen endpoint compliance).
+// Rejected on protocol grounds: gpt-5-nano (/v1/responses, no tools on Zen);
+// jev-1.13 (/v1/systemone, a decision model that emits no prose — see the
+// routing classifier). Chosen: qwen3.8-flash, served on /v1/messages.
+// - Q&A (no tools) and Code (tools on) currently share the model; re-split when
+//   a second tier is verified to serve the tools protocol over /v1/messages.
 // Worst case stays bounded: 20 req/min × 16,384 tokens per response.
-export const DEMO_QA_MODEL = "deepseek-v4-flash";
-export const DEMO_CODE_MODEL = "deepseek-v4-flash";
+export const DEMO_QA_MODEL = "qwen3.8-flash";
+export const DEMO_CODE_MODEL = "qwen3.8-flash";
 
 // Roles a client may put in a playground message. `system` is excluded because
 // a forged system message lands after the member's real system prompt and
