@@ -54,10 +54,10 @@ describe("getToolSchemas", () => {
 
 describe("activate_skill", () => {
   it("loads a packaged skill document", async () => {
-    const result = await executeTool("activate_skill", { skill_name: "commit-messages" });
+    const result = await executeTool("activate_skill", { skill_name: "the-scribe" });
     expect(result).not.toMatch(/^Error: /);
     expect(result.length).toBeGreaterThan(100);
-    expect(result.toLowerCase()).toContain("conventional");
+    expect(result.toLowerCase()).toContain("changelog");
   });
 
   it("returns an error for an unknown skill", async () => {
@@ -81,7 +81,7 @@ describe("activate_skill", () => {
   });
 
   it("caps the returned document at the tool result limit", async () => {
-    const result = await executeTool("activate_skill", { skill_name: "commit-messages" });
+    const result = await executeTool("activate_skill", { skill_name: "the-scribe" });
     expect(result.length).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS);
   });
 });
