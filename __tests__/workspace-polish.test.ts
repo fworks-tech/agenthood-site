@@ -3,6 +3,8 @@ import {
   toPolished,
   isEmptyTurn,
   collapseFraming,
+  mentionsUser,
+  collapseIntermediates,
 } from '../app/(main)/studio/_lib/workspace-polish'
 
 describe('toPolished', () => {
@@ -131,5 +133,59 @@ describe('isEmptyTurn', () => {
   it('keeps real answers', () => {
     expect(isEmptyTurn('## Plan\n- item one with enough detail to count as useful')).toBe(false)
     expect(isEmptyTurn('{"foo":1}')).toBe(false)
+  })
+})
+
+describe('mentionsUser', () => {
+  it('detects an @user address', () => {
+    expect(mentionsUser("@user What's the ask?")).toBe(true)
+    expect(mentionsUser('Some prose.\n@user tell me more')).toBe(true)
+  })
+  it('ignores emails and member accessors', () => {
+    expect(mentionsUser('contact a@user.com')).toBe(false)
+    expect(mentionsUser('obj.@user.route')).toBe(false)
+    expect(mentionsUser('no address here')).toBe(false)
+  })
+})
+
+describe('collapseIntermediates', () => {
+  const msg = (memberId: string, content: string) => ({ memberId, content })
+
+  it('does nothing when the thread is at or under the threshold', () => {
+    const list = [msg('user', 'hi'), msg('the-mediator', 'Let me check'), msg('user', 'yo')]
+    const { visible, hidden } = collapseIntermediates(list)
+    expect(hidden).toEqual([])
+    expect(visible).toHaveLength(3)
+  })
+
+  it('keeps a short @user reply past the threshold instead of hiding it (#316)', () => {
+    const list = [
+      msg('user', 'hi'),
+      msg('the-mediator', "@user What's the ask?"),
+      msg('user', 'sup'),
+      msg('the-mediator', 'Let me check the repo and see'),
+      msg('user', 'x'),
+      msg('user', 'y'),
+      msg('user', 'z'),
+      msg('the-reviewer', '@user Should I merge?'),
+    ]
+    const { visible, hidden } = collapseIntermediates(list)
+    expect(visible).toContainEqual(msg('the-mediator', "@user What's the ask?"))
+    expect(hidden).toContainEqual(msg('the-mediator', 'Let me check the repo and see'))
+  })
+
+  it('always keeps every user bubble', () => {
+    const list = [
+      msg('user', 'a'),
+      msg('the-builder', 'Let me think about this for a bit'),
+      msg('user', 'b'),
+      msg('the-builder', 'Now let me consider the options'),
+      msg('user', 'c'),
+      msg('user', 'd'),
+      msg('user', 'e'),
+      msg('the-auditor', 'Checked, all clear on the security front'),
+    ]
+    const { visible } = collapseIntermediates(list)
+    expect(list.filter((m) => m.memberId === 'user').every((m) => visible.includes(m))).toBe(true)
   })
 })
