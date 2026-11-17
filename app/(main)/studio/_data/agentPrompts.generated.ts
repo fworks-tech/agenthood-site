@@ -17,12 +17,12 @@ export const agentPrompts: Record<string, string[]> = {
     "When a new API endpoint or data access pattern is introduced"
   ],
   "the-builder": [
-    "When a task is ready to be coded after The Architect's planning or specification — the Architect hands off a spec or task list, not a question",
+    "When a task is ready to be coded after The Architect's planning or specification: the Architect hands off a spec or task list, not a question",
     "When you need a root-cause fix instead of a surface patch",
     "When the repository's existing patterns should be preserved rather than replaced",
     "When a change needs focused tests or validation alongside the edit",
     "When a nearby file or test is the clearest anchor for the work",
-    "When a change is small enough to review in one pass — larger work goes back to The Architect for splitting"
+    "When a change is small enough to review in one pass: larger work goes back to The Architect for splitting"
   ],
   "the-debugger": [
     "When any error, exception, or unexpected behavior occurs",
@@ -32,11 +32,11 @@ export const agentPrompts: Record<string, string[]> = {
     "When a bug was reported but cannot yet be reproduced"
   ],
   "the-doorman": [
-    "On every `commit-msg` hook — to validate the commit message",
-    "On every `pre-push` hook — to run a final health check",
-    "In CI on every PR — to validate all commits in the branch range",
-    "On demand — to audit repository health and hygiene",
-    "When setting up a new project — to configure all enforcement hooks"
+    "On every `commit-msg` hook, to validate the commit message",
+    "On every `pre-push` hook, to run a final health check",
+    "In CI on every PR, to validate all commits in the branch range",
+    "On demand, to audit repository health and hygiene",
+    "When setting up a new project, to configure all enforcement hooks"
   ],
   "the-envoy": [
     "When adopting the Agenthood in a project that does not use Claude Code",
@@ -47,10 +47,10 @@ export const agentPrompts: Record<string, string[]> = {
     "When generating the cross-provider coverage registry"
   ],
   "the-herald": [
-    "Before every release — to determine version bump and generate changelog",
+    "Before every release, to determine version bump and generate changelog",
     "When preparing a GitHub Release",
-    "Daily at 8:00 AM — morning standup report",
-    "Daily at end of day — work summary",
+    "Daily at 8:00 AM: morning standup report",
+    "Daily at end of day: work summary",
     "When a stakeholder asks \"what shipped this week?\""
   ],
   "the-inspector": [
@@ -67,10 +67,10 @@ export const agentPrompts: Record<string, string[]> = {
     "After a significant architectural decision (produce an ADR)",
     "When onboarding a new contributor",
     "On a documentation sync pass before each release",
-    "On every PR that touches `src/commands/`, `docs/conventions/`, `.githooks/`, `skills/`, or `docs/members/` — to check root-level spec files"
+    "On every PR that touches `src/commands/`, `docs/conventions/`, `.githooks/`, `skills/`, or `docs/members/`, to check root-level spec files"
   ],
   "the-mailman": [
-    "Before publishing any scheduled content — to verify delivery pipeline integrity",
+    "Before publishing any scheduled content, to verify delivery pipeline integrity",
     "When configuring notification systems (email, push, webhook, Slack)",
     "When a scheduled task failed to execute or a notification wasn't delivered",
     "When auditing delivery logs for reliability metrics"
@@ -100,29 +100,29 @@ export const agentPrompts: Record<string, string[]> = {
     "When refactoring existing code"
   ],
   "the-scribe": [
-    "Before every `git commit` — to write the message",
-    "Before opening a PR — to write the description",
-    "Before a release — to generate changelog entries",
+    "Before every `git commit`, to write the message",
+    "Before opening a PR, to write the description",
+    "Before a release, to generate changelog entries",
     "When a commit message is vague and needs improvement"
   ],
   "the-sentinel": [
     "After any member file is created or updated",
-    "Before a new member is added — to confirm its lane does not overlap an existing one",
-    "When a convention changes — to audit which member files reference the old rule",
+    "Before a new member is added, to confirm its lane does not overlap an existing one",
+    "When a convention changes, to audit which member files reference the old rule",
     "On a regular cadence (monthly or at each release) to catch slow drift",
-    "When a member's advice feels inconsistent with another member's — to confirm or deny"
+    "When a member's advice feels inconsistent with another member's, to confirm or deny"
   ],
   "the-steward": [
-    "At the start of any session — to load only the members the task requires",
-    "When context feels heavy — to assess what can be deferred or summarized",
-    "Before opening a PR, merging, or closing a long session — to trigger memory triage",
-    "When switching tasks mid-session — to re-route member loading",
-    "When working across providers — to apply the right cache strategy",
-    "Whenever the Steward Alert fires — immediately"
+    "At the start of any session, to load only the members the task requires",
+    "When context feels heavy, to assess what can be deferred or summarized",
+    "Before opening a PR, merging, or closing a long session, to trigger memory triage",
+    "When switching tasks mid-session, to re-route member loading",
+    "When working across providers, to apply the right cache strategy",
+    "Whenever the Steward Alert fires: immediately"
   ],
   "the-strategist": [
     "When a goal is stated but the definition of \"done\" is unclear",
-    "Before The Architect starts planning — to ensure requirements are grounded",
+    "Before The Architect starts planning, to ensure requirements are grounded",
     "When multiple stakeholders have different implicit expectations",
     "When a feature request lacks success criteria or acceptance metrics",
     "When prioritizing between competing directions",
@@ -136,18 +136,18 @@ export const agentPrompts: Record<string, string[]> = {
     "When assessing test coverage gaps"
   ],
   "the-warden": [
-    "On every PR — scan the diff for new smells introduced by the change",
-    "Before merging to main — confirm the branch does not worsen the codebase's health score",
-    "After a large refactor — verify the refactor did not introduce new coupling",
-    "On demand — full codebase scan to establish or revisit a health baseline",
-    "When the codebase feels slow or brittle — before attributing it to something else"
+    "On every PR: scan the diff for new smells introduced by the change",
+    "Before merging to main: confirm the branch does not worsen the codebase's health score",
+    "After a large refactor: verify the refactor did not introduce new coupling",
+    "On demand: full codebase scan to establish or revisit a health baseline",
+    "When the codebase feels slow or brittle: before attributing it to something else"
   ],
   "the-mediator": [
-    "At the start of any interaction — to classify what the user is actually asking for",
-    "When a prompt is ambiguous — before any member is loaded, so no specialist guesses",
-    "When a session is context-heavy or near capacity — to route to The Steward before loading more",
-    "When an entry needs format validation — to route to The Doorman before the work begins",
-    "When the intent is clear — to hand the prompt to the correct specialist without detour",
-    "When a handoff needs sequencing across multiple members — to determine the order of engagement"
+    "At the start of any interaction, to classify what the user is actually asking for",
+    "When a prompt is ambiguous: before any member is loaded, so no specialist guesses",
+    "When a session is context-heavy or near capacity, to route to The Steward before loading more",
+    "When an entry needs format validation, to route to The Doorman before the work begins",
+    "When the intent is clear, to hand the prompt to the correct specialist without detour",
+    "When a handoff needs sequencing across multiple members, to determine the order of engagement"
   ]
 };

@@ -69,7 +69,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/kv": "^3.0.0",
     "@vercel/speed-insights": "^2.1.0",
-    "agenthood": "3.75.0",
+    "agenthood": "4.0.0",
     "js-yaml": "^5.5.0",
     "next": "^16.4.5",
     "react": "19.3.0",

@@ -1,11 +1,154 @@
 # 📦 Release Notes
 
 > Full version history for [Agenthood](https://github.com/fworks-tech/agenthood).
-> Generated automatically — do not edit manually.
+> Generated automatically: do not edit manually.
 
 ---
 
-## v3.75.0 — October 8, 2026
+## v4.0.0: November 16, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** accept --!> as an inline finding block terminator
+- **Ci:** escape backslashes in Herald table cells
+- **Ci:** hold the prose check to the lines it can police
+- **Ci:** keep the workflow YAML valid after the prose pass
+- **Cli:** keep a rotated key out of a tracked config
+- **Cli:** keep bare "workflow" an error instead of listing chains
+- **Cli:** keep the contrib contract report opt-in (#154)
+- **Cli:** name chains.yaml when the file is malformed instead of a parser dump
+- **Cli:** remove the last escaped em dashes from output
+- **Cli:** show a hyphen for a missing table value
+- **Commands:** keep special characters when applying an optimized description
+- **Core:** cap the trajectory directory
+- **Core:** index retained traces once during pruning
+- **Cost:** record the provider that answered
+- **Cost:** tolerate torn lines and rotate the ledger
+- **Docs:** repair colons the dash pass broke
+- **Hooks:** block a real token beside a placeholder
+- **Hooks:** ignore empty and placeholder secret values
+- **Marketplace:** validate the plugin manifest and sync its version
+- **Memory:** serialize provenance writes across processes
+- **Metrics:** bind the server to the configured host
+- **Rag:** bound embedding concurrency
+- **Reasoning:** escape regex metacharacters in file patterns
+- **Release:** generate dash-free release notes deterministically
+- **Release:** honor the ! breaking marker when computing the version
+- **Release:** normalize a dash inherited from a commit subject
+- **Security:** harden the environment samples and ignore rules
+- **Security:** redact cloud tokens and debug payloads
+- **Skills:** bound one-off arguments and script output
+- **Skills:** clone remote sources into a unique directory
+- **Skills:** close two authorization gaps in the script runner (#536, #607)
+- **Skills:** escape activation notices before they enter the block (#549, #551)
+- **Skills:** ignore declared tools that match no registered tool
+- **Skills:** intersect the scopes of active skills
+- **Skills:** normalize unicode names, warn on mismatch and resolve collisions (#517, #513, #524)
+- **Skills:** refuse to overwrite an unparsable member lockfile
+- **Skills:** remove regex backtracking in compatibility fallback
+- **Tools:** compare real paths on both sides of the guard
+- **Tools:** resolve a symlinked directory before allowing a path
+- **Trace:** apply --limit to skill and tool trajectory listings
+- **Trace:** keep one trajectory per run under a shared correlation id
+- **Trace:** record step duration, run input and the step's provider cost
+- **Workflows:** index chain steps so a repeated member keeps its own result
+
+### 🔧 Code Refactoring
+
+- remove the no-op span API from Tracer, refs #1048
+
+### ✨ Features
+
+- **Ci:** check every text file for AI-typical punctuation
+- **Ci:** enforce the prose style on every pull request
+- **Cli:** rank skill cost against use and show activation history (#605, #628)
+- **Cli:** report skill token budgets and cross-location duplicates (#615, #616)
+- **Community:** define the third-party member authoring contract (#154)
+- **Llm:** add the multimodal provider interface and OpenAI implementation (#124)
+- **Runtime:** load AGENTS.md / CLAUDE.md as per-repo agent instructions, refs #567
+- **Skills:** activate through one tool, slash commands and structured blocks (#529, #530, #531, #535, #512)
+- **Skills:** add compatibility, hidden and router to the frontmatter (#581, #516, #588)
+- **Skills:** add metadata.version with semver validation (#579)
+- **Skills:** add registry namespaces and .well-known catalogs (#593, #522)
+- **Skills:** add the web-research skill from deepagents (#339)
+- **Skills:** authorize script runs by activation and isolate untrusted skills (#536, #542, #543, #607)
+- **Skills:** cache parsed skill metadata and bound the discovery scan (#525, #614, #617)
+- **Skills:** cache successful script output behind an opt-in switch (#598)
+- **Skills:** deduplicate activations, protect skill context and restore on resume (#532, #533, #618)
+- **Skills:** detect outdated copies and roll back to a version (#570, #592, #591)
+- **Skills:** enforce allowed-tools from SKILL.md at call time, refs #582
+- **Skills:** format, filter and order the skill catalog per provider (#528, #556, #537, #538, #611, #512)
+- **Skills:** gate skills on the model, tools and dependencies available here (#549, #551, #552, #553, #554, #555, #571)
+- **Skills:** honour compaction-replay and keep nested invocation safe (#587), refs #532
+- **Skills:** lint script interfaces and document the execution contract (#540, #547, #548)
+- **Skills:** measure skill cost, health and activation health (#586, #597, #626, #627)
+- **Skills:** parse conditions, priority, fallback and model-invocation opt-out (#537, #610, #611, #613)
+- **Skills:** resolve user-scope skills through XDG data paths (#523)
+- **Skills:** run bundled scripts with real runtimes, pinned one-offs and capped output (#539, #541, #544, #545, #546)
+- **Skills:** validate license as SPDX and add the license command (#580), refs #588
+- **Subagent:** delegate a skill to an isolated subagent context (#534, #612)
+- **Trace:** persist every ReAct step and filter trajectories by skill or tool, refs #605
+- **Verify:** fail on allowed-tools names agenthood does not know, refs #561
+- **Workflows:** compose skills, conditions and parallel branches in chains (#609)
+- **Workflows:** execute chains.yaml through WorkflowEngine, refs #609
+
+### 🔹 BREAKING CHANGES
+
+- **Skills:** enforce allowed-tools from SKILL.md at call time
+- remove the no-op span API from Tracer
+
+---
+
+## v3.78.0: November 16, 2026
+
+### 🐛 Bug Fixes
+
+- **Core:** scope OpenCode catalog pricing to OpenCode providers (#1064), refs #1062
+
+### ✨ Features
+
+- **Llm:** derive OpenCode pricing and routing from the live model catalog (#1063), refs #1060
+
+---
+
+## v3.77.1: November 15, 2026
+
+### 🐛 Bug Fixes
+
+- **Llm:** restore the reviewer bot on gpt-5-nano via /v1/responses (#1056)
+- **Llm:** surface incomplete responses and raise the output budget (#1059)
+
+---
+
+## v3.77.0: November 15, 2026
+
+### ✨ Features
+
+- **Members:** add host-registered custom members (#1051), refs #1040
+
+---
+
+## v3.76.1: November 15, 2026
+
+### 🐛 Bug Fixes
+
+- apply the repository audit findings (#1047)
+
+---
+
+## v3.76.0: November 15, 2026
+
+### 🐛 Bug Fixes
+
+- **Deps:** clear npm audit advisories blocking dependency PRs (#1042)
+
+### ✨ Features
+
+- **Skills:** rename members to drop 'the-' prefix for cross-tool compatibility (#583) (#1016)
+
+---
+
+## v3.75.0: October 8, 2026
 
 ### ✨ Features
 
@@ -13,7 +156,7 @@
 
 ---
 
-## v3.74.0 — October 8, 2026
+## v3.74.0: October 8, 2026
 
 ### ✨ Features
 
@@ -21,7 +164,7 @@
 
 ---
 
-## v3.73.0 — October 7, 2026
+## v3.73.0: October 7, 2026
 
 ### ✨ Features
 
@@ -29,7 +172,7 @@
 
 ---
 
-## v3.72.0 — October 6, 2026
+## v3.72.0: October 6, 2026
 
 ### ✨ Features
 
@@ -37,7 +180,7 @@
 
 ---
 
-## v3.71.1 — September 30, 2026
+## v3.71.1: September 30, 2026
 
 ### 🐛 Bug Fixes
 
@@ -45,7 +188,7 @@
 
 ---
 
-## v3.71.0 — September 28, 2026
+## v3.71.0: September 28, 2026
 
 ### ✨ Features
 
@@ -55,7 +198,7 @@
 
 ---
 
-## v3.70.2 — September 28, 2026
+## v3.70.2: September 28, 2026
 
 ### 🐛 Bug Fixes
 
@@ -71,7 +214,7 @@
 
 ---
 
-## v3.70.1 — September 27, 2026
+## v3.70.1: September 27, 2026
 
 ### 🐛 Bug Fixes
 
@@ -79,7 +222,7 @@
 
 ---
 
-## v3.70.0 — September 27, 2026
+## v3.70.0: September 27, 2026
 
 ### 🐛 Bug Fixes
 
@@ -93,7 +236,7 @@
 
 ---
 
-## v3.69.0 — September 27, 2026
+## v3.69.0: September 27, 2026
 
 ### ✨ Features
 
@@ -102,7 +245,7 @@
 
 ---
 
-## v3.68.3 — September 27, 2026
+## v3.68.3: September 27, 2026
 
 ### 🐛 Bug Fixes
 
@@ -113,7 +256,7 @@
 
 ---
 
-## v3.68.2 — September 26, 2026
+## v3.68.2: September 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -122,7 +265,7 @@
 
 ---
 
-## v3.68.1 — September 26, 2026
+## v3.68.1: September 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -130,7 +273,7 @@
 
 ---
 
-## v3.68.0 — September 26, 2026
+## v3.68.0: September 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -139,11 +282,11 @@
 
 ### ✨ Features
 
-- v3.68 Convert & Trust — onboarding, fail-closed skill trust, cost observability (#913), refs #574, #619, #620, #578, #152, #151, #514, #515, #604, #606, #624, #625, #651, #465
+- v3.68 Convert & Trust: onboarding, fail-closed skill trust, cost observability (#913), refs #574, #619, #620, #578, #152, #151, #514, #515, #604, #606, #624, #625, #651, #465
 
 ---
 
-## v3.67.0 — September 21, 2026
+## v3.67.0: September 21, 2026
 
 ### ✨ Features
 
@@ -154,7 +297,7 @@
 
 ---
 
-## v3.66.0 — September 20, 2026
+## v3.66.0: September 20, 2026
 
 ### 🐛 Bug Fixes
 
@@ -181,7 +324,7 @@
 
 ---
 
-## v3.65.2 — September 18, 2026
+## v3.65.2: September 18, 2026
 
 ### 🐛 Bug Fixes
 
@@ -189,7 +332,7 @@
 
 ---
 
-## v3.65.1 — September 17, 2026
+## v3.65.1: September 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -197,7 +340,7 @@
 
 ---
 
-## v3.65.0 — September 17, 2026
+## v3.65.0: September 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -209,7 +352,7 @@
 
 ---
 
-## v3.64.3 — September 17, 2026
+## v3.64.3: September 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -217,7 +360,7 @@
 
 ---
 
-## v3.64.2 — September 17, 2026
+## v3.64.2: September 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -225,7 +368,7 @@
 
 ---
 
-## v3.64.1 — September 17, 2026
+## v3.64.1: September 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -233,7 +376,7 @@
 
 ---
 
-## v3.64.0 — September 16, 2026
+## v3.64.0: September 16, 2026
 
 ### ✨ Features
 
@@ -241,7 +384,7 @@
 
 ---
 
-## v3.63.3 — September 12, 2026
+## v3.63.3: September 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -249,7 +392,7 @@
 
 ---
 
-## v3.63.2 — September 12, 2026
+## v3.63.2: September 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -257,7 +400,7 @@
 
 ---
 
-## v3.63.1 — September 9, 2026
+## v3.63.1: September 9, 2026
 
 ### 🐛 Bug Fixes
 
@@ -266,7 +409,7 @@
 
 ---
 
-## v3.63.0 — September 9, 2026
+## v3.63.0: September 9, 2026
 
 ### 🐛 Bug Fixes
 
@@ -286,7 +429,7 @@
 
 ---
 
-## v3.62.0 — September 9, 2026
+## v3.62.0: September 9, 2026
 
 ### 🐛 Bug Fixes
 
@@ -298,7 +441,7 @@
 
 ---
 
-## v3.61.0 — September 9, 2026
+## v3.61.0: September 9, 2026
 
 ### ✨ Features
 
@@ -307,7 +450,7 @@
 
 ---
 
-## v3.60.0 — September 8, 2026
+## v3.60.0: September 8, 2026
 
 ### ✨ Features
 
@@ -315,7 +458,7 @@
 
 ---
 
-## v3.59.2 — September 8, 2026
+## v3.59.2: September 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -323,7 +466,7 @@
 
 ---
 
-## v3.59.1 — September 8, 2026
+## v3.59.1: September 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -331,7 +474,7 @@
 
 ---
 
-## v3.59.0 — September 8, 2026
+## v3.59.0: September 8, 2026
 
 ### ✨ Features
 
@@ -339,7 +482,7 @@
 
 ---
 
-## v3.57.0 — September 8, 2026
+## v3.57.0: September 8, 2026
 
 ### ✨ Features
 
@@ -347,7 +490,7 @@
 
 ---
 
-## v3.56.6 — September 7, 2026
+## v3.56.6: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -355,7 +498,7 @@
 
 ---
 
-## v3.56.5 — September 7, 2026
+## v3.56.5: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -363,7 +506,7 @@
 
 ---
 
-## v3.56.4 — September 7, 2026
+## v3.56.4: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -371,7 +514,7 @@
 
 ---
 
-## v3.56.3 — September 7, 2026
+## v3.56.3: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -379,7 +522,7 @@
 
 ---
 
-## v3.56.2 — September 7, 2026
+## v3.56.2: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -387,7 +530,7 @@
 
 ---
 
-## v3.56.1 — September 7, 2026
+## v3.56.1: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -395,7 +538,7 @@
 
 ---
 
-## v3.56.0 — September 7, 2026
+## v3.56.0: September 7, 2026
 
 ### ✨ Features
 
@@ -403,7 +546,7 @@
 
 ---
 
-## v3.55.7 — September 7, 2026
+## v3.55.7: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -411,7 +554,7 @@
 
 ---
 
-## v3.55.6 — September 7, 2026
+## v3.55.6: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -419,7 +562,7 @@
 
 ---
 
-## v3.55.5 — September 7, 2026
+## v3.55.5: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -427,7 +570,7 @@
 
 ---
 
-## v3.55.4 — September 7, 2026
+## v3.55.4: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -435,7 +578,7 @@
 
 ---
 
-## v3.55.3 — September 7, 2026
+## v3.55.3: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -443,7 +586,7 @@
 
 ---
 
-## v3.55.2 — September 7, 2026
+## v3.55.2: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -451,7 +594,7 @@
 
 ---
 
-## v3.55.1 — September 7, 2026
+## v3.55.1: September 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -459,7 +602,7 @@
 
 ---
 
-## v3.55.0 — September 7, 2026
+## v3.55.0: September 7, 2026
 
 ### ✨ Features
 
@@ -467,7 +610,7 @@
 
 ---
 
-## v3.54.0 — September 7, 2026
+## v3.54.0: September 7, 2026
 
 ### ✨ Features
 
@@ -476,7 +619,7 @@
 
 ---
 
-## v3.53.0 — September 7, 2026
+## v3.53.0: September 7, 2026
 
 ### ✨ Features
 
@@ -484,7 +627,7 @@
 
 ---
 
-## v3.52.0 — September 7, 2026
+## v3.52.0: September 7, 2026
 
 ### ✨ Features
 
@@ -492,7 +635,7 @@
 
 ---
 
-## v3.51.0 — September 7, 2026
+## v3.51.0: September 7, 2026
 
 ### ✨ Features
 
@@ -500,7 +643,7 @@
 
 ---
 
-## v3.50.0 — September 7, 2026
+## v3.50.0: September 7, 2026
 
 ### ✨ Features
 
@@ -508,7 +651,7 @@
 
 ---
 
-## v3.49.0 — September 5, 2026
+## v3.49.0: September 5, 2026
 
 ### ✨ Features
 
@@ -516,7 +659,7 @@
 
 ---
 
-## v3.48.0 — September 5, 2026
+## v3.48.0: September 5, 2026
 
 ### 🐛 Bug Fixes
 
@@ -528,7 +671,7 @@
 
 ---
 
-## v3.47.0 — September 5, 2026
+## v3.47.0: September 5, 2026
 
 ### 🐛 Bug Fixes
 
@@ -540,7 +683,7 @@
 
 ---
 
-## v3.46.0 — September 5, 2026
+## v3.46.0: September 5, 2026
 
 ### ✨ Features
 
@@ -549,7 +692,7 @@
 
 ---
 
-## v3.45.0 — September 5, 2026
+## v3.45.0: September 5, 2026
 
 ### ✨ Features
 
@@ -557,7 +700,7 @@
 
 ---
 
-## v3.44.0 — September 5, 2026
+## v3.44.0: September 5, 2026
 
 ### ✨ Features
 
@@ -565,7 +708,7 @@
 
 ---
 
-## v3.43.0 — September 5, 2026
+## v3.43.0: September 5, 2026
 
 ### ✨ Features
 
@@ -573,7 +716,7 @@
 
 ---
 
-## v3.42.0 — September 4, 2026
+## v3.42.0: September 4, 2026
 
 ### ✨ Features
 
@@ -581,7 +724,7 @@
 
 ---
 
-## v3.41.1 — September 4, 2026
+## v3.41.1: September 4, 2026
 
 ### 🐛 Bug Fixes
 
@@ -589,7 +732,7 @@
 
 ---
 
-## v3.41.0 — September 3, 2026
+## v3.41.0: September 3, 2026
 
 ### ✨ Features
 
@@ -597,7 +740,7 @@
 
 ---
 
-## v3.40.0 — September 3, 2026
+## v3.40.0: September 3, 2026
 
 ### ✨ Features
 
@@ -605,7 +748,7 @@
 
 ---
 
-## v3.39.2 — September 1, 2026
+## v3.39.2: September 1, 2026
 
 ### 🐛 Bug Fixes
 
@@ -613,7 +756,7 @@
 
 ---
 
-## v3.39.1 — August 30, 2026
+## v3.39.1: August 30, 2026
 
 ### 🐛 Bug Fixes
 
@@ -621,7 +764,7 @@
 
 ---
 
-## v3.39.0 — August 30, 2026
+## v3.39.0: August 30, 2026
 
 ### 🐛 Bug Fixes
 
@@ -634,7 +777,7 @@
 
 ---
 
-## v3.38.1 — August 30, 2026
+## v3.38.1: August 30, 2026
 
 ### 🐛 Bug Fixes
 
@@ -650,7 +793,7 @@
 
 ---
 
-## v3.38.0 — August 21, 2026
+## v3.38.0: August 21, 2026
 
 ### 🐛 Bug Fixes
 
@@ -658,19 +801,19 @@
 
 ### ✨ Features
 
-- **Members:** reframe steward load routing and add the-mediator (#482), refs #474
+- **Members:** reframe steward load routing and add mediator (#482), refs #474
 
 ---
 
-## v3.37.1 — August 21, 2026
+## v3.37.1: August 21, 2026
 
 ### 🐛 Bug Fixes
 
-- **Core:** clean up MemberAgent delegation smell and sanitize the-mailman (#469)
+- **Core:** clean up MemberAgent delegation smell and sanitize mailman (#469)
 
 ---
 
-## v3.37.0 — August 20, 2026
+## v3.37.0: August 20, 2026
 
 ### ✨ Features
 
@@ -678,7 +821,7 @@
 
 ---
 
-## v3.36.0 — August 20, 2026
+## v3.36.0: August 20, 2026
 
 ### 🐛 Bug Fixes
 
@@ -690,12 +833,12 @@
 - **Agents:** add mind virus immunity warning to system prompts
 - **Core:** add injection-time SKILL.md integrity check
 - **Core:** add viral-persona and propagation anomaly signals
-- **Security:** complete mind virus defense — corrupt lockfile handling, marker clamp, redaction default, and test coverage for 461 fixes
+- **Security:** complete mind virus defense: corrupt lockfile handling, marker clamp, redaction default, and test coverage for 461 fixes
 - **Tools:** forbid message propagation in delegated tasks
 
 ---
 
-## v3.35.1 — August 19, 2026
+## v3.35.1: August 19, 2026
 
 ### 🐛 Bug Fixes
 
@@ -703,7 +846,7 @@
 
 ---
 
-## v3.35.0 — August 16, 2026
+## v3.35.0: August 16, 2026
 
 ### ✨ Features
 
@@ -715,7 +858,7 @@
 
 ---
 
-## v3.34.1 — August 16, 2026
+## v3.34.1: August 16, 2026
 
 ### 🐛 Bug Fixes
 
@@ -723,7 +866,7 @@
 
 ---
 
-## v3.34.0 — August 16, 2026
+## v3.34.0: August 16, 2026
 
 ### 🐛 Bug Fixes
 
@@ -751,7 +894,7 @@
 
 ---
 
-## v3.33.1 — August 15, 2026
+## v3.33.1: August 15, 2026
 
 ### 🐛 Bug Fixes
 
@@ -759,7 +902,7 @@
 
 ---
 
-## v3.33.0 — August 14, 2026
+## v3.33.0: August 14, 2026
 
 ### 🐛 Bug Fixes
 
@@ -783,7 +926,7 @@
 
 ---
 
-## v3.32.0 — August 14, 2026
+## v3.32.0: August 14, 2026
 
 ### ✨ Features
 
@@ -792,7 +935,7 @@
 
 ---
 
-## v3.31.0 — August 14, 2026
+## v3.31.0: August 14, 2026
 
 ### ✨ Features
 
@@ -800,7 +943,7 @@
 
 ---
 
-## v3.30.0 — August 14, 2026
+## v3.30.0: August 14, 2026
 
 ### ✨ Features
 
@@ -808,7 +951,7 @@
 
 ---
 
-## v3.29.0 — August 14, 2026
+## v3.29.0: August 14, 2026
 
 ### ✨ Features
 
@@ -817,7 +960,7 @@
 
 ---
 
-## v3.28.0 — August 14, 2026
+## v3.28.0: August 14, 2026
 
 ### ✨ Features
 
@@ -825,7 +968,7 @@
 
 ---
 
-## v3.27.0 — August 14, 2026
+## v3.27.0: August 14, 2026
 
 ### ✨ Features
 
@@ -833,7 +976,7 @@
 
 ---
 
-## v3.26.0 — August 14, 2026
+## v3.26.0: August 14, 2026
 
 ### ✨ Features
 
@@ -841,7 +984,7 @@
 
 ---
 
-## v3.25.0 — August 14, 2026
+## v3.25.0: August 14, 2026
 
 ### ✨ Features
 
@@ -849,7 +992,7 @@
 
 ---
 
-## v3.24.0 — August 14, 2026
+## v3.24.0: August 14, 2026
 
 ### ✨ Features
 
@@ -857,7 +1000,7 @@
 
 ---
 
-## v3.23.0 — August 14, 2026
+## v3.23.0: August 14, 2026
 
 ### 🐛 Bug Fixes
 
@@ -870,15 +1013,15 @@
 
 ---
 
-## v3.22.0 — August 14, 2026
+## v3.22.0: August 14, 2026
 
 ### ✨ Features
 
-- **Cli:** add trace command — npx agenthood trace, refs #302
+- **Cli:** add trace command: npx agenthood trace, refs #302
 
 ---
 
-## v3.21.0 — August 14, 2026
+## v3.21.0: August 14, 2026
 
 ### ✨ Features
 
@@ -886,7 +1029,7 @@
 
 ---
 
-## v3.20.0 — August 14, 2026
+## v3.20.0: August 14, 2026
 
 ### ✨ Features
 
@@ -894,7 +1037,7 @@
 
 ---
 
-## v3.19.0 — August 14, 2026
+## v3.19.0: August 14, 2026
 
 ### ✨ Features
 
@@ -902,7 +1045,7 @@
 
 ---
 
-## v3.18.0 — August 14, 2026
+## v3.18.0: August 14, 2026
 
 ### ✨ Features
 
@@ -910,7 +1053,7 @@
 
 ---
 
-## v3.17.0 — August 14, 2026
+## v3.17.0: August 14, 2026
 
 ### 🐛 Bug Fixes
 
@@ -922,7 +1065,7 @@
 
 ---
 
-## v3.16.0 — August 12, 2026
+## v3.16.0: August 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -935,7 +1078,7 @@
 
 ---
 
-## v3.15.0 — August 12, 2026
+## v3.15.0: August 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -964,7 +1107,7 @@
 
 ---
 
-## v3.14.2 — August 12, 2026
+## v3.14.2: August 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -972,7 +1115,7 @@
 
 ---
 
-## v3.14.1 — August 12, 2026
+## v3.14.1: August 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -984,7 +1127,7 @@
 
 ---
 
-## v3.14.0 — August 12, 2026
+## v3.14.0: August 12, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1001,7 +1144,7 @@
 
 ---
 
-## v3.13.6 — August 8, 2026
+## v3.13.6: August 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1009,7 +1152,7 @@
 
 ---
 
-## v3.13.5 — August 8, 2026
+## v3.13.5: August 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1017,7 +1160,7 @@
 
 ---
 
-## v3.13.4 — August 8, 2026
+## v3.13.4: August 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1025,7 +1168,7 @@
 
 ---
 
-## v3.13.3 — August 7, 2026
+## v3.13.3: August 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1035,7 +1178,7 @@
 
 ---
 
-## v3.13.2 — August 6, 2026
+## v3.13.2: August 6, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1049,7 +1192,7 @@
 
 ---
 
-## v3.13.1 — August 6, 2026
+## v3.13.1: August 6, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1058,7 +1201,7 @@
 
 ---
 
-## v3.13.0 — August 5, 2026
+## v3.13.0: August 5, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1067,19 +1210,19 @@
 - **Docs:** update member counts and skill links after canonicalization
 - **Marketplace:** add new members to agenthood-all bundle and update counts
 - **Marketplace:** align copy with 19 members
-- **Members:** satisfy sentinel and librarian checks for the-builder
+- **Members:** satisfy sentinel and librarian checks for builder
 - **Runtime:** route skill file changes to oracle and sentinel triggers
 - **Runtime:** watch skills dir for operator drift and test sentinel pattern
 
 ### ✨ Features
 
 - **Members:** add builder member
-- **Members:** bring the-builder to full society standards
-- **Runtime:** add the-builder to member triggers
+- **Members:** bring builder to full society standards
+- **Runtime:** add builder to member triggers
 
 ---
 
-## v3.12.0 — July 9, 2026
+## v3.12.0: July 9, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1091,7 +1234,7 @@
 
 ---
 
-## v3.11.1 — July 9, 2026
+## v3.11.1: July 9, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1103,7 +1246,7 @@
 
 ---
 
-## v3.11.0 — July 7, 2026
+## v3.11.0: July 7, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1117,16 +1260,16 @@
 
 ---
 
-## v3.10.0 — July 7, 2026
+## v3.10.0: July 7, 2026
 
 ### ✨ Features
 
-- add The Mailman — 17th Society member for delivery and cross-posting
+- add The Mailman: 17th Society member for delivery and cross-posting
 - **Init:** strip junk files from init (#360)
 
 ---
 
-## v3.9.1 — July 6, 2026
+## v3.9.1: July 6, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1134,7 +1277,7 @@
 
 ---
 
-## v3.9.0 — July 4, 2026
+## v3.9.0: July 4, 2026
 
 ### ✨ Features
 
@@ -1142,7 +1285,7 @@
 
 ---
 
-## v3.8.2 — July 4, 2026
+## v3.8.2: July 4, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1153,7 +1296,7 @@
 
 ---
 
-## v3.8.1 — July 4, 2026
+## v3.8.1: July 4, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1163,7 +1306,7 @@
 
 ---
 
-## v3.8.0 — July 3, 2026
+## v3.8.0: July 3, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1175,7 +1318,7 @@
 
 ---
 
-## v3.7.0 — July 2, 2026
+## v3.7.0: July 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1188,12 +1331,12 @@
 
 ---
 
-## v3.6.0 — July 1, 2026
+## v3.6.0: July 1, 2026
 
 ### 🐛 Bug Fixes
 
-- **Core:** address Warden findings — extract memberLore, refactor run.ts, deduplicate constants, add injection guards
-- **Core:** address Warden findings round 3 — indentation, dead code, boolean naming, nesting, unused dep
+- **Core:** address Warden findings: extract memberLore, refactor run.ts, deduplicate constants, add injection guards
+- **Core:** address Warden findings round 3: indentation, dead code, boolean naming, nesting, unused dep
 - **Core:** address Warden/Auditor/Reviewer findings round 2
 
 ### ✨ Features
@@ -1202,7 +1345,7 @@
 
 ---
 
-## v3.5.3 — July 1, 2026
+## v3.5.3: July 1, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1211,7 +1354,7 @@
 
 ---
 
-## v3.5.2 — June 29, 2026
+## v3.5.2: June 29, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1219,7 +1362,7 @@
 
 ---
 
-## v3.5.1 — June 29, 2026
+## v3.5.1: June 29, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1228,16 +1371,16 @@
 
 ---
 
-## v3.5.0 — June 28, 2026
+## v3.5.0: June 28, 2026
 
 ### 🐛 Bug Fixes
 
 - **Ci:** add explicit return 0 in decision function and guard call
 - **Ci:** add explicit return 0 in else branch for consistency
 - **Ci:** add explicit return 0 to check_agenthood_decision
-- **Ci:** address auditor findings — test-runner flag injection, npm ci, npm audit, temp paths
+- **Ci:** address auditor findings: test-runner flag injection, npm ci, npm audit, temp paths
 - **Ci:** address auditor high and medium findings
-- **Ci:** address review findings — setup-node in action, smart tester, extract scripts, pin tools
+- **Ci:** address review findings: setup-node in action, smart tester, extract scripts, pin tools
 - **Ci:** address reviewer and warden findings
 - **Ci:** address warden stale-comment quoting, temp_dir casing, revert vscode npm ci
 - **Ci:** align blocking detection in reviewer.yml with line-start grep pattern
@@ -1264,7 +1407,7 @@
 
 ---
 
-## v3.4.0 — June 28, 2026
+## v3.4.0: June 28, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1273,11 +1416,11 @@
 
 ### ✨ Features
 
-- **Evals:** implement EpisodeLearner — update LongTermMemory and ResidualMemory from eval scores, refs #119
+- **Evals:** implement EpisodeLearner: update LongTermMemory and ResidualMemory from eval scores, refs #119
 
 ---
 
-## v3.3.0 — June 28, 2026
+## v3.3.0: June 28, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1289,7 +1432,7 @@
 
 ---
 
-## v3.2.0 — June 28, 2026
+## v3.2.0: June 28, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1311,7 +1454,7 @@
 
 ---
 
-## v3.1.0 — June 27, 2026
+## v3.1.0: June 27, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1319,11 +1462,11 @@
 - **Docs:** correct check count to 21 and fix insert->add API example, refs #286
 - **Docs:** fix mentioned shipped version
 - **Init,check:** align init ceremony with health check expectations, refs #286
-- **Skills:** add output format section to the-reviewer SKILL.md for consistent rendering, refs #286
-- sync skills/the-reviewer/SKILL.md with members/ changes, refs #286
-- **The-reviewer:** address review findings on output format and README, refs #286
-- **The-reviewer:** flatten heading hierarchy and add intra-section spacing example, refs #286
-- **The-reviewer:** use [SEVERITY] placeholder and move meta-instruction outside template, refs #286
+- **Skills:** add output format section to reviewer SKILL.md for consistent rendering, refs #286
+- sync skills/reviewer/SKILL.md with members/ changes, refs #286
+- **Reviewer:** address review findings on output format and README, refs #286
+- **Reviewer:** flatten heading hierarchy and add intra-section spacing example, refs #286
+- **Reviewer:** use [SEVERITY] placeholder and move meta-instruction outside template, refs #286
 
 ### ✨ Features
 
@@ -1331,7 +1474,7 @@
 
 ---
 
-## v3.0.0 — June 26, 2026
+## v3.0.0: June 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1368,7 +1511,7 @@
 
 ---
 
-## v2.5.1 — June 26, 2026
+## v2.5.1: June 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1376,7 +1519,7 @@
 
 ---
 
-## v2.5.0 — June 26, 2026
+## v2.5.0: June 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1386,13 +1529,13 @@
 
 - **Memory:** implement PersonalisationStore for per-project agent adaptation, refs #112
 - **Memory:** implement ShortTerm, LongTerm, Episodic, and Project memory tiers, refs #262
-- **Rag:** implement baseline RAG pipeline — ChunkStrategy, Indexer, Retriever, refs #263
+- **Rag:** implement baseline RAG pipeline: ChunkStrategy, Indexer, Retriever, refs #263
 - **Rag:** implement SocietyIndexer for members, ADRs, and conventions, refs #107
 - **Rag:** implement TreeSitterParser for AST-based code structure extraction, refs #106
 
 ---
 
-## v2.4.0 — June 26, 2026
+## v2.4.0: June 26, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1405,13 +1548,13 @@
 - **Core:** move schema validator to core and harden error messages, refs #205
 - **Memory:** implement LanceDB vector store with IVectorStore interface, refs #261
 - **Memory:** implement memory governance with IMemoryStore and InMemoryStore, refs #111
-- **Memory:** implement ResidualMemory — decay-weighted trace signals, refs #110
+- **Memory:** implement ResidualMemory: decay-weighted trace signals, refs #110
 - **Rag:** implement KnowledgeGraphStore for relationship-aware retrieval, refs #105
 - **Reasoning:** add infinite loop detection to reactloop, refs #206
 
 ---
 
-## v2.3.1 — June 25, 2026
+## v2.3.1: June 25, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1419,7 +1562,7 @@
 
 ---
 
-## v2.3.0 — June 25, 2026
+## v2.3.0: June 25, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1435,7 +1578,7 @@
 
 ---
 
-## v2.2.0 — June 23, 2026
+## v2.2.0: June 23, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1447,7 +1590,7 @@
 
 ---
 
-## v2.1.0 — June 23, 2026
+## v2.1.0: June 23, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1461,7 +1604,7 @@
 
 ---
 
-## v2.0.0 — June 21, 2026
+## v2.0.0: June 21, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1489,14 +1632,14 @@
 - **Core:** add concurrency queue and safety guard
 - **Core:** add RiskManager, SkillRegistry discovery, dynamic routing, and README rewrite, refs #103, #162, #102
 - **Core:** implement ContextCompressor with token-aware memory summarization, refs #104
-- **Core:** security hardening — Ajv, API key validation, symlink checks
+- **Core:** security hardening: Ajv, API key validation, symlink checks
 - **Llm:** add Anthropic prompt caching with cache control breakpoint
 - **Llm:** implement ProviderFailover for resilience (#161)
 - **Llm:** provider failover with circuit breaker and per-member preferences
 - **Members:** wire all 14 society members to agenthood run
 - **Reasoning:** implement ContextCompressor for token management (#104)
 - **Release:** generate user-friendly release notes via @semantic-release/exec
-- **Runtime:** release v2.0.0 — TypeScript runtime with autonomous agent execution, refs #202
+- **Runtime:** release v2.0.0: TypeScript runtime with autonomous agent execution, refs #202
 - ship M4 foundation - TypeScript runtime with providers, agents, skills, and CLI
 - **Skills:** export and register SubagentTaskSkill with delegate_task name, refs #3, #8, #9
 - **Skills:** implement SubagentTaskSkill for agent delegation (#199)
@@ -1509,7 +1652,7 @@
 
 ---
 
-## v1.10.0 — June 20, 2026
+## v1.10.0: June 20, 2026
 
 ### ✨ Features
 
@@ -1517,7 +1660,7 @@
 
 ---
 
-## v1.9.1 — June 20, 2026
+## v1.9.1: June 20, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1525,7 +1668,7 @@
 
 ---
 
-## v1.9.0 — June 20, 2026
+## v1.9.0: June 20, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1539,7 +1682,7 @@
 
 ---
 
-## v1.8.4 — June 19, 2026
+## v1.8.4: June 19, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1547,7 +1690,7 @@
 
 ---
 
-## v1.8.3 — June 18, 2026
+## v1.8.3: June 18, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1555,7 +1698,7 @@
 
 ---
 
-## v1.8.2 — June 18, 2026
+## v1.8.2: June 18, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1563,7 +1706,7 @@
 
 ---
 
-## v1.8.1 — June 18, 2026
+## v1.8.1: June 18, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1571,7 +1714,7 @@
 
 ---
 
-## v1.8.0 — June 17, 2026
+## v1.8.0: June 17, 2026
 
 ### ✨ Features
 
@@ -1579,7 +1722,7 @@
 
 ---
 
-## v1.7.2 — June 17, 2026
+## v1.7.2: June 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1587,7 +1730,7 @@
 
 ---
 
-## v1.7.1 — June 17, 2026
+## v1.7.1: June 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1595,7 +1738,7 @@
 
 ---
 
-## v1.7.0 — June 17, 2026
+## v1.7.0: June 17, 2026
 
 ### ✨ Features
 
@@ -1603,7 +1746,7 @@
 
 ---
 
-## v1.6.7 — June 17, 2026
+## v1.6.7: June 17, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1612,7 +1755,7 @@
 
 ---
 
-## v1.6.6 — June 15, 2026
+## v1.6.6: June 15, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1621,7 +1764,7 @@
 
 ---
 
-## v1.6.5 — June 13, 2026
+## v1.6.5: June 13, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1630,7 +1773,7 @@
 
 ---
 
-## v1.2.3 — June 8, 2026
+## v1.2.3: June 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1638,7 +1781,7 @@
 
 ---
 
-## v1.2.2 — June 8, 2026
+## v1.2.2: June 8, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1646,7 +1789,7 @@
 
 ---
 
-## v1.2.1 — June 8, 2026
+## v1.2.1: June 8, 2026
 
 ### ✨ Features
 
@@ -1654,7 +1797,7 @@
 
 ---
 
-## v1.2.0 — June 2, 2026
+## v1.2.0: June 2, 2026
 
 ### ✨ Features
 
@@ -1662,7 +1805,7 @@
 
 ---
 
-## v1.1.1 — June 2, 2026
+## v1.1.1: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1670,7 +1813,7 @@
 
 ---
 
-## v1.1.0 — June 2, 2026
+## v1.1.0: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1683,7 +1826,7 @@
 
 ---
 
-## v1.0.3 — June 2, 2026
+## v1.0.3: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1691,7 +1834,7 @@
 
 ---
 
-## v1.0.2 — June 2, 2026
+## v1.0.2: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1700,7 +1843,7 @@
 
 ---
 
-## v1.0.1 — June 2, 2026
+## v1.0.1: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1709,7 +1852,7 @@
 
 ---
 
-## v1.0.0 — June 2, 2026
+## v1.0.0: June 2, 2026
 
 ### 🐛 Bug Fixes
 
@@ -1735,14 +1878,14 @@
 - **Hooks:** add commit-msg hook
 - **Hooks:** add pre-commit hook
 - **Members:** add branch scope and PR scope validation to architect and doorman
-- **Members:** add N+1 commit pattern and PR granularity to the-scribe
-- **Members:** add the-envoy
-- **Members:** add the-oracle
-- **Members:** add the-sentinel
-- **Members:** add the-steward
-- **Members:** add the-warden
-- **Members:** register the-oracle and the-envoy in indexes
-- **Members:** register the-sentinel and the-warden in indexes
+- **Members:** add N+1 commit pattern and PR granularity to scribe
+- **Members:** add envoy
+- **Members:** add oracle
+- **Members:** add sentinel
+- **Members:** add steward
+- **Members:** add warden
+- **Members:** register oracle and envoy in indexes
+- **Members:** register sentinel and warden in indexes
 - **Platform:** add npm package, VS Code extension, portals rename, and INITIATION
 - **Setup:** add setup.sh, makefile, devcontainer
 - **Society:** add skill files, rituals, agentic workflows, CI, and intelligence

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
-import { MEMBERS } from "./lib/members.mjs";
+import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
@@ -30,7 +30,7 @@ function withMirror(url) {
 }
 
 async function fetchSkill(member) {
-  const url = `${RAW_BASE}/skills/${member}/SKILL.md`;
+  const url = `${RAW_BASE}/skills/${skillDir(member)}/SKILL.md`;
   const res = await fetchWithRetry(url, undefined, withMirror(url));
   return await res.text();
 }
@@ -57,9 +57,21 @@ function extractWhenToUse(markdown) {
   return items;
 }
 
+// 4.0 declares each member's tools in `allowed-tools`. The Studio's code
+// sandbox is only for members whose contract grants code.write/code.refactor.
+// shortcut: parses the inline form only; every member ships it today, upgrade
+// to a YAML parser when one starts using a block list.
+function hasCodeWriteContract(markdown) {
+  const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatter) return false;
+  const declared = frontmatter[1].match(/^allowed-tools:(.*)$/m);
+  return Boolean(declared && /\bcode\.(write|refactor)\b/.test(declared[1]));
+}
+
 async function main() {
   const skills = {};
   const prompts = {};
+  const codeAgents = [];
 
   if (INSTALLED_VERSION) {
     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
@@ -71,8 +83,8 @@ async function main() {
   }
 
   const registry = await fetchRegistry();
-  const registryIds = new Set(registry.members.map((m) => m.name));
-  const unmirrored = registry.members.filter((m) => !MEMBERS.includes(m.name));
+  const registryIds = new Set(registry.members.map((m) => siteMemberId(m.name)));
+  const unmirrored = registry.members.filter((m) => !MEMBERS.includes(siteMemberId(m.name)));
   if (unmirrored.length > 0) {
     console.warn(`  ! upstream registry lists members not mirrored here: ${unmirrored.map((m) => m.name).join(", ")}`);
   }
@@ -85,6 +97,7 @@ async function main() {
       const raw = await fetchSkill(member);
       skills[member] = stripFrontmatter(raw);
       prompts[member] = extractWhenToUse(raw);
+      if (hasCodeWriteContract(raw)) codeAgents.push(member);
       console.log(`  ✓ ${member} (${prompts[member].length} prompts)`);
     } catch (err) {
       console.warn(`  ✗ ${member}: ${err.message}`);
@@ -112,9 +125,10 @@ async function main() {
     if (!existsSync(doc)) return false;
     return /^description:\s*Deprecated alias/im.test(readFileSync(doc, "utf8"));
   };
+  const memberDirs = new Set(MEMBERS.map(skillDir));
   const toolSkills = existsSync(pkgSkillsDir)
     ? readdirSync(pkgSkillsDir, { withFileTypes: true })
-        .filter((e) => e.isDirectory() && !e.name.startsWith("the-") && e.name !== "_shared")
+        .filter((e) => e.isDirectory() && !memberDirs.has(e.name) && e.name !== "_shared")
         .map((e) => e.name)
         .filter((name) => !isDeprecatedAlias(name))
         .sort()
@@ -137,7 +151,7 @@ export const agentPrompts: Record<string, string[]> = ${JSON.stringify(prompts, 
 `;
 
   const registryEntries = registry.members.map((m) => ({
-    name: m.name,
+    name: siteMemberId(m.name),
     displayName: m.displayName,
     tagline: m.tagline,
     role: m.role,
@@ -157,6 +171,8 @@ export interface RegistryEntry {
 }
 
 export const agentRegistry: RegistryEntry[] = ${JSON.stringify(registryEntries, null, 2)};
+
+export const codeAgents: string[] = ${JSON.stringify(codeAgents, null, 2)};
 `;
 
   writeFileSync(OUTPUT_FILE, ts, "utf-8");
@@ -180,7 +196,7 @@ async function verify() {
   const pkgSkillsDir = join(PROJECT_ROOT, "node_modules", "agenthood", "skills");
   let failed = false;
   for (const member of MEMBERS) {
-    const local = join(pkgSkillsDir, member, "SKILL.md");
+    const local = join(pkgSkillsDir, skillDir(member), "SKILL.md");
     if (!existsSync(local)) {
       console.error(`  ✗ ${member}: missing from installed agenthood package`);
       failed = true;

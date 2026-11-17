@@ -30,18 +30,18 @@ describe("Provider", () => {
 });
 
 describe("CODE_AGENTS", () => {
-  it("contains the nine code-capable members", () => {
+  it("contains the nine members whose 4.0 contract allows writing code", () => {
     expect(CODE_AGENTS).toEqual(
       new Set([
         "the-architect",
         "the-builder",
-        "the-reviewer",
-        "the-tester",
         "the-debugger",
-        "the-warden",
-        "the-auditor",
-        "the-doorman",
-        "the-operator",
+        "the-herald",
+        "the-inspector",
+        "the-librarian",
+        "the-mailman",
+        "the-scribe",
+        "the-tester",
       ]),
     );
   });
@@ -61,7 +61,7 @@ describe("getMemberTools", () => {
   });
 
   it("withholds code_execution from prose-lane members", () => {
-    for (const id of ["the-scribe", "the-herald", "the-librarian", "the-mediator"]) {
+    for (const id of ["the-reviewer", "the-warden", "the-auditor", "the-mediator"]) {
       expect(getMemberTools(id)).toEqual(["web_fetch", "activate_skill"]);
     }
   });

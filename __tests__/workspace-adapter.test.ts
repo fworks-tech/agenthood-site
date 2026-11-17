@@ -36,6 +36,7 @@ vi.mock('../app/(main)/studio/_data/registry.generated', () => ({
   agentRegistry: [
     { name: 'the-builder', displayName: 'The Builder', tagline: '', role: 'coding', stage: [], priority: 0 },
   ],
+  codeAgents: ['the-architect', 'the-builder', 'the-debugger', 'the-herald', 'the-inspector', 'the-librarian', 'the-mailman', 'the-scribe', 'the-tester'],
 }))
 
 vi.mock('../app/(main)/studio/_lib/tools', async (importOriginal) => {
@@ -319,13 +320,13 @@ describe('createWorkspaceTurnStream', () => {
 
   // Regression: workspace turns always enable tools, but the balanced default
   // (gpt-5-nano) rejects the tools protocol on Zen with 400 "Model does not
-  // support this protocol". Every non-CODE_AGENTS member (the-builder,
-  // the-mediator, ...) hit it; the architect worked only because it is in
+  // support this protocol". Every non-CODE_AGENTS member (the-mediator,
+  // the-strategist, ...) hit it; the architect worked only because it is in
   // CODE_AGENTS and got the code tier.
   it('never routes a tool-enabled turn to the tools-incapable default model', async () => {
     setupProvider({ complete: { content: 'ok', toolCalls: [] } })
     const stream = await createWorkspaceTurnStream({
-      workspaceId: 'ws-model', correlationId: 'c-model', memberId: 'the-builder', instruction: 'test', thread: [], turnIndex: 0,
+      workspaceId: 'ws-model', correlationId: 'c-model', memberId: 'the-mediator', instruction: 'test', thread: [], turnIndex: 0,
     })
     await collectEvents(stream)
     expect(mockSetModel).toHaveBeenCalled()

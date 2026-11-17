@@ -31,6 +31,7 @@ vi.mock("../app/(main)/studio/_data/agents.generated", () => ({
   agentSkills: {
     "the-scribe": "You are a commit message writer.",
     "the-builder": "You are the implementation hand.",
+    "the-mediator": "You are the router.",
   },
   sharedConversationalStyle: "",
   toolSkills: [],
@@ -40,7 +41,9 @@ vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
   agentRegistry: [
     { name: "the-scribe", displayName: "The Scribe", tagline: "", role: "commits", stage: [], priority: 0 },
     { name: "the-builder", displayName: "The Builder", tagline: "", role: "coding", stage: [], priority: 0 },
+    { name: "the-mediator", displayName: "The Mediator", tagline: "", role: "routing", stage: [], priority: 0 },
   ],
+  codeAgents: ["the-architect", "the-builder", "the-debugger", "the-herald", "the-inspector", "the-librarian", "the-mailman", "the-scribe", "the-tester"],
 }));
 
 vi.mock("../app/(main)/studio/_lib/tools", () => ({
@@ -544,10 +547,10 @@ describe("LightweightAdapter", () => {
       complete,
     }));
 
-    // the-scribe is prose-lane: the adapter is the last gate before the
+    // the-mediator is prose-lane: the adapter is the last gate before the
     // provider, so a caller asking for code_execution must not get it.
     const stream = await adapter.chat({
-      agentId: "the-scribe",
+      agentId: "the-mediator",
       messages: [{ role: "user", content: "run it" }],
       config: { enabledTools: ["web_fetch", "code_execution"] },
     });
@@ -712,7 +715,7 @@ describe("selectDemoModel", () => {
   const msg = (content: string) => [{ content }];
 
   it("picks the Q&A tier for plain prompts with no tools", () => {
-    expect(selectDemoModel("the-scribe", msg("what is an ADR?"), false)).toBe(DEMO_QA_MODEL);
+    expect(selectDemoModel("the-mediator", msg("what is an ADR?"), false)).toBe(DEMO_QA_MODEL);
   });
 
   it("picks the tool-capable tier when tools are on (gpt-5-nano cannot serve tools)", () => {
