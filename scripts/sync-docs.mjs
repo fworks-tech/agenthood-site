@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
+import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
 
 const REPO = "fworks-tech/agenthood";
 const BRANCH = "main";
@@ -60,13 +61,24 @@ function buildSlug(relativePath) {
     .filter(Boolean);
 }
 
+const MEMBER_IDS = new Set(MEMBERS);
+
 // Upstream member READMEs link to ../../skills/<member>/SKILL.md, which does
-// not exist in the site mirror — point them at the rendered member page.
+// not exist in the site mirror — point them at the rendered member page. 4.0
+// stripped the the- prefix from skill directories and registry ids, but the
+// site's canonical ids keep it, so normalize member ids here. Utility skills
+// have no member page, so their SKILL.md link goes to the source file.
 function rewriteMemberSkillLinks(content) {
-  return content.replace(
-    /\]\(\.\.\/\.\.\/skills\/([^)/]+)\/SKILL\.md\)/g,
-    (_match, member) => `](/docs/members/${member}/)`,
-  );
+  return content
+    .replace(
+      /\]\(\.\.\/\.\.\/skills\/([^)/]+)\/SKILL\.md\)/g,
+      (_match, member) => `](/docs/members/${siteMemberId(member)}/)`,
+    )
+    .replace(/\]\(\/docs\/members\/([^)/]+)\/\)/g, (match, member) => {
+      const id = siteMemberId(member);
+      if (MEMBER_IDS.has(id)) return `](/docs/members/${id}/)`;
+      return `](https://github.com/${REPO}/blob/${BRANCH}/skills/${skillDir(id)}/SKILL.md)`;
+    });
 }
 
 async function syncDirectory(sourceDir, destDir) {
@@ -92,7 +104,7 @@ async function syncDirectory(sourceDir, destDir) {
       continue;
     }
 
-    const content = await fetchRaw(file.path);
+    const content = rewriteMemberSkillLinks(await fetchRaw(file.path));
     const destPath = path.join(CONTENT_DIR, destDir, relative);
 
     fs.mkdirSync(path.dirname(destPath), { recursive: true });

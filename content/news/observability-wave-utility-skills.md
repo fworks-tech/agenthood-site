@@ -42,6 +42,6 @@ Unlike the nineteen Society members, these are utility skills: single-purpose, d
 
 ## What this means for the Studio
 
-This site's playground runs the same runtime through `agenthood/dist/llm` — every chat request now goes through the same redacted trace pipeline, which is exactly the behavior [documented in the Studio architecture](/docs/governance/). The trace envelopes this site emits with `source: "playground"` follow the same shape as the upstream runtime, so playground activity is comparable with member runs in the CLI.
+This site's playground runs the same runtime through `agenthood/dist/llm` — every chat request now goes through the same redacted trace pipeline, which is exactly the behavior [documented in the Studio architecture](https://github.com/fworks-tech/agenthood-site/blob/main/docs/adr/002-studio-architecture.md). The trace envelopes this site emits with `source: "playground"` follow the same shape as the upstream runtime, so playground activity is comparable with member runs in the CLI.
 
 If you are new to the observability pieces, the [decision-intelligence architecture doc](/docs/architecture/decision-intelligence/) and the recent ADRs — [ADR-017 (embedding index)](/adr/ADR-017-embedding-index-semantic-learning/), [ADR-018 (redaction scope)](/adr/ADR-018-redaction-scope-for-decisions/), and [ADR-019 (executor contract)](/adr/ADR-019-executor-contract-model-attribution/) — are the best starting points.

@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
+import { MEMBERS } from "./lib/members.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
@@ -27,14 +28,6 @@ const MIRROR_BASE = `https://cdn.jsdelivr.net/gh/fworks-tech/agenthood@${REF}`;
 function withMirror(url) {
   return { mirrors: [url.replace(RAW_BASE, MIRROR_BASE)] };
 }
-
-const MEMBERS = [
-  "the-architect", "the-auditor", "the-builder", "the-debugger", "the-doorman",
-  "the-envoy", "the-herald", "the-inspector", "the-librarian", "the-mailman",
-  "the-operator", "the-oracle", "the-reviewer", "the-scribe", "the-sentinel",
-  "the-steward", "the-strategist", "the-tester", "the-warden",
-  "the-mediator",
-];
 
 async function fetchSkill(member) {
   const url = `${RAW_BASE}/skills/${member}/SKILL.md`;

@@ -85,5 +85,5 @@ These checks will run on every PR so doc drift is caught before it reaches `main
 ## Related
 
 - [Issue #?? — Documentation audit tracking](https://github.com/fworks-tech/agenthood/issues)
-- [ADR-008 — TypeScript runtime over Python](/docs/adr/ADR-008-typescript-runtime-over-python.md)
-- [Built-in Tools — canonical tool registry](/docs/architecture/built-in-tools.md)
+- [ADR-008 — TypeScript runtime over Python](/adr/ADR-008-typescript-runtime-over-python/)
+- [Built-in Tools — canonical tool registry](/docs/architecture/built-in-tools/)
