@@ -11,7 +11,7 @@
  *     exact published_at of the newest covered release, so releases that ship
  *     later on the same calendar day as a digest are still picked up by the
  *     next run — comparing calendar dates alone would silently drop them.
- *  3. Ask OpenCode Go (deepseek-v4-flash, OPENCODE_API_KEY) to draft a full
+ *  3. Ask OpenCode Go (deepseek-v4.1-flash, OPENCODE_API_KEY) to draft a full
  *     article in the house style (front matter + markdown body).
  *  4. Validate the draft against the same contract enforced by
  *     scripts/build-news-manifest.mjs; retry once on an empty LLM response
@@ -44,7 +44,9 @@ const MANIFEST_PATH = path.join(NEWS_DIR, "manifest.json");
 const STATE_PATH = path.join(NEWS_DIR, ".digest-state.json");
 
 const OPENCODE_API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/v1";
-const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
+// deepseek-v4-flash left the Zen catalog; the digest failed with
+// "Model is unavailable" on every scheduled run until this moved to v4.1.
+const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4.1-flash";
 const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-news-digest";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SUMMARY_CHARS = 160;
