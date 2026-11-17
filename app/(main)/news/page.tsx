@@ -8,7 +8,7 @@ import { logger } from "@/app/(main)/studio/_lib/logger";
 
 export const metadata: Metadata = {
   title: "News · Agenthood",
-  description: "Release digests and engineering notes from the Agenthood Society.",
+  description: "Incident reports, release notes, and project updates from the Agenthood Society.",
   alternates: {
     canonical: "/news/",
     types: { "application/rss+xml": "/news/rss.xml" },
@@ -68,7 +68,7 @@ export default function NewsIndex() {
                   <p className="text-zinc-400 mt-1 text-sm">{entry.summary}</p>
                 )}
                 {entry.author && (
-                  <p className="text-xs text-zinc-600 mt-2">{entry.author}</p>
+                  <p className="text-xs text-zinc-500 mt-2">{entry.author}</p>
                 )}
               </Link>
             </FadeIn>

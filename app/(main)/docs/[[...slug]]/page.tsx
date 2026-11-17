@@ -52,6 +52,7 @@ const MEMBER_ICONS: Record<string, string> = {
   "the-steward": "🧭",
   "the-strategist": "🎯",
   "the-operator": "🩺",
+  "the-mediator": "🔀",
 };
 
 const SECTION_ORDER = [
@@ -158,11 +159,11 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
                       </li>
                     ))}
                     {contentEntries.length > 6 && (
-                      <li className="text-xs text-zinc-600">+{contentEntries.length - 6} more</li>
+                      <li className="text-xs text-zinc-500">+{contentEntries.length - 6} more</li>
                     )}
                   </ul>
                 ) : (
-                  <p className="text-sm text-zinc-600">Overview</p>
+                  <p className="text-sm text-zinc-500">Overview</p>
                 )}
               </Link>
             </FadeIn>
