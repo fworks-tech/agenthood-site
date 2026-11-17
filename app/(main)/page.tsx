@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Text, Group, Badge, SimpleGrid } from "@mantine/core";
 import {
@@ -17,6 +18,10 @@ import FadeIn from "../_components/FadeIn";
 import InstallBlock from "../_components/InstallBlock";
 import { ClientCTA } from "./_client-cta";
 import { agents } from "./studio/_data/agents";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const teamMembers = agents.map((a) => ({
   name: a.name,

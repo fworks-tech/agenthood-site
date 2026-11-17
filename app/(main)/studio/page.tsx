@@ -11,7 +11,8 @@ const memberCount = agentRegistry.length;
 export function generateMetadata(): Metadata {
   return {
     title: "Agenthood Studio — Try AI agents in your browser",
-    description: `Chat with ${memberCount} specialized AI agents live. Select your provider and start a conversation.`,
+    description: `Chat with ${memberCount} specialized AI agents live on a pinned OpenCode Zen model. No API key or setup required.`,
+    alternates: { canonical: "/studio/" },
   };
 }
 

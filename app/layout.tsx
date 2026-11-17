@@ -36,7 +36,6 @@ export const metadata: Metadata = {
     "open source",
   ],
   authors: [{ name: "Fabio Ritzel Borges", url: "https://flabs.tech" }],
-  alternates: { canonical: "/" },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
