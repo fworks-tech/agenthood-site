@@ -309,18 +309,18 @@ describe("middleware Upstash rate limiting", () => {
     expect(res.headers.get("RateLimit-Limit")).toBe("60");
   });
 
-  it("maps other rate-limited paths to the feedback Upstash limiter", async () => {
+  it("routes /api/news/comments to its own Upstash limiter", async () => {
     const { middleware } = await import("../app/middleware");
-    const feedback = ratelimitInstances.find((r) => r.prefix === "ratelimit:feedback");
-    expect(feedback).toBeDefined();
-    feedback!.limit.mockResolvedValueOnce({
+    const comments = ratelimitInstances.find((r) => r.prefix === "ratelimit:comments");
+    expect(comments).toBeDefined();
+    comments!.limit.mockResolvedValueOnce({
       success: false,
-      limit: 60,
+      limit: 30,
       remaining: 0,
       reset: Date.now() + 10_000,
     });
     const res = await middleware(makeRequest("/api/news/comments"));
     expect(res.status).toBe(429);
-    expect(res.headers.get("RateLimit-Limit")).toBe("60");
+    expect(res.headers.get("RateLimit-Limit")).toBe("30");
   });
 });

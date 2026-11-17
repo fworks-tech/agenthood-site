@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { agents } from "../(main)/studio/_data/agents";
+import { agents, toolSkills } from "../(main)/studio/_data/agents";
 
 interface TypingTerminalProps {
   startTyping: boolean;
@@ -99,10 +99,10 @@ const EXAMPLES: TerminalExample[] = [
     status: "Done — spec + ADR written",
   },
   {
-    command: 'agenthood run the-herald "prepare release notes for v2.1.0"',
+    command: 'agenthood run the-herald "prepare release notes for v4.0.0"',
     outputLines: [
       "",
-      "✓ v2.1.0 — minor bump, 14 commits analyzed",
+      "✓ v4.0.0 — minor bump, 14 commits analyzed",
       "",
       "  - 3 features, 6 fixes, 5 chores",
       "  - CHANGELOG.md updated",
@@ -157,7 +157,7 @@ const EXAMPLES: TerminalExample[] = [
       "  … run any with: agenthood run <member> <task>",
       "",
     ],
-    status: `Done — ${agents.length} members, 41 utility skills`,
+    status: `Done — ${agents.length} members, ${toolSkills.length} utility skills`,
   },
 ];
 
@@ -251,7 +251,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
         <div className="w-3 h-3 rounded-full bg-zinc-700" />
         <div className="w-3 h-3 rounded-full bg-zinc-700" />
         <div className="w-3 h-3 rounded-full bg-zinc-700" />
-        <span className="ml-2 text-xs text-zinc-600">terminal</span>
+        <span className="ml-2 text-xs text-zinc-500">terminal</span>
       </div>
 
       {/* Content — fixed height so the CTA grid does not re-center as text grows */}

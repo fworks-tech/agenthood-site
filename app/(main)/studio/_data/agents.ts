@@ -1,5 +1,7 @@
 import { agentRegistry } from "./registry.generated";
 
+export { toolSkills } from "./agents.generated";
+
 export interface AgentEntry {
   id: string;
   name: string;

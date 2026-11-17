@@ -108,7 +108,7 @@ export default function StudioHubPage() {
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
                 Every request goes through the agenthood LLMRouter with automatic failover.
-                Rate limited, validated, and logged server-side. Your keys are never stored on the server.
+                Rate limited, validated, and logged server-side — no API key or setup required.
               </p>
             </div>
           </FadeIn>

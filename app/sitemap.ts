@@ -8,6 +8,7 @@ const routes = [
   { path: "/adr", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/docs", priority: 0.9, changeFrequency: "weekly" as const },
   { path: "/getting-started", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/news", priority: 0.6, changeFrequency: "daily" as const },
   { path: "/releases", priority: 0.6, changeFrequency: "weekly" as const },
   { path: "/studio", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/studio/playground", priority: 0.7, changeFrequency: "monthly" as const },
