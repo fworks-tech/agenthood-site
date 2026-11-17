@@ -4,19 +4,9 @@
 @import "@mantine/spotlight/styles.layer.css";
 @import "@mantine/code-highlight/styles.layer.css";
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(16px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
 }
 
 /* Group-chat motion: message entrance, action pills, reaction chips. */
@@ -64,7 +54,8 @@
   .msg-in,
   .action-pop,
   .react-pop,
-  .route-pill {
+  .route-pill,
+  .animate-pulse {
     animation: none;
   }
   .typing-row .presence-dot {

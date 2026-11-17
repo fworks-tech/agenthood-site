@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Text } from "@mantine/core";
 import { IconCode } from "@tabler/icons-react";
 import FadeIn from "../_components/FadeIn";
@@ -8,9 +8,10 @@ import TypingTerminal from "../_components/TypingTerminal";
 
 export function ClientCTA() {
   const [terminalVisible, setTerminalVisible] = useState(false);
+  const handleVisible = useCallback(() => setTerminalVisible(true), []);
 
   return (
-    <FadeIn onVisible={() => setTerminalVisible(true)}>
+    <FadeIn onVisible={handleVisible}>
       <section className="border-t border-zinc-800 bg-zinc-900/50">
         <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
           <div className="text-center md:text-left">
