@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Metadata } from "next";
 import MarkdownRenderer from "../../components/MarkdownRenderer";
+
+export const metadata: Metadata = {
+  title: "Getting Started · Agenthood",
+  description: "Install Agenthood, load the Society into your runtime, and run your first member in about two minutes.",
+  alternates: { canonical: "/getting-started/" },
+};
 
 const MARKDOWN_PATH = path.join(process.cwd(), "content", "academy", "getting-started.md");
 

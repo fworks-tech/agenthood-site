@@ -1,9 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import FadeIn from "../../_components/FadeIn";
 import { logger } from "@/app/(main)/studio/_lib/logger";
+
+export const metadata: Metadata = {
+  title: "News · Agenthood",
+  description: "Release digests and engineering notes from the Agenthood Society.",
+  alternates: {
+    canonical: "/news/",
+    types: { "application/rss+xml": "/news/rss.xml" },
+  },
+};
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 

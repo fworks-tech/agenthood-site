@@ -40,6 +40,7 @@ export async function generateMetadata({ params }: AdrPageProps) {
   const entry = findEntry(readManifest(), slug);
   return {
     title: entry ? `${entry.title} · Agenthood ADR` : "Architecture Decision Records",
+    alternates: { canonical: `/adr/${slug.join("/")}${slug.length > 0 ? "/" : ""}` },
   };
 }
 

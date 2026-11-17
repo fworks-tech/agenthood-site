@@ -44,8 +44,12 @@ interface NewsPostProps {
 export async function generateMetadata({ params }: NewsPostProps) {
   const { slug } = await params;
   const entry = findEntry([slug]);
-  if (!entry) return { title: "News · Agenthood" };
-  return { title: `${entry.title} · Agenthood News` };
+  if (!entry) return { title: "News · Agenthood", alternates: { canonical: "/news/" } };
+  return {
+    title: `${entry.title} · Agenthood News`,
+    description: entry.summary,
+    alternates: { canonical: `/news/${slug}/` },
+  };
 }
 
 function stripFrontMatter(markdown: string): string {

@@ -99,13 +99,16 @@ interface DocsPageProps {
 
 export async function generateMetadata({ params }: DocsPageProps) {
   const { slug = [] } = await params;
-  if (slug.length === 0) return { title: "Docs · Agenthood" };
+  const canonical = `/docs/${slug.join("/")}${slug.length > 0 ? "/" : ""}`;
+  if (slug.length === 0) return { title: "Docs · Agenthood", alternates: { canonical } };
 
   const entry = findEntry(readManifest(), slug);
-  if (entry) return { title: `${entry.title} · Agenthood Docs` };
+  if (entry) {
+    return { title: `${entry.title} · Agenthood Docs`, alternates: { canonical } };
+  }
 
   const sectionLabel = SECTION_LABELS[slug.join("/")] || displayName(slug.join("/"));
-  return { title: `${sectionLabel} · Agenthood Docs` };
+  return { title: `${sectionLabel} · Agenthood Docs`, alternates: { canonical } };
 }
 
 function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {

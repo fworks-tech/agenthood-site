@@ -41,6 +41,7 @@ export async function generateMetadata({ params }: AcademyPageProps) {
   const entry = findEntry(readManifest(), slug);
   return {
     title: entry ? `${entry.title} · Agenthood Academy` : "Agenthood Academy",
+    alternates: { canonical: `/academy/${slug.join("/")}${slug.length > 0 ? "/" : ""}` },
   };
 }
 

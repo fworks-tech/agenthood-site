@@ -1,7 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Metadata } from "next";
 import MarkdownRenderer from "../../components/MarkdownRenderer";
 import FadeIn from "../../_components/FadeIn";
+
+export const metadata: Metadata = {
+  title: "Release Notes · Agenthood",
+  description: "Full version history for Agenthood, generated from conventional commits.",
+  alternates: { canonical: "/releases/" },
+};
 
 const RELEASE_NOTES_PATH = path.join(process.cwd(), "content", "release-notes.md");
 
