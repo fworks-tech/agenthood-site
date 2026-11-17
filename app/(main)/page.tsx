@@ -18,6 +18,7 @@ import FadeIn from "../_components/FadeIn";
 import InstallBlock from "../_components/InstallBlock";
 import { ClientCTA } from "./_client-cta";
 import { agents } from "./studio/_data/agents";
+import { AGENTHOOD_VERSION } from "../_lib/agenthood-version";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -58,7 +59,7 @@ export default function Home() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
         <Badge variant="outline" color="dark" size="lg" className="mb-6 tracking-wide uppercase">
-          Open source · Agenthood 4.0
+          Open source · Agenthood {AGENTHOOD_VERSION}
         </Badge>
         <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
           A full AI engineering team<br />
@@ -130,7 +131,7 @@ export default function Home() {
               Try the Society in your browser
             </h2>
             <Text c="dimmed" className="max-w-2xl mx-auto mb-8 leading-relaxed">
-              Pick any agent, choose your provider, and start a live conversation.
+              Pick any agent and start a live conversation on a preconfigured model.
               No install, no setup — just you and the agents.
             </Text>
             <Group justify="center" gap="md" className="mb-10">
@@ -173,7 +174,7 @@ export default function Home() {
 
       {/* Agents grid — grouped by category */}
       <FadeIn>
-        <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-18">
+        <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-20">
           <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
           <Text c="dimmed" className="mb-12 max-w-2xl">
             Every role a real software team needs — available as a skill file with impeccable standards.
@@ -187,7 +188,7 @@ export default function Home() {
                     <div className={`w-1 h-5 rounded-full ${cat.accent}`} />
                     <cat.icon size={18} className="text-zinc-400" />
                     <h3 className="text-lg font-semibold text-zinc-200">{cat.label}</h3>
-                    <span className="text-xs text-zinc-600">{catAgents.length}</span>
+                    <span className="text-xs text-zinc-500">{catAgents.length}</span>
                   </div>
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {catAgents.map((a) => (
