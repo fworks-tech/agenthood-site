@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
-import { MEMBERS } from "./lib/members.mjs";
+import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
@@ -30,7 +30,7 @@ function withMirror(url) {
 }
 
 async function fetchSkill(member) {
-  const url = `${RAW_BASE}/skills/${member}/SKILL.md`;
+  const url = `${RAW_BASE}/skills/${skillDir(member)}/SKILL.md`;
   const res = await fetchWithRetry(url, undefined, withMirror(url));
   return await res.text();
 }
@@ -71,8 +71,8 @@ async function main() {
   }
 
   const registry = await fetchRegistry();
-  const registryIds = new Set(registry.members.map((m) => m.name));
-  const unmirrored = registry.members.filter((m) => !MEMBERS.includes(m.name));
+  const registryIds = new Set(registry.members.map((m) => siteMemberId(m.name)));
+  const unmirrored = registry.members.filter((m) => !MEMBERS.includes(siteMemberId(m.name)));
   if (unmirrored.length > 0) {
     console.warn(`  ! upstream registry lists members not mirrored here: ${unmirrored.map((m) => m.name).join(", ")}`);
   }
@@ -112,9 +112,10 @@ async function main() {
     if (!existsSync(doc)) return false;
     return /^description:\s*Deprecated alias/im.test(readFileSync(doc, "utf8"));
   };
+  const memberDirs = new Set(MEMBERS.map(skillDir));
   const toolSkills = existsSync(pkgSkillsDir)
     ? readdirSync(pkgSkillsDir, { withFileTypes: true })
-        .filter((e) => e.isDirectory() && !e.name.startsWith("the-") && e.name !== "_shared")
+        .filter((e) => e.isDirectory() && !memberDirs.has(e.name) && e.name !== "_shared")
         .map((e) => e.name)
         .filter((name) => !isDeprecatedAlias(name))
         .sort()
@@ -137,7 +138,7 @@ export const agentPrompts: Record<string, string[]> = ${JSON.stringify(prompts, 
 `;
 
   const registryEntries = registry.members.map((m) => ({
-    name: m.name,
+    name: siteMemberId(m.name),
     displayName: m.displayName,
     tagline: m.tagline,
     role: m.role,
@@ -180,7 +181,7 @@ async function verify() {
   const pkgSkillsDir = join(PROJECT_ROOT, "node_modules", "agenthood", "skills");
   let failed = false;
   for (const member of MEMBERS) {
-    const local = join(pkgSkillsDir, member, "SKILL.md");
+    const local = join(pkgSkillsDir, skillDir(member), "SKILL.md");
     if (!existsSync(local)) {
       console.error(`  ✗ ${member}: missing from installed agenthood package`);
       failed = true;
