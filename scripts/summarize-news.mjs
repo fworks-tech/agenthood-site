@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { load as parseYaml } from "js-yaml";
 
 const API_BASE = process.env.OPENCODE_NEWS_BASE_URL ?? "https://opencode.ai/zen/v1";
-const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4-flash";
+const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4.1-flash";
 const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-summarize-news";
 const MAX_SUMMARY_CHARS = 160;
 
