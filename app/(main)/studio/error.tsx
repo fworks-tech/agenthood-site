@@ -20,7 +20,7 @@ export default function StudioError({
           <HelpTip text="An unexpected error occurred. This could be a network or server issue." />
         </h2>
         <p className="mt-2 text-sm text-zinc-500">
-          An unexpected error occurred. Try again or select a different provider.
+          An unexpected error occurred. Try again or reload the page.
         </p>
         {error.digest && (
           <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-600">Error ID: {error.digest}</p>
