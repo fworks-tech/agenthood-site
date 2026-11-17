@@ -23,7 +23,6 @@ const STATIC_ROUTES = [
   "/robots.txt",
   "/sitemap.xml",
   "/opengraph-image",
-  "/monitoring",
   "/favicon.ico",
 ];
 
@@ -43,34 +42,26 @@ function normalize(href) {
   return clean.endsWith("/") ? clean : `${clean}/`;
 }
 
-function walkMarkdown(dir) {
-  const files = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...walkMarkdown(full));
-    else if (entry.name.endsWith(".md")) files.push(full);
-  }
-  return files;
-}
-
-const routes = new Set(STATIC_ROUTES);
+const manifests = new Map(SECTIONS.map(([dir]) => [dir, readManifest(dir)]));
+const routes = new Set(STATIC_ROUTES.map(normalize));
 for (const [dir, prefix] of SECTIONS) {
-  for (const entry of readManifest(dir)) {
+  for (const entry of manifests.get(dir)) {
     const slug = Array.isArray(entry.slug) ? entry.slug.join("/") : entry.slug;
     routes.add(`${prefix}${slug}/`.replace(/\/+/g, "/"));
   }
 }
 
+// Only absolute links are checked here; relative links are resolved at render
+// time by MarkdownRenderer.rewriteHref and can still 404 (issue #331).
 const broken = [];
 for (const [dir] of SECTIONS) {
-  const root = path.join(CONTENT_DIR, dir);
-  for (const file of walkMarkdown(root)) {
-    const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  for (const entry of manifests.get(dir)) {
+    const lines = fs.readFileSync(path.join(CONTENT_DIR, entry.path), "utf8").split(/\r?\n/);
     lines.forEach((line, index) => {
       for (const match of line.matchAll(/\]\((\/[^)\s]+)\)/g)) {
         const target = normalize(match[1]);
         if (target && !routes.has(target)) {
-          broken.push(`${path.relative(CONTENT_DIR, file)}:${index + 1} -> ${target}`);
+          broken.push(`${entry.path}:${index + 1} -> ${target}`);
         }
       }
     });
@@ -83,4 +74,4 @@ if (broken.length > 0) {
   process.exit(1);
 }
 
-console.log(`check-links: ${routes.size} routes, no broken internal links`);
+console.log(`check-links: ${routes.size} routes, no broken absolute internal links`);
