@@ -13,6 +13,8 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)** · [Studio Play
 
 Agenthood is a 20-member AI society — planners, builders, reviewers, auditors, and more — each a portable Markdown skill file, plus a TypeScript runtime that runs them autonomously across your whole software lifecycle.
 
+**Agenthood 4.0 is out.** Members and workflows are data now: register your own agents at runtime, declare a multi-step chain in `chains.yaml`, and every step keeps the traces, decisions, and provenance records the built-in Society already writes.
+
 Load them into **Claude Code, Copilot, Gemini CLI, Cursor, OpenCode**, or any runtime that supports skill files. Hand them a task, or let them run end to end.
 
 No lock-in. No vendor-specific format. Setup in ~2 minutes. Every decision auditable.
@@ -24,6 +26,9 @@ No lock-in. No vendor-specific format. Setup in ~2 minutes. Every decision audit
 - **20 specialized members** — architect, reviewer, tester, auditor, security, DevOps, and more
 - **41 utility skills** — specialist capability files (docker, kubernetes, jira, postgres, and more) that activate on task match
 - **Delegation chains** — chain agents together: tester → builder → reviewer → doorman
+- **Composable workflows (4.0)** — register custom members and declare multi-step `chains.yaml` workflows
+- **Skill contracts (4.0)** — `allowed-tools` and model/tool/dependency gating decide where a skill may run
+- **Sandboxed scripts (4.0)** — bundled scripts run on pinned runtimes, inside Docker or not at all
 - **Autonomous runtime** — `npx agenthood run the-scribe "write a commit message"`
 - **Multi-agent workspaces** — assemble a team, give one instruction, watch them collaborate; human checkpoints included
 - **Decision intelligence** — tamper-evident audit trail with hash-chain provenance

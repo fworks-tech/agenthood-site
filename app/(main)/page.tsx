@@ -58,7 +58,7 @@ export default function Home() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
         <Badge variant="outline" color="dark" size="lg" className="mb-6 tracking-wide uppercase">
-          Open source · AI dev tools
+          Open source · Agenthood 4.0
         </Badge>
         <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
           A full AI engineering team<br />
@@ -217,7 +217,8 @@ export default function Home() {
             Each agent is a single <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">.md</code> file
             that describes a role, its responsibilities, standards, and how it communicates.
             Load one or all of them into Claude Code, Copilot, Gemini CLI, or any runtime that supports skill files.
-            Or run them autonomously via the TypeScript CLI.
+            Or run them autonomously via the TypeScript CLI, and compose your own members and multi-step
+            workflows in <code className="bg-zinc-800/70 text-zinc-300 px-1.5 py-0.5 rounded-md text-sm border border-zinc-700/50 font-mono">chains.yaml</code>.
           </Text>
           <div className="grid md:grid-cols-3 gap-6 relative">
             <div className="hidden md:block absolute top-8 left-[17%] right-[17%] h-px bg-zinc-800" />
