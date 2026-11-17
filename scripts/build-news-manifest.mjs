@@ -60,7 +60,11 @@ function buildEntry(file, text) {
     throw new Error(detail);
   }
 
-  const { title, date, author, summary } = frontMatter.data;
+  const { title, author, summary } = frontMatter.data;
+  // js-yaml deserializes unquoted dates (date: 2026-10-09) into Date objects;
+  // they are UTC-midnight stamps, so slicing the ISO string keeps the same day.
+  const rawDate = frontMatter.data.date;
+  const date = rawDate instanceof Date ? rawDate.toISOString().slice(0, 10) : rawDate;
 
   if (typeof title !== "string" || !title.trim()) {
     throw new Error(`front matter must define a non-empty "title"`);
