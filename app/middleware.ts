@@ -107,8 +107,13 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/workspaces"].max, `${RATE_LIMITS["/api/studio/workspaces"].windowMs}ms`),
     prefix: "ratelimit:workspaces",
   });
+  const comments = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/news/comments"].max, `${RATE_LIMITS["/api/news/comments"].windowMs}ms`),
+    prefix: "ratelimit:comments",
+  });
 
-  return { chat, tools, agents, feedback, workspaces };
+  return { chat, tools, agents, feedback, workspaces, comments };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -129,12 +134,13 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limitKey) return null;
   const limits = RATE_LIMITS[limitKey];
 
-  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "feedback" | "workspaces"> = {
+  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "feedback" | "workspaces" | "comments"> = {
     "/api/studio/chat": "chat",
     "/api/studio/tools": "tools",
     "/api/studio/agents": "agents",
     "/api/studio/feedback": "feedback",
     "/api/studio/workspaces": "workspaces",
+    "/api/news/comments": "comments",
   };
 
   if (upstash) {
@@ -226,5 +232,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/studio/:path*"],
+  matcher: ["/api/studio/:path*", "/api/news/:path*"],
 };
