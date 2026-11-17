@@ -212,3 +212,15 @@ export const agentRegistry: RegistryEntry[] = [
     "priority": 19
   }
 ];
+
+export const codeAgents: string[] = [
+  "the-architect",
+  "the-builder",
+  "the-debugger",
+  "the-herald",
+  "the-inspector",
+  "the-librarian",
+  "the-mailman",
+  "the-scribe",
+  "the-tester"
+];

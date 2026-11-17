@@ -14,6 +14,7 @@ vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
     { name: "the-scribe", displayName: "The Scribe", tagline: "Turns your diff into prose worth reading", role: "commits & changelogs", stage: [], priority: 0 },
     { name: "the-builder", displayName: "The Builder", tagline: "Builds the smallest verified change", role: "coding, implementation", stage: [], priority: 1 },
   ],
+  codeAgents: ["the-architect", "the-builder", "the-debugger", "the-herald", "the-inspector", "the-librarian", "the-mailman", "the-scribe", "the-tester"],
 }));
 
 import { buildSystemPrompt } from "../app/(main)/studio/_lib/system-prompt";

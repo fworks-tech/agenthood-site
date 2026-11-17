@@ -57,9 +57,21 @@ function extractWhenToUse(markdown) {
   return items;
 }
 
+// 4.0 declares each member's tools in `allowed-tools`. The Studio's code
+// sandbox is only for members whose contract grants code.write/code.refactor.
+// shortcut: parses the inline form only; every member ships it today, upgrade
+// to a YAML parser when one starts using a block list.
+function hasCodeWriteContract(markdown) {
+  const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!frontmatter) return false;
+  const declared = frontmatter[1].match(/^allowed-tools:(.*)$/m);
+  return Boolean(declared && /\bcode\.(write|refactor)\b/.test(declared[1]));
+}
+
 async function main() {
   const skills = {};
   const prompts = {};
+  const codeAgents = [];
 
   if (INSTALLED_VERSION) {
     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
@@ -85,6 +97,7 @@ async function main() {
       const raw = await fetchSkill(member);
       skills[member] = stripFrontmatter(raw);
       prompts[member] = extractWhenToUse(raw);
+      if (hasCodeWriteContract(raw)) codeAgents.push(member);
       console.log(`  ✓ ${member} (${prompts[member].length} prompts)`);
     } catch (err) {
       console.warn(`  ✗ ${member}: ${err.message}`);
@@ -158,6 +171,8 @@ export interface RegistryEntry {
 }
 
 export const agentRegistry: RegistryEntry[] = ${JSON.stringify(registryEntries, null, 2)};
+
+export const codeAgents: string[] = ${JSON.stringify(codeAgents, null, 2)};
 `;
 
   writeFileSync(OUTPUT_FILE, ts, "utf-8");
