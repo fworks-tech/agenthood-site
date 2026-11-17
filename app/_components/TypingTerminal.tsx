@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { agents } from "../(main)/studio/_data/agents";
 
 interface TypingTerminalProps {
   startTyping: boolean;
@@ -149,14 +150,14 @@ const EXAMPLES: TerminalExample[] = [
     command: "agenthood list",
     outputLines: [
       "",
-      "✓ 20 members available",
+      `✓ ${agents.length} members available`,
       "",
       "  the-strategist  the-architect  the-tester",
       "  the-builder     the-reviewer   the-auditor",
       "  … run any with: agenthood run <member> <task>",
       "",
     ],
-    status: "Done — 20 members, 28 skills",
+    status: `Done — ${agents.length} members, 41 utility skills`,
   },
 ];
 
@@ -171,19 +172,30 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
   const [cmdIdx, setCmdIdx] = useState(0);
   const [outIdx, setOutIdx] = useState(0);
   const [outLineChars, setOutLineChars] = useState(0);
+  const [inView, setInView] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const current = EXAMPLES[exampleIdx];
 
+  // Pause the loop while the terminal is scrolled out of view.
   useEffect(() => {
-    if (!startTyping || phase !== "idle") return;
+    const el = rootRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.2 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!startTyping || !inView || phase !== "idle") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPhase("command");
-  }, [startTyping, phase]);
+  }, [startTyping, inView, phase]);
 
   // Cycle to the next example after a pause on "done"
   useEffect(() => {
-    if (phase !== "done") return;
+    if (phase !== "done" || !inView) return;
     timerRef.current = setTimeout(() => {
       setExampleIdx((i) => (i + 1) % EXAMPLES.length);
       setCmdIdx(0);
@@ -192,22 +204,22 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
       setPhase("command");
     }, PAUSE_AFTER_DONE);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [phase]);
+  }, [phase, inView]);
 
   // Type command characters
   useEffect(() => {
-    if (phase !== "command") return;
+    if (phase !== "command" || !inView) return;
     if (cmdIdx >= current.command.length) {
       timerRef.current = setTimeout(() => setPhase("output"), PAUSE_AFTER_COMMAND);
       return;
     }
     timerRef.current = setTimeout(() => setCmdIdx((i) => i + 1), CHAR_SPEED);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [phase, cmdIdx, current.command]);
+  }, [phase, inView, cmdIdx, current.command]);
 
   // Type output lines
   useEffect(() => {
-    if (phase !== "output") return;
+    if (phase !== "output" || !inView) return;
     if (outIdx >= current.outputLines.length) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("done");
@@ -223,7 +235,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
     }
     timerRef.current = setTimeout(() => setOutLineChars((c) => c + 1), 12);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [phase, outIdx, outLineChars, current.outputLines]);
+  }, [phase, inView, outIdx, outLineChars, current.outputLines]);
 
   const typedCmd = current.command.slice(0, cmdIdx);
   const visibleOutput = current.outputLines.slice(0, outIdx).join("\n")
@@ -233,7 +245,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
   const outputLines = visibleOutput.split("\n");
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm overflow-hidden shadow-2xl">
+    <div ref={rootRef} aria-hidden="true" className="rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm overflow-hidden shadow-2xl">
       {/* Title bar */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/50">
         <div className="w-3 h-3 rounded-full bg-zinc-700" />
@@ -242,8 +254,8 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
         <span className="ml-2 text-xs text-zinc-600">terminal</span>
       </div>
 
-      {/* Content */}
-      <div className="p-4 min-h-[180px]">
+      {/* Content — fixed height so the CTA grid does not re-center as text grows */}
+      <div className="p-4 h-64 overflow-y-auto">
         <div className="text-zinc-500 mb-1">$ <span className="text-zinc-200">{typedCmd}</span>{phase === "command" && <span className="animate-pulse text-emerald-400">▌</span>}</div>
         {phase !== "idle" && (
           <pre className="text-zinc-400 whitespace-pre-wrap leading-relaxed">
