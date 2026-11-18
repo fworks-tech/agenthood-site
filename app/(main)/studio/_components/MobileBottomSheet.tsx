@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
-import { Drawer } from "@mantine/core";
+import { ActionIcon, Drawer } from "@mantine/core";
+import { IconX } from "@tabler/icons-react";
 
 interface MobileBottomSheetProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
 }
+
+const SHEET_HEIGHT = "85dvh";
 
 export default function MobileBottomSheet({ open, onClose, children }: MobileBottomSheetProps) {
   const [translateY, setTranslateY] = useState(0);
@@ -44,7 +47,7 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
       opened={open}
       onClose={onClose}
       position="bottom"
-      size="85vh"
+      size={SHEET_HEIGHT}
       withCloseButton={false}
       padding={0}
       styles={{
@@ -55,19 +58,30 @@ export default function MobileBottomSheet({ open, onClose, children }: MobileBot
           transform: `translateY(${translateY}px)`,
           transition: isDragging ? "none" : "transform 0.3s ease-out",
         },
-        body: { padding: 0, overflow: "hidden" },
+        body: { padding: 0, overflow: "hidden", height: "100%" },
       }}
       transitionProps={{ transition: "slide-up", duration: 300 }}
     >
-      <div
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className="flex justify-center pt-3 pb-2">
+      <div className="flex h-full flex-col">
+        <div
+          className="relative flex shrink-0 touch-none items-center justify-center pb-2 pt-3"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="lg"
+            className="absolute right-2 top-1.5"
+            onClick={onClose}
+            aria-label="Close configuration panel"
+          >
+            <IconX size={18} />
+          </ActionIcon>
         </div>
-        <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 40px)" }}>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {children}
         </div>
       </div>

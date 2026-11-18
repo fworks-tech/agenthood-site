@@ -13,7 +13,7 @@ export function ClientCTA() {
   return (
     <FadeIn onVisible={handleVisible}>
       <section className="border-t border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+        <div className="max-w-6xl mx-auto px-6 py-14 sm:py-20 grid md:grid-cols-2 gap-10 md:gap-12 items-center">
           <div className="text-center md:text-left">
             <h2 className="text-3xl font-semibold text-white mb-4">Your project deserves a full team.</h2>
             <Text c="dimmed" mb="lg">Open source. No sign-up. Works with any agent runtime.</Text>

@@ -89,27 +89,29 @@ export default function LiveLogs({
 
   return (
     <div className="border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
-      <UnstyledButton
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-label="Toggle live logs"
-        className="flex w-full items-center justify-between px-3 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-      >
+      <div className="flex w-full items-center justify-between px-3 py-1.5">
         <Group gap="xs">
-          <IconChevronDown
-            size={14}
-            className="text-zinc-500 transition-transform duration-200"
-            style={{ transform: open ? undefined : "rotate(-90deg)" }}
-          />
-          <Text size="xs" fw={500} c="zinc.5" className="flex items-center gap-1">
-            Live Logs
-            <HelpTip text="Real-time event log showing request routing, provider calls, errors, and system messages." />
-          </Text>
+          <UnstyledButton
+            onClick={onToggle}
+            aria-expanded={open}
+            aria-label="Toggle live logs"
+            className="flex items-center gap-1 px-1 py-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors rounded"
+          >
+            <IconChevronDown
+              size={14}
+              className="text-zinc-500 transition-transform duration-200"
+              style={{ transform: open ? undefined : "rotate(-90deg)" }}
+            />
+            <Text size="xs" fw={500} c="zinc.5">
+              Live Logs
+            </Text>
+          </UnstyledButton>
+          <HelpTip text="Real-time event log showing request routing, provider calls, errors, and system messages." />
         </Group>
         <Text size="xs" c="zinc.6">
           {renderedLogs.length}/{logs.length} events
         </Text>
-      </UnstyledButton>
+      </div>
       <div className="flex items-center gap-2 border-t border-zinc-200/50 dark:border-zinc-800/50 px-3 py-1">
         <ActionIcon
           variant="subtle"

@@ -15,10 +15,13 @@ interface MessageListProps {
 }
 
 export default function MessageList({ messages, isStreaming, conversationId, onReplayTool }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: reduceMotion ? "auto" : "smooth" });
   }, [messages, isStreaming]);
 
   if (messages.length === 0) {
@@ -36,7 +39,7 @@ export default function MessageList({ messages, isStreaming, conversationId, onR
   const streamingIndex = lastAssistantIndex >= 0 ? messages.length - 1 - lastAssistantIndex : -1;
 
   return (
-    <ScrollArea className="flex-1" px="lg" py="xl">
+    <ScrollArea viewportRef={viewportRef} className="flex-1" px="lg" py="xl">
       <Stack className="mx-auto max-w-3xl" gap="md">
         {messages.map((msg, i) => (
           <AnimatedMessage key={msg.id}>
@@ -48,7 +51,6 @@ export default function MessageList({ messages, isStreaming, conversationId, onR
             />
           </AnimatedMessage>
         ))}
-        <div ref={bottomRef} />
       </Stack>
     </ScrollArea>
   );

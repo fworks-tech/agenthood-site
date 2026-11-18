@@ -15,8 +15,9 @@ overflow.
   backdrop + the absolute overlay classes entirely. Mobile has exactly one path per action:
   bottom bar → `MobileDrawer` for conversations, `MobileBottomSheet` for config.
 - Gate the header "Show/Hide Panel" toggle and the horizontal `DragHandle` to `md:`+.
-- Give the right column bottom clearance (`mb-16` on mobile) so the composer/logs sit above the
-  fixed bottom bar.
+- Give the right column bottom clearance (`mb-[calc(4rem+env(safe-area-inset-bottom))]`
+  on mobile) so the composer/logs sit above the 48px fixed bottom bar; the bar itself
+  respects the safe area.
 - Let the header row wrap and truncate (agent name, provider·model) at small widths.
 - Contain long words/code inside assistant bubbles: `break-words` on the markdown container and
   `overflow-x-auto` on `pre` blocks (the message list itself is `min-w-0`).
@@ -24,14 +25,14 @@ overflow.
 ## Out of Scope
 
 - Touch/drag gestures for the sidebar on mobile.
-- Reworking `MobileBottomSheet` sizing (unchanged beyond existing behavior).
+- Edge-swipe to open the conversations drawer.
 - Desktop sidebar behavior changes.
 
 ## Acceptance Criteria
 
-- [ ] No drawer/backdrop flash before hydration at 375px; no in-page overlay on mobile
+- [ ] No drawer/backdrop flash before hydration at 360px; no in-page overlay on mobile
 - [ ] Composer (textarea + send) fully visible and tappable above the fixed bottom bar
-- [ ] Header row (agent, provider·model, token, Clear) never overflows at 375px
+- [ ] Header row (agent, provider·model, token, Clear) never overflows at 360px
 - [ ] Config reachable on mobile only via the bottom sheet; conversations only via the drawer
 - [ ] Assistant message with a 600-char unbroken line inside a code fence causes no horizontal
       page overflow; the `pre` scrolls internally
@@ -40,9 +41,9 @@ overflow.
 
 ## Testing Strategy
 
-- **E2E** (`responsive.spec.ts`): 375×812 assertions — header toggle hidden, no backdrop,
-  config via bottom sheet, composer clearance via bounding boxes, and scroll-width equality
-  after rendering a long code block; 1280×720 assertions unchanged.
+- **E2E** (`responsive.spec.ts`): 360×740 and 430×800 assertions — header toggle hidden,
+  no backdrop, config via bottom sheet, composer clearance via bounding boxes at scroll top,
+  and scroll-width equality after rendering a long code block; 1280×720 assertions unchanged.
 - **Unit:** not applicable (presentational layout).
 
 ## Open Questions

@@ -25,13 +25,16 @@ export default function PlaygroundChatArea({
 }: PlaygroundChatAreaProps) {
   if (!selectedAgent) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex h-full items-center justify-center overflow-y-auto py-6">
         <div className="max-w-lg text-center px-6">
           <h2 className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">Welcome to Agenthood Studio</h2>
           <p className="mt-2 text-sm text-zinc-500 mb-8">
-            Select a Society member from the left panel to start testing.
+            Select a Society member <span className="hidden md:inline">from the left panel</span>
+            <span className="md:hidden">below</span> to start testing.
           </p>
-          <WelcomeTerminal />
+          <div className="hidden md:block">
+            <WelcomeTerminal />
+          </div>
         </div>
       </div>
     );
@@ -49,7 +52,7 @@ export default function PlaygroundChatArea({
   }
 
   return (
-    <div className="flex h-full items-center justify-center">
+    <div className="flex h-full items-center justify-center overflow-y-auto py-6">
       <div className="max-w-md text-center px-6">
         <span className="text-4xl">{selectedAgent.icon}</span>
         <h2 className="mt-3 text-lg font-semibold text-zinc-800 dark:text-zinc-200">{selectedAgent.name}</h2>

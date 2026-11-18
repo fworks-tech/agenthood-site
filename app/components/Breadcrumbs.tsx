@@ -45,7 +45,7 @@ export default function Breadcrumbs({ segments }: BreadcrumbsProps) {
     <nav aria-label="Breadcrumb" className="mb-6">
       <ol className="flex items-center gap-2 flex-wrap text-sm text-zinc-500">
         <li>
-          <Anchor component={Link} href="/" c="emerald.4">
+          <Anchor component={Link} href="/" c="emerald.4" className="inline-flex items-center py-1.5">
             Home
           </Anchor>
         </li>
@@ -53,11 +53,11 @@ export default function Breadcrumbs({ segments }: BreadcrumbsProps) {
           <li key={crumb.href} className="flex items-center gap-2">
             <span className="text-zinc-700">/</span>
             {crumb.isLast ? (
-              <Text c="gray.3" fw={500} size="sm">
+              <Text c="gray.3" fw={500} size="sm" className="py-1.5">
                 {crumb.label}
               </Text>
             ) : (
-              <Anchor component={Link} href={crumb.href} c="emerald.4" size="sm">
+              <Anchor component={Link} href={crumb.href} c="emerald.4" size="sm" className="inline-flex items-center py-1.5">
                 {crumb.label}
               </Anchor>
             )}

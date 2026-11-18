@@ -168,12 +168,22 @@ export default function MarkdownRenderer({ children, basePath = "", animateSecti
           }
           return acc;
         }, []);
-      return <p className="text-zinc-300 leading-relaxed mb-4">{insertBreaks(children)}</p>;
+      return <p className="text-zinc-300 leading-relaxed mb-4 break-words [overflow-wrap:anywhere]">{insertBreaks(children)}</p>;
     },
     ul: ({ children }) => <ul className="list-disc space-y-1.5 text-zinc-300 ml-6 mb-4">{children}</ul>,
     ol: ({ children }) => <ol className="list-decimal space-y-1.5 text-zinc-300 ml-6 mb-4">{children}</ol>,
-    li: ({ children }) => <li>{children}</li>,
+    li: ({ children }) => <li className="break-words [overflow-wrap:anywhere]">{children}</li>,
     a: MarkdownLink,
+    img: ({ src, alt }) => (
+      // Synced docs are trusted local content; a plain img avoids remotePatterns config.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={typeof src === "string" ? src : undefined}
+        alt={alt ?? ""}
+        loading="lazy"
+        className="max-w-full h-auto rounded-lg border border-zinc-800 mb-4"
+      />
+    ),
     code: ({ children, className }) => {
       const isInline = !className;
       if (isInline) {
@@ -208,7 +218,7 @@ export default function MarkdownRenderer({ children, basePath = "", animateSecti
     strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
     table: ({ children }) => (
       <div className="mb-6 overflow-x-auto rounded-lg border border-zinc-800/80">
-        <table className="w-full text-sm">{children}</table>
+        <table className="w-full min-w-[560px] text-sm">{children}</table>
       </div>
     ),
     thead: ({ children }) => <thead className="bg-zinc-900/80">{children}</thead>,

@@ -139,7 +139,9 @@ export default function PlaygroundPage() {
   }, [chat.isStreaming, selectedAgent, addLog]);
 
   return (
-    <div className="h-screen bg-zinc-50 py-12 dark:bg-zinc-950">
+    // The mobile playground fills the viewport minus the 80px site navbar it
+    // sits under; desktop keeps the original full-height stage.
+    <div className="h-[calc(100dvh-5rem-env(safe-area-inset-top,0px))] bg-zinc-50 py-2 md:h-screen md:py-12 dark:bg-zinc-950">
       <div className="relative flex h-full max-w-7xl mx-auto">
         <PlaygroundSidebar
           configOpen={configOpen}
@@ -169,7 +171,7 @@ export default function PlaygroundPage() {
             className="hidden md:flex"
           />
         )}
-        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-200/80 rounded-xl mt-2 mb-16 mr-2 md:mb-2 dark:border-zinc-800/80">
+        <div data-right-col className="flex flex-1 flex-col min-w-0 border border-zinc-200/80 rounded-xl mt-2 mb-[calc(4rem+env(safe-area-inset-bottom,0px))] mx-2 md:mb-2 dark:border-zinc-800/80">
           <PlaygroundHeader
             selectedAgent={selectedAgent}
             config={config}
@@ -241,7 +243,7 @@ export default function PlaygroundPage() {
         onOpenConfig={() => setMobileSheetOpen((p) => !p)}
         onToggleLogs={() => setLogsOpen((p) => !p)}
       />
-      <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)} onOpen={() => setMobileDrawerOpen(true)}>
+      <MobileDrawer open={mobileDrawerOpen} onClose={() => setMobileDrawerOpen(false)}>
         <div data-conversation-list="sidebar">
           <ConversationList
             conversations={conversations}

@@ -54,25 +54,27 @@ export default function ConversationList({
   return (
     <div className="border border-zinc-200 dark:border-zinc-800">
       <Group justify="space-between" px="lg" py="sm">
-        <UnstyledButton
-          onClick={toggleOpen}
-          aria-expanded={open}
-          aria-label="Toggle conversations"
-          className="hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-        >
-          <Group gap="xs">
-            <IconChevronDown
-              size={14}
-              className="text-zinc-500 transition-transform duration-200"
-              style={{ transform: open ? undefined : "rotate(-90deg)" }}
-            />
-            <Text size="xs" fw={500} c="zinc.4" className="flex items-center gap-1">
-              Conversations
-              <HelpTip text="Your saved chat sessions, stored locally in your browser." side="bottom" />
-            </Text>
-            <Text size="xs" c="zinc.6">{conversations.length}</Text>
-          </Group>
-        </UnstyledButton>
+        <Group gap="xs">
+          <UnstyledButton
+            onClick={toggleOpen}
+            aria-expanded={open}
+            aria-label="Toggle conversations"
+            className="hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+          >
+            <Group gap="xs">
+              <IconChevronDown
+                size={14}
+                className="text-zinc-500 transition-transform duration-200"
+                style={{ transform: open ? undefined : "rotate(-90deg)" }}
+              />
+              <Text size="xs" fw={500} c="zinc.4">
+                Conversations
+              </Text>
+              <Text size="xs" c="zinc.6">{conversations.length}</Text>
+            </Group>
+          </UnstyledButton>
+          <HelpTip text="Your saved chat sessions, stored locally in your browser." side="bottom" />
+        </Group>
         <Group gap="xs">
           <UnstyledButton
             onClick={onNewConversation}
@@ -102,7 +104,7 @@ export default function ConversationList({
                   key={conv.id}
                   data-conversation-item
                   data-active={isActive}
-                  className={`group flex items-center gap-2 px-4 py-1.5 cursor-pointer transition-colors ${
+                  className={`group flex items-center gap-2 px-4 py-2 cursor-pointer transition-colors ${
                     isActive
                       ? "bg-emerald-950/30 border-l-2 border-emerald-500"
                        : "border-l-2 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900"
@@ -120,11 +122,11 @@ export default function ConversationList({
                   <Group gap={4}>
                     <ActionIcon
                       variant="subtle"
-                      size="xs"
+                      size="md"
                       c="zinc.6"
                       onClick={(e) => { e.stopPropagation(); confirmDelete(conv.id, conv.title); }}
                       aria-label={`Delete conversation ${conv.title}`}
-                      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-400 transition-opacity"
+                      className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-400 transition-opacity"
                       title="Delete conversation"
                     >
                       <IconTrash size={12} />

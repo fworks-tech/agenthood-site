@@ -16,7 +16,7 @@ export default function AnimatedMessage({ children, className = "" }: AnimatedMe
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
-    if (rect.top < window.innerHeight) {
+    if (rect.top < window.innerHeight || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setVisible(true);
       return;
     }

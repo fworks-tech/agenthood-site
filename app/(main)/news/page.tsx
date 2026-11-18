@@ -47,7 +47,7 @@ export default function NewsIndex() {
     <main className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
       <div className="max-w-3xl mx-auto px-6 py-16">
         <Breadcrumbs segments={["news"]} />
-        <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
           News
         </h1>
         <p className="text-zinc-400 mb-12">

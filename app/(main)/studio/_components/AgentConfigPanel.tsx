@@ -36,25 +36,27 @@ export function SectionHeader({
   onToggle: () => void;
 }) {
   return (
-    <UnstyledButton
-      onClick={onToggle}
-      aria-expanded={isOpen}
-      aria-label={`Toggle ${label}`}
-      className="flex w-full items-center justify-between py-1.5 group"
-    >
-      <Group gap="xs">
-        <div className="h-3 w-0.5 rounded-full bg-emerald-500" />
-        <Text size="xs" fw={600} c="gray.4" className="uppercase tracking-wider">
-          {label}
-        </Text>
-        <HelpTip text={helpText} side="right" />
-      </Group>
-      <IconChevronDown
-        size={14}
-        className="text-zinc-400 dark:text-zinc-600 transition-transform duration-200 group-hover:text-zinc-600 dark:group-hover:text-zinc-400"
-        style={{ transform: isOpen ? undefined : "rotate(-90deg)" }}
-      />
-    </UnstyledButton>
+    <div className="flex w-full items-center gap-1 py-1.5">
+      <UnstyledButton
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-label={`Toggle ${label}`}
+        className="group flex flex-1 items-center justify-between"
+      >
+        <Group gap="xs">
+          <div className="h-3 w-0.5 rounded-full bg-emerald-500" />
+          <Text size="xs" fw={600} c="gray.4" className="uppercase tracking-wider">
+            {label}
+          </Text>
+        </Group>
+        <IconChevronDown
+          size={14}
+          className="text-zinc-400 dark:text-zinc-600 transition-transform duration-200 group-hover:text-zinc-600 dark:group-hover:text-zinc-400"
+          style={{ transform: isOpen ? undefined : "rotate(-90deg)" }}
+        />
+      </UnstyledButton>
+      <HelpTip text={helpText} side="right" />
+    </div>
   );
 }
 

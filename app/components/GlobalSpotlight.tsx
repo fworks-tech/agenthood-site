@@ -92,6 +92,7 @@ export default function GlobalSpotlight() {
       highlightQuery
       scrollable
       limit={12}
+      maxHeight="min(400px, 55dvh)"
     />
   );
 }
