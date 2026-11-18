@@ -60,33 +60,37 @@ export default function WorkspaceComposer({ selected, onToggle, instruction, onI
         )
       })}
 
-      <div
-        className={`transition-all duration-300 ${
-          selected.length > 0 ? 'opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-2'
-        }`}
-      >
-        <Text component="label" htmlFor="workspace-instruction" mb={8} size="sm" fw={500}>
-          Instruction
-        </Text>
-        <Textarea
-          id="workspace-instruction"
-          value={instruction}
-          onChange={(e) => onInstructionChange(e.currentTarget.value)}
-          placeholder="e.g. Suggest an area for improvement in https://github.com/fworks-tech/agenthood"
-          minRows={4}
-          aria-label="Instruction"
-        />
-        <Button
-          type="button"
-          onClick={onStart}
-          disabled={!canStart}
-          loading={running}
-          fullWidth
-          mt="md"
-        >
-          {running ? 'Running...' : 'Start Workspace'}
-        </Button>
-      </div>
+      {selected.length > 0 && (
+        <>
+          <div aria-hidden className="h-56 md:hidden" />
+          <div className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-200 bg-zinc-50/95 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95 md:static md:inset-auto md:z-auto md:border-t-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none md:dark:bg-transparent">
+            <div className="mx-auto max-w-4xl">
+              <Text component="label" htmlFor="workspace-instruction" mb={8} size="sm" fw={500}>
+                Instruction
+              </Text>
+              <Textarea
+                id="workspace-instruction"
+                value={instruction}
+                onChange={(e) => onInstructionChange(e.currentTarget.value)}
+                placeholder="e.g. Suggest an area for improvement in https://github.com/fworks-tech/agenthood"
+                minRows={2}
+                aria-label="Instruction"
+              />
+              <Button
+                type="button"
+                onClick={onStart}
+                disabled={!canStart}
+                loading={running}
+                fullWidth
+                mt="md"
+                className="min-h-11"
+              >
+                {running ? 'Running...' : 'Start Workspace'}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

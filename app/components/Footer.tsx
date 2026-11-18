@@ -12,7 +12,7 @@ interface FooterProps {
 export default function Footer({ className = "", version }: FooterProps) {
   return (
     <footer
-      className={`border-t border-zinc-800 px-6 py-8 max-w-6xl mx-auto ${className}`}
+      className={`border-t border-zinc-800 px-6 pt-8 pb-[calc(2rem+env(safe-area-inset-bottom,0px))] sm:pb-8 max-w-6xl mx-auto ${className}`}
     >
       <Group justify="space-between" gap="sm" className="flex-col sm:flex-row">
         <Group gap="sm" className="text-sm text-zinc-500">
@@ -39,7 +39,7 @@ export default function Footer({ className = "", version }: FooterProps) {
           target="_blank"
           rel="noopener noreferrer"
           c="dimmed"
-          className="flex items-center gap-1.5 hover:text-zinc-400 transition-colors"
+          className="flex min-h-11 items-center gap-1.5 hover:text-zinc-400 transition-colors"
         >
           <IconBrandGithub size={16} />
           <Text size="sm">GitHub</Text>

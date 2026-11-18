@@ -57,35 +57,36 @@ export default function Home() {
     <main className="min-h-full bg-zinc-950 text-zinc-100 font-sans">
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
-        <Badge variant="outline" color="dark" size="lg" className="mb-6 tracking-wide uppercase">
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 sm:pt-24 sm:pb-20 text-center">
+        <Badge variant="outline" color="dark" size="lg" className="mb-5 sm:mb-6 tracking-wide uppercase">
           Open source · Agenthood {AGENTHOOD_VERSION}
         </Badge>
-        <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
-          A full AI engineering team<br />
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-white leading-tight mb-6">
+          A full AI engineering team{" "}
+          <br className="hidden sm:block" />
           <span className="text-zinc-500">that earns every merge.</span>
         </h1>
-        <Text className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <Text className="text-base sm:text-xl text-zinc-400 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
           A {agents.length}-member AI society — planners, builders, reviewers, auditors. Hand
           them a task or run them autonomously across your entire software lifecycle. 7 LLM
           providers, any runtime. Every decision auditable.
         </Text>
-        <Group justify="center" gap="md">
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
             href="https://github.com/fworks-tech/agenthood"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-white text-zinc-950 font-medium px-6 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-block"
+            className="bg-white text-zinc-950 font-medium px-6 py-3 rounded-lg hover:bg-zinc-100 transition-colors inline-block w-full sm:w-auto"
           >
             View on GitHub
           </a>
           <Link
             href="#how"
-            className="text-zinc-400 border border-zinc-700 px-6 py-3 rounded-lg hover:border-zinc-500 hover:text-white transition-colors inline-block"
+            className="text-zinc-400 border border-zinc-700 px-6 py-3 rounded-lg hover:border-zinc-500 hover:text-white transition-colors inline-block w-full sm:w-auto"
           >
             How it works
           </Link>
-        </Group>
+        </div>
         <div className="mt-8 flex justify-center">
           <InstallBlock />
         </div>
@@ -93,7 +94,7 @@ export default function Home() {
 
       {/* Stats bar */}
       <section className="border-y border-zinc-800 bg-zinc-900/50">
-        <div className="max-w-6xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
+        <div className="max-w-6xl mx-auto px-6 py-6 sm:py-8 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800 text-center">
           <div className="flex items-center justify-center gap-1 px-6">
             <div>
               <div className="text-3xl font-semibold text-white">{agents.length}</div>
@@ -121,7 +122,7 @@ export default function Home() {
       {/* Studio preview */}
       <FadeIn>
         <section className="border-y border-zinc-800 bg-gradient-to-b from-zinc-900/30 to-zinc-950">
-          <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+          <div className="max-w-6xl mx-auto px-6 py-14 sm:py-20 text-center">
             <Group justify="center" mb="md">
               <Badge variant="outline" color="emerald" size="sm" leftSection={<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}>
                 Agenthood Studio
@@ -134,31 +135,31 @@ export default function Home() {
               Pick any agent and start a live conversation on a preconfigured model.
               No install, no setup — just you and the agents.
             </Text>
-            <Group justify="center" gap="md" className="mb-10">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row mb-10">
               <Link
                 href="/studio/playground"
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors"
               >
                 <IconPlayerPlay size={16} />
                 Open Playground
               </Link>
               <Link
                 href="/studio/workspaces"
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
               >
                 <IconUsersGroup size={16} />
                 Try Workspaces
               </Link>
               <Link
                 href="/studio"
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-zinc-700 px-6 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-900 transition-colors"
               >
                 About Studio
               </Link>
-            </Group>
-            <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="lg">
+            </div>
+            <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="lg">
               {features.map((f) => (
-                <div key={f.label} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 text-center">
+                <div key={f.label} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:p-5 text-center">
                   <f.icon size={28} className={`mx-auto mb-3 ${f.color}`} />
                   <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-200 mb-1.5">
                     {f.label}
@@ -174,7 +175,7 @@ export default function Home() {
 
       {/* Agents grid — grouped by category */}
       <FadeIn>
-        <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-20">
+        <section id="agents" className="max-w-6xl mx-auto px-6 pb-12 mt-14 sm:mt-20">
           <h2 className="text-3xl font-semibold text-white mb-4">Meet the team</h2>
           <Text c="dimmed" className="mb-12 max-w-2xl">
             Every role a real software team needs — available as a skill file with impeccable standards.

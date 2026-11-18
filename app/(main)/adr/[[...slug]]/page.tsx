@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: AdrPageProps) {
 function AdrIndex({ manifest }: { manifest: ManifestEntry[] }) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
-      <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4">
         Architecture Decision Records
       </h1>
       <p className="text-zinc-400 mb-10">

@@ -245,7 +245,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
   const outputLines = visibleOutput.split("\n");
 
   return (
-    <div ref={rootRef} aria-hidden="true" className="rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-sm overflow-hidden shadow-2xl">
+    <div ref={rootRef} aria-hidden="true" className="rounded-xl border border-zinc-800 bg-zinc-950 font-mono text-xs sm:text-sm overflow-hidden shadow-2xl">
       {/* Title bar */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/50">
         <div className="w-3 h-3 rounded-full bg-zinc-700" />
@@ -255,7 +255,7 @@ export default function TypingTerminal({ startTyping }: TypingTerminalProps) {
       </div>
 
       {/* Content — fixed height so the CTA grid does not re-center as text grows */}
-      <div className="p-4 h-64 overflow-y-auto">
+      <div className="p-3 sm:p-4 h-56 sm:h-64 overflow-y-auto">
         <div className="text-zinc-500 mb-1">$ <span className="text-zinc-200">{typedCmd}</span>{phase === "command" && <span className="animate-pulse text-emerald-400">▌</span>}</div>
         {phase !== "idle" && (
           <pre className="text-zinc-400 whitespace-pre-wrap leading-relaxed">

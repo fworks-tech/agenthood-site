@@ -29,11 +29,11 @@ export default function PlaygroundHeader({
   onClear,
 }: PlaygroundHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800">
+    <div className="flex flex-wrap items-center justify-between gap-y-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-800 sm:px-4 sm:py-2.5">
       <div className="flex min-w-0 items-center gap-3">
         <div>
           <h1 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Playground</h1>
-          <p className="text-xs text-zinc-500">Test agents, prompts, and controls in a live chat UI.</p>
+          <p className="hidden text-xs text-zinc-500 md:block">Test agents, prompts, and controls in a live chat UI.</p>
         </div>
         <div className="hidden md:flex items-center gap-1">
           <button
@@ -50,7 +50,9 @@ export default function PlaygroundHeader({
             side="right"
           />
         </div>
-        <ThemeToggle />
+        <div className="hidden md:block">
+          <ThemeToggle />
+        </div>
       </div>
       {selectedAgent && (
         <div key={selectedAgent.id} className="flex min-w-0 items-center gap-3 animate-[slide-up_0.2s_ease-out_forwards]">
@@ -71,7 +73,7 @@ export default function PlaygroundHeader({
                 <Menu.Target>
                   <button
                     type="button"
-                    className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                    className="flex items-center gap-1 rounded px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
                     title="Export conversation"
                     aria-label="Export conversation"
                   >
@@ -87,7 +89,7 @@ export default function PlaygroundHeader({
               <button
                 type="button"
                 onClick={onClear}
-                className="rounded px-2 py-0.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+                className="rounded px-2 py-1.5 text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
                 title="Clear conversation"
               >
                 Clear

@@ -2,6 +2,65 @@ import { expect } from "@playwright/test";
 import { test, buildChatSSEBody } from "./fixtures";
 import { mockTurnstile, waitForHydration, selectAgent, sendMessage, waitForStreamComplete } from "./helpers";
 
+test.describe("Mobile — site chrome and content pages", () => {
+  test.use({ hasTouch: true });
+  const MOBILE_PAGES = ["/", "/docs/", "/news/", "/studio/", "/studio/workspaces/"];
+
+  for (const width of [360, 430]) {
+    test(`content pages do not overflow horizontally at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      for (const path of MOBILE_PAGES) {
+        await page.goto(path);
+        await page.waitForLoadState("networkidle");
+        const overflows = await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth,
+        );
+        expect(overflows, `${path} overflows at ${width}px`).toBeFalsy();
+      }
+    });
+  }
+
+  test("navbar controls and drawer rows meet the minimum touch size", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/");
+
+    const search = await page.getByRole("button", { name: "Search pages and agents" }).boundingBox();
+    const burger = await page.getByRole("button", { name: "Toggle menu" }).boundingBox();
+    expect(search!.width).toBeGreaterThanOrEqual(44);
+    expect(search!.height).toBeGreaterThanOrEqual(44);
+    expect(burger!.width).toBeGreaterThanOrEqual(44);
+    expect(burger!.height).toBeGreaterThanOrEqual(44);
+
+    await page.getByRole("button", { name: "Toggle menu" }).click();
+    for (const label of ["Home", "Getting started", "Docs", "Academy", "News", "Releases"]) {
+      const row = await page.getByRole("link", { name: label, exact: true }).last().boundingBox();
+      expect(row!.height, `${label} row is too short`).toBeGreaterThanOrEqual(44);
+    }
+    const studioRow = await page.getByRole("link", { name: /^Studio/ }).last().boundingBox();
+    expect(studioRow!.height, "Studio row is too short").toBeGreaterThanOrEqual(44);
+  });
+
+  test("help tips open on tap", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/");
+    await page.getByRole("button", { name: /^Help: All 20 Society members/ }).tap();
+    await expect(
+      page.getByRole("tooltip").filter({ hasText: "All 20 Society members available" }).first(),
+    ).toBeVisible();
+  });
+
+  test("workspace instructions stay reachable after selecting an agent", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/studio/workspaces");
+    await page.getByRole("button", { name: /The Reviewer/ }).first().click();
+
+    const instruction = await page.getByLabel("Instruction").boundingBox();
+    const start = await page.getByRole("button", { name: "Start Workspace" }).boundingBox();
+    expect(instruction!.y + instruction!.height).toBeLessThanOrEqual(740);
+    expect(start!.y + start!.height).toBeLessThanOrEqual(740);
+  });
+});
+
 test.describe("Playground — Responsive Layout", () => {
   async function setup(page: import("@playwright/test").Page, width: number, height: number, clearStorage: () => Promise<void>) {
     await page.setViewportSize({ width, height });
@@ -33,7 +92,7 @@ test.describe("Playground — Responsive Layout", () => {
   });
 
   test("composer stays fully visible and usable above the fixed bottom bar", async ({ page, clearStorage }) => {
-    await setup(page, 375, 812, clearStorage);
+    await setup(page, 360, 740, clearStorage);
     await page.route("**/api/studio/chat/**", (route) =>
       route.fulfill({
         status: 200,
@@ -45,11 +104,13 @@ test.describe("Playground — Responsive Layout", () => {
 
     const textarea = page.locator("textarea[placeholder='Type a message...']");
     await expect(textarea).toBeVisible({ timeout: 10000 });
+    await page.evaluate(() => window.scrollTo(0, 0));
     const bar = page.locator("div.fixed.bottom-0.left-0.right-0");
     const textareaBox = await textarea.boundingBox();
     const barBox = await bar.boundingBox();
     expect(textareaBox).not.toBeNull();
     expect(barBox).not.toBeNull();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     // The composer must sit entirely above the bottom bar so the send button stays tappable.
     expect(textareaBox!.y + textareaBox!.height).toBeLessThanOrEqual(barBox!.y + 1);
   });

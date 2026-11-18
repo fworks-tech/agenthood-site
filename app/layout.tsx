@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -21,6 +21,13 @@ const SITE_URL = "https://agenthood.flabs.tech";
 const TITLE = "Agenthood — A full AI engineering team that earns every merge";
 const DESCRIPTION =
   `A ${agents.length}-member AI society — planners, builders, reviewers, auditors — that runs your whole software lifecycle. Hand them a task or run them autonomously. 7 LLM providers, any runtime, every decision auditable.`;
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#09090b",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

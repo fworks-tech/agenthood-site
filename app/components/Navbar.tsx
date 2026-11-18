@@ -7,7 +7,6 @@ import { Button, Group, Badge, Burger, Drawer, Stack, ActionIcon } from "@mantin
 import { useDisclosure } from "@mantine/hooks";
 import { IconSearch } from "@tabler/icons-react";
 import { openGlobalSpotlight } from "./GlobalSpotlight";
-import HelpTip from "../(main)/studio/_components/HelpTip";
 
 interface NavLink {
   href: string;
@@ -32,7 +31,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="border-b border-zinc-800 bg-zinc-950">
+    <nav className="border-b border-zinc-800 bg-zinc-950 pt-[env(safe-area-inset-top)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link
           href="/"
@@ -55,9 +54,6 @@ export default function Navbar() {
                   size="xs"
                   variant="outline"
                   color="emerald"
-                  rightSection={
-                    <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
-                  }
                   styles={{ label: { textTransform: "uppercase", letterSpacing: "0.05em" } }}
                 >
                   New
@@ -102,6 +98,7 @@ export default function Navbar() {
           <ActionIcon
             variant="subtle"
             color="gray"
+            size="xl"
             onClick={openGlobalSpotlight}
             aria-label="Search pages and agents"
           >
@@ -112,6 +109,7 @@ export default function Navbar() {
             onClick={toggleMenu}
             color="gray"
             aria-label="Toggle menu"
+            className="!h-11 !w-11"
           />
         </Group>
       </div>
@@ -122,6 +120,7 @@ export default function Navbar() {
         size="xs"
         padding="md"
         hiddenFrom="md"
+        closeButtonProps={{ size: "xl", "aria-label": "Close menu" }}
         title={
           <Link href="/" className="font-semibold text-white tracking-tight">
             agenthood
@@ -135,16 +134,13 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => { trackNav(link.label); closeMenu(); }}
-                className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                className="flex items-center gap-2 py-2.5 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
               >
                 {link.label}
                 <Badge
                   size="xs"
                   variant="outline"
                   color="emerald"
-                  rightSection={
-                    <HelpTip text="Agenthood Studio was recently added. Chat with agents live in your browser." side="top" />
-                  }
                   styles={{ label: { textTransform: "uppercase", letterSpacing: "0.05em" } }}
                 >
                   New
@@ -155,7 +151,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => { trackNav(link.label); closeMenu(); }}
-                className="block text-zinc-400 hover:text-white transition-colors"
+                className="block py-2.5 text-zinc-400 hover:text-white transition-colors"
               >
                 {link.label}
               </Link>

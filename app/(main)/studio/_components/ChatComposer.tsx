@@ -23,7 +23,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
   const warningTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!isStreaming && textareaRef.current) {
+    if (!isStreaming && textareaRef.current && window.matchMedia("(pointer: fine)").matches) {
       textareaRef.current.focus();
     }
   }, [isStreaming]);
@@ -116,7 +116,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
               variant="filled"
               color="red"
               aria-label="Stop streaming"
-              className="animate-pulse active:scale-90 transition-transform duration-100"
+              className="!h-11 !w-11 animate-pulse active:scale-90 transition-transform duration-100"
             >
               <IconSquare size={16} />
             </ActionIcon>
@@ -146,7 +146,7 @@ export default function ChatComposer({ onSend, onStop, isStreaming, disabled, ca
               variant="filled"
               color="emerald"
               aria-label="Send message"
-              className="active:scale-90 transition-transform duration-100"
+              className="!h-11 !w-11 active:scale-90 transition-transform duration-100"
             >
               <IconSend size={16} />
             </ActionIcon>

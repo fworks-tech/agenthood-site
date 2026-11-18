@@ -149,7 +149,7 @@ export default function WorkspacesPage() {
               </div>
             </div>
 
-            <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
+            <div className="border-t border-zinc-200 dark:border-zinc-800 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
               <div className="relative mx-auto flex max-w-3xl gap-2">
                 {completions.length > 0 && (
                   <div
@@ -193,20 +193,21 @@ export default function WorkspacesPage() {
                   aria-label="Follow-up message"
                   aria-expanded={completions.length > 0}
                   aria-autocomplete="list"
-                  className="flex-1"
+                  className="min-w-0 flex-1"
                 />
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim()}
+                  className="shrink-0"
                 >
                   Send
                 </Button>
                 {isRunning ? (
-                  <button onClick={workspace.stop} className="cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
+                  <button onClick={workspace.stop} className="shrink-0 cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
                     Stop
                   </button>
                 ) : (
-                  <button onClick={handleReset} className="cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 hover:scale-[1.02] active:scale-95">
+                  <button onClick={handleReset} className="hidden shrink-0 cursor-pointer rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-all duration-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 hover:scale-[1.02] active:scale-95 sm:inline-flex">
                     New workspace
                   </button>
                 )}
@@ -228,7 +229,7 @@ export default function WorkspacesPage() {
         </div>
       )}
 
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onOpen={() => setDrawerOpen(true)}>
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <div className="p-4">
           <WorkspaceSidebar
             selected={selected}

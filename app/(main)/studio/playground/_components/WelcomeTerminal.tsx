@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const SAMPLE_PROMPTS = [
   { agent: "The Reviewer", icon: "🔍", prompt: "Review my pull request for security vulnerabilities" },
@@ -24,8 +24,19 @@ export default function WelcomeTerminal() {
   const [showOutput, setShowOutput] = useState(false);
   const [outputLines, setOutputLines] = useState(0);
   const [phase, setPhase] = useState<"typing" | "pausing" | "output" | "waiting">("typing");
+  const [inView, setInView] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const current = SAMPLE_PROMPTS[promptIndex];
+
+  // Pause the decorative loop while the terminal is scrolled out of view.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.2 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const advancePrompt = useCallback(() => {
     setPromptIndex((i) => (i + 1) % SAMPLE_PROMPTS.length);
@@ -36,14 +47,13 @@ export default function WelcomeTerminal() {
   }, []);
 
   useEffect(() => {
-    if (phase === "waiting") {
-      const t = setTimeout(advancePrompt, PAUSE_AFTER_OUTPUT);
-      return () => clearTimeout(t);
-    }
-  }, [phase, advancePrompt]);
+    if (!inView || phase !== "waiting") return;
+    const t = setTimeout(advancePrompt, PAUSE_AFTER_OUTPUT);
+    return () => clearTimeout(t);
+  }, [phase, advancePrompt, inView]);
 
   useEffect(() => {
-    if (phase !== "typing") return;
+    if (!inView || phase !== "typing") return;
     if (typedText.length >= current.prompt.length) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("pausing");
@@ -53,19 +63,19 @@ export default function WelcomeTerminal() {
       setTypedText(current.prompt.slice(0, typedText.length + 1));
     }, TYPING_SPEED);
     return () => clearTimeout(t);
-  }, [typedText, current.prompt, phase]);
+  }, [typedText, current.prompt, phase, inView]);
 
   useEffect(() => {
-    if (phase !== "pausing") return;
+    if (!inView || phase !== "pausing") return;
     const t = setTimeout(() => {
       setShowOutput(true);
       setPhase("output");
     }, PAUSE_AFTER_TYPE);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [phase, inView]);
 
   useEffect(() => {
-    if (phase !== "output") return;
+    if (!inView || phase !== "output") return;
     if (outputLines >= OUTPUT_LINES.length) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPhase("waiting");
@@ -75,10 +85,10 @@ export default function WelcomeTerminal() {
       setOutputLines((n) => n + 1);
     }, 280);
     return () => clearTimeout(t);
-  }, [outputLines, phase]);
+  }, [outputLines, phase, inView]);
 
   return (
-    <div data-testid="welcome-terminal" className="w-full max-w-lg mx-auto">
+    <div ref={rootRef} data-testid="welcome-terminal" className="w-full max-w-lg mx-auto">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-2xl">{current.icon}</span>
         <div>

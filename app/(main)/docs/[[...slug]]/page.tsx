@@ -126,7 +126,7 @@ function DocsIndex({ manifest }: { manifest: ManifestEntry[] }) {
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
       <Breadcrumbs segments={["docs"]} />
-      <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white mb-2">
         Docs
       </h1>
       <p className="text-zinc-400 mb-12">
@@ -178,7 +178,7 @@ function SectionIndex({ slug, entries, title }: { slug: string[]; entries: Manif
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
       <Breadcrumbs segments={["docs", ...slug]} />
-      <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-8">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-white mb-8">
         {title}
       </h1>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
