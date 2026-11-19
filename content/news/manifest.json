@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-11-19"
+    ],
+    "path": "news/whats-new-2026-11-19.md",
+    "title": "Agenthood 4.2.0: Audit the Decision Trail, Verify the Chain",
+    "date": "2026-11-19",
+    "author": "Agenthood Team",
+    "summary": "4.2.0 adds an ordered, verifiable audit of the decision trail, plus Opencode and trace fixes. We also shipped 4.1.0 through 4.1.2."
+  },
+  {
+    "slug": [
       "whats-new-2026-11-17"
     ],
     "path": "news/whats-new-2026-11-17.md",
