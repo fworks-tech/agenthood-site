@@ -10,6 +10,7 @@ import type { Components } from "react-markdown";
 import FadeIn from "../_components/FadeIn";
 import { childrenToString } from "../_lib/react-children";
 import { isAbsoluteUrl, resolveHref } from "../_lib/markdown-links.mjs";
+
 interface MarkdownRendererProps {
   children: string;
   basePath?: string;

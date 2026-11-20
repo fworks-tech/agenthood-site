@@ -61,9 +61,9 @@ for (const [dir] of SECTIONS) {
     lines.forEach((line, index) => {
       for (const match of line.matchAll(/\]\(([^)\s]+)\)/g)) {
         const href = match[1];
-        if (isAbsoluteUrl(href) || href.startsWith("#")) return;
+        if (isAbsoluteUrl(href) || href.startsWith("#")) continue;
         const resolved = resolveHref(href, basePath);
-        if (!resolved.startsWith("/")) return;
+        if (!resolved.startsWith("/")) continue;
         checked++;
         const target = normalize(resolved);
         if (target && !routes.has(target)) {
