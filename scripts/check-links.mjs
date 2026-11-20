@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { resolveHref, isAbsoluteUrl } from "../app/_lib/markdown-links.mjs";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 const SECTIONS = [
@@ -51,17 +52,22 @@ for (const [dir, prefix] of SECTIONS) {
   }
 }
 
-// Only absolute links are checked here; relative links are resolved at render
-// time by MarkdownRenderer.rewriteHref and can still 404 (issue #331).
 const broken = [];
+let checked = 0;
 for (const [dir] of SECTIONS) {
   for (const entry of manifests.get(dir)) {
     const lines = fs.readFileSync(path.join(CONTENT_DIR, entry.path), "utf8").split(/\r?\n/);
+    const basePath = path.posix.dirname(entry.path);
     lines.forEach((line, index) => {
-      for (const match of line.matchAll(/\]\((\/[^)\s]+)\)/g)) {
-        const target = normalize(match[1]);
+      for (const match of line.matchAll(/\]\(([^)\s]+)\)/g)) {
+        const href = match[1];
+        if (isAbsoluteUrl(href) || href.startsWith("#")) return;
+        const resolved = resolveHref(href, basePath);
+        if (!resolved.startsWith("/")) return;
+        checked++;
+        const target = normalize(resolved);
         if (target && !routes.has(target)) {
-          broken.push(`${entry.path}:${index + 1} -> ${target}`);
+          broken.push(`${entry.path}:${index + 1} -> ${target} (from ${href})`);
         }
       }
     });
@@ -74,4 +80,4 @@ if (broken.length > 0) {
   process.exit(1);
 }
 
-console.log(`check-links: ${routes.size} routes, no broken absolute internal links`);
+console.log(`check-links: ${routes.size} routes, ${checked} internal links, no broken internal links`);
