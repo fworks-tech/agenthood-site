@@ -2,7 +2,7 @@
 // MarkdownRenderer and scripts/check-links.mjs so the checker validates exactly
 // what the renderer produces (see issue #331).
 
-export function joinPosix(...parts) {
+function joinPosix(...parts) {
   return parts
     .map((part) => part.replace(/\/+$/, ""))
     .filter(Boolean)
@@ -10,7 +10,7 @@ export function joinPosix(...parts) {
     .replace(/\/+/g, "/");
 }
 
-export function normalizePosix(input) {
+function normalizePosix(input) {
   const parts = input.split("/").filter((p) => p !== "" && p !== ".");
   const stack = [];
   for (const part of parts) {

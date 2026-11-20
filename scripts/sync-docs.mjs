@@ -76,7 +76,7 @@ function rewriteMemberSkillLinks(content) {
       /\]\(\.\.\/\.\.\/skills\/([^)/]+)\/SKILL\.md\)/g,
       (_match, member) => `](/docs/members/${siteMemberId(member)}/)`,
     )
-    .replace(/\]\(ARTICLE_TEMPLATE\.md\)/g, "](https://github.com/fworks-tech/agenthood/blob/main/docs/academy/ARTICLE_TEMPLATE.md)")
+    .replace(/\]\(\.?\/?ARTICLE_TEMPLATE\.md(?:\s+"[^"]*")?\)/g, "](https://github.com/fworks-tech/agenthood/blob/main/docs/academy/ARTICLE_TEMPLATE.md)")
     .replace(/\]\(\/docs\/members\/([^)/]+)\/\)/g, (match, member) => {
       const id = siteMemberId(member);
       if (MEMBER_IDS.has(id)) return `](/docs/members/${id}/)`;
