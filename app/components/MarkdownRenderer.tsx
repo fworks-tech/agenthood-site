@@ -9,88 +9,12 @@ import { CodeHighlight } from "@mantine/code-highlight";
 import type { Components } from "react-markdown";
 import FadeIn from "../_components/FadeIn";
 import { childrenToString } from "../_lib/react-children";
+import { isAbsoluteUrl, resolveHref } from "../_lib/markdown-links.mjs";
 
 interface MarkdownRendererProps {
   children: string;
   basePath?: string;
   animateSections?: boolean;
-}
-
-function joinPosix(...parts: string[]): string {
-  return parts
-    .map((part) => part.replace(/\/+$/, ""))
-    .filter(Boolean)
-    .join("/")
-    .replace(/\/+/g, "/");
-}
-
-function normalizePosix(input: string): string {
-  const parts = input.split("/").filter((p) => p !== "" && p !== ".");
-  const stack: string[] = [];
-  for (const part of parts) {
-    if (part === "..") {
-      stack.pop();
-    } else {
-      stack.push(part);
-    }
-  }
-  return "/" + stack.join("/");
-}
-
-function isAbsoluteUrl(href: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(href);
-}
-
-function isDocsPath(relativePath: string): boolean {
-  return (
-    relativePath === "academy" ||
-    relativePath.startsWith("academy/") ||
-    relativePath === "adr" ||
-    relativePath.startsWith("adr/") ||
-    relativePath.startsWith("docs/")
-  );
-}
-
-function rewriteHref(href: string, basePath: string): string {
-  if (!href || href.startsWith("#") || isAbsoluteUrl(href) || href.startsWith("/")) {
-    return href;
-  }
-
-  const [pathPart, fragment] = href.split("#");
-  const joined = basePath ? joinPosix(basePath, pathPart) : pathPart;
-  const normalized = normalizePosix(joined);
-  const relativePath = normalized.replace(/^\/+/, "");
-
-  if (isDocsPath(relativePath)) {
-    let sitePath = relativePath;
-    if (sitePath.startsWith("docs/academy/") || sitePath === "docs/academy") {
-      sitePath = sitePath.slice(5);
-    } else if (sitePath.startsWith("docs/adr/") || sitePath === "docs/adr") {
-      sitePath = sitePath.slice(5);
-    }
-    sitePath = sitePath.replace(/\.md$/i, "").replace(/\/+$/, "");
-
-    if (sitePath.endsWith("/SKILL")) {
-      sitePath = sitePath.slice(0, -"/SKILL".length);
-    } else if (sitePath.endsWith("/README")) {
-      sitePath = sitePath.slice(0, -"/README".length);
-    } else if (sitePath === "README") {
-      sitePath = "";
-    }
-
-    const route = "/" + (sitePath ? `${sitePath}/` : "");
-    return fragment ? `${route}#${fragment}` : route;
-  }
-
-  const hasFileExtension = /[^/]\.[a-zA-Z0-9]+$/.test(relativePath);
-  const githubBase = hasFileExtension
-    ? "https://github.com/fworks-tech/agenthood/blob/main/"
-    : "https://github.com/fworks-tech/agenthood/tree/main/";
-  const githubPath = relativePath.endsWith("/")
-    ? relativePath.slice(0, -1)
-    : relativePath;
-
-  return `${githubBase}${githubPath}${fragment ? `#${fragment}` : ""}`;
 }
 
 function slugify(text: string): string {
@@ -120,7 +44,7 @@ export default function MarkdownRenderer({ children, basePath = "", animateSecti
       );
     }
 
-    const rewritten = href.startsWith("/") ? href : rewriteHref(href, basePath);
+    const rewritten = resolveHref(href, basePath);
     return (
       <Link href={rewritten} className="text-emerald-400 hover:text-emerald-300 transition-colors">
         {children}
