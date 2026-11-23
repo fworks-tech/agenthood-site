@@ -1,6 +1,16 @@
 [
   {
     "slug": [
+      "whats-new-2026-11-23"
+    ],
+    "path": "news/whats-new-2026-11-23.md",
+    "title": "Agenthood v4.4.0 and v4.3.0: Traceability, audit detail, and routing records",
+    "date": "2026-11-23",
+    "author": "Agenthood Team",
+    "summary": "Two releases add provider tracing, richer audit output, validated routing records, and fixes for provenance, redaction, and CI gates."
+  },
+  {
+    "slug": [
       "whats-new-2026-11-19"
     ],
     "path": "news/whats-new-2026-11-19.md",
