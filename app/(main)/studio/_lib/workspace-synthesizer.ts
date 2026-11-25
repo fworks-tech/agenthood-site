@@ -1,6 +1,8 @@
 import { selectDemoModel } from '../_types/studio'
 import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
 import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
+import { providerFailure } from './zen'
+import { generateId } from './ids'
 
 const SYNTHESIS_SYSTEM = `You are the Workspace Synthesizer — the final voice the user hears, exactly like Claude Work.
 
@@ -95,7 +97,15 @@ export async function createSynthesisStream(
         )
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        controller.enqueue(enc.encode(JSON.stringify({ type: 'workspace.synthesized_error', data: msg }) + '\n'))
+        const requestId = generateId()
+        const failure = providerFailure(msg, requestId)
+        controller.enqueue(enc.encode(JSON.stringify({
+          type: 'workspace.synthesized_error',
+          data: failure.message,
+          requestId,
+          workspaceId: workspaceMeta.workspaceId,
+          correlationId: workspaceMeta.correlationId,
+        }) + '\n'))
       } finally {
         controller.close()
       }

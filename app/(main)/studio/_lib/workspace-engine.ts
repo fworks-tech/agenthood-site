@@ -198,26 +198,24 @@ export async function mediatorNext(
 }
 
 // Optional calibrated routing confidence for the mediator hop (which is
-// otherwise a flat heuristic 60). Server-internal: the route requires a shared
-// JEV_ROUTING_ENABLED gate plus a JEV_INTERNAL_TOKEN secret, and this caller
-// attaches it. Returns null unless Jev agrees with the mediator's pick AND is at
-// least as confident as the 60 baseline, so it can only promote a hop to `auto`,
-// never demote below today's behaviour. Any error, timeout, or disabled state
-// falls back to the deterministic 60 path unchanged.
+// otherwise a flat heuristic 60). The engine runs in the browser, so the call
+// goes through the server-side bridge: it holds JEV_INTERNAL_TOKEN, gates the
+// paid hop on a solved CAPTCHA, and attaches the secret there. Returns null
+// unless Jev agrees with the mediator's pick AND is at least as confident as
+// the 60 baseline, so it can only promote a hop to `auto`, never demote below
+// today's behaviour. Any error, timeout, or disabled state falls back to the
+// deterministic 60 path unchanged.
 async function jevRoutingConfidence(state: string, ids: string[], chosenId: string): Promise<number | null> {
-  const secret = process.env.JEV_INTERNAL_TOKEN
   try {
-    const res = await fetch('/api/studio/jev', {
+    const res = await fetch('/api/studio/workspaces/jev', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(secret ? { 'x-jev-token': secret } : {}),
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         state,
         options: ids,
         instructions: 'Which Society member should take the next turn to advance this workspace thread?',
       }),
+      signal: AbortSignal.timeout(12_000),
     })
     if (!res.ok) return null
     const data = (await res.json().catch(() => null)) as { value?: string; probability?: number; unavailable?: boolean } | null

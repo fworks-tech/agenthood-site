@@ -11,5 +11,5 @@ export const TURNSTILE_ENABLED =
   process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
 
 export const TURNSTILE_REQUIRED =
-  TURNSTILE_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  TURNSTILE_ENABLED && process.env.TURNSTILE_REQUIRED !== "false";
 

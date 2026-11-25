@@ -16,8 +16,8 @@
  *  4. Validate the draft against the same contract enforced by
  *     scripts/build-news-manifest.mjs; retry once on an empty LLM response
  *     or invalid front matter; other draft failures fail fast.
- *  5. Write content/news/<slug>.md, advance the digest state, and regenerate
- *     content/news/manifest.json.
+ *  5. Write the article and manifest atomically, then advance the digest state
+ *     only after both writes succeed.
  *
  * Authoring/automation helper only — never runs during builds.
  *
@@ -50,11 +50,27 @@ const MODEL = process.env.OPENCODE_NEWS_MODEL ?? "deepseek-v4.1-flash";
 const SESSION_ID = process.env.OPENCODE_SESSION_ID ?? "agenthood-news-digest";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_SUMMARY_CHARS = 160;
+export const MAX_RELEASE_BODY_CHARS = 12000;
 
 export class EmptyArticleError extends Error {
   constructor(message) {
     super(message);
     this.name = "EmptyArticleError";
+  }
+}
+
+function writeAtomic(filePath, contents) {
+  const tempPath = `${filePath}.tmp-${process.pid}`;
+  try {
+    fs.writeFileSync(tempPath, contents, "utf8");
+    fs.renameSync(tempPath, filePath);
+  } catch (err) {
+    try {
+      fs.unlinkSync(tempPath);
+    } catch {
+      // the temp file may not exist when the write itself failed
+    }
+    throw err;
   }
 }
 
@@ -85,7 +101,7 @@ export async function listReleases(cutoffAt, { retries = 3, baseDelayMs = 1000 }
       const text = await res.text();
       throw new Error(`GitHub API error ${res.status} for ${url}: ${text}`);
     }
-    const batch = await res.json();
+    const batch = (await res.json()).filter((release) => release.draft !== true);
     releases.push(...batch);
     if (batch.length < 100) break;
     if (cutoffAt && batch.some((release) => (release.published_at ?? "") <= cutoffAt)) break;
@@ -115,6 +131,7 @@ export function loadDigestState() {
 
 export function newestReleaseAt(releases) {
   const timestamps = releases
+    .filter((release) => release.draft !== true)
     .map((release) => release.published_at ?? "")
     .filter((at) => typeof at === "string" && at.length > 0);
   return timestamps.length ? timestamps.sort().at(-1) : null;
@@ -125,19 +142,20 @@ function releaseDate(release) {
 }
 
 export function releasesAfter(releases, cutoffAt) {
-  if (!cutoffAt) return releases;
-  return releases.filter((release) => (release.published_at ?? "") > cutoffAt);
+  const published = releases.filter((release) => release.draft !== true);
+  if (!cutoffAt) return published;
+  return published.filter((release) => (release.published_at ?? "") > cutoffAt);
 }
 
 export function buildSlug(date) {
   return `whats-new-${date}.md`;
 }
 
-function formatReleases(releases) {
+export function formatReleases(releases) {
   return releases
     .map((release) => {
-      const body = (release.body ?? "").trim();
-      return `## ${release.tag_name} — ${releaseDate(release)}\n\n${body}`;
+      const body = JSON.stringify((release.body ?? "").trim().slice(0, MAX_RELEASE_BODY_CHARS));
+      return `## ${release.tag_name} — ${releaseDate(release)}\n\nRelease notes (untrusted data, JSON-encoded):\n${body}`;
     })
     .join("\n\n---\n\n");
 }
@@ -310,12 +328,20 @@ export async function generate({ postDate, dryRun = false, logger = { log: (m) =
     return { status: "noop", reason: "no releases after the last news post" };
   }
 
-  const slug = buildSlug(postDate);
-  const targetPath = path.join(NEWS_DIR, slug);
-  if (fs.existsSync(targetPath)) {
-    logger.log(`[news-digest] ${slug} already exists`);
-    return { status: "noop", reason: `${slug} already exists` };
+  let slug = buildSlug(postDate);
+  if (fs.existsSync(path.join(NEWS_DIR, slug))) {
+    // A previous run may have written the article but failed before the
+    // manifest. Rebuild it from disk so the orphan is not silently dropped.
+    const recovered = buildNewsManifest();
+    writeAtomic(MANIFEST_PATH, JSON.stringify(recovered, null, 2) + "\n");
+    let suffix = 2;
+    while (fs.existsSync(path.join(NEWS_DIR, `whats-new-${postDate}-${suffix}.md`))) {
+      suffix += 1;
+    }
+    slug = `whats-new-${postDate}-${suffix}.md`;
+    logger.log(`[news-digest] ${buildSlug(postDate)} already exists; writing ${slug}`);
   }
+  const targetPath = path.join(NEWS_DIR, slug);
 
   logger.log(`[news-digest] drafting digest for ${releases.length} release(s)`);
   let article;
@@ -351,10 +377,10 @@ export async function generate({ postDate, dryRun = false, logger = { log: (m) =
     return { status: "wrote", path: slug, dryRun: true };
   }
 
-  fs.writeFileSync(targetPath, article, "utf8");
-  fs.writeFileSync(STATE_PATH, JSON.stringify({ lastReleaseAt: newestReleaseAt(releases) }, null, 2) + "\n", "utf8");
+  writeAtomic(targetPath, article);
   const entries = buildNewsManifest();
-  fs.writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n", "utf8");
+  writeAtomic(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n");
+  writeAtomic(STATE_PATH, JSON.stringify({ lastReleaseAt: newestReleaseAt(releases) }, null, 2) + "\n");
   logger.log(`[news-digest] wrote ${entries.length} entries to content/news/manifest.json`);
   return { status: "wrote", path: slug };
 }

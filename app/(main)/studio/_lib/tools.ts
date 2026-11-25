@@ -1,6 +1,7 @@
 import type { ToolSchema } from "agenthood/dist/llm";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { spawn } from "node:child_process";
 import { getCustomToolSchemas } from "./custom-tools";
 
 export interface ToolDefinition {
@@ -23,6 +24,75 @@ export const MAX_TOOL_ITERATIONS = 25;
 export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
 export const TOOL_RESULT_MAX_CHARS = 6_000;
 export const FETCH_TIMEOUT_MS = 15_000;
+export const MAX_FETCH_REDIRECTS = 5
+export const CODE_EXECUTION_MAX_CHARS = 4_000
+const CODE_RESULT_MAX_VALUE_CHARS = 200
+const CODE_RESULT_MAX_ITEMS = 100
+
+// The worker owns the memory limit: the vm timeout alone cannot stop a native
+// allocation, and a eval'd worker must never receive user code as its source.
+const WORKER_SOURCE = `
+const vm = require('node:vm')
+const { parentPort, workerData } = require('node:worker_threads')
+try {
+  const context = vm.createContext(Object.create(null), { codeGeneration: { strings: false, wasm: false } })
+  const result = new vm.Script(workerData.code, { filename: 'user-code.js' }).runInContext(context, { timeout: workerData.timeout })
+  if (result === undefined) {
+    parentPort.postMessage({ ok: true, text: 'Executed successfully (undefined result)' })
+  } else {
+    const seen = new WeakSet()
+    const replacer = (_key, value) => {
+      if (typeof value === 'string' && value.length > workerData.valueChars) return value.slice(0, workerData.valueChars)
+      if (value && typeof value === 'object') {
+        if (seen.has(value)) return '[circular]'
+        seen.add(value)
+        if (Array.isArray(value)) return value.slice(0, workerData.maxItems)
+        const trimmed = {}
+        let count = 0
+        for (const key in value) {
+          if (count >= workerData.maxItems) break
+          trimmed[key] = value[key]
+          count += 1
+        }
+        return trimmed
+      }
+      return value
+    }
+    const text = typeof result === 'string'
+      ? result.slice(0, workerData.maxChars)
+      : JSON.stringify(result, replacer, 2).slice(0, workerData.maxChars)
+    parentPort.postMessage({ ok: true, text })
+  }
+} catch (err) {
+  parentPort.postMessage({ ok: false, error: err instanceof Error ? err.message : String(err) })
+}
+`
+
+// A fatal V8 out-of-memory abort can take down the whole process even with
+// worker resourceLimits, so the worker runs inside a child with its own heap.
+const CHILD_SOURCE = `
+const { Worker } = require('node:worker_threads')
+const workerSource = ${JSON.stringify(WORKER_SOURCE)}
+let input = ''
+process.stdin.setEncoding('utf8')
+process.stdin.on('data', (chunk) => { input += chunk })
+process.stdin.on('end', () => {
+  try {
+    const worker = new Worker(workerSource, {
+      eval: true,
+      workerData: JSON.parse(input),
+      resourceLimits: { maxOldGenerationSizeMb: 64, maxYoungGenerationSizeMb: 16, codeRangeSizeMb: 8, stackSizeMb: 2 },
+      timeout: 5000,
+    })
+    worker.on('message', (message) => { process.stdout.write(JSON.stringify(message)); process.exit(0) })
+    worker.on('error', (err) => { process.stdout.write(JSON.stringify({ ok: false, error: err.message })); process.exit(0) })
+    worker.on('exit', () => { process.stdout.write(JSON.stringify({ ok: false, error: 'worker exited' })); process.exit(0) })
+  } catch (err) {
+    process.stdout.write(JSON.stringify({ ok: false, error: err.message }))
+    process.exit(0)
+  }
+})
+`
 
 const ALLOWED_FETCH_HOSTS = [
   "github.com",
@@ -42,6 +112,27 @@ function isAllowedFetchUrl(urlStr: string): boolean {
   }
 }
 
+function isRedirect(status: number): boolean {
+  return status >= 300 && status < 400
+}
+
+async function readBoundedText(body: ReadableStream<Uint8Array> | null): Promise<string> {
+  if (!body) return ''
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let out = ''
+  try {
+    while (out.length < TOOL_RESULT_MAX_CHARS) {
+      const { done, value } = await reader.read()
+      if (done) break
+      out += decoder.decode(value, { stream: true })
+    }
+  } finally {
+    await reader.cancel().catch(() => {})
+  }
+  return out.slice(0, TOOL_RESULT_MAX_CHARS)
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -56,77 +147,113 @@ async function webFetchHandler(
   args: Record<string, unknown>,
   signal?: AbortSignal,
 ): Promise<string> {
-  const url = args.url as string;
-  if (!url) return "Error: url is required";
+  const url = args.url as string
+  if (!url) return 'Error: url is required'
 
-  if (!isAllowedFetchUrl(url)) {
-    return `Error: URL not allowed. Allowed hosts: ${ALLOWED_FETCH_HOSTS.join(", ")}`;
-  }
+  const notAllowed = `Error: URL not allowed. Allowed hosts: ${ALLOWED_FETCH_HOSTS.join(', ')}`
+  if (!isAllowedFetchUrl(url)) return notAllowed
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  if (signal) signal.addEventListener("abort", () => ctrl.abort());
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
+  if (signal) signal.addEventListener('abort', () => ctrl.abort())
 
-  const headers = { "User-Agent": "Agenthood/1.0" };
-  const doFetch = () => fetch(url, { signal: ctrl.signal, headers });
+  const headers = { 'User-Agent': 'Agenthood/1.0' }
+  const doFetch = (target: string) => fetch(target, { signal: ctrl.signal, headers, redirect: 'manual' })
 
   try {
-    let res = await doFetch();
+    let currentUrl = url
+    let res = await doFetch(currentUrl)
+
+    // fetch() would follow redirects internally and hand back a body from a
+    // host the initial allow-list check never saw, so each hop is checked.
+    for (let i = 0; i < MAX_FETCH_REDIRECTS && isRedirect(res.status); i++) {
+      const location = res.headers.get('location')
+      if (!location) return `Error: HTTP ${res.status} ${res.statusText}`
+      let nextUrl: string
+      try {
+        nextUrl = new URL(location, currentUrl).toString()
+      } catch {
+        return 'Error: invalid redirect URL'
+      }
+      if (!isAllowedFetchUrl(nextUrl)) return notAllowed
+      try { await res.body?.cancel() } catch { /* drop the error body */ }
+      currentUrl = nextUrl
+      res = await doFetch(currentUrl)
+    }
+    if (isRedirect(res.status)) return 'Error: too many redirects'
+
     // Single retry on 5xx: hosts (notably GitHub) intermittently 503
     // datacenter egress. 4xx is the caller's mistake — no retry.
     if (res.status >= 500 && res.status < 600) {
-      try { await res.body?.cancel(); } catch { /* drop the error body */ }
-      await new Promise((r) => setTimeout(r, 500));
-      res = await doFetch();
+      try { await res.body?.cancel() } catch { /* drop the error body */ }
+      await new Promise((r) => setTimeout(r, 500))
+      res = await doFetch(currentUrl)
     }
-    if (!res.ok) return `Error: HTTP ${res.status} ${res.statusText}`;
+    if (!res.ok) return `Error: HTTP ${res.status} ${res.statusText}`
+    if (res.url && !isAllowedFetchUrl(res.url)) return notAllowed
 
-    const contentType = res.headers.get("content-type") ?? "";
-    const text = await res.text();
+    const contentType = res.headers.get('content-type') ?? ''
+    const text = await readBoundedText(res.body)
 
-    if (contentType.includes("text/html")) {
-      const stripped = stripHtml(text);
-      return stripped.slice(0, TOOL_RESULT_MAX_CHARS);
-    }
-    return text.slice(0, TOOL_RESULT_MAX_CHARS);
+    if (contentType.includes('text/html')) return stripHtml(text)
+    return text
   } catch (err) {
-    return `Error: ${err instanceof Error ? err.message : String(err)}`;
+    return `Error: ${err instanceof Error ? err.message : String(err)}`
   } finally {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
+}
+
+function runCodeInWorker(code: string): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, ['--max-old-space-size=64', '-e', CHILD_SOURCE], {
+      stdio: ['pipe', 'pipe', 'ignore'],
+    })
+    let output = ''
+    let settled = false
+    const finish = (text: string) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      child.kill()
+      resolve(text)
+    }
+    const timer = setTimeout(() => finish('Error: code execution timed out'), 8000)
+
+    child.stdout.on('data', (chunk) => { output += String(chunk) })
+    child.on('close', (exitCode) => {
+      try {
+        const message = JSON.parse(output) as { ok: boolean; text?: string; error?: string }
+        finish(message.ok ? (message.text ?? '') : `Error: ${message.error ?? 'unknown error'}`)
+      } catch {
+        finish(`Error: code execution failed (exit ${exitCode})`)
+      }
+    })
+    child.on('error', (err) => finish(`Error: ${err.message}`))
+
+    child.stdin.end(JSON.stringify({
+      code,
+      timeout: 5000,
+      maxChars: TOOL_RESULT_MAX_CHARS,
+      valueChars: CODE_RESULT_MAX_VALUE_CHARS,
+      maxItems: CODE_RESULT_MAX_ITEMS,
+    }))
+  })
 }
 
 async function codeExecutionHandler(
   args: Record<string, unknown>,
 ): Promise<string> {
-  const code = args.code as string;
-  if (!code) return "Error: code is required";
-
-  const vm = await import("node:vm");
-  // Hardening is load-bearing, not decoration. A bare createContext({}) hands
-  // user code the HOST realm's prototype chain, so this.constructor.constructor
-  // reaches the real `process` and exfiltrates every secret in process.env
-  // (OPENCODE_API_KEY, Sentry DSN, Turnstile secret, Upstash token) through
-  // the tool result. Two settings close it together:
-  //   - a null-prototype sandbox, so there is no host prototype to walk
-  //   - codeGeneration off, so eval/Function/WebAssembly are refused
-  // Verified against 14 escape vectors; all blocked, ordinary JS unaffected.
-  // Still not a true sandbox: it isolates the realm, not the OS.
-  const context = vm.createContext(Object.create(null) as Record<string, unknown>, {
-    codeGeneration: { strings: false, wasm: false },
-  });
-
-  try {
-    const script = new vm.Script(code, { filename: "user-code.js" });
-    const result = script.runInContext(context, { timeout: 5000 });
-    if (result === undefined) return "Executed successfully (undefined result)";
-    // Same cap as web_fetch: large outputs are re-sent on every loop
-    // iteration, so an unsliced dump would blow the context budget.
-    const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-    return text.slice(0, TOOL_RESULT_MAX_CHARS);
-  } catch (err) {
-    return `Error: ${err instanceof Error ? err.message : String(err)}`;
+  const code = args.code as string
+  if (!code || typeof code !== 'string') return 'Error: code is required'
+  if (code.length > CODE_EXECUTION_MAX_CHARS) {
+    return `Error: code exceeds ${CODE_EXECUTION_MAX_CHARS} characters`
   }
+
+  // The null-prototype context and disabled code generation keep the worker's
+  // realm isolated from the host; resourceLimits bound native allocations the
+  // vm timeout cannot stop. Still a realm sandbox, not an OS sandbox.
+  return runCodeInWorker(code)
 }
 
 // Packaged agenthood skill documents. The prompt advertises these names to

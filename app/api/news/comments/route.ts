@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 
-const KV = process.env.KV_URL && process.env.KV_TOKEN
-  ? new Redis({ url: process.env.KV_URL, token: process.env.KV_TOKEN })
+const KV_URL = process.env.KV_REST_API_URL || process.env.KV_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.KV_TOKEN;
+const KV = KV_URL && KV_TOKEN
+  ? new Redis({ url: KV_URL, token: KV_TOKEN })
   : null;
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? "";
@@ -69,13 +71,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name and comment are required" }, { status: 400 });
   }
 
-  if (
-    TURNSTILE_ENABLED &&
-    TURNSTILE_SECRET &&
-    TURNSTILE_SITE_KEY &&
-    (!token || !(await verifyTurnstile(token)))
-  ) {
-    return NextResponse.json({ error: "Captcha verification failed" }, { status: 400 });
+  if (TURNSTILE_ENABLED) {
+    if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
+      if (TURNSTILE_REQUIRED) {
+        console.error("comments.turnstile_config_missing");
+        return NextResponse.json({ error: "CAPTCHA configuration missing" }, { status: 503 });
+      }
+    } else if (!token || !(await verifyTurnstile(token))) {
+      return NextResponse.json({ error: "Captcha verification failed" }, { status: 400 });
+    }
   }
 
   if (!KV) {
@@ -91,6 +95,7 @@ export async function POST(request: Request) {
 
   const key = `news:comments:${slug}`;
   await KV.rpush(key, JSON.stringify(comment));
+  await KV.ltrim(key, 0, 99);
 
   return NextResponse.json({ success: true, comment });
 }
@@ -106,7 +111,7 @@ export async function GET(request: NextRequest) {
   }
 
   const key = `news:comments:${slug}`;
-  const raw = await KV.lrange(key, 0, -1);
+  const raw = await KV.lrange(key, 0, 99);
   const comments: Comment[] = (raw ?? []).map(parseComment).filter(Boolean) as Comment[];
   return NextResponse.json({ comments });
 }

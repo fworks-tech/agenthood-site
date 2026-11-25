@@ -182,7 +182,8 @@ describe("LightweightAdapter", () => {
     ).rejects.toThrow(/No system prompt/);
   });
 
-  it("sends error event when the server has no API key", async () => {
+  it("sends a referenced generic error event when the server has no API key", async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     mockFromConfig.mockRejectedValue(new Error("MissingApiKeyError: OPENCODE_API_KEY not set"));
 
     const stream = await adapter.chat({
@@ -194,7 +195,11 @@ describe("LightweightAdapter", () => {
     expect(events).toHaveLength(1);
     const parsed = events[0];
     expect(parsed.type).toBe("error");
-    expect(parsed.data).toContain("no API key configured on the server");
+    expect(parsed.data).toMatch(/^Provider request failed\. Reference: /);
+    expect(parsed.data).not.toContain("OPENCODE_API_KEY");
+    expect(parsed.requestId).toBeTruthy();
+    expect(errorSpy.mock.calls.map((c) => String(c[0])).join('\n')).toContain("MissingApiKeyError");
+    errorSpy.mockRestore();
   });
 
   it("respects abort signal and closes cleanly", async () => {
@@ -229,8 +234,9 @@ describe("LightweightAdapter", () => {
     expect(traces[0]).toMatchObject({ status: "error", source: "playground" });
   });
 
-  it("gracefully handles provider stream errors", async () => {
-    mockStreamImpl.mockRejectedValue(new Error("Provider rate limited"));
+  it("gracefully handles provider stream errors without leaking the detail", async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockStreamImpl.mockRejectedValue(new Error("sk-leak Provider rate limited"));
 
     const stream = await adapter.chat({
       agentId: "the-scribe",
@@ -241,7 +247,10 @@ describe("LightweightAdapter", () => {
     expect(events).toHaveLength(1);
     const parsed = events[0];
     expect(parsed.type).toBe("error");
-    expect(parsed.data).toContain("Provider rate limited");
+    expect(parsed.data).toMatch(/^Provider request failed\. Reference: /);
+    expect(parsed.data).not.toContain("sk-leak");
+    expect(errorSpy.mock.calls.map((c) => String(c[0])).join('\n')).toContain("sk-leak Provider rate limited");
+    errorSpy.mockRestore();
   });
 
   function traceLogs(spy: ReturnType<typeof vi.spyOn>): Record<string, unknown>[] {

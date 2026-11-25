@@ -6,6 +6,8 @@ import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '../_types/stud
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
 import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
 import { runToolLoop, withProviderRetry } from './tool-loop'
+import { providerFailure } from './zen'
+import { generateId } from './ids'
 import type { Message } from 'agenthood/dist/llm'
 
 export interface WorkspaceTurnRequest {
@@ -240,11 +242,13 @@ export async function createWorkspaceTurnStream(
           return
         }
         const msg = err instanceof Error ? err.message : String(err)
-        logger.error('workspace.error', { ...workspaceMeta, error: msg })
+        const requestId = generateId()
+        logger.error('workspace.error', { ...workspaceMeta, error: msg, requestId })
         wsLog('error', 'workspace.error', { memberId: req.memberId })
         encode(controller, {
           type: 'workspace.error',
-          data: msg,
+          data: providerFailure(msg, requestId).message,
+          requestId,
           workspaceId: req.workspaceId,
           correlationId: req.correlationId,
         })

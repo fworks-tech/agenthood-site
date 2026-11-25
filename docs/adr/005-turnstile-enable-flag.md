@@ -26,9 +26,9 @@ Introduce `NEXT_PUBLIC_TURNSTILE_ENABLED` (`"true"` default, `"false"` disables)
 - Client requires a token only when `ENABLED && SITE_KEY` (site key still required so the gate
   is always satisfiable).
 - Server enforces verification only when `ENABLED && SECRET && SITE_KEY`.
-- When `ENABLED` but misconfigured (secret or site key missing), the server **fails open** with a
-  loud `turnstile.config_missing` error log — site availability takes precedence over a failed
-  security control (see alternatives).
+- When `ENABLED` but misconfigured (secret or site key missing), the server logs
+  `turnstile.config_missing` and either fails open or closed according to `TURNSTILE_REQUIRED`
+  (see the amendment below).
 
 ## Alternatives Considered
 
@@ -47,8 +47,17 @@ Introduce `NEXT_PUBLIC_TURNSTILE_ENABLED` (`"true"` default, `"false"` disables)
 - **Risk:** deployments that relied on implicit gating must add the flag only if they intend to
   disable CAPTCHA; the default (`"true"`) preserves existing behavior.
 
+## Amendment (2026-11-25)
+
+`TURNSTILE_REQUIRED` defaults to `"true"` and is the single server-side switch for the fail-closed
+behavior. With `NEXT_PUBLIC_TURNSTILE_ENABLED=true` and `TURNSTILE_REQUIRED=true`, a missing secret
+or site key now returns an error instead of accepting the request. The same gate covers workspace
+turns and the Jev bridge. Setting `TURNSTILE_REQUIRED=false` restores the original fail-open
+behavior. This reverses the availability-first choice recorded above: an unauthenticated paid or
+write endpoint is the larger risk.
+
 ## References
 
-- Issues fworks-tech/agenthood-site#97, #103, #113; `app/components/Turnstile.tsx`,
+- Issues fworks-tech/agenthood-site#97, #103, #113, #345; `app/components/Turnstile.tsx`,
   `app/components/GuestCommentForm.tsx`, `app/(main)/studio/playground/page.tsx`,
   `app/api/studio/chat/route.ts`, `app/api/news/comments/route.ts`.

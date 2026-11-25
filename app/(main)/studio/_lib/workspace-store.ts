@@ -1,8 +1,9 @@
-// WorkspaceStore — reliable shared memory for Studio Workspaces.
-// v1: server in-memory Map (globalThis) + client localStorage mirror.
-// Future Redis: implement same WorkspaceStore interface with UPSTASH_REDIS_URL.
+// WorkspaceStore — shared memory for Studio Workspaces.
+// Server: Upstash Redis when KV_REST_API_* is configured (same as middleware),
+// with a per-instance Map fallback for local dev. Client: localStorage mirror.
 // All agents + user share thread + scratchpad via workspaceId.
 
+import type { Redis } from '@upstash/redis'
 import { STORAGE_KEYS } from './constants'
 import type { WorkspaceSession } from '../_types/workspace'
 
@@ -12,6 +13,25 @@ const MAX_WORKSPACES = 20
 const MAX_AGE_MS = 45 * 60 * 1000 // 45m TTL — debug object stays scannable, not forever
 const STORE_KEY = STORAGE_KEYS.WORKSPACES as string
 const ACTIVE_KEY = STORAGE_KEYS.ACTIVE_WORKSPACE as string
+const REDIS_PREFIX = 'workspace:'
+const REDIS_TTL_SECONDS = Math.ceil(MAX_AGE_MS / 1000)
+
+let redisPromise: Promise<Redis | null> | null = null
+
+// Dynamic import keeps the Redis client out of the browser bundle; type-only
+// import above is erased at build time.
+async function serverRedis(): Promise<Redis | null> {
+  if (!isServer()) return null
+  if (redisPromise === null) {
+    const url = process.env.KV_REST_API_URL
+    const token = process.env.KV_REST_API_TOKEN
+    if (!url || !token) return null
+    redisPromise = import('@upstash/redis')
+      .then(({ Redis: Client }) => new Client({ url, token }))
+      .catch(() => null)
+  }
+  return redisPromise
+}
 
 declare global {
   var __workspaceStore: Map<string, WorkspaceSession> | undefined
@@ -83,6 +103,30 @@ export function saveWorkspace(session: WorkspaceSession): void {
   const all = loadWorkspaces().filter((s) => s.workspaceId !== session.workspaceId)
   all.unshift(session)
   saveWorkspaces(all)
+}
+
+// Async server path: keeps the sync exports above intact for the client hook
+// while making a turn visible to every lambda instance in production.
+export async function getWorkspaceAsync(workspaceId: string): Promise<WorkspaceSession | null> {
+  const redis = await serverRedis()
+  if (!redis) return getWorkspace(workspaceId)
+  try {
+    return await redis.get<WorkspaceSession>(`${REDIS_PREFIX}${workspaceId}`)
+  } catch {
+    return getWorkspace(workspaceId)
+  }
+}
+
+export async function saveWorkspaceAsync(session: WorkspaceSession): Promise<void> {
+  session.updatedAt = Date.now()
+  saveWorkspace(session)
+  const redis = await serverRedis()
+  if (!redis) return
+  try {
+    await redis.set(`${REDIS_PREFIX}${session.workspaceId}`, session, { ex: REDIS_TTL_SECONDS })
+  } catch {
+    // Instance-local Map still serves this lambda if Redis is unavailable.
+  }
 }
 
 export function getActiveWorkspaceId(): string | null {

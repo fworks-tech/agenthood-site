@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test'
 import { test } from './fixtures'
+import { mockTurnstile } from './helpers'
 
 function wsBody(lines: Record<string, unknown>[]): string {
   return lines.map((e) => JSON.stringify(e) + '\n').join('')
@@ -114,6 +115,27 @@ test.describe('Workspaces — Multi-agent orchestration', () => {
     // deselect
     await builderBtn.click()
     await expect(builderBtn).not.toHaveClass(/border-indigo-500/)
+  })
+
+  test('workspace turns carry the captcha token', async ({ page }) => {
+    await mockTurnstile(page)
+    const tokens: unknown[] = []
+    await page.route('**/api/studio/workspaces**', async (route) => {
+      if (route.request().method() === 'POST') {
+        try {
+          tokens.push((JSON.parse(route.request().postData() ?? '{}') as Record<string, unknown>).turnstileToken)
+        } catch {}
+      }
+      await route.fulfill({ status: 200, headers: { 'Content-Type': 'text/event-stream' }, body: '' })
+    })
+    await page.goto('/studio/workspaces/')
+    await page.getByRole('button', { name: /The Builder/ }).first().click()
+    const startBtn = page.getByRole('button', { name: 'Start Workspace' })
+    await page.getByPlaceholder('e.g. Suggest an area for improvement').fill('Hello workspace')
+    await expect(startBtn).toBeEnabled()
+    await startBtn.click()
+    await expect.poll(() => tokens.length).toBeGreaterThan(0)
+    expect(tokens[0]).toBeTruthy()
   })
 
   test.skip('full orchestration renders live chat with multi-agent turns', async ({ page }) => {

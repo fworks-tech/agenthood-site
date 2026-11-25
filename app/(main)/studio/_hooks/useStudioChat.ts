@@ -498,7 +498,7 @@ export function useStudioChat(options?: UseStudioChatOptions): UseStudioChatRetu
       const toolCall = message?.toolCalls?.find((t) => t.id === toolCallId);
       if (!message || !toolCall) return { ok: false, outcome: {} };
       const startedAt = Date.now();
-      const outcome = await replayToolExecution(toolCall.name, toolCall.args, turnstileToken);
+      const outcome = await replayToolExecution(toolCall.name, toolCall.args, conv.agentId, turnstileToken);
       const next = applyToolReplayOutcome(conv, messageId, toolCallId, outcome, Date.now(), startedAt);
       const updated = conversationsRef.current.map((c) => (c.id === conv.id ? next : c));
       conversationsRef.current = updated;

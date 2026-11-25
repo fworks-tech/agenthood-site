@@ -13,12 +13,7 @@ updates:
     commit-message:
       prefix: chore
       include: scope
-    # agenthood is exact-pinned and its upgrade is blocked by agenthood#739
-    # (the package exports map dropped ./dist/llm and ./dist/core). Surface a
-    # failing bump PR never merges is noise — upgrades are applied manually per
-    # issue #176, so Dependabot ignores it.
     ignore:
-      - dependency-name: agenthood
       # ESLint 10 cannot load this repo's config, so every such PR fails in
       # seconds and none can be merged. eslint-config-next@16.3.6 hard-depends
       # on eslint-plugin-react ^7.37.0, and 7.37.5 is that plugin's newest

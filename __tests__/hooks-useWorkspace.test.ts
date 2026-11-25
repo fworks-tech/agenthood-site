@@ -32,7 +32,7 @@ function planOf(members: { id: string; task: string }[]): string {
   return JSON.stringify({ members: members.map((m, i) => ({ ...m, order: i })) })
 }
 
-type Call = { url: string; body: { memberId?: string; instruction?: string; thread?: { role: string; content: string }[] } }
+type Call = { url: string; body: { memberId?: string; instruction?: string; turnstileToken?: string; thread?: { role: string; content: string }[] } }
 
 function installFetch(turns: TurnScript[], synthText: string | null) {
   const calls: Call[] = []
@@ -48,7 +48,7 @@ function installFetch(turns: TurnScript[], synthText: string | null) {
       ])
     }
     // The engine's optional Jev hop returns 204 (disabled) without consuming a turn script.
-    if (url.includes('/api/studio/jev')) {
+    if (url.includes('/api/studio/workspaces/jev') || url.includes('/api/studio/jev')) {
       return new Response(null, { status: 204 })
     }
     const t = turns[Math.min(i++, turns.length - 1)]
@@ -94,6 +94,42 @@ describe('useWorkspace chain engine', () => {
     expect(result.current.workspaceState).toBe('done')
     expect(calls.filter((c) => !c.url.includes('/synthesize'))).toHaveLength(2)
     expect(calls.some((c) => c.url.includes('/synthesize'))).toBe(false)
+  })
+
+  it('generates an unguessable workspace id and reuses it for every turn', async () => {
+    const calls = installFetch(
+      [
+        { text: planOf([{ id: 'the-builder', task: 'build' }]) },
+        { text: 'Built ```js\nok\n```' },
+        { text: '' },
+      ],
+      null,
+    )
+    const { result } = renderHook(() => useWorkspace())
+    await act(async () => {
+      await result.current.start({ memberIds: ['the-builder'], instruction: 'go' })
+    })
+    expect(result.current.workspaceId).toMatch(/^ws-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    expect(calls.filter((c) => c.url.includes('/api/studio/workspaces'))
+      .every((c) => (c.body as { workspaceId?: string }).workspaceId === result.current.workspaceId)).toBe(true)
+  })
+
+  it('sends the captcha token on every workspace turn', async () => {
+    const calls = installFetch(
+      [
+        { text: planOf([{ id: 'the-builder', task: 'build' }]) },
+        { text: 'Built ```js\nok\n```' },
+        { text: '' },
+      ],
+      null,
+    )
+    const { result } = renderHook(() => useWorkspace('turnstile-token'))
+    await act(async () => {
+      await result.current.start({ memberIds: ['the-builder'], instruction: 'go' })
+    })
+    const turns = calls.filter((c) => c.url.includes('/api/studio/workspaces') && !c.url.includes('/jev'))
+    expect(turns.length).toBeGreaterThan(0)
+    expect(turns.every((c) => c.body.turnstileToken === 'turnstile-token')).toBe(true)
   })
 
   it('pauses on a 60% route and resumes via typed /continue with the hint preserved', async () => {

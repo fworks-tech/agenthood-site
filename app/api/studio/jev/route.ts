@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import { logger } from '@/app/(main)/studio/_lib/logger'
 import { jevChoice } from '@/app/(main)/studio/_lib/zen'
 
@@ -7,6 +8,11 @@ export const maxDuration = 15
 
 const MAX_OPTIONS = 32
 const MAX_STATE_CHARS = 4000
+
+function tokenMatches(provided: string | null, secret: string): boolean {
+  if (!provided || provided.length !== secret.length) return false
+  return timingSafeEqual(Buffer.from(provided), Buffer.from(secret))
+}
 
 // Server-side only: keeps OPENCODE_API_KEY off the client. Disabled unless the
 // operator opts in — the routing hop then falls back to the deterministic 60. When
@@ -23,7 +29,7 @@ export async function POST(request: Request) {
     logger.error('jev.misconfigured', { reason: 'JEV_ROUTING_ENABLED without JEV_INTERNAL_TOKEN' })
     return new Response(null, { status: 204 })
   }
-  if (request.headers.get('x-jev-token') !== secret) {
+  if (!tokenMatches(request.headers.get('x-jev-token'), secret)) {
     return new Response(null, { status: 401 })
   }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, renameSync, existsSync, readdirSync } from "node:fs";
 import { generate } from "../scripts/generate-news-digest.mjs";
 
 vi.mock("node:fs", () => {
@@ -10,14 +10,16 @@ vi.mock("node:fs", () => {
     throw new Error(`mock fs: no such file ${file}`);
   });
   const writeFileSync = vi.fn();
+  const renameSync = vi.fn();
   const existsSync = vi.fn(() => false);
   const readdirSync = vi.fn(() => []);
   return {
     readFileSync,
     writeFileSync,
+    renameSync,
     existsSync,
     readdirSync,
-    default: { readFileSync, writeFileSync, existsSync, readdirSync },
+    default: { readFileSync, writeFileSync, renameSync, existsSync, readdirSync },
   };
 });
 
@@ -125,5 +127,54 @@ describe("news digest — draft retry", () => {
       /request failed \(404\)/,
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("builds the manifest and writes state only after the manifest write", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock
+      .mockResolvedValueOnce(releasePage())
+      .mockResolvedValueOnce(chatResponse(article));
+
+    await generate({ postDate, logger: { log() {} } });
+
+    const paths = writeFileSync.mock.calls.map(([p]) => String(p));
+    const articleIndex = paths.findIndex((p) => p.includes("whats-new-2026-08-14.md"));
+    const manifestIndex = paths.findIndex((p) => p.includes("manifest.json"));
+    const stateIndex = paths.findIndex((p) => p.includes(".digest-state.json"));
+    expect(articleIndex).toBeGreaterThanOrEqual(0);
+    expect(manifestIndex).toBeGreaterThan(articleIndex);
+    expect(stateIndex).toBeGreaterThan(manifestIndex);
+    expect(renameSync).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not advance digest state when manifest building throws", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock
+      .mockResolvedValueOnce(releasePage())
+      .mockResolvedValueOnce(chatResponse(article));
+    readdirSync.mockImplementationOnce(() => {
+      throw new Error("manifest boom");
+    });
+
+    await expect(generate({ postDate, logger: { log() {} } })).rejects.toThrow(/manifest boom/);
+
+    const stateWrites = writeFileSync.mock.calls.filter(([p]) => String(p).includes(".digest-state.json"));
+    expect(stateWrites).toEqual([]);
+  });
+
+  it("uses a suffixed slug and reconciles the manifest when today's digest exists", async () => {
+    existsSync.mockReturnValueOnce(true);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    fetchMock.mockResolvedValueOnce(releasePage()).mockResolvedValueOnce(chatResponse(article));
+
+    const result = await generate({ postDate, logger: { log() {} } });
+
+    expect(result.status).toBe("wrote");
+    expect(result.path).toBe(`whats-new-${postDate}-2.md`);
+    const manifestWrites = writeFileSync.mock.calls.filter(([p]) => String(p).includes("manifest.json"));
+    expect(manifestWrites.length).toBe(2);
   });
 });

@@ -8,6 +8,7 @@ import {
 } from "@/app/(main)/studio/_lib/captcha";
 import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
 import { logger } from "@/app/(main)/studio/_lib/logger";
+import { getMemberTools } from '@/app/(main)/studio/_types/studio'
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
     correlationId = readCorrelationId(request) ?? requestId;
 
-    const { tool, args, turnstileToken } = body as Record<string, unknown>;
+    const { tool, args, agentId, turnstileToken } = body as Record<string, unknown>
     const verifiedCookie = parseCaptchaCookie(request.headers.get("cookie"));
     const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
@@ -61,6 +62,12 @@ export async function POST(request: Request) {
     }
     if (JSON.stringify(args).length > MAX_ARGS_CHARS) {
       throw new ValidationError(`args exceed ${MAX_ARGS_CHARS} characters`);
+    }
+    if (!agentId || typeof agentId !== 'string') throw new ValidationError('agentId must be a string')
+    // The chat route grants tools by identity; a CAPTCHA alone must not hand
+    // any caller the code_execution VM.
+    if (!getMemberTools(agentId).includes(tool)) {
+      throw new ValidationError(`Tool "${tool}" is not allowed for this member`)
     }
 
     const result = await executeTool(tool, args as Record<string, unknown>, request.signal);

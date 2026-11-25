@@ -91,4 +91,47 @@ describe("fetchWithRetry", () => {
     expect(err.message).toContain("API rate limit exceeded");
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("attaches a 30s timeout signal to every fetch call", async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    vi.mocked(fetch).mockResolvedValue(response(200, "ok"));
+
+    const res = await fetchWithRetry("https://example.com/h");
+
+    expect(res.status).toBe(200);
+    expect(timeoutSpy).toHaveBeenCalledWith(30_000);
+    const options = vi.mocked(fetch).mock.calls[0][1] as RequestInit;
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("retries a 403 when rate-limit headers say the quota is exhausted", async () => {
+    const limited = new Response("", {
+      status: 403,
+      statusText: "Forbidden",
+      headers: { "x-ratelimit-remaining": "0" },
+    });
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(limited)
+      .mockResolvedValueOnce(response(200, "recovered"));
+
+    const res = await fetchWithRetry("https://example.com/i", undefined, {
+      baseDelayMs: 1,
+      retryRateLimit: true,
+    });
+
+    expect(res.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a 403 without rate-limit headers", async () => {
+    vi.mocked(fetch).mockResolvedValue(response(403, "Forbidden"));
+
+    await expect(
+      fetchWithRetry("https://example.com/j", undefined, {
+        baseDelayMs: 1,
+        retryRateLimit: true,
+      }),
+    ).rejects.toThrow("403");
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
 });

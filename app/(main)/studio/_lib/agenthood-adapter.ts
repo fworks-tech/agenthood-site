@@ -4,7 +4,7 @@ import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ILLMProvider } from "agenthood/dist/llm";
 import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from "./tools";
 import { runToolLoop, withProviderRetry } from "./tool-loop";
-import { zenProtocolForModel, ZenMessagesProvider } from "./zen";
+import { providerFailure, zenProtocolForModel, ZenMessagesProvider } from "./zen";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
 import { generateId } from "./ids";
 import {
@@ -240,16 +240,13 @@ export class LightweightAdapter implements AgenthoodAdapter {
             return;
           }
           const msg = err instanceof Error ? err.message : String(err);
-          logger.error("chat.error", { agentId: req.agentId, error: msg, correlationId });
-          emitLogEvent(controller, "error", "chat.error", { agentId: req.agentId, provider: providerName, correlationId });
+          const requestId = generateId();
+          logger.error("chat.error", { agentId: req.agentId, error: msg, correlationId, requestId });
+          emitLogEvent(controller, "error", "chat.error", { agentId: req.agentId, provider: providerName, correlationId, requestId });
           emitTrace(controller, "error", output);
 
-          const isMissingKey = /(?:api[_-]?key|not set|auth)/i.test(msg) || msg.includes("MissingApiKeyError");
-          const errorMessage = isMissingKey
-            ? "The model provider has no API key configured on the server."
-            : msg;
-
-          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: errorMessage }) + "\n"));
+          const failure = providerFailure(msg, requestId);
+          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: failure.message, requestId }) + "\n"));
         } finally {
           controller.close();
         }

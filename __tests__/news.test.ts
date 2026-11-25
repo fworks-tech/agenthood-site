@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { buildNewsManifest } from "../scripts/build-news-manifest.mjs";
+import { buildNewsManifest, isIsoDate, shouldWriteManifest } from "../scripts/build-news-manifest.mjs";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 
@@ -110,5 +110,49 @@ describe("RSS feed", () => {
       const encoded = entry.title.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       expect(text).toContain(encoded);
     }
+  });
+
+  it("escapes every slug segment in both link and guid", async () => {
+    const { buildRssItem } = await import("../app/(main)/news/rss.xml/route");
+    const xml = buildRssItem({
+      slug: ["a&b", "<script>"],
+      path: "news/a&b/<script>.md",
+      title: "Unsafe slugs",
+      date: "2026-01-01",
+    });
+
+    expect(xml).toContain("news/a&amp;b/&lt;script&gt;</link>");
+    expect(xml).toContain("news/a&amp;b/&lt;script&gt;</guid>");
+    expect(xml).not.toContain("news/a&b/<script>");
+  });
+});
+
+describe("news manifest — ISO date validation", () => {
+  it("accepts a real calendar date", () => {
+    expect(isIsoDate("2026-02-28")).toBe(true);
+  });
+
+  it("rejects an impossible date such as 2026-02-30", () => {
+    expect(isIsoDate("2026-02-30")).toBe(false);
+  });
+
+  it("rejects malformed dates", () => {
+    expect(isIsoDate("2026-2-3")).toBe(false);
+    expect(isIsoDate("not-a-date")).toBe(false);
+  });
+});
+
+describe("news automation safety", () => {
+  it("passes the generator output to the PR step via env instead of inline interpolation", () => {
+    const yaml = fs.readFileSync(path.join(process.cwd(), ".github/workflows/news-digest.yml"), "utf8");
+    expect(yaml).toContain("DIGEST_RESULT: ${{ steps.generate.outputs.result }}");
+    expect(yaml).toContain('echo "$DIGEST_RESULT"');
+    expect(yaml).not.toContain('echo "${{ steps.generate.outputs.result }}"');
+  });
+
+  it("does not rewrite the tracked manifest in lenient mode when an article was skipped", () => {
+    expect(shouldWriteManifest(true, 4, 4)).toBe(true);
+    expect(shouldWriteManifest(true, 3, 4)).toBe(false);
+    expect(shouldWriteManifest(false, 3, 4)).toBe(true);
   });
 });

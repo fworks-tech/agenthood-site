@@ -14,6 +14,7 @@ const ORIGIN_PROTECTED_PREFIXES = [
   "/api/studio/tools",
   "/api/studio/feedback",
   "/api/studio/workspaces",
+  "/api/studio/jev",
 ];
 
 function isOriginProtected(pathname: string): boolean {
@@ -42,8 +43,11 @@ function validateOrigin(request: NextRequest): void {
 type RateLimits = Record<string, { max: number; windowMs: number }>;
 
 const RATE_LIMITS: RateLimits = {
-  "/api/studio/chat": { max: 100, windowMs: 60_000 },
+  "/api/studio/chat": { max: 20, windowMs: 60_000 },
   "/api/studio/workspaces": { max: 120, windowMs: 60_000 },
+  // Paid Jev hops — the bridge inherits the same tight budget as the proxy.
+  "/api/studio/workspaces/jev": { max: 20, windowMs: 60_000 },
+  "/api/studio/jev": { max: 20, windowMs: 60_000 },
   "/api/studio/tools": { max: 100, windowMs: 60_000 },
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },
@@ -87,6 +91,16 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/chat"].max, `${RATE_LIMITS["/api/studio/chat"].windowMs}ms`),
     prefix: "ratelimit:chat",
   });
+  const jev = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/jev"].max, `${RATE_LIMITS["/api/studio/jev"].windowMs}ms`),
+    prefix: "ratelimit:jev",
+  });
+  const workspaceJev = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/workspaces/jev"].max, `${RATE_LIMITS["/api/studio/workspaces/jev"].windowMs}ms`),
+    prefix: "ratelimit:workspace-jev",
+  });
   const tools = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/studio/tools"].max, `${RATE_LIMITS["/api/studio/tools"].windowMs}ms`),
@@ -113,7 +127,7 @@ function createUpstashRatelimiter() {
     prefix: "ratelimit:comments",
   });
 
-  return { chat, tools, agents, feedback, workspaces, comments };
+  return { chat, jev, workspaceJev, tools, agents, feedback, workspaces, comments };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -134,8 +148,10 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limitKey) return null;
   const limits = RATE_LIMITS[limitKey];
 
-  const LIMITER_BY_KEY: Record<string, "chat" | "tools" | "agents" | "feedback" | "workspaces" | "comments"> = {
+  const LIMITER_BY_KEY: Record<string, "chat" | "jev" | "workspaceJev" | "tools" | "agents" | "feedback" | "workspaces" | "comments"> = {
     "/api/studio/chat": "chat",
+    "/api/studio/workspaces/jev": "workspaceJev",
+    "/api/studio/jev": "jev",
     "/api/studio/tools": "tools",
     "/api/studio/agents": "agents",
     "/api/studio/feedback": "feedback",

@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import { TextInput, Button } from '@mantine/core'
 import { useWorkspace } from '../_hooks/useWorkspace'
 import { useLogs } from '../_hooks/useLogs'
+import { useCaptcha } from '../_hooks/useCaptcha'
+import Turnstile from '../../../components/Turnstile'
 import { getCompletions, applyCompletion } from '../_lib/workspace-complete'
 import WorkspaceComposer from './_components/WorkspaceComposer'
 import WorkspaceSidebar from './_components/WorkspaceSidebar'
@@ -29,24 +31,26 @@ export default function WorkspacesPage() {
     return true
   }, [input, selected])
 
-  const workspace = useWorkspace()
-  const { logs, logsOpen, setLogsOpen, debugVisible, setDebugVisible, logCategoryFilter, setLogCategoryFilter, liveLogsHeight } = useLogs()
+  const { logs, logsOpen, setLogsOpen, debugVisible, setDebugVisible, logCategoryFilter, setLogCategoryFilter, liveLogsHeight, addLog } = useLogs()
+  const captcha = useCaptcha({ addLog })
+  const workspace = useWorkspace(captcha.token)
 
   const toggle = useCallback((id: string) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }, [])
 
+  const captchaReady = !captcha.isRequired || !!captcha.token
   const handleStart = useCallback(async () => {
-    if (selected.length === 0 || !instruction.trim()) return
+    if (selected.length === 0 || !instruction.trim() || !captchaReady) return
     await workspace.start({ memberIds: selected, instruction: instruction.trim() })
-  }, [selected, instruction, workspace])
+  }, [selected, instruction, workspace, captchaReady])
 
   const isRunning = workspace.workspaceState === 'running' || workspace.workspaceState === 'handoff'
   const hasStarted = workspace.workspaceId !== null
 
   const handleSend = useCallback(async () => {
     const text = input.trim()
-    if (!text) return
+    if (!text || !captchaReady) return
     setInput('')
     // Follow-ups must never wipe history — screenshots showed a second
     // "Give me a summary" replacing the whole thread because done/error
@@ -58,7 +62,7 @@ export default function WorkspacesPage() {
     } else {
       await workspace.sendIntervention(text)
     }
-  }, [input, selected, workspace, hasStarted])
+  }, [input, selected, workspace, hasStarted, captchaReady])
 
   const handleReset = useCallback(() => {
     workspace.reset()
@@ -72,6 +76,17 @@ export default function WorkspacesPage() {
       <div className="border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 md:px-6">
         <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Workspaces</h1>
         <p className="text-sm text-zinc-500">Assemble a team, give one instruction, watch them collaborate. Mediator is auto-included.</p>
+        {captcha.isRequired && !captcha.verified && (
+          <div className="mt-3">
+            <Turnstile
+              onToken={captcha.setToken}
+              onError={captcha.onError}
+              onStatus={captcha.onStatus}
+              refreshKey={captcha.refreshKey}
+              visible
+            />
+          </div>
+        )}
       </div>
 
       {!hasStarted ? (

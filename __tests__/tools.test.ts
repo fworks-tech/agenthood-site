@@ -5,16 +5,28 @@ import {
   classifyToolResult,
   MAX_TOOL_ITERATIONS,
   TOOL_RESULT_MAX_CHARS,
-} from "../app/(main)/studio/_lib/tools";
+  MAX_FETCH_REDIRECTS,
+  CODE_EXECUTION_MAX_CHARS,
+} from '../app/(main)/studio/_lib/tools'
 
-function okResponse(body: string, contentType = "text/plain") {
+function responseBody(text: string): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(text))
+      controller.close()
+    }
+  })
+}
+
+function okResponse(body: string, contentType = 'text/plain') {
   return {
     ok: true,
     status: 200,
-    statusText: "OK",
+    statusText: 'OK',
     headers: { get: () => contentType },
+    body: responseBody(body),
     text: async () => body,
-  };
+  }
 }
 
 function errResponse(status: number, statusText: string) {
@@ -22,9 +34,20 @@ function errResponse(status: number, statusText: string) {
     ok: false,
     status,
     statusText,
-    headers: { get: () => "text/plain" },
-    text: async () => "",
-  };
+    headers: { get: () => 'text/plain' },
+    body: responseBody(''),
+    text: async () => '',
+  }
+}
+
+function redirectResponse(location: string) {
+  return {
+    ok: false,
+    status: 302,
+    statusText: 'Found',
+    headers: { get: (name: string) => (name.toLowerCase() === 'location' ? location : null) },
+    body: responseBody(''),
+  }
 }
 
 const fetchMock = vi.fn();
@@ -176,6 +199,51 @@ describe("web_fetch URL allow-list", () => {
   });
 });
 
+describe('web_fetch redirects', () => {
+  it.each([
+    'http://169.254.169.254/latest/meta-data/',
+    'http://127.0.0.1:3000/admin',
+    'http://localhost:11434/api/tags',
+    'file:///etc/passwd',
+  ])('refuses a redirect to %s without fetching it', async (location) => {
+    fetchMock.mockResolvedValueOnce(redirectResponse(location))
+    const result = await executeTool('web_fetch', { url: 'https://github.com/foo' })
+    expect(result).toContain('URL not allowed')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('requests redirects manually rather than letting fetch follow them', async () => {
+    fetchMock.mockResolvedValueOnce(redirectResponse('https://raw.githubusercontent.com/x/y')).mockResolvedValueOnce(okResponse('redirected'))
+    await expect(executeTool('web_fetch', { url: 'https://github.com/foo' })).resolves.toBe('redirected')
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ redirect: 'manual' }))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('re-checks an allowlisted redirect target before reading its body', async () => {
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse('https://github.com.evil.test/x'))
+      .mockResolvedValueOnce(okResponse('leaked'))
+    const result = await executeTool('web_fetch', { url: 'https://github.com/foo' })
+    expect(result).toContain('URL not allowed')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('resolves a protocol-relative Location against the current URL before checking it', async () => {
+    fetchMock
+      .mockResolvedValueOnce(redirectResponse('//169.254.169.254/latest/meta-data/'))
+      .mockResolvedValueOnce(okResponse('leaked'))
+    const result = await executeTool('web_fetch', { url: 'https://github.com/foo' })
+    expect(result).toContain('URL not allowed')
+  })
+
+  it('stops after too many redirects', async () => {
+    fetchMock.mockResolvedValue(redirectResponse('https://github.com/loop'))
+    const result = await executeTool('web_fetch', { url: 'https://github.com/foo' })
+    expect(result).toContain('too many redirects')
+    expect(fetchMock).toHaveBeenCalledTimes(MAX_FETCH_REDIRECTS + 1)
+  })
+})
+
 describe("web_fetch response handling", () => {
   it("strips HTML, script, and style tags from HTML pages", async () => {
     const html =
@@ -202,6 +270,25 @@ describe("web_fetch response handling", () => {
     const result = await executeTool("web_fetch", { url: "https://github.com/foo" });
     expect(result).toHaveLength(TOOL_RESULT_MAX_CHARS);
   });
+
+  it('stops reading an endless body at the result cap', async () => {
+    let cancelled = false
+    let reads = 0
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        reads += 1
+        controller.enqueue(new TextEncoder().encode('x'.repeat(1000)))
+      },
+      cancel() {
+        cancelled = true
+      },
+    })
+    fetchMock.mockResolvedValue({ ...okResponse(''), body })
+    const result = await executeTool('web_fetch', { url: 'https://github.com/foo' })
+    expect(result).toHaveLength(TOOL_RESULT_MAX_CHARS)
+    expect(cancelled).toBe(true)
+    expect(reads).toBeLessThan(20)
+  })
 
   it("retries once on 5xx and returns the recovered body", async () => {
     fetchMock
@@ -312,6 +399,35 @@ describe("code_execution sandbox", () => {
     expect(result).not.toContain("PATH");
     expect(result).not.toContain("API_KEY");
   });
+
+  it('bounds native allocations with worker memory limits', async () => {
+    const result = await executeTool('code_execution', {
+      code: 'new Array(2 ** 30).fill("x")',
+    })
+    expect(result).toMatch(/^Error: /)
+  })
+
+  it('rejects oversized code before running it', async () => {
+    const result = await executeTool('code_execution', {
+      code: 'x'.repeat(CODE_EXECUTION_MAX_CHARS + 1),
+    })
+    expect(result).toContain('code exceeds')
+  })
+
+  it('bounds object serialization without materializing a huge string', async () => {
+    const result = await executeTool('code_execution', {
+      code: "Object.fromEntries(Array.from({ length: 2000 }, (_, i) => ['k' + i, 'v'.repeat(300)]))",
+    })
+    expect(result.length).toBeLessThanOrEqual(TOOL_RESULT_MAX_CHARS)
+    expect(result).toContain('"k0"')
+  })
+
+  it('serializes circular results without throwing', async () => {
+    const result = await executeTool('code_execution', {
+      code: "(() => { const o = {}; o.self = o; return o })()",
+    })
+    expect(result).toContain('[circular]')
+  })
 
   // The hardening must not cost real capability.
   it("still runs ordinary JavaScript after hardening", async () => {

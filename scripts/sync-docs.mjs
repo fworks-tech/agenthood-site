@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
 import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
 
@@ -12,15 +13,36 @@ const CONTENT_DIR = path.join(process.cwd(), "content");
 const token = process.env.GITHUB_TOKEN;
 
 async function api(url) {
-  const res = await fetchWithRetry(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  const res = await fetchWithRetry(
+    url,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     },
-  });
+    { retryRateLimit: true },
+  );
 
   return res.json();
+}
+
+const CONCURRENCY = 8;
+
+export async function mapInBatches(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 function encodeRawPath(filePath) {
@@ -84,9 +106,8 @@ function rewriteMemberSkillLinks(content) {
     });
 }
 
-async function syncDirectory(sourceDir, destDir) {
+async function syncDirectory(sourceDir, destDir, tree) {
   const sourcePrefix = `${sourceDir}/`;
-  const tree = await api(`${API_BASE}/git/trees/${BRANCH}?recursive=1`);
 
   const files = tree.tree.filter(
     (item) =>
@@ -99,12 +120,10 @@ async function syncDirectory(sourceDir, destDir) {
     console.warn(`No markdown files found under ${sourcePrefix}`);
   }
 
-  const entries = [];
-
-  for (const file of files) {
+  const entries = await mapInBatches(files, CONCURRENCY, async (file) => {
     const relative = file.path.slice(sourcePrefix.length);
     if (path.basename(relative).toLowerCase() === "article_template.md") {
-      continue;
+      return null;
     }
 
     const content = rewriteMemberSkillLinks(await fetchRaw(file.path));
@@ -113,20 +132,20 @@ async function syncDirectory(sourceDir, destDir) {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
     fs.writeFileSync(destPath, content, "utf8");
 
-    entries.push({
+    return {
       slug: buildSlug(relative),
       path: path.posix.join(destDir, relative),
       title: titleFromMarkdown(content),
-    });
-  }
+    };
+  });
 
-  entries.sort((a, b) => a.path.localeCompare(b.path));
+  const sorted = entries.filter(Boolean).sort((a, b) => a.path.localeCompare(b.path));
 
   const manifestPath = path.join(CONTENT_DIR, destDir, "manifest.json");
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
-  fs.writeFileSync(manifestPath, JSON.stringify(entries, null, 2), "utf8");
+  fs.writeFileSync(manifestPath, JSON.stringify(sorted, null, 2), "utf8");
 
-  console.log(`Synced ${entries.length} files to content/${destDir}`);
+  console.log(`Synced ${sorted.length} files to content/${destDir}`);
 }
 
 async function syncFile(sourcePath, destPath) {
@@ -151,9 +170,7 @@ async function syncFullDocs(tree) {
       !excludeExact.includes(item.path)
   );
 
-  const entries = [];
-
-  for (const file of files) {
+  const entries = await mapInBatches(files, CONCURRENCY, async (file) => {
     const relative = file.path.slice(sourcePrefix.length);
     const content = rewriteMemberSkillLinks(await fetchRaw(file.path));
     const destPath = path.join(CONTENT_DIR, "docs", relative);
@@ -161,12 +178,12 @@ async function syncFullDocs(tree) {
     fs.mkdirSync(path.dirname(destPath), { recursive: true });
     fs.writeFileSync(destPath, content, "utf8");
 
-    entries.push({
+    return {
       slug: buildSlug(relative),
       path: path.posix.join("docs", relative),
       title: titleFromMarkdown(content),
-    });
-  }
+    };
+  });
 
   entries.sort((a, b) => a.path.localeCompare(b.path));
 
@@ -179,17 +196,23 @@ async function syncFullDocs(tree) {
 
 async function main() {
   fs.mkdirSync(CONTENT_DIR, { recursive: true });
-  await syncDirectory("docs/academy", "academy");
-  await syncDirectory("docs/adr", "adr");
-  await syncFile("docs/release-notes.md", "release-notes.md");
-
   const tree = await api(`${API_BASE}/git/trees/${BRANCH}?recursive=1`);
+  if (tree.truncated) {
+    throw new Error("GitHub tree response was truncated; refusing to generate a partial docs sync");
+  }
+
+  await syncDirectory("docs/academy", "academy", tree);
+  await syncDirectory("docs/adr", "adr", tree);
+  await syncFile("docs/release-notes.md", "release-notes.md");
   await syncFullDocs(tree);
 
   console.log("Docs sync complete.");
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
