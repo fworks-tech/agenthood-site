@@ -9,7 +9,9 @@
  * - `title` must match the first `# ` heading
  *
  * `--lenient` (used by predev) skips invalid articles with a warning so the
- * dev server still boots while an article is being written; prebuild stays strict.
+ * dev server still boots while an article is being written, and leaves the
+ * tracked manifest.json untouched so a half-written draft cannot be committed;
+ * prebuild stays strict.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -21,6 +23,16 @@ const NEWS_DIR = path.join(CONTENT_DIR, "news");
 const MANIFEST_PATH = path.join(NEWS_DIR, "manifest.json");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isIsoDate(date) {
+  if (typeof date !== "string" || !DATE_PATTERN.test(date)) return false;
+  const parsed = new Date(date);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
+}
+
+export function shouldWriteManifest(lenient, entryCount, fileCount) {
+  return !lenient || entryCount === fileCount;
+}
 
 export function buildNewsManifest({ strict = true } = {}) {
   const files = fs
@@ -69,7 +81,7 @@ function buildEntry(file, text) {
   if (typeof title !== "string" || !title.trim()) {
     throw new Error(`front matter must define a non-empty "title"`);
   }
-  if (typeof date !== "string" || !DATE_PATTERN.test(date) || Number.isNaN(new Date(date).getTime())) {
+  if (!isIsoDate(date)) {
     throw new Error(`front matter "date" must be an ISO date (YYYY-MM-DD)`);
   }
   if (typeof author !== "string" || !author.trim()) {
@@ -121,6 +133,11 @@ function titleFromMarkdown(text) {
 function main() {
   const lenient = process.argv.includes("--lenient");
   const entries = buildNewsManifest({ strict: !lenient });
+  const fileCount = fs.readdirSync(NEWS_DIR).filter((f) => f.endsWith(".md")).length;
+  if (!shouldWriteManifest(lenient, entries.length, fileCount)) {
+    console.warn("[news-manifest] lenient mode skipped invalid article(s); leaving content/news/manifest.json unchanged");
+    return;
+  }
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n", "utf8");
   console.log(`[news-manifest] wrote ${entries.length} entries to content/news/manifest.json`);
 }

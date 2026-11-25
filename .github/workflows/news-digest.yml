@@ -46,8 +46,9 @@ jobs:
         if: startsWith(steps.generate.outputs.result, 'WROTE')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIGEST_RESULT: ${{ steps.generate.outputs.result }}
         run: |
-          POST=$(echo "${{ steps.generate.outputs.result }}" | sed 's/^WROTE content\/news\///')
+          POST=$(echo "$DIGEST_RESULT" | sed 's/^WROTE content\/news\///')
           SLUG=$(basename "$POST" .md)                # whats-new-2026-08-08
           DATE=${SLUG##whats-new-}                    # 2026-08-08
           BRANCH="news-digest/$DATE"

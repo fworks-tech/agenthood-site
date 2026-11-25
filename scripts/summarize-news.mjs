@@ -88,21 +88,21 @@ async function summarize(text) {
   return summary.slice(0, MAX_SUMMARY_CHARS);
 }
 
-function upsertSummary(filePath, summary) {
+export function upsertSummary(filePath, summary) {
   const text = fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n");
-  const parsed = parseFrontMatter(text);
-  if (!parsed) {
+  if (parseFrontMatter(text) === null) {
     throw new Error(`${filePath}: missing YAML front matter. Add front matter first, then re-run.`);
   }
 
+  const closing = text.indexOf("\n---\n", 4);
+  const frontMatter = text.slice(4, closing);
   const encoded = summary.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  let output;
-  if (/^---\n([\s\S]*?)\nsummary:[\s\S]*?\n([\s\S]*)$/.test(text)) {
-    output = text.replace(/^(---\n[\s\S]*?\n)summary:[^\n]*\n/, `$1summary: "${encoded}"\n`);
-  } else {
-    output = text.replace(/^(---\n[\s\S]*?\n)(---)/, `$1summary: "${encoded}"\n$2`);
-  }
-  fs.writeFileSync(filePath, output, "utf8");
+  const line = `summary: "${encoded}"`;
+  const hasSummary = /^summary:[^\n]*(?:\n|$)/m.test(frontMatter);
+  const updated = hasSummary
+    ? frontMatter.replace(/^summary:[^\n]*(\n?)/m, (_, newline) => `${line}${newline}`)
+    : `${frontMatter}\n${line}`;
+  fs.writeFileSync(filePath, `---\n${updated}${text.slice(closing)}`, "utf8");
 }
 
 async function main() {
