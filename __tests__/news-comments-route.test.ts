@@ -70,6 +70,14 @@ describe("news comments route captcha gating", () => {
     expect(json.error).toBe("Captcha verification failed");
   });
 
+  it("fails closed when CAPTCHA is required but misconfigured", async () => {
+    process.env.TURNSTILE_REQUIRED = "true";
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+    const res = await post(VALID_BODY);
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toBe("CAPTCHA configuration missing");
+  });
+
   it("bypasses the captcha gate when Turnstile is unconfigured", async () => {
     const res = await post(VALID_BODY);
     expect(res.status).toBe(503);

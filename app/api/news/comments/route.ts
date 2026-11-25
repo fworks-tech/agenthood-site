@@ -71,13 +71,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Name and comment are required" }, { status: 400 });
   }
 
-  if (
-    TURNSTILE_ENABLED &&
-    TURNSTILE_SECRET &&
-    TURNSTILE_SITE_KEY &&
-    (!token || !(await verifyTurnstile(token)))
-  ) {
-    return NextResponse.json({ error: "Captcha verification failed" }, { status: 400 });
+  if (TURNSTILE_ENABLED) {
+    if (!TURNSTILE_SECRET || !TURNSTILE_SITE_KEY) {
+      if (TURNSTILE_REQUIRED) {
+        console.error("comments.turnstile_config_missing");
+        return NextResponse.json({ error: "CAPTCHA configuration missing" }, { status: 503 });
+      }
+    } else if (!token || !(await verifyTurnstile(token))) {
+      return NextResponse.json({ error: "Captcha verification failed" }, { status: 400 });
+    }
   }
 
   if (!KV) {

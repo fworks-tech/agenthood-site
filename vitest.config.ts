@@ -10,6 +10,7 @@ export default defineConfig({
     testTimeout: 10000,
     // Warms the route module graphs once per run; see __tests__/global-setup.ts.
     globalSetup: ["__tests__/global-setup.ts"],
+    setupFiles: ["__tests__/setup-env.ts"],
     coverage: {
       provider: "v8",
       include: [
