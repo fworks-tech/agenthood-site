@@ -400,6 +400,13 @@ describe("code_execution sandbox", () => {
     expect(result).not.toContain("API_KEY");
   });
 
+  it('bounds native allocations with worker memory limits', async () => {
+    const result = await executeTool('code_execution', {
+      code: 'new Array(2 ** 30).fill("x")',
+    })
+    expect(result).toMatch(/^Error: /)
+  })
+
   it('rejects oversized code before running it', async () => {
     const result = await executeTool('code_execution', {
       code: 'x'.repeat(CODE_EXECUTION_MAX_CHARS + 1),

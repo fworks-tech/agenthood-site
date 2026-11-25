@@ -1,6 +1,7 @@
 import type { ToolSchema } from "agenthood/dist/llm";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { spawn } from "node:child_process";
 import { getCustomToolSchemas } from "./custom-tools";
 
 export interface ToolDefinition {
@@ -27,6 +28,71 @@ export const MAX_FETCH_REDIRECTS = 5
 export const CODE_EXECUTION_MAX_CHARS = 4_000
 const CODE_RESULT_MAX_VALUE_CHARS = 200
 const CODE_RESULT_MAX_ITEMS = 100
+
+// The worker owns the memory limit: the vm timeout alone cannot stop a native
+// allocation, and a eval'd worker must never receive user code as its source.
+const WORKER_SOURCE = `
+const vm = require('node:vm')
+const { parentPort, workerData } = require('node:worker_threads')
+try {
+  const context = vm.createContext(Object.create(null), { codeGeneration: { strings: false, wasm: false } })
+  const result = new vm.Script(workerData.code, { filename: 'user-code.js' }).runInContext(context, { timeout: workerData.timeout })
+  if (result === undefined) {
+    parentPort.postMessage({ ok: true, text: 'Executed successfully (undefined result)' })
+  } else {
+    const seen = new WeakSet()
+    const replacer = (_key, value) => {
+      if (typeof value === 'string' && value.length > workerData.valueChars) return value.slice(0, workerData.valueChars)
+      if (value && typeof value === 'object') {
+        if (seen.has(value)) return '[circular]'
+        seen.add(value)
+        if (Array.isArray(value)) return value.slice(0, workerData.maxItems)
+        const trimmed = {}
+        let count = 0
+        for (const key in value) {
+          if (count >= workerData.maxItems) break
+          trimmed[key] = value[key]
+          count += 1
+        }
+        return trimmed
+      }
+      return value
+    }
+    const text = typeof result === 'string'
+      ? result.slice(0, workerData.maxChars)
+      : JSON.stringify(result, replacer, 2).slice(0, workerData.maxChars)
+    parentPort.postMessage({ ok: true, text })
+  }
+} catch (err) {
+  parentPort.postMessage({ ok: false, error: err instanceof Error ? err.message : String(err) })
+}
+`
+
+// A fatal V8 out-of-memory abort can take down the whole process even with
+// worker resourceLimits, so the worker runs inside a child with its own heap.
+const CHILD_SOURCE = `
+const { Worker } = require('node:worker_threads')
+const workerSource = ${JSON.stringify(WORKER_SOURCE)}
+let input = ''
+process.stdin.setEncoding('utf8')
+process.stdin.on('data', (chunk) => { input += chunk })
+process.stdin.on('end', () => {
+  try {
+    const worker = new Worker(workerSource, {
+      eval: true,
+      workerData: JSON.parse(input),
+      resourceLimits: { maxOldGenerationSizeMb: 64, maxYoungGenerationSizeMb: 16, codeRangeSizeMb: 8, stackSizeMb: 2 },
+      timeout: 5000,
+    })
+    worker.on('message', (message) => { process.stdout.write(JSON.stringify(message)); process.exit(0) })
+    worker.on('error', (err) => { process.stdout.write(JSON.stringify({ ok: false, error: err.message })); process.exit(0) })
+    worker.on('exit', () => { process.stdout.write(JSON.stringify({ ok: false, error: 'worker exited' })); process.exit(0) })
+  } catch (err) {
+    process.stdout.write(JSON.stringify({ ok: false, error: err.message }))
+    process.exit(0)
+  }
+})
+`
 
 const ALLOWED_FETCH_HOSTS = [
   "github.com",
@@ -138,30 +204,41 @@ async function webFetchHandler(
   }
 }
 
-function serializeBoundedResult(value: unknown): string {
-  if (typeof value === 'string') return value.slice(0, TOOL_RESULT_MAX_CHARS)
-  const seen = new WeakSet<object>()
-  const replacer = (_key: string, v: unknown): unknown => {
-    if (typeof v === 'string' && v.length > CODE_RESULT_MAX_VALUE_CHARS) {
-      return v.slice(0, CODE_RESULT_MAX_VALUE_CHARS)
+function runCodeInWorker(code: string): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, ['--max-old-space-size=64', '-e', CHILD_SOURCE], {
+      stdio: ['pipe', 'pipe', 'ignore'],
+    })
+    let output = ''
+    let settled = false
+    const finish = (text: string) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      child.kill()
+      resolve(text)
     }
-    if (Array.isArray(v) && v.length > CODE_RESULT_MAX_ITEMS) return v.slice(0, CODE_RESULT_MAX_ITEMS)
-    if (v && typeof v === 'object') {
-      if (seen.has(v)) return '[circular]'
-      seen.add(v)
-      if (!Array.isArray(v)) {
-        const trimmed: Record<string, unknown> = {}
-        let count = 0
-        for (const key in v) {
-          if (count >= CODE_RESULT_MAX_ITEMS) return trimmed
-          trimmed[key] = (v as Record<string, unknown>)[key]
-          count += 1
-        }
+    const timer = setTimeout(() => finish('Error: code execution timed out'), 8000)
+
+    child.stdout.on('data', (chunk) => { output += String(chunk) })
+    child.on('close', (exitCode) => {
+      try {
+        const message = JSON.parse(output) as { ok: boolean; text?: string; error?: string }
+        finish(message.ok ? (message.text ?? '') : `Error: ${message.error ?? 'unknown error'}`)
+      } catch {
+        finish(`Error: code execution failed (exit ${exitCode})`)
       }
-    }
-    return v
-  }
-  return JSON.stringify(value, replacer, 2).slice(0, TOOL_RESULT_MAX_CHARS)
+    })
+    child.on('error', (err) => finish(`Error: ${err.message}`))
+
+    child.stdin.end(JSON.stringify({
+      code,
+      timeout: 5000,
+      maxChars: TOOL_RESULT_MAX_CHARS,
+      valueChars: CODE_RESULT_MAX_VALUE_CHARS,
+      maxItems: CODE_RESULT_MAX_ITEMS,
+    }))
+  })
 }
 
 async function codeExecutionHandler(
@@ -173,33 +250,10 @@ async function codeExecutionHandler(
     return `Error: code exceeds ${CODE_EXECUTION_MAX_CHARS} characters`
   }
 
-  // shortcut: the VM timeout cannot bound native allocations, so a tiny
-  // script can still exhaust the function heap; move to a worker with
-  // resourceLimits if that becomes exploitable in practice.
-  const vm = await import("node:vm");
-  // Hardening is load-bearing, not decoration. A bare createContext({}) hands
-  // user code the HOST realm's prototype chain, so this.constructor.constructor
-  // reaches the real `process` and exfiltrates every secret in process.env
-  // (OPENCODE_API_KEY, Sentry DSN, Turnstile secret, Upstash token) through
-  // the tool result. Two settings close it together:
-  //   - a null-prototype sandbox, so there is no host prototype to walk
-  //   - codeGeneration off, so eval/Function/WebAssembly are refused
-  // Verified against 14 escape vectors; all blocked, ordinary JS unaffected.
-  // Still not a true sandbox: it isolates the realm, not the OS.
-  const context = vm.createContext(Object.create(null) as Record<string, unknown>, {
-    codeGeneration: { strings: false, wasm: false },
-  });
-
-  try {
-    const script = new vm.Script(code, { filename: "user-code.js" });
-    const result = script.runInContext(context, { timeout: 5000 })
-    if (result === undefined) return "Executed successfully (undefined result)"
-    // Same cap as web_fetch: large outputs are re-sent on every loop
-    // iteration, so an unsliced dump would blow the context budget.
-    return serializeBoundedResult(result)
-  } catch (err) {
-    return `Error: ${err instanceof Error ? err.message : String(err)}`;
-  }
+  // The null-prototype context and disabled code generation keep the worker's
+  // realm isolated from the host; resourceLimits bound native allocations the
+  // vm timeout cannot stop. Still a realm sandbox, not an OS sandbox.
+  return runCodeInWorker(code)
 }
 
 // Packaged agenthood skill documents. The prompt advertises these names to
