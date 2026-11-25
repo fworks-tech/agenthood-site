@@ -43,10 +43,18 @@ test.describe("Mobile — site chrome and content pages", () => {
   test("help tips open on tap", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 740 });
     await page.goto("/");
-    await page.getByRole("button", { name: /^Help: All 20 Society members/ }).tap();
-    await expect(
-      page.getByRole("tooltip").filter({ hasText: "All 20 Society members available" }).first(),
-    ).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const help = page.getByRole("button", { name: /^Help: All 20 Society members/ });
+    const tip = page
+      .getByRole("tooltip")
+      .filter({ hasText: "All 20 Society members available" })
+      .first();
+    // A synthetic touch can be swallowed while Mantine attaches its floating
+    // tooltip handlers; retry the gesture before treating it as broken.
+    await expect(async () => {
+      await help.tap();
+      await expect(tip).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
   });
 
   test("workspace instructions stay reachable after selecting an agent", async ({ page }) => {
