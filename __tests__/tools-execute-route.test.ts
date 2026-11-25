@@ -37,16 +37,34 @@ async function post(body: unknown): Promise<Response> {
 }
 
 describe("/api/studio/tools/execute", () => {
-  it("executes code_execution and returns the result", async () => {
-    const res = await post({ tool: "code_execution", args: { code: "1 + 1" } });
+  it("executes code_execution for a code-lane member", async () => {
+    const res = await post({ agentId: 'the-builder', tool: "code_execution", args: { code: "1 + 1" } })
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.result).toBe("2");
     expect(data.error).toBeUndefined();
   });
 
+  it("refuses code_execution for a prose-lane member", async () => {
+    const res = await post({ agentId: 'the-reviewer', tool: "code_execution", args: { code: "1 + 1" } })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.code).toBe('VALIDATION_ERROR')
+    expect(data.error).toContain('not allowed')
+    expect(data.result).toBeUndefined()
+  })
+
+  it("requires agentId before executing any tool", async () => {
+    const res = await post({ tool: "code_execution", args: { code: "1 + 1" } })
+    expect(res.status).toBe(400)
+    const data = await res.json()
+    expect(data.code).toBe('VALIDATION_ERROR')
+    expect(data.error).toContain('agentId')
+    expect(data.result).toBeUndefined()
+  })
+
   it("classifies a failing tool as a structured error", async () => {
-    const res = await post({ tool: "code_execution", args: { code: "throw new Error('boom')" } });
+    const res = await post({ agentId: 'the-builder', tool: "code_execution", args: { code: "throw new Error('boom')" } })
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.result).toBeUndefined();

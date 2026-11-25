@@ -23,6 +23,10 @@ export const MAX_TOOL_ITERATIONS = 25;
 export const PLAYGROUND_MAX_TOOL_ITERATIONS = 10;
 export const TOOL_RESULT_MAX_CHARS = 6_000;
 export const FETCH_TIMEOUT_MS = 15_000;
+export const MAX_FETCH_REDIRECTS = 5
+export const CODE_EXECUTION_MAX_CHARS = 4_000
+const CODE_RESULT_MAX_VALUE_CHARS = 200
+const CODE_RESULT_MAX_ITEMS = 100
 
 const ALLOWED_FETCH_HOSTS = [
   "github.com",
@@ -42,6 +46,27 @@ function isAllowedFetchUrl(urlStr: string): boolean {
   }
 }
 
+function isRedirect(status: number): boolean {
+  return status >= 300 && status < 400
+}
+
+async function readBoundedText(body: ReadableStream<Uint8Array> | null): Promise<string> {
+  if (!body) return ''
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let out = ''
+  try {
+    while (out.length < TOOL_RESULT_MAX_CHARS) {
+      const { done, value } = await reader.read()
+      if (done) break
+      out += decoder.decode(value, { stream: true })
+    }
+  } finally {
+    await reader.cancel().catch(() => {})
+  }
+  return out.slice(0, TOOL_RESULT_MAX_CHARS)
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -56,52 +81,101 @@ async function webFetchHandler(
   args: Record<string, unknown>,
   signal?: AbortSignal,
 ): Promise<string> {
-  const url = args.url as string;
-  if (!url) return "Error: url is required";
+  const url = args.url as string
+  if (!url) return 'Error: url is required'
 
-  if (!isAllowedFetchUrl(url)) {
-    return `Error: URL not allowed. Allowed hosts: ${ALLOWED_FETCH_HOSTS.join(", ")}`;
-  }
+  const notAllowed = `Error: URL not allowed. Allowed hosts: ${ALLOWED_FETCH_HOSTS.join(', ')}`
+  if (!isAllowedFetchUrl(url)) return notAllowed
 
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  if (signal) signal.addEventListener("abort", () => ctrl.abort());
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS)
+  if (signal) signal.addEventListener('abort', () => ctrl.abort())
 
-  const headers = { "User-Agent": "Agenthood/1.0" };
-  const doFetch = () => fetch(url, { signal: ctrl.signal, headers });
+  const headers = { 'User-Agent': 'Agenthood/1.0' }
+  const doFetch = (target: string) => fetch(target, { signal: ctrl.signal, headers, redirect: 'manual' })
 
   try {
-    let res = await doFetch();
+    let currentUrl = url
+    let res = await doFetch(currentUrl)
+
+    // fetch() would follow redirects internally and hand back a body from a
+    // host the initial allow-list check never saw, so each hop is checked.
+    for (let i = 0; i < MAX_FETCH_REDIRECTS && isRedirect(res.status); i++) {
+      const location = res.headers.get('location')
+      if (!location) return `Error: HTTP ${res.status} ${res.statusText}`
+      let nextUrl: string
+      try {
+        nextUrl = new URL(location, currentUrl).toString()
+      } catch {
+        return 'Error: invalid redirect URL'
+      }
+      if (!isAllowedFetchUrl(nextUrl)) return notAllowed
+      try { await res.body?.cancel() } catch { /* drop the error body */ }
+      currentUrl = nextUrl
+      res = await doFetch(currentUrl)
+    }
+    if (isRedirect(res.status)) return 'Error: too many redirects'
+
     // Single retry on 5xx: hosts (notably GitHub) intermittently 503
     // datacenter egress. 4xx is the caller's mistake — no retry.
     if (res.status >= 500 && res.status < 600) {
-      try { await res.body?.cancel(); } catch { /* drop the error body */ }
-      await new Promise((r) => setTimeout(r, 500));
-      res = await doFetch();
+      try { await res.body?.cancel() } catch { /* drop the error body */ }
+      await new Promise((r) => setTimeout(r, 500))
+      res = await doFetch(currentUrl)
     }
-    if (!res.ok) return `Error: HTTP ${res.status} ${res.statusText}`;
+    if (!res.ok) return `Error: HTTP ${res.status} ${res.statusText}`
+    if (res.url && !isAllowedFetchUrl(res.url)) return notAllowed
 
-    const contentType = res.headers.get("content-type") ?? "";
-    const text = await res.text();
+    const contentType = res.headers.get('content-type') ?? ''
+    const text = await readBoundedText(res.body)
 
-    if (contentType.includes("text/html")) {
-      const stripped = stripHtml(text);
-      return stripped.slice(0, TOOL_RESULT_MAX_CHARS);
-    }
-    return text.slice(0, TOOL_RESULT_MAX_CHARS);
+    if (contentType.includes('text/html')) return stripHtml(text)
+    return text
   } catch (err) {
-    return `Error: ${err instanceof Error ? err.message : String(err)}`;
+    return `Error: ${err instanceof Error ? err.message : String(err)}`
   } finally {
-    clearTimeout(timer);
+    clearTimeout(timer)
   }
+}
+
+function serializeBoundedResult(value: unknown): string {
+  if (typeof value === 'string') return value.slice(0, TOOL_RESULT_MAX_CHARS)
+  const seen = new WeakSet<object>()
+  const replacer = (_key: string, v: unknown): unknown => {
+    if (typeof v === 'string' && v.length > CODE_RESULT_MAX_VALUE_CHARS) {
+      return v.slice(0, CODE_RESULT_MAX_VALUE_CHARS)
+    }
+    if (Array.isArray(v) && v.length > CODE_RESULT_MAX_ITEMS) return v.slice(0, CODE_RESULT_MAX_ITEMS)
+    if (v && typeof v === 'object') {
+      if (seen.has(v)) return '[circular]'
+      seen.add(v)
+      if (!Array.isArray(v)) {
+        const trimmed: Record<string, unknown> = {}
+        let count = 0
+        for (const key in v) {
+          if (count >= CODE_RESULT_MAX_ITEMS) return trimmed
+          trimmed[key] = (v as Record<string, unknown>)[key]
+          count += 1
+        }
+      }
+    }
+    return v
+  }
+  return JSON.stringify(value, replacer, 2).slice(0, TOOL_RESULT_MAX_CHARS)
 }
 
 async function codeExecutionHandler(
   args: Record<string, unknown>,
 ): Promise<string> {
-  const code = args.code as string;
-  if (!code) return "Error: code is required";
+  const code = args.code as string
+  if (!code || typeof code !== 'string') return 'Error: code is required'
+  if (code.length > CODE_EXECUTION_MAX_CHARS) {
+    return `Error: code exceeds ${CODE_EXECUTION_MAX_CHARS} characters`
+  }
 
+  // shortcut: the VM timeout cannot bound native allocations, so a tiny
+  // script can still exhaust the function heap; move to a worker with
+  // resourceLimits if that becomes exploitable in practice.
   const vm = await import("node:vm");
   // Hardening is load-bearing, not decoration. A bare createContext({}) hands
   // user code the HOST realm's prototype chain, so this.constructor.constructor
@@ -118,12 +192,11 @@ async function codeExecutionHandler(
 
   try {
     const script = new vm.Script(code, { filename: "user-code.js" });
-    const result = script.runInContext(context, { timeout: 5000 });
-    if (result === undefined) return "Executed successfully (undefined result)";
+    const result = script.runInContext(context, { timeout: 5000 })
+    if (result === undefined) return "Executed successfully (undefined result)"
     // Same cap as web_fetch: large outputs are re-sent on every loop
     // iteration, so an unsliced dump would blow the context budget.
-    const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-    return text.slice(0, TOOL_RESULT_MAX_CHARS);
+    return serializeBoundedResult(result)
   } catch (err) {
     return `Error: ${err instanceof Error ? err.message : String(err)}`;
   }

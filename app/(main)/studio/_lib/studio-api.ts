@@ -45,6 +45,7 @@ export async function sendChat(
 export async function replayToolExecution(
   tool: string,
   args: Record<string, unknown>,
+  agentId: string,
   turnstileToken?: string,
   correlationId?: string,
 ): Promise<ExecuteToolResponse> {
@@ -53,7 +54,7 @@ export async function replayToolExecution(
   const res = await fetch("/api/studio/tools/execute/", {
     method: "POST",
     headers,
-    body: JSON.stringify({ tool, args, turnstileToken }),
+    body: JSON.stringify({ tool, args, agentId, turnstileToken }),
   });
   if (!res.ok) {
     let errorBody: { error?: string; code?: string } | null = null;

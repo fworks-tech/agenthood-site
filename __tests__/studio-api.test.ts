@@ -70,6 +70,7 @@ describe("replayToolExecution", () => {
     const outcome = await replayToolExecution(
       "code_execution",
       { code: "1 + 1" },
+      "the-builder",
       "tok-2",
       "corr-1",
     );
@@ -83,6 +84,7 @@ describe("replayToolExecution", () => {
     expect(JSON.parse(init.body)).toEqual({
       tool: "code_execution",
       args: { code: "1 + 1" },
+      agentId: "the-builder",
       turnstileToken: "tok-2",
     });
   });
@@ -96,8 +98,8 @@ describe("replayToolExecution", () => {
         ),
       ),
     );
-    await expect(replayToolExecution("nope", {})).rejects.toThrow("Unknown tool");
-    await expect(replayToolExecution("nope", {})).rejects.toMatchObject({
+    await expect(replayToolExecution("nope", {}, "the-builder")).rejects.toThrow("Unknown tool");
+    await expect(replayToolExecution("nope", {}, "the-builder")).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
   });
