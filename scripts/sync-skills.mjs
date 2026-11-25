@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
 import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
@@ -68,11 +68,23 @@ function hasCodeWriteContract(markdown) {
   return Boolean(declared && /\bcode\.(write|refactor)\b/.test(declared[1]));
 }
 
-async function main() {
+export async function collectMemberData(fetchMember) {
   const skills = {};
   const prompts = {};
   const codeAgents = [];
 
+  for (const member of MEMBERS) {
+    const raw = await fetchMember(member);
+    skills[member] = stripFrontmatter(raw);
+    prompts[member] = extractWhenToUse(raw);
+    if (hasCodeWriteContract(raw)) codeAgents.push(member);
+    console.log(`  ✓ ${member} (${prompts[member].length} prompts)`);
+  }
+
+  return { skills, prompts, codeAgents };
+}
+
+async function main() {
   if (INSTALLED_VERSION) {
     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
   } else if (process.argv.includes("--allow-main")) {
@@ -93,18 +105,9 @@ async function main() {
     if (!registryIds.has(member)) {
       console.warn(`  ! ${member} missing from upstream registry.json`);
     }
-    try {
-      const raw = await fetchSkill(member);
-      skills[member] = stripFrontmatter(raw);
-      prompts[member] = extractWhenToUse(raw);
-      if (hasCodeWriteContract(raw)) codeAgents.push(member);
-      console.log(`  ✓ ${member} (${prompts[member].length} prompts)`);
-    } catch (err) {
-      console.warn(`  ✗ ${member}: ${err.message}`);
-      skills[member] = "";
-      prompts[member] = [];
-    }
   }
+
+  const { skills, prompts, codeAgents } = await collectMemberData(fetchSkill);
 
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -217,14 +220,17 @@ async function verify() {
   console.log(`  ✓ sync-skills --verify: generated data matches agenthood v${INSTALLED_VERSION}`);
 }
 
-if (process.argv.includes("--verify")) {
-  verify().catch((err) => {
-    console.error("sync-skills --verify failed:", err.message);
-    process.exit(1);
-  });
-} else {
-main().catch((err) => {
-  console.error("sync-skills failed:", err.message);
-  process.exit(1);
-});
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  if (process.argv.includes("--verify")) {
+    verify().catch((err) => {
+      console.error("sync-skills --verify failed:", err.message);
+      process.exit(1);
+    });
+  } else {
+    main().catch((err) => {
+      console.error("sync-skills failed:", err.message);
+      process.exit(1);
+    });
+  }
 }

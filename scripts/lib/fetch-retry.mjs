@@ -3,6 +3,7 @@ const DEFAULT_BASE_DELAY_MS = 2000;
 const DEFAULT_MIRROR_AFTER_ATTEMPTS = 2;
 const MAX_ERROR_BODY_CHARS = 200;
 const JITTER_MS = 500;
+const TIMEOUT_MS = 30_000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -14,6 +15,12 @@ function backoffDelay(attempt, baseDelayMs) {
 
 function isRetryable(status) {
   return status === 429 || status >= 500;
+}
+
+// GitHub throttles the REST API with 403 + x-ratelimit-remaining: 0. A bare
+// 403 is a permissions error and must stay non-retryable.
+function isRateLimited(res) {
+  return res.status === 403 && res.headers?.get?.("x-ratelimit-remaining") === "0";
 }
 
 async function failureWithBody(candidate, res) {
@@ -41,6 +48,7 @@ export async function fetchWithRetry(url, fetchOptions, retryOptions = {}) {
     retryOptions.mirrorAfterAttempts ?? DEFAULT_MIRROR_AFTER_ATTEMPTS,
     maxAttempts,
   );
+  const retryRateLimit = retryOptions.retryRateLimit ?? false;
 
   const firstPass = mirrors.length > 0 ? mirrorAfterAttempts : maxAttempts;
   const plan = [[url, firstPass]];
@@ -53,7 +61,11 @@ export async function fetchWithRetry(url, fetchOptions, retryOptions = {}) {
     for (let attempt = 1; attempt <= attempts; attempt += 1) {
       let res;
       try {
-        res = await fetch(candidate, fetchOptions);
+        const timeoutSignal = AbortSignal.timeout(TIMEOUT_MS);
+        const signal = fetchOptions?.signal
+          ? AbortSignal.any([fetchOptions.signal, timeoutSignal])
+          : timeoutSignal;
+        res = await fetch(candidate, { ...fetchOptions, signal });
       } catch (err) {
         lastError = err;
         if (attempt >= attempts) break;
@@ -69,7 +81,7 @@ export async function fetchWithRetry(url, fetchOptions, retryOptions = {}) {
       }
 
       lastError = await failureWithBody(candidate, res);
-      if (!isRetryable(res.status) || attempt >= attempts) break;
+      if ((!isRetryable(res.status) && !(retryRateLimit && isRateLimited(res))) || attempt >= attempts) break;
 
       const delay = backoffDelay(attempt, baseDelayMs);
       console.warn(`  ! ${candidate} returned ${res.status} (attempt ${attempt}/${attempts}), retrying in ${Math.round(delay)}ms`);

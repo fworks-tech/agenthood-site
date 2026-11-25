@@ -44,6 +44,7 @@
 # misc
 .DS_Store
 *.pem
+pr305.diff
 
 # debug
 npm-debug.log*
