@@ -13,7 +13,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)** · [Studio Play
 
 Agenthood is a 20-member AI society — planners, builders, reviewers, auditors, and more — each a portable Markdown skill file, plus a TypeScript runtime that runs them autonomously across your whole software lifecycle.
 
-**Agenthood 4.0 is out.** Members and workflows are data now: register your own agents at runtime, declare a multi-step chain in `chains.yaml`, and every step keeps the traces, decisions, and provenance records the built-in Society already writes.
+**Agenthood 4.4 is out.** Members and workflows are data now: register your own agents at runtime, declare a multi-step chain in `chains.yaml`, and every step keeps the traces, decisions, and provenance records the built-in Society already writes.
 
 Load them into **Claude Code, Copilot, Gemini CLI, Cursor, OpenCode**, or any runtime that supports skill files. Hand them a task, or let them run end to end.
 
@@ -24,7 +24,7 @@ No lock-in. No vendor-specific format. Setup in ~2 minutes. Every decision audit
 ## Features
 
 - **20 specialized members** — architect, reviewer, tester, auditor, security, DevOps, and more
-- **41 utility skills** — specialist capability files (docker, kubernetes, jira, postgres, and more) that activate on task match
+- **23 utility skills** — specialist capability files (docker, kubernetes, jira, postgres, and more) that activate on task match
 - **Delegation chains** — chain agents together: tester → builder → reviewer → doorman
 - **Composable workflows (4.0)** — register custom members and declare multi-step `chains.yaml` workflows
 - **Skill contracts (4.0)** — `allowed-tools` and model/tool/dependency gating decide where a skill may run
@@ -34,7 +34,7 @@ No lock-in. No vendor-specific format. Setup in ~2 minutes. Every decision audit
 - **Decision intelligence** — tamper-evident audit trail with hash-chain provenance
 - **Conventional commit enforcement** — zero tolerance for `fix stuff`
 - **Agenthood Studio** — browser-based playground with multi-agent workspaces
-- **7 LLM providers** — Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode
+- **7 LLM providers** — Anthropic, OpenAI, Groq, OpenRouter, Ollama, OpenCode, OpenCode Go
 - **BYOK or zero-setup** — bring your own API key or use the default
 
 ---
@@ -139,7 +139,7 @@ The full set lives in [`docs/adr/`](docs/adr/) — covering build-time docs sync
 
 | Repo | Purpose |
 |------|---------|
-| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 20 member skill files, 41 utility skills, TypeScript runtime, CI workflows |
+| [fworks-tech/agenthood](https://github.com/fworks-tech/agenthood) | The Society — 20 member skill files, 23 utility skills, TypeScript runtime, CI workflows |
 | [fworks-tech/flabs.tech](https://github.com/fworks-tech/flabs.tech) | Personal portfolio of the author |
 
 ---

@@ -5,6 +5,75 @@
 
 ---
 
+## v4.4.0: November 19, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** retire librarian and auditor gate warnings once their checks pass (#1125)
+- **Cli:** flag provenance entries the chain never covered (#1121)
+- **Core:** stop url-query over-redaction and catch pkcs8 private keys (#1128), refs #1126
+- **Deps:** sync the lockfile with package.json (#1132)
+
+### ✨ Features
+
+- **Observability:** record the provider that answered in the run trace (#1142)
+
+---
+
+## v4.3.0: November 19, 2026
+
+### ✨ Features
+
+- **Cli:** show run duration, cost and tokens in the audit (#1117)
+- **Cli:** write validated routing records from stdin (#1118)
+
+---
+
+## v4.2.0: November 19, 2026
+
+### 🐛 Bug Fixes
+
+- **Opencode:** give a member run five minutes and an env override (#1109)
+- **Trace:** apply --limit after dropping log entries (#1111)
+
+### ✨ Features
+
+- **Cli:** audit the decision trail in order and verify the chain (#1113)
+
+---
+
+## v4.1.2: November 18, 2026
+
+### 🐛 Bug Fixes
+
+- **Opencode:** run members on node and let a project .env win (#1106)
+
+---
+
+## v4.1.1: November 18, 2026
+
+### 🐛 Bug Fixes
+
+- **Opencode:** port the agenthood plugin to the v2 plugin api (#1103)
+
+---
+
+## v4.1.0: November 18, 2026
+
+### 🐛 Bug Fixes
+
+- **Ci:** give the automated reviewer real input and a deterministic gate (#1085)
+- **Ci:** repair the scheduled rituals and lead the README with the audit record (#1089), refs #1087
+
+### ✨ Features
+
+- adopt the legacy utility skills and widen the public catalog (#1082)
+- **Runtime:** let a host opt out of AGENTS.md prompt injection (#1100), refs #406, #1071
+- **Skills:** cross-location skill dedup with opt-in merge (#1096)
+- **Skills:** load skill bodies on demand at activation (#1097), refs #614
+
+---
+
 ## v4.0.0: November 16, 2026
 
 ### 🐛 Bug Fixes
