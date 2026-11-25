@@ -30,7 +30,7 @@ describe("Provider", () => {
 });
 
 describe("CODE_AGENTS", () => {
-  it("contains the nine members whose 4.0 contract allows writing code", () => {
+  it("contains the nine members whose allowed-tools contract allows writing code", () => {
     expect(CODE_AGENTS).toEqual(
       new Set([
         "the-architect",
