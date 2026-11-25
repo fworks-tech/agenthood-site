@@ -328,13 +328,20 @@ export async function generate({ postDate, dryRun = false, logger = { log: (m) =
     return { status: "noop", reason: "no releases after the last news post" };
   }
 
-  const slug = buildSlug(postDate);
-  const targetPath = path.join(NEWS_DIR, slug);
-  if (fs.existsSync(targetPath)) {
-    const reason = `${slug} already exists with ${releases.length} newer release(s) pending; resolve the existing post or run with a different --date`;
-    logger.log(`[news-digest] ${reason}`);
-    return { status: "noop", reason };
+  let slug = buildSlug(postDate);
+  if (fs.existsSync(path.join(NEWS_DIR, slug))) {
+    // A previous run may have written the article but failed before the
+    // manifest. Rebuild it from disk so the orphan is not silently dropped.
+    const recovered = buildNewsManifest();
+    writeAtomic(MANIFEST_PATH, JSON.stringify(recovered, null, 2) + "\n");
+    let suffix = 2;
+    while (fs.existsSync(path.join(NEWS_DIR, `whats-new-${postDate}-${suffix}.md`))) {
+      suffix += 1;
+    }
+    slug = `whats-new-${postDate}-${suffix}.md`;
+    logger.log(`[news-digest] ${buildSlug(postDate)} already exists; writing ${slug}`);
   }
+  const targetPath = path.join(NEWS_DIR, slug);
 
   logger.log(`[news-digest] drafting digest for ${releases.length} release(s)`);
   let article;

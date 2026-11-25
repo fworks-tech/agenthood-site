@@ -164,17 +164,17 @@ describe("news digest — draft retry", () => {
     expect(stateWrites).toEqual([]);
   });
 
-  it("reports an explicit reason when an existing slug blocks newer releases", async () => {
+  it("uses a suffixed slug and reconciles the manifest when today's digest exists", async () => {
     existsSync.mockReturnValueOnce(true);
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-    fetchMock.mockResolvedValueOnce(releasePage());
+    fetchMock.mockResolvedValueOnce(releasePage()).mockResolvedValueOnce(chatResponse(article));
 
     const result = await generate({ postDate, logger: { log() {} } });
 
-    expect(result.status).toBe("noop");
-    expect(result.reason).toContain("already exists");
-    expect(result.reason).toContain("newer release");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.status).toBe("wrote");
+    expect(result.path).toBe(`whats-new-${postDate}-2.md`);
+    const manifestWrites = writeFileSync.mock.calls.filter(([p]) => String(p).includes("manifest.json"));
+    expect(manifestWrites.length).toBe(2);
   });
 });
