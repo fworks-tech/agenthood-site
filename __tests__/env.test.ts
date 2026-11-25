@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getMaxTokens } from "../app/(main)/studio/_lib/env";
 
 const originalEnv = { ...process.env };
@@ -32,5 +32,23 @@ describe("getMaxTokens", () => {
     expect(getMaxTokens()).toBe(4096);
     process.env.AGENTHOOD_MAX_TOKENS = "-100";
     expect(getMaxTokens()).toBe(4096);
+  });
+});
+
+describe("TURNSTILE_REQUIRED", () => {
+  it("is false when the site key is missing, even if a secret and the legacy flag are set", async () => {
+    vi.resetModules();
+    process.env.TURNSTILE_SECRET_KEY = "secret";
+    delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    process.env.TURNSTILE_REQUIRED = "true";
+    const { TURNSTILE_REQUIRED } = await import("../app/(main)/studio/_lib/env");
+    expect(TURNSTILE_REQUIRED).toBe(false);
+  });
+
+  it("is true only when enabled and the site key is present", async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "site";
+    const { TURNSTILE_REQUIRED } = await import("../app/(main)/studio/_lib/env");
+    expect(TURNSTILE_REQUIRED).toBe(true);
   });
 });

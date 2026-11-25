@@ -24,6 +24,9 @@ function postBody(body: unknown, headers: Record<string, string> = {}): Request 
 }
 
 beforeEach(() => {
+  vi.resetModules()
+  delete process.env.TURNSTILE_SECRET_KEY
+  delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   mockCreateTurnStream.mockReset()
   mockCreateTurnStream.mockResolvedValue(fakeStream([
     JSON.stringify({ type: 'workspace.token', memberId: 'the-builder', data: 'hi', workspaceId: 'ws-1', correlationId: 'c1' }),
@@ -32,6 +35,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('POST /api/studio/workspaces validation', () => {
@@ -226,13 +230,73 @@ describe('POST /api/studio/workspaces success', () => {
     expect(text).toContain('workspace.tool_call')
   })
 
-  it('surfaces adapter failures as 500', async () => {
-    mockCreateTurnStream.mockRejectedValue(new Error('adapter boom'))
+  it('surfaces adapter failures as a generic 500 with a requestId', async () => {
+    const logSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockCreateTurnStream.mockRejectedValue(new Error('sk-secret adapter boom'))
     const { POST } = await import('../app/api/studio/workspaces/route')
     const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])
     expect(res.status).toBe(500)
     const json = await res.json()
     expect(json.code).toBe('WORKSPACE_ERROR')
-    expect(json.error).toContain('adapter boom')
+    expect(json.error).toContain('Provider request failed. Reference:')
+    expect(json.error).not.toContain('sk-secret adapter boom')
+    expect(json.requestId).toBeTruthy()
+    expect(logSpy.mock.calls.map((c) => String(c[0])).join('\n')).toContain('sk-secret adapter boom')
+  })
+})
+
+describe('POST /api/studio/workspaces CAPTCHA and bounds', () => {
+  it('rejects a turn without a CAPTCHA token when Turnstile is configured', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'secret'
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site'
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe('CAPTCHA_FAILED')
+  })
+
+  it('verifies the token and sets the verification cookie', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'secret'
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = 'site'
+    const fetchSpy = vi.fn().mockResolvedValue({ json: async () => ({ success: true }) })
+    vi.stubGlobal('fetch', fetchSpy)
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', turnstileToken: 'token' }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(200)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(res.headers.get('Set-Cookie')).toContain('captcha_verified=')
+    await res.text()
+  })
+
+  it('rejects more than 20 memberIds', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    const memberIds = Array.from({ length: 21 }, () => 'the-builder')
+    const res = await POST(postBody({ memberIds, instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('at most 20')
+  })
+
+  it('deduplicates memberIds before logging and streaming them', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    const res = await POST(postBody({ memberIds: ['the-builder', 'the-builder', 'the-builder'], instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(200)
+    const first = JSON.parse((await res.text()).split('\n')[0])
+    expect(first.members).toEqual(['the-builder'])
+  })
+
+  it('rejects oversized and control-char ids', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', workspaceId: 'w'.repeat(129) }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
+    expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', workspaceId: 'w\u0001bad' }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
+    expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', correlationId: 'c'.repeat(129) }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
+    expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi' }, { 'x-correlation-id': 'h'.repeat(129) }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
+    expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', memberId: 'm\u0002bad' }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
+  })
+
+  it('generates an unguessable workspace id when none is supplied', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])
+    expect(res.headers.get('x-workspace-id')).toMatch(/^ws-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    await res.text()
   })
 })

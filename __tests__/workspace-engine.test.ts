@@ -419,7 +419,10 @@ describe('mediatorNext Jev calibration (promote-only)', () => {
     return mediatorNext(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
   }
 
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete process.env.JEV_INTERNAL_TOKEN
+  })
 
   it('promotes the hop when Jev agrees with confidence >= 60', async () => {
     const { next } = await mediate({ ok: true, json: { value: 'the-builder', probability: 80 } })
@@ -439,5 +442,19 @@ describe('mediatorNext Jev calibration (promote-only)', () => {
   it('falls back to 60 when the Jev hop is unavailable', async () => {
     const { next } = await mediate({ ok: false })
     expect(next?.confidence).toBe(60)
+  })
+
+  it('calls the server bridge without ever attaching the internal token', async () => {
+    process.env.JEV_INTERNAL_TOKEN = 'must-never-reach-client'
+    const fetchMock = vi.fn(async () => Response.json({ value: 'the-builder', probability: 80 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { state } = fresh(['the-builder'])
+    state.thread = [{ role: 'user', content: 'go' }]
+    const { ctx } = mockEngine(['the-builder'], [planJson('the-builder')])
+    const { next } = await mediatorNext(state, RUN.wId, RUN.correlationId, RUN.session, ctx)
+    expect(next?.confidence).toBe(80)
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/studio/workspaces/jev')
+    expect(JSON.stringify(init.headers)).not.toContain('must-never-reach-client')
   })
 })

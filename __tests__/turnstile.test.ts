@@ -256,6 +256,26 @@ describe("Turnstile CAPTCHA validation", () => {
     expect(body.code).toBe("CAPTCHA_FAILED");
   });
 
+  it("fails open when the secret is set but the site key is missing", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "test-secret";
+    delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+    const { POST } = await import("../app/api/studio/chat/route");
+    const req = new Request("http://localhost/api/studio/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId: "the-scribe",
+        messages: [{ role: "user", content: "hello" }],
+        config: {},
+      }),
+    });
+
+    const res = await POST(req);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+  });
+
   it("rejects an expired signed cookie", async () => {
     process.env.TURNSTILE_SECRET_KEY = "test-secret";
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";

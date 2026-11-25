@@ -14,7 +14,10 @@ function jsonFetch(body: unknown, ok = true, status = 200) {
   })
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
 
 describe('zenProtocolForModel', () => {
   it('routes qwen3.8-flash and Claude to /v1/messages', () => {
@@ -67,11 +70,22 @@ describe('ZenMessagesProvider.complete', () => {
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).system).toBe('be terse')
   })
 
-  it('surfaces the real error message (e.g. insufficient funds)', async () => {
+  it('logs the raw upstream detail but exposes only a referenced generic error', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.stubGlobal('fetch', jsonFetch({ error: { message: 'Insufficient account funds' } }, false, 402))
     const provider = new ZenMessagesProvider('key', 'qwen3.8-flash')
-    await expect(provider.complete({ messages: [{ role: 'user', content: 'hi' }] }))
-      .rejects.toThrow(/402.*Insufficient account funds/)
+    let caught: unknown
+    try {
+      await provider.complete({ messages: [{ role: 'user', content: 'hi' }] })
+    } catch (err) {
+      caught = err
+    }
+    const message = (caught as Error).message
+    expect(message).toMatch(/^Provider request failed\. Reference: /)
+    expect(message).not.toContain('Insufficient')
+    const logged = errorSpy.mock.calls.map((c) => String(c[0])).join('\n')
+    expect(logged).toContain('Insufficient account funds')
+    expect(logged).toContain('402')
   })
 })
 

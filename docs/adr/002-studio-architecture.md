@@ -128,7 +128,7 @@ A `Content-Security-Policy` header is applied to all routes via `next.config.ts`
 | Directive | Sources |
 |-----------|---------|
 | `default-src` | `'self'` |
-| `script-src` | `'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com` |
+| `script-src` | `'self' 'unsafe-inline' https://challenges.cloudflare.com` |
 | `style-src` | `'self' 'unsafe-inline'` |
 | `img-src` | `'self' data: blob:` |
 | `font-src` | `'self' data:` |

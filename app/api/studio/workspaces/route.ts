@@ -3,7 +3,16 @@ import { getAgentById } from '@/app/(main)/studio/_data/agents'
 import { createWorkspaceTurnStream } from '@/app/(main)/studio/_lib/workspace-adapter'
 import { logger } from '@/app/(main)/studio/_lib/logger'
 import { emitLogEvent } from '@/app/(main)/studio/_lib/trace'
-import { getWorkspace, saveWorkspace } from '@/app/(main)/studio/_lib/workspace-store'
+import { getWorkspaceAsync, saveWorkspaceAsync } from '@/app/(main)/studio/_lib/workspace-store'
+import { StudioError } from '@/app/(main)/studio/_lib/errors'
+import { providerFailure } from '@/app/(main)/studio/_lib/zen'
+import { generateId } from '@/app/(main)/studio/_lib/ids'
+import {
+  validateTurnstile,
+  createCaptchaCookieValue,
+  getCaptchaCookieAttributes,
+  parseCaptchaCookie,
+} from '@/app/(main)/studio/_lib/captcha'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -12,16 +21,25 @@ export const maxDuration = 60
 const MAX_THREAD_MESSAGES = 200
 const MAX_MESSAGE_CHARS = 20_000
 const MAX_THREAD_TOTAL_CHARS = 100_000
+const MAX_MEMBER_IDS = 20
+const MAX_ID_LENGTH = 128
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+
+function isBoundedId(value: string): boolean {
+  const id = value.trim()
+  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id)
+}
+
+function jsonError(error: string, code: string, status: number, requestId?: string) {
+  return Response.json({ error, code, ...(requestId ? { requestId } : {}) }, { status })
+}
 
 export async function GET(req: NextRequest) {
   const workspaceId = req.nextUrl.searchParams.get('workspaceId')
-  if (!workspaceId) {
-    return new Response(JSON.stringify({ error: 'workspaceId required', code: 'VALIDATION_ERROR' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+  if (!workspaceId || !isBoundedId(workspaceId)) {
+    return jsonError('workspaceId required', 'VALIDATION_ERROR', 400)
   }
-  const session = getWorkspace(workspaceId)
+  const session = await getWorkspaceAsync(workspaceId.trim())
   if (!session) {
     return new Response(JSON.stringify({ error: 'not found', code: 'NOT_FOUND' }), {
       status: 404,
@@ -34,14 +52,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const requestId = generateId()
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON', code: 'VALIDATION_ERROR' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return jsonError('Invalid JSON', 'VALIDATION_ERROR', 400, requestId)
   }
 
   const payload = body as {
@@ -53,23 +69,35 @@ export async function POST(req: NextRequest) {
     thread?: unknown
     correlationId?: unknown
     workspaceMemberIds?: unknown
+    turnstileToken?: unknown
   }
 
-  const memberIds = payload.memberIds
+  let didVerify = false
+  try {
+    didVerify = await validateTurnstile(payload.turnstileToken, parseCaptchaCookie(req.headers.get('cookie')))
+  } catch (err) {
+    if (err instanceof StudioError) {
+      return jsonError(err.message, err.code, err.statusCode, requestId)
+    }
+    throw err
+  }
+
+  const rawMemberIds = payload.memberIds
   const instruction = payload.instruction
 
-  if (!Array.isArray(memberIds) || memberIds.length === 0) {
+  if (!Array.isArray(rawMemberIds) || rawMemberIds.length === 0) {
     return new Response(JSON.stringify({ error: 'memberIds must be a non-empty array', code: 'VALIDATION_ERROR' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  if (rawMemberIds.length > MAX_MEMBER_IDS) {
+    return jsonError(`memberIds must have at most ${MAX_MEMBER_IDS} items`, 'VALIDATION_ERROR', 400, requestId)
+  }
+  const memberIds = [...new Set(rawMemberIds)]
   for (const id of memberIds) {
     if (typeof id !== 'string' || !getAgentById(id)) {
-      return new Response(JSON.stringify({ error: `Invalid memberId: ${String(id)}`, code: 'VALIDATION_ERROR' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return jsonError(`Invalid memberId: ${String(id)}`, 'VALIDATION_ERROR', 400, requestId)
     }
   }
 
@@ -86,14 +114,26 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const workspaceId =
-    typeof payload.workspaceId === 'string' && payload.workspaceId.length > 0
-      ? payload.workspaceId
-      : `ws-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-  const correlationId =
-    typeof payload.correlationId === 'string' && payload.correlationId.length > 0
-      ? payload.correlationId
-      : (req.headers.get('x-correlation-id') ?? `ws-corr-${Date.now()}`)
+  const headerCorrelationId = req.headers.get('x-correlation-id')
+  if (headerCorrelationId !== null && !isBoundedId(headerCorrelationId)) {
+    return jsonError('Invalid x-correlation-id header', 'VALIDATION_ERROR', 400, requestId)
+  }
+  if (payload.workspaceId !== undefined && (typeof payload.workspaceId !== 'string' || !isBoundedId(payload.workspaceId))) {
+    return jsonError('Invalid workspaceId', 'VALIDATION_ERROR', 400, requestId)
+  }
+  if (payload.correlationId !== undefined && (typeof payload.correlationId !== 'string' || !isBoundedId(payload.correlationId))) {
+    return jsonError('Invalid correlationId', 'VALIDATION_ERROR', 400, requestId)
+  }
+  if (payload.memberId !== undefined && (typeof payload.memberId !== 'string' || !isBoundedId(payload.memberId))) {
+    return jsonError('Invalid memberId', 'VALIDATION_ERROR', 400, requestId)
+  }
+  // Possession of the URL is the capability — never a timestamp-guessable id.
+  const workspaceId = typeof payload.workspaceId === 'string' && payload.workspaceId.length > 0
+    ? payload.workspaceId.trim()
+    : `ws-${generateId()}`
+  const correlationId = typeof payload.correlationId === 'string' && payload.correlationId.length > 0
+    ? payload.correlationId.trim()
+    : (headerCorrelationId ?? `ws-corr-${requestId}`)
 
   const memberId =
     typeof payload.memberId === 'string' && payload.memberId.length > 0 ? payload.memberId : memberIds[0]
@@ -138,11 +178,10 @@ export async function POST(req: NextRequest) {
 
   logger.info('workspace.request', { workspaceId, memberId, turnIndex, correlationId, members: memberIds })
 
-  // Server-side session store — reliable shared memory (Map + client localStorage mirror).
-  // Upsert incoming thread so GET can rehydrate after reload; client also persists full
-  // session via workspace-store saveWorkspace after each turn (future Redis swaps Map).
+  // Upsert incoming thread so GET can rehydrate after reload; Redis-backed on
+  // Vercel so the next lambda sees the turn, Map fallback for local dev.
   try {
-    const existing = getWorkspace(workspaceId)
+    const existing = await getWorkspaceAsync(workspaceId)
     const sessionToSave = existing ?? {
       workspaceId,
       correlationId,
@@ -161,7 +200,7 @@ export async function POST(req: NextRequest) {
     sessionToSave.correlationId = correlationId
     sessionToSave.turnCounter = turnIndex
     sessionToSave.updatedAt = Date.now()
-    saveWorkspace(sessionToSave)
+    await saveWorkspaceAsync(sessionToSave)
   } catch {
     // store best-effort
   }
@@ -210,9 +249,10 @@ export async function POST(req: NextRequest) {
           doneSent = true
         } catch (readErr) {
           const msg = readErr instanceof Error ? readErr.message : String(readErr)
-          const errEvt = { type: 'workspace.error', data: msg, workspaceId, correlationId }
+          const reference = generateId()
+          const errEvt = { type: 'workspace.error', data: providerFailure(msg, reference).message, requestId: reference, workspaceId, correlationId }
           controller.enqueue(enc.encode(JSON.stringify(errEvt) + '\n'))
-          logger.error('workspace.stream_read_error', { workspaceId, correlationId, error: msg })
+          logger.error('workspace.stream_read_error', { workspaceId, correlationId, error: msg, requestId: reference })
         } finally {
           if (!doneSent) {
             const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'interrupted', workspaceId, correlationId }
@@ -223,21 +263,21 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return new Response(wrapped, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-        'x-correlation-id': correlationId,
-        'x-workspace-id': workspaceId,
-      },
-    })
+    const headers: Record<string, string> = {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Request-Id': requestId,
+      'x-correlation-id': correlationId,
+      'x-workspace-id': workspaceId,
+    }
+    if (didVerify) {
+      headers['Set-Cookie'] = `captcha_verified=${await createCaptchaCookieValue()}; ${getCaptchaCookieAttributes()}`
+    }
+    return new Response(wrapped, { headers })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    logger.error('workspace.error', { workspaceId, correlationId, error: msg })
-    return new Response(JSON.stringify({ error: msg, code: 'WORKSPACE_ERROR' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    logger.error('workspace.error', { workspaceId, correlationId, error: msg, requestId })
+    return jsonError(providerFailure(msg, requestId).message, 'WORKSPACE_ERROR', 500, requestId)
   }
 }

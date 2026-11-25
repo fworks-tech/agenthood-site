@@ -13,8 +13,17 @@
 // the whole contract — no call-site changes.
 
 import type { LLMResponse, LLMChunk, LLMRequest } from 'agenthood/dist/llm'
+import { logger } from './logger'
+import { generateId } from './ids'
 
 export const ZEN_BASE = 'https://opencode.ai/zen/v1'
+
+// Upstream bodies may carry keys, billing data or internal URLs. Keep the full
+// detail in the server log and give the client only a correlatable reference.
+export function providerFailure(detail: string, requestId: string = generateId()): Error {
+  logger.error('provider.error', { error: detail, requestId })
+  return new Error(`Provider request failed. Reference: ${requestId}`)
+}
 
 export type ZenProtocol = 'chat' | 'messages' | 'systemone' | 'responses'
 
@@ -90,10 +99,7 @@ async function throwZenError(res: Response, provider: string): Promise<never> {
   } catch {
     /* keep raw body */
   }
-  // Surface the real reason (e.g. "Insufficient account funds" on 402) rather
-  // than a bare status, so a billing or protocol failure is visible to the user
-  // instead of looking like an agent that is "still typing".
-  throw new Error(`${provider} ${res.status}: ${detail || res.statusText}`)
+  throw providerFailure(`${provider} ${res.status}: ${detail || res.statusText}`)
 }
 
 // A minimal ILLMProvider for Zen models served on `/v1/messages`. Mirrors the

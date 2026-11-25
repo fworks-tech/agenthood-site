@@ -1,10 +1,9 @@
 import { CaptchaError } from "./errors";
 import { logger } from "./logger";
+import { TURNSTILE_ENABLED, TURNSTILE_REQUIRED } from './env';
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
-const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 export const CAPTCHA_COOKIE_NAME = "captcha_verified";
 export const CAPTCHA_COOKIE_MAX_AGE = 86400;

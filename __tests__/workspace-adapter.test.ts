@@ -265,15 +265,19 @@ describe('createWorkspaceTurnStream', () => {
     expect(events.some((e) => e.type === 'workspace.turn_end' && e.decision === 'handoff')).toBe(true)
   })
 
-  it('emits workspace.error on provider failure', async () => {
-    mockFromConfig.mockRejectedValue(new Error('provider down'))
+  it('emits a referenced generic workspace.error on provider failure', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockFromConfig.mockRejectedValue(new Error('sk-leak provider down'))
     const stream = await createWorkspaceTurnStream({
       workspaceId: 'ws-8', correlationId: 'c8', memberId: 'the-builder', instruction: 'hi', thread: [], turnIndex: 0,
     })
     const events = await collectEvents(stream)
     expect(events.some((e) => e.type === 'workspace.error')).toBe(true)
     const err = events.find((e) => e.type === 'workspace.error') as Record<string, unknown>
-    expect(err.data).toContain('provider down')
+    expect(err.data).toMatch(/^Provider request failed\. Reference: /)
+    expect(err.data).not.toContain('sk-leak')
+    expect(err.requestId).toBeTruthy()
+    expect(errorSpy.mock.calls.map((c) => String(c[0])).join('\n')).toContain('sk-leak provider down')
   })
 
   it('includes workspaceId and correlationId on trace log events', async () => {

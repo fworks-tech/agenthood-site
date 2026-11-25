@@ -150,7 +150,7 @@ describe("middleware origin validation", () => {
 
 describe("middleware in-memory rate limiting", () => {
   it("allows requests below the chat limit and throttles the next one", async () => {
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 20; i += 1) {
       const res = await callMiddleware(makeRequest("/api/studio/chat"));
       expect(res.status).not.toBe(429);
     }
@@ -163,7 +163,7 @@ describe("middleware in-memory rate limiting", () => {
   });
 
   it("isolates rate limits per client IP", async () => {
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 20; i += 1) {
       await callMiddleware(makeRequest("/api/studio/chat"));
     }
     const otherIp = await callMiddleware(
@@ -175,12 +175,12 @@ describe("middleware in-memory rate limiting", () => {
   it("adds rate-limit headers on subsequent allowed requests", async () => {
     await callMiddleware(makeRequest("/api/studio/chat"));
     const second = await callMiddleware(makeRequest("/api/studio/chat"));
-    expect(second.headers.get("RateLimit-Limit")).toBe("100");
-    expect(second.headers.get("RateLimit-Remaining")).toBe("98");
+    expect(second.headers.get("RateLimit-Limit")).toBe("20");
+    expect(second.headers.get("RateLimit-Remaining")).toBe("18");
   });
 
   it("applies the agents limit independently of the chat limit", async () => {
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 20; i += 1) {
       const res = await callMiddleware(makeRequest("/api/studio/chat"));
       expect(res.status).not.toBe(429);
     }
@@ -199,7 +199,7 @@ describe("middleware in-memory rate limiting", () => {
       method: "GET",
       headers: { "x-real-ip": "9.9.9.9" },
     });
-    for (let i = 0; i < 100; i += 1) {
+    for (let i = 0; i < 20; i += 1) {
       const res = await callMiddleware(request);
       expect(res.status).not.toBe(429);
     }
@@ -224,7 +224,7 @@ describe("middleware in-memory rate limiting", () => {
     const chatRes = await callMiddleware(makeRequest("/api/studio/chat"));
     expect(chatRes.status).toBe(200);
     const chatAgain = await callMiddleware(makeRequest("/api/studio/chat"));
-    expect(chatAgain.headers.get("RateLimit-Limit")).toBe("100");
+    expect(chatAgain.headers.get("RateLimit-Limit")).toBe("20");
   });
 
   it("normalizes trailing slashes into the same rate-limit bucket", async () => {
@@ -249,14 +249,14 @@ describe("middleware Upstash rate limiting", () => {
     expect(chat).toBeDefined();
     chat!.limit.mockResolvedValueOnce({
       success: true,
-      limit: 100,
-      remaining: 99,
+      limit: 20,
+      remaining: 19,
       reset: Date.now() + 60_000,
     });
     const res = await middleware(makeRequest("/api/studio/chat"));
     expect(res.status).toBe(200);
-    expect(res.headers.get("RateLimit-Limit")).toBe("100");
-    expect(res.headers.get("RateLimit-Remaining")).toBe("99");
+    expect(res.headers.get("RateLimit-Limit")).toBe("20");
+    expect(res.headers.get("RateLimit-Remaining")).toBe("19");
   });
 
   it("returns 429 with Retry-After when Upstash throttles the request", async () => {
@@ -265,7 +265,7 @@ describe("middleware Upstash rate limiting", () => {
     expect(chat).toBeDefined();
     chat!.limit.mockResolvedValueOnce({
       success: false,
-      limit: 100,
+      limit: 20,
       remaining: 0,
       reset: Date.now() + 30_000,
     });
@@ -322,5 +322,50 @@ describe("middleware Upstash rate limiting", () => {
     const res = await middleware(makeRequest("/api/news/comments"));
     expect(res.status).toBe(429);
     expect(res.headers.get("RateLimit-Limit")).toBe("30");
+  });
+});
+
+describe("middleware Jev protection", () => {
+  it("rejects foreign origins for the Jev proxy and its workspace bridge", async () => {
+    expect((await callMiddleware(makeRequest("/api/studio/jev", { origin: "https://evil.example" }))).status).toBe(403);
+    expect((await callMiddleware(makeRequest("/api/studio/workspaces/jev", { origin: "https://evil.example" }))).status).toBe(403);
+  });
+
+  it("throttles the Jev proxy at 20/min", async () => {
+    for (let i = 0; i < 20; i += 1) {
+      expect((await callMiddleware(makeRequest("/api/studio/jev"))).status).not.toBe(429);
+    }
+    expect((await callMiddleware(makeRequest("/api/studio/jev"))).status).toBe(429);
+  });
+
+  it("keeps the workspace Jev bridge in its own rate-limit bucket", async () => {
+    for (let i = 0; i < 20; i += 1) {
+      await callMiddleware(makeRequest("/api/studio/workspaces/jev"));
+    }
+    expect((await callMiddleware(makeRequest("/api/studio/workspaces/jev"))).status).toBe(429);
+    expect((await callMiddleware(makeRequest("/api/studio/jev"))).status).toBe(200);
+  });
+});
+
+describe("middleware Upstash Jev limiter", () => {
+  beforeEach(() => {
+    process.env.KV_REST_API_URL = "https://fake-kv.example.com";
+    process.env.KV_REST_API_TOKEN = "test-token";
+  });
+
+  it("routes /api/studio/jev to its own Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const jev = ratelimitInstances.find((r) => r.prefix === "ratelimit:jev");
+    expect(jev).toBeDefined();
+    jev!.limit.mockResolvedValueOnce({
+      success: true,
+      limit: 20,
+      remaining: 19,
+      reset: Date.now() + 60_000,
+    });
+    const res = await middleware(makeRequest("/api/studio/jev"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("RateLimit-Limit")).toBe("20");
+    expect(jev!.limit).toHaveBeenCalledTimes(1);
   });
 });

@@ -17,6 +17,7 @@ import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type Wor
 import type { ThreadMessage } from '../_lib/workspace-orchestrator'
 import { getAgentById } from '../_data/agents'
 import { getActiveWorkspaceId, getWorkspace, saveWorkspace, setActiveWorkspaceId } from '../_lib/workspace-store'
+import { generateId } from '../_lib/ids'
 
 export type WorkspaceToolCall = { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }
 export type { WorkspaceMessage }
@@ -26,7 +27,7 @@ export type WorkspaceState = 'idle' | 'running' | 'handoff' | 'done' | 'error'
 const NUDGE_PROCEED_PROMPT = 'Proceed without the user reply — continue with your best assumption in your lane.'
 const NUDGE_TIMEOUT_PROMPT = 'The user has not replied. Continue with your best assumption in your lane, briefly, or re-ask once.'
 
-export function useWorkspace() {
+export function useWorkspace(turnstileToken?: string | null) {
   const [messages, setMessages] = useState<WorkspaceMessage[]>([])
   const [statusMap, setStatusMap] = useState<Record<string, WorkspaceStatus>>({})
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>('idle')
@@ -265,6 +266,7 @@ export function useWorkspace() {
             thread,
             correlationId,
             workspaceMemberIds: specRef.current?.memberIds ?? [memberId],
+            turnstileToken,
           }),
           signal: controller.signal,
         })
@@ -363,7 +365,7 @@ export function useWorkspace() {
       }
       return currentContent
     },
-    [updateStatus, pushReaction, messages],
+    [updateStatus, pushReaction, messages, turnstileToken],
   )
 
   const runSynthesis = useCallback(async () => {
@@ -428,7 +430,7 @@ export function useWorkspace() {
       for (const id of spec.memberIds) {
         if (!getAgentById(id)) throw new Error(`Invalid memberId: ${id}`)
       }
-      const wId = `ws-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+      const wId = `ws-${generateId()}`
       const correlationId = `ws-corr-${Date.now()}`
       correlationRef.current = correlationId
       const session = ++sessionRef.current
