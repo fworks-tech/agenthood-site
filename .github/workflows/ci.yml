@@ -26,5 +26,8 @@ jobs:
       - run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: npm run check:deps -- --strict
+      - run: npm run check:models
+      - run: npm run sync-skills:verify
       - run: npm run check:links
       - run: npm test
