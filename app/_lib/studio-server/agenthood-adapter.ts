@@ -39,7 +39,21 @@ export const CLI_PROVIDER_CHAIN: readonly Provider[] = ['opencode']
 // A slice boundary can bisect a surrogate pair. That is safe only because the
 // client appends chunks into one string buffer; rendering each chunk as its
 // own node would show U+FFFD for any emoji straddling a boundary.
-const TOKEN_CHUNK = 128
+export const TOKEN_CHUNK = 128;
+
+// Single home for SSE framing: every server stream (playground, workspace
+// turn, synthesis) enqueues NDJSON through here so framing cannot drift.
+export function enqueueJson(controller: ReadableStreamDefaultController<Uint8Array>, payload: Record<string, unknown>): void {
+  controller.enqueue(new TextEncoder().encode(JSON.stringify(payload) + "\n"));
+}
+
+// Splitter for the non-live path (tool-loop final text, complete() fallback).
+// Live provider deltas stream through untouched.
+export function chunkText(text: string, size: number = TOKEN_CHUNK): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < text.length; i += size) out.push(text.slice(i, i + size));
+  return out;
+}
 
 // The route rejects other roles, but this is the last code that touches the
 // array before the provider — a caller reaching the adapter directly must not
@@ -166,9 +180,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           const provider = await resolveDemoProvider(model, llmConfig, correlationId);
 
           if (toolSchemas && toolSchemas.length > 0) {
-            const emit = (event: Record<string, unknown>) => {
-              controller.enqueue(new TextEncoder().encode(JSON.stringify(event) + "\n"));
-            };
+            const emit = (event: Record<string, unknown>) => enqueueJson(controller, event);
             const loop = await runToolLoop({
               provider,
               messages,
@@ -189,13 +201,12 @@ export class LightweightAdapter implements AgenthoodAdapter {
               ? loop.text || "I've reached the maximum number of tool operations for this request. Please refine your question."
               : loop.text;
 
-            for (let i = 0; i < output.length; i += TOKEN_CHUNK) {
+            for (const chunk of chunkText(output)) {
               if (signal?.aborted) break;
-              const chunk = output.slice(i, i + TOKEN_CHUNK);
               outputChars += chunk.length;
-              controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: chunk }) + "\n"));
+              enqueueJson(controller, { type: "token", data: chunk });
             }
-            controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "done" }) + "\n"));
+            enqueueJson(controller, { type: "done" });
           } else {
             const finalRequest: LLMRequest = {
               messages,
@@ -212,10 +223,10 @@ export class LightweightAdapter implements AgenthoodAdapter {
               if (chunk.delta) {
                 outputChars += chunk.delta.length;
                 output += chunk.delta;
-                controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "token", data: chunk.delta }) + "\n"));
+                enqueueJson(controller, { type: "token", data: chunk.delta });
               }
               if (chunk.done) {
-                controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "done" }) + "\n"));
+                enqueueJson(controller, { type: "done" });
                 break;
               }
             }
@@ -246,7 +257,7 @@ export class LightweightAdapter implements AgenthoodAdapter {
           emitTrace(controller, "error", output);
 
           const failure = providerFailure(msg, requestId);
-          controller.enqueue(new TextEncoder().encode(JSON.stringify({ type: "error", data: failure.message, requestId }) + "\n"));
+          enqueueJson(controller, { type: "error", data: failure.message, requestId });
         } finally {
           controller.close();
         }
