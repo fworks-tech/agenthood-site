@@ -84,10 +84,10 @@ export async function collectMemberData(fetchMember) {
   return { skills, prompts, codeAgents };
 }
 
-async function main() {
+export async function runSkills({ allowMain = false } = {}) {
   if (INSTALLED_VERSION) {
     console.log(`  → pinning to agenthood v${INSTALLED_VERSION}`);
-  } else if (process.argv.includes("--allow-main")) {
+  } else if (allowMain || process.argv.includes("--allow-main")) {
     console.warn("  ! could not detect installed agenthood version, falling back to main (--allow-main)");
   } else {
     console.error("  ✗ cannot determine installed agenthood version; refusing to generate from a moving ref. Install the published package or pass --allow-main.");
@@ -186,7 +186,7 @@ export const codeAgents: string[] = ${JSON.stringify(codeAgents, null, 2)};
   console.log(`Generated ${REGISTRY_FILE} (${registryEntries.length} members)`);
 }
 
-async function verify() {
+export async function verifySkills() {
   if (!INSTALLED_VERSION) {
     console.error("  ✗ cannot verify: installed agenthood version unknown");
     process.exit(1);
@@ -223,12 +223,12 @@ async function verify() {
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   if (process.argv.includes("--verify")) {
-    verify().catch((err) => {
+    verifySkills().catch((err) => {
       console.error("sync-skills --verify failed:", err.message);
       process.exit(1);
     });
   } else {
-    main().catch((err) => {
+    runSkills().catch((err) => {
       console.error("sync-skills failed:", err.message);
       process.exit(1);
     });

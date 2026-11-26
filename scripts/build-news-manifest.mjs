@@ -130,16 +130,21 @@ function titleFromMarkdown(text) {
   return line ? line.trim().replace(/^#\s+/, "") : "";
 }
 
-function main() {
-  const lenient = process.argv.includes("--lenient");
+export function runNewsManifest({ lenient = false } = {}) {
   const entries = buildNewsManifest({ strict: !lenient });
   const fileCount = fs.readdirSync(NEWS_DIR).filter((f) => f.endsWith(".md")).length;
   if (!shouldWriteManifest(lenient, entries.length, fileCount)) {
     console.warn("[news-manifest] lenient mode skipped invalid article(s); leaving content/news/manifest.json unchanged");
-    return;
+    return entries;
   }
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(entries, null, 2) + "\n", "utf8");
   console.log(`[news-manifest] wrote ${entries.length} entries to content/news/manifest.json`);
+  return entries;
+}
+
+function main() {
+  const lenient = process.argv.includes("--lenient");
+  runNewsManifest({ lenient });
 }
 
 const isDirectRun =
