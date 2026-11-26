@@ -293,6 +293,15 @@ describe('POST /api/studio/workspaces CAPTCHA and bounds', () => {
     expect((await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', memberId: 'm\u0002bad' }) as unknown as Parameters<typeof POST>[0])).status).toBe(400)
   })
 
+  it('rejects glob and whitespace characters in ids', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/route')
+    for (const bad of ['ws admin', 'ws{x}', 'ws[y]', 'ws*z']) {
+      const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi', workspaceId: bad }) as unknown as Parameters<typeof POST>[0])
+      expect(res.status).toBe(400)
+      expect((await res.json()).error).toContain('Invalid workspaceId')
+    }
+  })
+
   it('generates an unguessable workspace id when none is supplied', async () => {
     const { POST } = await import('../app/api/studio/workspaces/route')
     const res = await POST(postBody({ memberIds: ['the-builder'], instruction: 'hi' }) as unknown as Parameters<typeof POST>[0])

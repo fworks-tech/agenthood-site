@@ -152,3 +152,23 @@ describe("news comments route storage", () => {
     expect(json.comments.map((c: { text: string }) => c.text)).toEqual(["first", "second"]);
   });
 });
+
+describe("news comments route slug allowlist", () => {
+  it("rejects traversal slugs on POST", async () => {
+    const res = await post({ ...VALID_BODY, slug: "../secret" });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("Invalid slug");
+  });
+
+  it("rejects overlong and uppercase slugs on POST", async () => {
+    expect((await post({ ...VALID_BODY, slug: "a".repeat(129) })).status).toBe(400);
+    expect((await post({ ...VALID_BODY, slug: "Hello-World" })).status).toBe(400);
+    expect((await post({ ...VALID_BODY, slug: "a b" })).status).toBe(400);
+  });
+
+  it("rejects traversal slugs on GET", async () => {
+    const res = await get(encodeURIComponent("../../etc"));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toContain("Invalid slug");
+  });
+});

@@ -6,7 +6,8 @@ import {
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
 } from "@/app/(main)/studio/_lib/captcha";
-import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
+import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/(main)/studio/_lib/tools";
+import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { getMemberTools } from '@/app/(main)/studio/_types/studio'
 
@@ -16,8 +17,7 @@ export const maxDuration = 30;
 
 const CUSTOM_TOOL_PATTERN = /^custom_[a-z][a-z0-9_]{0,56}$/;
 const MAX_ARGS_CHARS = 100_000;
-const CORRELATION_ID_MAX_LENGTH = 128;
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+const CORRELATION_ID_MAX_LENGTH = MAX_ID_LENGTH;
 
 function generateId(): string {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -54,6 +54,9 @@ export async function POST(request: Request) {
     const didVerify = await validateTurnstile(turnstileToken, verifiedCookie);
 
     const isValidCustom = typeof tool === "string" && CUSTOM_TOOL_PATTERN.test(tool);
+    if (typeof tool === "string" && isMcpToolName(tool)) {
+      throw new ValidationError(`MCP tool "${tool}" is not configured (remote HTTP only, no server allowlisted)`);
+    }
     if (typeof tool !== "string" || (!BUILT_IN_TOOL_NAMES.has(tool) && !isValidCustom)) {
       throw new ValidationError(`Unknown tool: "${tool ?? "undefined"}"`);
     }

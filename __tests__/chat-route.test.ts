@@ -188,6 +188,13 @@ describe("chat route validation", () => {
       "code_execution",
     ]);
   });
+
+  it("rejects MCP tool names instead of silently dropping them", async () => {
+    await expectValidationError(
+      { ...VALID_BODY, config: { enabledTools: ["web_fetch", "mcp__docs__fetch"] } },
+      "MCP tool",
+    );
+  });
 });
 
 describe("chat route streaming response", () => {

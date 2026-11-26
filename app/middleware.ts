@@ -3,13 +3,29 @@ import type { NextRequest } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const ALLOWED_ORIGINS = process.env.NODE_ENV === "development"
-  ? ["http://localhost:3000", "http://127.0.0.1:3000"]
-  : [
-      "https://agenthood.flabs.tech",
-      ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean) : []),
-    ];
+function isAllowedOriginEntry(entry: string): boolean {
+  if (entry === "*" || entry.endsWith("/*")) return false;
+  try {
+    const url = new URL(entry);
+    return url.protocol === "https:" && url.origin === entry;
+  } catch {
+    return false;
+  }
+}
+
+const ALLOWED_ORIGINS = (
+  process.env.NODE_ENV === "development"
+    ? ["http://localhost:3000", "http://127.0.0.1:3000"]
+    : [
+        "https://agenthood.flabs.tech",
+        ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+        ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean) : []),
+      ]
+).filter((o) => {
+  const ok = process.env.NODE_ENV === "development" || isAllowedOriginEntry(o);
+  if (!ok) console.error("middleware.invalid_origin_entry", { entry: o });
+  return ok;
+});
 
 // State-changing / private studio endpoints must be same-origin. `agents` is a
 // public read-only list and is intentionally excluded.
@@ -28,6 +44,9 @@ function isOriginProtected(pathname: string): boolean {
 function validateOrigin(request: NextRequest): void {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
+  // No origin/referer (curl, server-to-server) intentionally bypasses: this
+  // check is browser-only CSRF defense. Turnstile + rate limiting are the real
+  // gates for non-browser callers.
   if (!origin && !referer) return;
   const raw = origin ?? referer ?? "";
   let source: string;
@@ -248,6 +267,15 @@ export async function middleware(request: NextRequest) {
       return new NextResponse(
         JSON.stringify({ error: "Cross-origin request rejected", code: "FORBIDDEN" }),
         { status: 403, headers: { "Content-Type": "application/json" } },
+      );
+    }
+    // Paid LLM routes fail closed without global rate limiting: the
+    // per-instance memory fallback is bypassable across lambdas.
+    if (!upstash && (process.env.NODE_ENV === "production" || process.env.VERCEL)) {
+      console.error("middleware.kv_required", { pathname });
+      return new NextResponse(
+        JSON.stringify({ error: "Rate limiting unavailable", code: "SERVICE_UNAVAILABLE" }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
       );
     }
   }

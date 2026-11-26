@@ -15,6 +15,8 @@ const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
 const SLUG_PATTERN = /^[a-z0-9/_-]{1,128}$/;
 
+// Defense-in-depth: SLUG_PATTERN already excludes `.`, so `..` can never
+// match — the explicit check guards a future loosening of the pattern.
 function isSafeSlug(slug: string): boolean {
   if (!SLUG_PATTERN.test(slug)) return false;
   if (slug.includes("..")) return false;

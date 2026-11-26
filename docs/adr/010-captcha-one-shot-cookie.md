@@ -1,7 +1,7 @@
 # ADR-010: One-shot CAPTCHA with a signed session cookie
 
 **Date:** 2026-08-31
-**Status:** Accepted
+**Status:** Accepted (cookie TTL superseded by ADR-014: 24h → 4h)
 
 ## Context
 

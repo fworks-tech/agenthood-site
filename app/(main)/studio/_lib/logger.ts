@@ -22,6 +22,7 @@ function isKeySensitive(key: string): boolean {
 
 const VALUE_PATTERNS = [
   /sk-[a-zA-Z0-9]{20,}/g,
+  /\bsk-(proj|ant)-[A-Za-z0-9._-]{8,}/g,
   /\bsk-or-[a-zA-Z0-9._-]{8,}/g,
   /\bgsk_[a-zA-Z0-9]{8,}/g,
   /\boc-[a-zA-Z0-9._-]{8,}/g,

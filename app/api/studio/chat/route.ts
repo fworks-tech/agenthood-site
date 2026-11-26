@@ -10,7 +10,8 @@ import {
 } from "@/app/(main)/studio/_lib/captcha";
 import { logger } from "@/app/(main)/studio/_lib/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
-import { BUILT_IN_TOOL_NAMES } from "@/app/(main)/studio/_lib/tools";
+import { BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/(main)/studio/_lib/tools";
+import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
 import { DEMO_PROVIDER, CLIENT_MESSAGE_ROLES } from "@/app/(main)/studio/_types/studio";
 
 export const runtime = "nodejs";
@@ -28,8 +29,7 @@ const MAX_TOTAL_CHARS = 100_000;
 // the correct defensive posture for a public demo endpoint.
 type ChatRequestConfig = { enabledTools?: string[] };
 
-const CORRELATION_ID_MAX_LENGTH = 128;
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+const CORRELATION_ID_MAX_LENGTH = MAX_ID_LENGTH;
 
 function readCorrelationId(request: Request): string | undefined {
   const raw = request.headers.get("X-Correlation-Id");
@@ -81,6 +81,13 @@ function validateConfig(config: unknown): ChatRequestConfig {
         typeof t === "string" &&
         (CUSTOM_TOOL_PATTERN.test(t) || BUILT_IN_TOOL_NAMES.has(t)),
     );
+    // MCP names are fail-closed, not silently dropped: a client asking for
+    // mcp__* gets an explicit error instead of a quiet grant downgrade.
+    for (const t of c.enabledTools) {
+      if (typeof t === "string" && isMcpToolName(t)) {
+        throw new ValidationError(`MCP tool "${t}" is not configured (remote HTTP only, no server allowlisted)`);
+      }
+    }
   }
 
   return validated;

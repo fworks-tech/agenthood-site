@@ -64,8 +64,8 @@
     "@mantine/spotlight": "^9.8.1",
     "@sentry/nextjs": "^11.15.0",
     "@tabler/icons-react": "^3.52.0",
-    "@upstash/ratelimit": "^2.2.1",
-    "@upstash/redis": "^1.41.0",
+    "@upstash/ratelimit": "2.2.1",
+    "@upstash/redis": "1.41.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.1.0",
     "agenthood": "4.5.0",
@@ -77,7 +77,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.4.6",
+    "@next/bundle-analyzer": "16.4.6",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.3",
@@ -87,7 +87,7 @@
     "@vitest/coverage-v8": "^5.1.1",
     "cross-env": "^10.1.0",
     "eslint": "^9",
-    "eslint-config-next": "^16.4.6",
+    "eslint-config-next": "16.4.6",
     "jsdom": "^31.0.1",
     "patch-package": "^8.0.1",
     "postcss-preset-mantine": "^1.18.0",

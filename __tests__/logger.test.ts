@@ -123,4 +123,20 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
 
     spy.mockRestore();
   });
+
+  it("redacts OpenAI project and Anthropic key prefixes in values", async () => {
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    logger.info("chat.complete", {
+      reason: "keys sk-proj-abc123456789 sk-ant-abc123456789 failed",
+    });
+
+    const call = JSON.parse(spy.mock.calls[0][0]);
+    expect(call.reason).not.toContain("sk-proj-abc123456789");
+    expect(call.reason).not.toContain("sk-ant-abc123456789");
+    expect(call.reason).toContain("[REDACTED]");
+
+    spy.mockRestore();
+  });
 });

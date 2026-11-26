@@ -91,5 +91,5 @@ mediator fallback, 100 direct @-mention) — not calibrated probabilities.
 
 ## References
 
-- Issue fworks-tech/agenthood-site#290; ADR-011 (shared memory), ADR-012
+- Issue fworks-tech/agenthood-site#290; ADR 011 (shared memory), ADR 012
   (auto-synthesizer); `ORCHESTRATION_GUIDE` in `_lib/system-prompt.ts`.

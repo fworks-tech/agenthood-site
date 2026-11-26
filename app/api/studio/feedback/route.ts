@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { messageId, conversationId, value } = body;
+    const { messageId, value } = body;
 
     if (!messageId || typeof messageId !== "string" || messageId.length > 256) {
       logger.warn("feedback.validation_failed", { error: "missing messageId" });
@@ -18,16 +18,26 @@ export async function POST(request: Request) {
       return Response.json({ error: "value must be 'up', 'down', or null" }, { status: 400 });
     }
 
-    const bounded = (v: unknown): string | undefined =>
-      typeof v === "string" && v.length > 0 && v.length <= 256 ? v : undefined;
+    const optionalFields = {
+      conversationId: body.conversationId,
+      agentId: body.agentId,
+      provider: body.provider,
+      model: body.model,
+    } as Record<string, unknown>;
+    for (const [key, val] of Object.entries(optionalFields)) {
+      if (val !== undefined && (typeof val !== "string" || val.length > 256)) {
+        logger.warn("feedback.validation_failed", { error: `invalid ${key}` });
+        return Response.json({ error: `${key} must be a string of at most 256 chars` }, { status: 400 });
+      }
+    }
 
     logger.info("feedback.received", {
-      messageId: messageId.slice(0, 256),
-      conversationId: bounded(conversationId),
+      messageId,
+      conversationId: (body.conversationId as string | undefined) ?? undefined,
       value,
-      ...(bounded(body.agentId) ? { agentId: bounded(body.agentId) } : {}),
-      ...(bounded(body.provider) ? { provider: bounded(body.provider) } : {}),
-      ...(bounded(body.model) ? { model: bounded(body.model) } : {}),
+      ...(body.agentId ? { agentId: body.agentId } : {}),
+      ...(body.provider ? { provider: body.provider } : {}),
+      ...(body.model ? { model: body.model } : {}),
     });
 
     return Response.json({ ok: true });

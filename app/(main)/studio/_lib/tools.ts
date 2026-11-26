@@ -349,8 +349,8 @@ export function getToolSchemas(): ToolSchema[] {
 // mcp__ invocation is rejected until an allowlisted remote host exists.
 export const MCP_TOOL_PREFIX = "mcp__";
 
-export function isMcpToolName(name: string): boolean {
-  return name.startsWith(MCP_TOOL_PREFIX);
+export function isMcpToolName(name: unknown): boolean {
+  return typeof name === "string" && name.startsWith(MCP_TOOL_PREFIX);
 }
 
 // Single source of truth for which tool names are real; the two public routes

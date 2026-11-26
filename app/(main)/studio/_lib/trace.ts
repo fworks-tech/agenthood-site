@@ -54,8 +54,6 @@ export interface WorkspaceTraceMeta {
   turnIndex: number
   memberId: string
   correlationId: string
-  mcpServers?: string[]
-  mcpGrants?: string[]
 }
 
 export function createWorkspaceTraceMeta(meta: WorkspaceTraceMeta): Record<string, unknown> {
@@ -64,7 +62,5 @@ export function createWorkspaceTraceMeta(meta: WorkspaceTraceMeta): Record<strin
     turnIndex: meta.turnIndex,
     memberId: meta.memberId,
     correlationId: meta.correlationId,
-    ...(meta.mcpServers ? { mcpServers: meta.mcpServers } : {}),
-    ...(meta.mcpGrants ? { mcpGrants: meta.mcpGrants } : {}),
   }
 }

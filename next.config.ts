@@ -24,6 +24,8 @@ const securityHeaders = [
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      // Per-route upgrade for the first allowlisted remote MCP host goes here
+      // (connect-src). No MCP host is allowlisted yet — see ADR-013.
       "upgrade-insecure-requests",
     ].join("; "),
   },

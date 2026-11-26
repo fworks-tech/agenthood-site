@@ -1,8 +1,7 @@
-# ADR-013: MCP remote-only on Vercel + 4h CAPTCHA cookie
+# ADR-013: MCP remote-only on Vercel
 
 **Date:** 2026-11-26
 **Status:** Accepted
-**Supersedes:** ADR-010 (cookie TTL 24h → 4h)
 
 ## Context
 
@@ -14,29 +13,32 @@ Vercel serverless has read-only `/var/task` and no process spawn. The public
 ## Decision
 
 - MCP transport policy: **remote HTTP only** on Vercel. Stdio servers are
-  explicitly unsupported and fail closed (`executeTool` rejects `mcp__*` until
-  a host-allowlisted remote exists, `tools/execute` allowlist rejects unknown
-  tools, `getMcpToolsForMember()` returns `[]`).
-- `mcpServers` lives only in `.agenthood/config.json` (host-declared). `SKILL.md`
-  `mcpServers` is ignored. Secrets only via env-substituted headers. No
-  `mcp__*` grant for `restricted` members.
-- Trace envelope carries `mcpServers/mcpGrants` (names + outcome only, no
-  args/results by default).
-- CAPTCHA cookie `CAPTCHA_COOKIE_MAX_AGE` 86400 → 14400 (4h). One solve no
-  longer buys 24h of paid-LLM access. Re-solve required for paid hops stays
-  as follow-up.
+  explicitly unsupported and fail closed.
+- Enforcement (all three layers reject `mcp__*` today):
+  - `app/(main)/studio/_lib/tools.ts` — `isMcpToolName` + `executeTool`
+    returns a not-configured error;
+  - `app/api/studio/tools/execute/route.ts` — explicit MCP branch with
+    `ValidationError` before the generic unknown-tool error;
+  - `app/api/studio/chat/route.ts` — `validateConfig` throws on `mcp__*`
+    instead of silently dropping it.
+- `getMemberTools` never emits `mcp__*`, so `restricted` members get none by
+  construction. `mcpServers` lives only in `.agenthood/config.json`
+  (host-declared); a `SKILL.md` `mcpServers` key is ignored. Secrets only via
+  env-substituted headers.
+- Trace/observability for MCP (server/grant/invocation fields) is deferred to
+  the first real remote-server PR — no dead wire surface until then.
 
 ## Consequences
 
 - Easier: Studio cannot hang the 30-60s function budget spawning stdio.
 - Harder: first remote MCP server still needs `connect-src` CSP + tracing
   allowlist per host.
-- Risk: grant logic is hand-rolled (`declared ∩ allowlist`), not shared with
-  `MemberAgent/McpSession` — do not expose stdio or `restricted` MCP until
-  shared.
+- Risk: the grant rule (`declared ∩ allowlist`) is hand-rolled, not shared
+  with `MemberAgent`/`McpSession` — do not expose stdio or `restricted` MCP
+  until shared.
 
 ## References
 
 - `app/(main)/studio/_lib/tools.ts`, `app/(main)/studio/_types/studio.ts`,
-  `app/(main)/studio/_lib/trace.ts`, `.agenthood/config.json`,
-  `app/(main)/studio/_lib/captcha.ts`, ADR-005, ADR-010.
+  `app/api/studio/tools/execute/route.ts`, `app/api/studio/chat/route.ts`,
+  `.agenthood/config.json`, ADR-005.
