@@ -13,6 +13,14 @@ const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 const TURNSTILE_ENABLED = process.env.NEXT_PUBLIC_TURNSTILE_ENABLED !== "false";
 const TURNSTILE_REQUIRED = process.env.TURNSTILE_REQUIRED !== "false";
 
+const SLUG_PATTERN = /^[a-z0-9/_-]{1,128}$/;
+
+function isSafeSlug(slug: string): boolean {
+  if (!SLUG_PATTERN.test(slug)) return false;
+  if (slug.includes("..")) return false;
+  return true;
+}
+
 interface Comment {
   id: string;
   name: string;
@@ -25,7 +33,7 @@ async function verifyTurnstile(token: string): Promise<boolean> {
     if (TURNSTILE_ENABLED && TURNSTILE_REQUIRED) {
       console.error("comments.turnstile_config_missing");
     }
-    return true;
+    return false;
   }
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -59,8 +67,8 @@ export async function POST(request: Request) {
   }
 
   const slug = (body.slug ?? "").trim();
-  if (!slug) {
-    return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+  if (!slug || !isSafeSlug(slug)) {
+    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
   }
 
   const name = (body.name ?? "").trim().slice(0, 50);
@@ -102,8 +110,8 @@ export async function POST(request: Request) {
 
 export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug");
-  if (!slug) {
-    return NextResponse.json({ error: "Missing slug" }, { status: 400 });
+  if (!slug || !isSafeSlug(slug)) {
+    return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
   }
 
   if (!KV) {

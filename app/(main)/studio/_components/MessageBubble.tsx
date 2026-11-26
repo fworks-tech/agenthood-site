@@ -9,6 +9,7 @@ import { IconThumbUp, IconThumbDown } from "@tabler/icons-react";
 import type { ChatMessage } from "../_lib/studio-api";
 import { STORAGE_KEYS } from "../_lib/constants";
 import { childrenToString } from "../../../_lib/react-children";
+import { isSafeHref } from "../../../_lib/markdown-links.mjs";
 
 function loadFeedback(): Record<string, "up" | "down"> {
   if (typeof window === "undefined") return {};
@@ -103,6 +104,16 @@ export default function MessageBubble({ message, isStreaming, conversationId, on
   }
 
   const mdComponents: Components = {
+    a: ({ children, href }) => {
+      if (!href || !isSafeHref(href)) {
+        return <span>{children}</span>;
+      }
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline break-words [overflow-wrap:anywhere]">
+          {children}
+        </a>
+      );
+    },
     pre: ({ children }) => {
       const code = childrenToString(children);
       return (

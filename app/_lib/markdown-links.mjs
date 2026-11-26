@@ -27,6 +27,15 @@ export function isAbsoluteUrl(href) {
   return /^[a-z][a-z0-9+.-]*:/i.test(href);
 }
 
+// Allowlist for clickable links. LLM output is attacker-influenced, so
+// javascript:/data:/vbscript: must never render as <a href>.
+export function isSafeHref(href) {
+  if (!href || typeof href !== "string") return false;
+  if (href.startsWith("#") || href.startsWith("/")) return true;
+  if (!isAbsoluteUrl(href)) return false;
+  return /^(https?:|mailto:)/i.test(href);
+}
+
 function isDocsPath(relativePath) {
   return (
     relativePath === "academy" ||

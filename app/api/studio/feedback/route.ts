@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { messageId, conversationId, value } = body;
 
-    if (!messageId || typeof messageId !== "string") {
+    if (!messageId || typeof messageId !== "string" || messageId.length > 256) {
       logger.warn("feedback.validation_failed", { error: "missing messageId" });
       return Response.json({ error: "messageId is required" }, { status: 400 });
     }
@@ -18,13 +18,16 @@ export async function POST(request: Request) {
       return Response.json({ error: "value must be 'up', 'down', or null" }, { status: 400 });
     }
 
+    const bounded = (v: unknown): string | undefined =>
+      typeof v === "string" && v.length > 0 && v.length <= 256 ? v : undefined;
+
     logger.info("feedback.received", {
-      messageId,
-      conversationId: conversationId ?? undefined,
+      messageId: messageId.slice(0, 256),
+      conversationId: bounded(conversationId),
       value,
-      ...(body.agentId ? { agentId: body.agentId } : {}),
-      ...(body.provider ? { provider: body.provider } : {}),
-      ...(body.model ? { model: body.model } : {}),
+      ...(bounded(body.agentId) ? { agentId: bounded(body.agentId) } : {}),
+      ...(bounded(body.provider) ? { provider: bounded(body.provider) } : {}),
+      ...(bounded(body.model) ? { model: bounded(body.model) } : {}),
     });
 
     return Response.json({ ok: true });

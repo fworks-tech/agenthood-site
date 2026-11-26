@@ -12,6 +12,7 @@ import { QUICK_EMOJI } from '../../_lib/workspace-reactions'
 import type { WorkspaceReaction } from '../../_types/workspace'
 import { STORAGE_KEYS } from '../../_lib/constants'
 import { childrenToString } from '../../../../_lib/react-children'
+import { isSafeHref } from '../../../../_lib/markdown-links.mjs'
 import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 import type { WorkspaceToolCall } from '../../_hooks/useWorkspace'
 
@@ -246,11 +247,16 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
       </Title>
     ),
     strong: ({ children }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{children}</strong>,
-    a: ({ children, href }) => (
-      <a href={href} target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
-        {children}
-      </a>
-    ),
+    a: ({ children, href }) => {
+      if (!href || !isSafeHref(href)) {
+        return <span className="text-indigo-400">{children}</span>;
+      }
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
+          {children}
+        </a>
+      );
+    },
   }
 
   const isLong = !thinkingOnly && !!polished && (polished.length > 2200 || polished.split('\n').length > 50)

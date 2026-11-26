@@ -16,10 +16,11 @@ export const maxDuration = 60
 
 const MAX_ID_LENGTH = 128
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+const UNSAFE_ID_CHARS = /[\s*{}\[\]]/
 
 function isBoundedId(value: string): boolean {
   const id = value.trim()
-  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id)
+  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id) && !UNSAFE_ID_CHARS.test(id)
 }
 
 export async function POST(req: NextRequest) {
@@ -67,12 +68,16 @@ export async function POST(req: NextRequest) {
   // Same trust boundary as the turn route: no forged system messages
   // (prompt injection) and a bounded total size.
   const VALID_ROLES = ['user', 'assistant', 'tool']
+  const MAX_SYNTHESIZE_MESSAGE_CHARS = 20_000
   for (const m of thread) {
     if (typeof m.role !== 'string' || !VALID_ROLES.includes(m.role)) {
       return new Response(JSON.stringify({ error: 'thread contains an invalid role' }), { status: 400 })
     }
     if (typeof m.content !== 'string') {
       return new Response(JSON.stringify({ error: 'thread messages must be strings' }), { status: 400 })
+    }
+    if (m.content.length > MAX_SYNTHESIZE_MESSAGE_CHARS) {
+      return new Response(JSON.stringify({ error: 'thread messages must be at most 20000 chars' }), { status: 400 })
     }
   }
   const totalChars = thread.reduce((n, m) => n + m.content.length, 0)

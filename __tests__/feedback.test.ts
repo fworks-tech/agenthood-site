@@ -76,4 +76,15 @@ describe("POST /api/studio/feedback", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
+
+  it("bounds string fields and drops unknown props", async () => {
+    const { POST } = await import("../app/api/studio/feedback/route");
+    const req = new Request("http://localhost/api/studio/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messageId: "m".repeat(300), value: "up" }),
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
 });

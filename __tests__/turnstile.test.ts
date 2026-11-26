@@ -202,7 +202,7 @@ describe("Turnstile CAPTCHA validation", () => {
     const setCookie = res.headers.get("Set-Cookie") ?? "";
     expect(setCookie).toContain("captcha_verified=1:");
     expect(setCookie).toContain("HttpOnly");
-    expect(setCookie).toContain("Max-Age=86400");
+    expect(setCookie).toContain("Max-Age=14400");
   });
 
   it("honours a valid signed cookie without a token (one-shot gate)", async () => {

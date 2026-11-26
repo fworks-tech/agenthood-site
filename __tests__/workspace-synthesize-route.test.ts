@@ -42,10 +42,18 @@ describe('POST /api/studio/workspaces/synthesize validation', () => {
 
   it('rejects threads over 100k total chars', async () => {
     const { POST } = await import('../app/api/studio/workspaces/synthesize/route')
-    const thread = Array.from({ length: 6 }, (_, i) => ({ role: 'user', content: `m${i}-`.concat('x'.repeat(20_000)) }))
+    const thread = Array.from({ length: 6 }, (_, i) => ({ role: 'user', content: `m${i}-`.concat('x'.repeat(18_000)) }))
     const res = await POST(postBody({ workspaceId: 'ws-1', correlationId: 'c1', thread }) as unknown as Parameters<typeof POST>[0])
     expect(res.status).toBe(400)
     expect((await res.json()).error).toContain('total')
+  })
+
+  it('rejects single messages over 20k chars', async () => {
+    const { POST } = await import('../app/api/studio/workspaces/synthesize/route')
+    const thread = [{ role: 'user', content: 'x'.repeat(20_001) }]
+    const res = await POST(postBody({ workspaceId: 'ws-1', correlationId: 'c1', thread }) as unknown as Parameters<typeof POST>[0])
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('20000')
   })
 
   it('rejects threads with forged system role (prompt injection)', async () => {

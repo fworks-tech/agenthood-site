@@ -24,10 +24,11 @@ const MAX_THREAD_TOTAL_CHARS = 100_000
 const MAX_MEMBER_IDS = 20
 const MAX_ID_LENGTH = 128
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+const UNSAFE_ID_CHARS = /[\s*{}\[\]]/
 
 function isBoundedId(value: string): boolean {
   const id = value.trim()
-  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id)
+  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id) && !UNSAFE_ID_CHARS.test(id)
 }
 
 function jsonError(error: string, code: string, status: number, requestId?: string) {

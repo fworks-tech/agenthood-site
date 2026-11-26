@@ -5,7 +5,11 @@ import { Redis } from "@upstash/redis";
 
 const ALLOWED_ORIGINS = process.env.NODE_ENV === "development"
   ? ["http://localhost:3000", "http://127.0.0.1:3000"]
-  : ["https://agenthood.flabs.tech"];
+  : [
+      "https://agenthood.flabs.tech",
+      ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean) : []),
+    ];
 
 // State-changing / private studio endpoints must be same-origin. `agents` is a
 // public read-only list and is intentionally excluded.
@@ -81,7 +85,12 @@ function createUpstashRatelimiter() {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
   if (!url || !token) {
-    console.warn("middleware.upstash_unavailable", { hasUrl: !!url, hasToken: !!token });
+    const msg = "middleware.upstash_unavailable";
+    if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+      console.error(msg, { hasUrl: !!url, hasToken: !!token, note: "rate limiting falls back to per-instance memory in production" });
+    } else {
+      console.warn("middleware.upstash_unavailable", { hasUrl: !!url, hasToken: !!token });
+    }
     return null;
   }
 
@@ -134,8 +143,11 @@ const upstash = createUpstashRatelimiter();
 const memStore = upstash ? null : createInMemoryStore();
 
 function getClientIp(request: NextRequest): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || request.headers.get("x-real-ip")
+  // Prefer Vercel/real-ip headers over leftmost x-forwarded-for, which the
+  // client can spoof when the platform appends. Used only as a rate-limit key.
+  return request.headers.get("x-real-ip")?.trim()
+    || request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim()
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
     || "unknown";
 }
 

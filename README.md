@@ -13,7 +13,7 @@ Live at **[agenthood.flabs.tech](https://agenthood.flabs.tech)** · [Studio Play
 
 Agenthood is a 20-member AI society — planners, builders, reviewers, auditors, and more — each a portable Markdown skill file, plus a TypeScript runtime that runs them autonomously across your whole software lifecycle.
 
-**Agenthood 4.4 is out.** Members and workflows are data now: register your own agents at runtime, declare a multi-step chain in `chains.yaml`, and every step keeps the traces, decisions, and provenance records the built-in Society already writes.
+**Agenthood 4.5 is out.** Members and workflows are data now: register your own agents at runtime, declare a multi-step chain in `chains.yaml`, and every step keeps the traces, decisions, and provenance records the built-in Society already writes. MCP clients are supported via host-declared `mcpServers` (remote HTTP only on Vercel; stdio is explicitly unsupported in serverless).
 
 Load them into **Claude Code, Copilot, Gemini CLI, Cursor, OpenCode**, or any runtime that supports skill files. Hand them a task, or let them run end to end.
 
