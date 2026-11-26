@@ -5,6 +5,10 @@ on:
     branches: [main, staging]
   pull_request:
 
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   unit-and-coverage:
     runs-on: ubuntu-latest
