@@ -151,6 +151,14 @@ describe("custom-tools", () => {
     expect(result).toBe('Error: custom tool "custom_weather" execution not yet implemented');
   });
 
+  it("executeTool fails closed for unconfigured MCP tools", async () => {
+    const { executeTool, isMcpToolName } = await import("../app/(main)/studio/_lib/tools");
+    expect(isMcpToolName("mcp__docs__fetch")).toBe(true);
+    expect(isMcpToolName("web_fetch")).toBe(false);
+    const result = await executeTool("mcp__docs__fetch", { url: "https://example.com" });
+    expect(result).toContain("MCP tool");
+  });
+
   it("rejects tool names exceeding 64 characters", async () => {
     const { registerCustomTool } = await import("../app/(main)/studio/_lib/custom-tools");
     const longName = "custom_" + "a".repeat(60);

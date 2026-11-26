@@ -6,7 +6,7 @@ const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export const CAPTCHA_COOKIE_NAME = "captcha_verified";
-export const CAPTCHA_COOKIE_MAX_AGE = 86400;
+export const CAPTCHA_COOKIE_MAX_AGE = 14400;
 
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;

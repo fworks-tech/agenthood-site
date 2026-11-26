@@ -27,6 +27,18 @@ export function isAbsoluteUrl(href) {
   return /^[a-z][a-z0-9+.-]*:/i.test(href);
 }
 
+// Allowlist for clickable links. LLM output is attacker-influenced, so
+// javascript:/data:/vbscript: must never render as <a href>. Only absolute
+// URLs need allowlisting; relative hrefs resolve via resolveHref. tel: is
+// deliberately excluded: chat/assistant content has no dialing use case.
+export function isSafeHref(href) {
+  if (!href || typeof href !== "string") return false;
+  const h = href.trim();
+  if (h.startsWith("#") || h.startsWith("/")) return true;
+  if (!isAbsoluteUrl(h)) return true;
+  return /^(https?:|mailto:)/i.test(h);
+}
+
 function isDocsPath(relativePath) {
   return (
     relativePath === "academy" ||

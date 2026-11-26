@@ -33,6 +33,8 @@ export const CODE_AGENTS = new Set(codeAgents);
 // Capability follows identity. web_fetch is cross-cutting (any member may need
 // to read a source); activate_skill is how a member loads its own operating
 // manual, so every member gets it; the code_execution VM is code-lane only.
+// MCP (4.5) mcp__<server>__<tool> names stay out of the grant until a
+// host-allowlisted remote server exists — see ADR-013.
 export function getMemberTools(memberId: string): string[] {
   return CODE_AGENTS.has(memberId)
     ? ["web_fetch", "activate_skill", "code_execution"]

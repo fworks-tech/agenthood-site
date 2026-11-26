@@ -14,21 +14,17 @@ import {
   parseCaptchaCookie,
 } from '@/app/(main)/studio/_lib/captcha'
 
+import {
+  MAX_THREAD_MESSAGES,
+  MAX_MESSAGE_CHARS,
+  MAX_THREAD_TOTAL_CHARS,
+  MAX_MEMBER_IDS,
+  isBoundedId,
+} from '@/app/(main)/studio/_lib/limits'
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-
-const MAX_THREAD_MESSAGES = 200
-const MAX_MESSAGE_CHARS = 20_000
-const MAX_THREAD_TOTAL_CHARS = 100_000
-const MAX_MEMBER_IDS = 20
-const MAX_ID_LENGTH = 128
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
-
-function isBoundedId(value: string): boolean {
-  const id = value.trim()
-  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id)
-}
 
 function jsonError(error: string, code: string, status: number, requestId?: string) {
   return Response.json({ error, code, ...(requestId ? { requestId } : {}) }, { status })

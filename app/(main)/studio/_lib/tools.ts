@@ -342,6 +342,17 @@ export function getToolSchemas(): ToolSchema[] {
   return [...Object.values(TOOL_DEFINITIONS).map((t) => t.schema), ...getCustomToolSchemas()];
 }
 
+// MCP (Agenthood 4.5): remote HTTP servers only on Vercel. stdio spawns cannot
+// run in serverless (read-only /var/task, no child_process) and must fail
+// closed. Tool names are namespaced mcp__<server>__<tool> after the
+// declared ∩ allowlist ∩ profile grant. No server is configured yet, so every
+// mcp__ invocation is rejected until an allowlisted remote host exists.
+export const MCP_TOOL_PREFIX = "mcp__";
+
+export function isMcpToolName(name: unknown): boolean {
+  return typeof name === "string" && name.startsWith(MCP_TOOL_PREFIX);
+}
+
 // Single source of truth for which tool names are real; the two public routes
 // filter against this instead of hand-typing the list.
 export const BUILT_IN_TOOL_NAMES: ReadonlySet<string> = new Set(Object.keys(TOOL_DEFINITIONS));
@@ -353,6 +364,7 @@ export async function executeTool(
 ): Promise<string> {
   const tool = TOOL_DEFINITIONS[name];
   if (tool) return tool.execute(args, signal);
+  if (isMcpToolName(name)) return `Error: MCP tool "${name}" is not configured (remote HTTP only, no server allowlisted)`;
   if (name.startsWith("custom_")) return `Error: custom tool "${name}" execution not yet implemented`;
   return `Error: unknown tool "${name}"`;
 }

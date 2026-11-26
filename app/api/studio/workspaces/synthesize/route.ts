@@ -10,17 +10,16 @@ import {
   parseCaptchaCookie,
 } from '@/app/(main)/studio/_lib/captcha'
 
+import {
+  MAX_THREAD_MESSAGES,
+  MAX_THREAD_TOTAL_CHARS,
+  MAX_MESSAGE_CHARS,
+  isBoundedId,
+} from '@/app/(main)/studio/_lib/limits'
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-
-const MAX_ID_LENGTH = 128
-const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
-
-function isBoundedId(value: string): boolean {
-  const id = value.trim()
-  return id.length > 0 && id.length <= MAX_ID_LENGTH && !CONTROL_CHARS.test(id)
-}
 
 export async function POST(req: NextRequest) {
   const requestId = generateId()
@@ -60,8 +59,8 @@ export async function POST(req: NextRequest) {
     : (headerCorrelationId ?? `ws-corr-${requestId}`)
   const thread = Array.isArray(payload.thread) ? (payload.thread as ThreadMessage[]) : []
 
-  if (thread.length > 200) {
-    return new Response(JSON.stringify({ error: 'thread too large' }), { status: 400 })
+  if (thread.length > MAX_THREAD_MESSAGES) {
+    return Response.json({ error: `thread must have at most ${MAX_THREAD_MESSAGES} messages` }, { status: 400 })
   }
 
   // Same trust boundary as the turn route: no forged system messages
@@ -69,15 +68,18 @@ export async function POST(req: NextRequest) {
   const VALID_ROLES = ['user', 'assistant', 'tool']
   for (const m of thread) {
     if (typeof m.role !== 'string' || !VALID_ROLES.includes(m.role)) {
-      return new Response(JSON.stringify({ error: 'thread contains an invalid role' }), { status: 400 })
+      return Response.json({ error: 'thread contains an invalid role' }, { status: 400 })
     }
     if (typeof m.content !== 'string') {
-      return new Response(JSON.stringify({ error: 'thread messages must be strings' }), { status: 400 })
+      return Response.json({ error: 'thread messages must be strings' }, { status: 400 })
+    }
+    if (m.content.length > MAX_MESSAGE_CHARS) {
+      return Response.json({ error: `thread messages must be at most ${MAX_MESSAGE_CHARS} chars` }, { status: 400 })
     }
   }
   const totalChars = thread.reduce((n, m) => n + m.content.length, 0)
-  if (totalChars > 100_000) {
-    return new Response(JSON.stringify({ error: 'thread must total at most 100000 chars' }), { status: 400 })
+  if (totalChars > MAX_THREAD_TOTAL_CHARS) {
+    return Response.json({ error: `thread must total at most ${MAX_THREAD_TOTAL_CHARS} chars` }, { status: 400 })
   }
 
   const stream = await createSynthesisStream(thread, { workspaceId, correlationId }, req.signal)

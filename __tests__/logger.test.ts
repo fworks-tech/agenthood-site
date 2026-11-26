@@ -3,8 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Test sanitize by importing and testing its effect via the exposed log function
 // Since sanitize is internal to logger.ts, we test through the public logger API
 
-describe("logger sanitization", () => {
-  it("redacts apiKey fields", async () => {
+describe("logger sanitization", () => {  it("redacts apiKey fields", async () => {
     const { logger } = await import("../app/(main)/studio/_lib/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
@@ -104,6 +103,39 @@ describe("logger sanitization", () => {
 
     const call = JSON.parse(spy.mock.calls[0][0]);
     expect(call.self).toBe("[REDACTED]");
+
+    spy.mockRestore();
+  });
+
+  it("redacts opencode/groq/openrouter key prefixes in values", async () => {
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    logger.info("chat.complete", {
+      reason: "keys oc-abc123456789 gsk_abc123456789 sk-or-abc123456789 failed",
+    });
+
+    const call = JSON.parse(spy.mock.calls[0][0]);
+    expect(call.reason).not.toContain("oc-abc123456789");
+    expect(call.reason).not.toContain("gsk_abc123456789");
+    expect(call.reason).not.toContain("sk-or-abc123456789");
+    expect(call.reason).toContain("[REDACTED]");
+
+    spy.mockRestore();
+  });
+
+  it("redacts OpenAI project and Anthropic key prefixes in values", async () => {
+    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    logger.info("chat.complete", {
+      reason: "keys sk-proj-abc123456789 sk-ant-abc123456789 failed",
+    });
+
+    const call = JSON.parse(spy.mock.calls[0][0]);
+    expect(call.reason).not.toContain("sk-proj-abc123456789");
+    expect(call.reason).not.toContain("sk-ant-abc123456789");
+    expect(call.reason).toContain("[REDACTED]");
 
     spy.mockRestore();
   });

@@ -146,6 +146,60 @@ describe("middleware origin validation", () => {
     );
     expect(res.status).toBe(403);
   });
+
+  it("allows preview origins from VERCEL_URL", async () => {
+    process.env.VERCEL_URL = "agenthood-site-git-preview-fworks.vercel.app";
+    vi.resetModules();
+    const res = await callMiddleware(
+      makeRequest("/api/studio/chat", { origin: "https://agenthood-site-git-preview-fworks.vercel.app" }),
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("ignores invalid ALLOWED_ORIGINS entries", async () => {
+    process.env.ALLOWED_ORIGINS = "*,http://insecure.example,https://preview.example.com";
+    vi.resetModules();
+    const evil = await callMiddleware(
+      makeRequest("/api/studio/chat", { origin: "http://insecure.example" }),
+    );
+    expect(evil.status).toBe(403);
+    const ok = await callMiddleware(
+      makeRequest("/api/studio/chat", { origin: "https://preview.example.com" }),
+    );
+    expect(ok.status).toBe(200);
+  });
+
+  it("fails closed on paid routes when KV is missing in production", async () => {
+    (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "production";
+    vi.resetModules();
+    const res = await callMiddleware(makeRequest("/api/studio/chat"));
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("SERVICE_UNAVAILABLE");
+  });
+
+  it("keeps the public agents list open when KV is missing in production", async () => {
+    (process.env as unknown as { NODE_ENV: string }).NODE_ENV = "production";
+    vi.resetModules();
+    const res = await callMiddleware(makeRequest("/api/studio/agents"));
+    expect(res.status).toBe(200);
+  });
+
+  it("prefers x-real-ip over a spoofable leftmost x-forwarded-for", async () => {
+    const request = new NextRequest("https://agenthood.flabs.tech/api/studio/chat", {
+      method: "GET",
+      headers: { "x-forwarded-for": "1.1.1.1", "x-real-ip": "9.9.9.9" },
+    });
+    for (let i = 0; i < 20; i += 1) {
+      const res = await callMiddleware(request);
+      expect(res.status).not.toBe(429);
+    }
+    expect((await callMiddleware(request)).status).toBe(429);
+    const otherRealIp = new NextRequest("https://agenthood.flabs.tech/api/studio/chat", {
+      method: "GET",
+      headers: { "x-forwarded-for": "1.1.1.1", "x-real-ip": "8.8.8.8" },
+    });
+    expect((await callMiddleware(otherRealIp)).status).toBe(200);
+  });
 });
 
 describe("middleware in-memory rate limiting", () => {

@@ -58,6 +58,7 @@
   "skills": {
     "autoDiscover": false
   },
+  "mcpServers": {},
   "security": {
     "strictSkillIntegrity": true
   }

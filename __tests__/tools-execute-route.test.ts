@@ -78,6 +78,14 @@ describe("/api/studio/tools/execute", () => {
     expect(data.code).toBe("VALIDATION_ERROR");
   });
 
+  it("rejects unconfigured MCP tools with an explicit error", async () => {
+    const res = await post({ agentId: 'the-builder', tool: "mcp__docs__fetch", args: {} });
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe('VALIDATION_ERROR');
+    expect(data.error).toContain('MCP tool');
+  });
+
   it("rejects non-object args with 400", async () => {
     const res = await post({ tool: "code_execution", args: null });
     expect(res.status).toBe(400);

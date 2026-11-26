@@ -20,9 +20,13 @@ const securityHeaders = [
       "font-src 'self' data:",
       "connect-src 'self' https://opencode.ai https://api.anthropic.com https://api.openai.com https://api.groq.com https://openrouter.ai/api https://o4508931134267392.ingest.us.sentry.io",
       "frame-src https://challenges.cloudflare.com",
+      "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
+      // Per-route upgrade for the first allowlisted remote MCP host goes here
+      // (connect-src). No MCP host is allowlisted yet — see ADR-013.
+      "upgrade-insecure-requests",
     ].join("; "),
   },
 ];
