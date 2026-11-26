@@ -131,7 +131,7 @@ describe("custom-tools", () => {
 
   it("getToolSchemas includes custom tools", async () => {
     const { registerCustomTool } = await import("../app/(main)/studio/_lib/custom-tools");
-    const { getToolSchemas } = await import("../app/(main)/studio/_lib/tools");
+    const { getToolSchemas } = await import("../app/_lib/studio-server/tools");
     registerCustomTool({
       name: "custom_weather",
       description: "Get weather",
@@ -146,13 +146,13 @@ describe("custom-tools", () => {
   });
 
   it("executeTool returns not-implemented for custom tools", async () => {
-    const { executeTool } = await import("../app/(main)/studio/_lib/tools");
+    const { executeTool } = await import("../app/_lib/studio-server/tools");
     const result = await executeTool("custom_weather", {});
     expect(result).toBe('Error: custom tool "custom_weather" execution not yet implemented');
   });
 
   it("executeTool fails closed for unconfigured MCP tools", async () => {
-    const { executeTool, isMcpToolName } = await import("../app/(main)/studio/_lib/tools");
+    const { executeTool, isMcpToolName } = await import("../app/_lib/studio-server/tools");
     expect(isMcpToolName("mcp__docs__fetch")).toBe(true);
     expect(isMcpToolName("web_fetch")).toBe(false);
     const result = await executeTool("mcp__docs__fetch", { url: "https://example.com" });

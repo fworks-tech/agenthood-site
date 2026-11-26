@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { LightweightAdapter } from "@/app/(main)/studio/_lib/agenthood-adapter";
+import { LightweightAdapter } from "@/app/_lib/studio-server/agenthood-adapter";
 import { getAgentById } from "@/app/(main)/studio/_data/agents";
 import { ValidationError, StudioError } from "@/app/(main)/studio/_lib/errors";
 import {
@@ -7,10 +7,10 @@ import {
   createCaptchaCookieValue,
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
-} from "@/app/(main)/studio/_lib/captcha";
-import { logger } from "@/app/(main)/studio/_lib/logger";
+} from "@/app/_lib/studio-server/captcha";
+import { logger } from "@/app/_lib/studio-server/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
-import { BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/(main)/studio/_lib/tools";
+import { BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/_lib/studio-server/tools";
 import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
 import { DEMO_PROVIDER, CLIENT_MESSAGE_ROLES } from "@/app/(main)/studio/_types/studio";
 

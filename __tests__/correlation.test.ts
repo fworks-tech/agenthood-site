@@ -3,7 +3,7 @@ import { ReadableStream } from "node:stream/web";
 
 const { chatStub } = vi.hoisted(() => ({ chatStub: vi.fn() }));
 
-vi.mock("@/app/(main)/studio/_lib/agenthood-adapter", () => ({
+vi.mock("@/app/_lib/studio-server/agenthood-adapter", () => ({
   LightweightAdapter: class {
     chat = chatStub;
   },

@@ -1,13 +1,13 @@
-import { buildSystemPrompt } from './system-prompt'
+import { buildSystemPrompt } from '@/app/(main)/studio/_lib/system-prompt'
 import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from './tools'
 import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
-import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '../_types/studio'
-import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from './workspace-orchestrator'
+import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '@/app/(main)/studio/_types/studio'
+import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from '@/app/(main)/studio/_lib/workspace-orchestrator'
 import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
 import { runToolLoop, withProviderRetry } from './tool-loop'
 import { providerFailure } from './zen'
-import { generateId } from './ids'
+import { generateId } from '@/app/(main)/studio/_lib/ids'
 import type { Message } from 'agenthood/dist/llm'
 
 export interface WorkspaceTurnRequest {

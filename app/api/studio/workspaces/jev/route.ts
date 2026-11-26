@@ -1,4 +1,4 @@
-import { parseCaptchaCookie, validateTurnstile } from '@/app/(main)/studio/_lib/captcha'
+import { parseCaptchaCookie, validateTurnstile } from '@/app/_lib/studio-server/captcha'
 import { POST as jevPost } from '@/app/api/studio/jev/route'
 
 export const runtime = 'nodejs'

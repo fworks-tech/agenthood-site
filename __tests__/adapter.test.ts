@@ -22,8 +22,8 @@ vi.mock("agenthood/dist/llm", () => ({
 
 // Pin the demo provider onto the chat-completions seam these adapter tests
 // exercise; Zen protocol selection is covered separately in zen.test.ts.
-vi.mock("../app/(main)/studio/_lib/zen", async (io) => ({
-  ...(await io<typeof import("../app/(main)/studio/_lib/zen")>()),
+vi.mock("../app/_lib/studio-server/zen", async (io) => ({
+  ...(await io<typeof import("../app/_lib/studio-server/zen")>()),
   zenProtocolForModel: () => "chat",
 }));
 
@@ -46,7 +46,7 @@ vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
   codeAgents: ["the-architect", "the-builder", "the-debugger", "the-herald", "the-inspector", "the-librarian", "the-mailman", "the-scribe", "the-tester"],
 }));
 
-vi.mock("../app/(main)/studio/_lib/tools", () => ({
+vi.mock("../app/_lib/studio-server/tools", () => ({
   getToolSchemas: mockGetToolSchemas,
   executeTool: mockExecuteTool,
   MAX_TOOL_ITERATIONS: 25,
@@ -55,14 +55,14 @@ vi.mock("../app/(main)/studio/_lib/tools", () => ({
     /^Error: /.test(result) ? { error: result } : { result },
 }));
 
-import { LightweightAdapter } from "../app/(main)/studio/_lib/agenthood-adapter";
+import { LightweightAdapter } from "../app/_lib/studio-server/agenthood-adapter";
 import {
   DEMO_CODE_MODEL,
   DEMO_MAX_TOKENS,
   DEMO_QA_MODEL,
   selectDemoModel,
 } from "../app/(main)/studio/_types/studio";
-import { PLAYGROUND_MAX_TOOL_ITERATIONS } from "../app/(main)/studio/_lib/tools";
+import { PLAYGROUND_MAX_TOOL_ITERATIONS } from "../app/_lib/studio-server/tools";
 
 function collectStream(stream: ReadableStream): Promise<string[]> {
   const reader = stream.getReader();

@@ -8,7 +8,7 @@ let realFetch: typeof globalThis.fetch
 
 async function freshPatch() {
   vi.resetModules()
-  const mod = await import('@/app/(main)/studio/_lib/opencode-session')
+  const mod = await import('@/app/_lib/studio-server/opencode-session')
   mod.patchOpenCodeSession()
 }
 
@@ -63,7 +63,7 @@ describe('patchOpenCodeSession', () => {
   })
 
   it('is idempotent — double patch does not stack wrappers', async () => {
-    const { patchOpenCodeSession } = await import('@/app/(main)/studio/_lib/opencode-session')
+    const { patchOpenCodeSession } = await import('@/app/_lib/studio-server/opencode-session')
     patchOpenCodeSession()
     patchOpenCodeSession()
     await globalThis.fetch(ORIGINAL)

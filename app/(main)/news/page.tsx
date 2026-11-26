@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import FadeIn from "../../_components/FadeIn";
-import { logger } from "@/app/(main)/studio/_lib/logger";
+import { logger } from "@/app/_lib/studio-server/logger";
 
 export const metadata: Metadata = {
   title: "News · Agenthood",

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { logger } from "@/app/(main)/studio/_lib/logger";
+import { logger } from "@/app/_lib/studio-server/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 

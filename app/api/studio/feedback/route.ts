@@ -1,4 +1,4 @@
-import { logger } from "@/app/(main)/studio/_lib/logger";
+import { logger } from "@/app/_lib/studio-server/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -8,7 +8,7 @@ import {
   getMemberTools,
   type Provider,
 } from "../app/(main)/studio/_types/studio";
-import { getToolSchemas } from "../app/(main)/studio/_lib/tools";
+import { getToolSchemas } from "../app/_lib/studio-server/tools";
 import { agentRegistry } from "../app/(main)/studio/_data/registry.generated";
 
 const ALL_PROVIDERS: Provider[] = [

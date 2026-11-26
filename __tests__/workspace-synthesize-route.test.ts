@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const { mockSynthesis } = vi.hoisted(() => ({ mockSynthesis: vi.fn() }))
 
-vi.mock('@/app/(main)/studio/_lib/workspace-synthesizer', () => ({
+vi.mock('@/app/_lib/studio-server/workspace-synthesizer', () => ({
   createSynthesisStream: mockSynthesis,
 }))
 

@@ -5,10 +5,10 @@ import {
   createCaptchaCookieValue,
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
-} from "@/app/(main)/studio/_lib/captcha";
-import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/(main)/studio/_lib/tools";
+} from "@/app/_lib/studio-server/captcha";
+import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/_lib/studio-server/tools";
 import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
-import { logger } from "@/app/(main)/studio/_lib/logger";
+import { logger } from "@/app/_lib/studio-server/logger";
 import { getMemberTools } from '@/app/(main)/studio/_types/studio'
 
 export const runtime = "nodejs";

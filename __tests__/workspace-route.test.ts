@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 const mockCreateTurnStream = vi.fn()
 
-vi.mock('@/app/(main)/studio/_lib/workspace-adapter', () => ({
+vi.mock('@/app/_lib/studio-server/workspace-adapter', () => ({
   createWorkspaceTurnStream: mockCreateTurnStream,
 }))
 

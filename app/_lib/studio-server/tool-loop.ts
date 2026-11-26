@@ -1,6 +1,6 @@
 import type { LLMRequest, Message, ToolSchema } from "agenthood/dist/llm";
 import { executeTool, classifyToolResult, type ToolCall } from "./tools";
-import { DEMO_MAX_TOKENS } from "../_types/studio";
+import { DEMO_MAX_TOKENS } from "@/app/(main)/studio/_types/studio";
 
 /** The Studio is a fixed-temperature demo; the adapter has never exposed it. */
 const DEMO_TEMPERATURE = 0.7;

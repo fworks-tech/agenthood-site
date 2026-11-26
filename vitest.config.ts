@@ -21,7 +21,7 @@ export default defineConfig({
         "app/(main)/studio/_types/*.ts",
       ],
       exclude: [
-        "app/(main)/studio/_lib/workspace-synthesizer.ts",
+        "app/_lib/studio-server/workspace-synthesizer.ts",
       ],
       reporter: ["text", "json-summary"],
       thresholds: {

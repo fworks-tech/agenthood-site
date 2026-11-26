@@ -5,7 +5,7 @@ import { load as parseYaml } from "js-yaml";
 import MarkdownRenderer from "../../../components/MarkdownRenderer";
 import Breadcrumbs from "../../../components/Breadcrumbs";
 import Giscus from "../../../components/Giscus";
-import { logger } from "@/app/(main)/studio/_lib/logger";
+import { logger } from "@/app/_lib/studio-server/logger";
 
 const MANIFEST_PATH = path.join(process.cwd(), "content", "news", "manifest.json");
 

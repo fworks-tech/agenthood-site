@@ -14,7 +14,7 @@
 
 import type { LLMResponse, LLMChunk, LLMRequest } from 'agenthood/dist/llm'
 import { logger } from './logger'
-import { generateId } from './ids'
+import { generateId } from '@/app/(main)/studio/_lib/ids'
 
 export const ZEN_BASE = 'https://opencode.ai/zen/v1'
 

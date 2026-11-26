@@ -1,8 +1,8 @@
-import { selectDemoModel } from '../_types/studio'
-import { buildMemberMessages, type ThreadMessage } from './workspace-orchestrator'
+import { selectDemoModel } from '@/app/(main)/studio/_types/studio'
+import { buildMemberMessages, type ThreadMessage } from '@/app/(main)/studio/_lib/workspace-orchestrator'
 import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
 import { providerFailure } from './zen'
-import { generateId } from './ids'
+import { generateId } from '@/app/(main)/studio/_lib/ids'
 
 const SYNTHESIS_SYSTEM = `You are the Workspace Synthesizer — the final voice the user hears, exactly like Claude Work.
 
