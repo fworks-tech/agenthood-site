@@ -34,6 +34,8 @@ describe("markdown-links", () => {
 
   it("blocks javascript:/data: urls from rendering as links", () => {
     expect(isSafeHref("javascript:alert(1)")).toBe(false);
+    expect(isSafeHref("   javascript:alert(1)")).toBe(false);
+    expect(isSafeHref("JaVaScRiPt:alert(1)")).toBe(false);
     expect(isSafeHref("data:text/html,<script>alert(1)</script>")).toBe(false);
     expect(isSafeHref("vbscript:msgbox(1)")).toBe(false);
     expect(isSafeHref("https://example.com")).toBe(true);
@@ -41,5 +43,11 @@ describe("markdown-links", () => {
     expect(isSafeHref("mailto:a@b.com")).toBe(true);
     expect(isSafeHref("#heading")).toBe(true);
     expect(isSafeHref("/docs/foo/")).toBe(true);
+  });
+
+  it("leaves relative hrefs to the renderer (only absolute urls are gated)", () => {
+    expect(isSafeHref("docs/foo")).toBe(true);
+    expect(isSafeHref("../other-topic/")).toBe(true);
+    expect(isAbsoluteUrl("docs/foo")).toBe(false);
   });
 });

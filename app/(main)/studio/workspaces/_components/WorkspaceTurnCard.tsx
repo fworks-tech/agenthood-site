@@ -12,7 +12,7 @@ import { QUICK_EMOJI } from '../../_lib/workspace-reactions'
 import type { WorkspaceReaction } from '../../_types/workspace'
 import { STORAGE_KEYS } from '../../_lib/constants'
 import { childrenToString } from '../../../../_lib/react-children'
-import { isSafeHref } from '../../../../_lib/markdown-links.mjs'
+import { isAbsoluteUrl, isSafeHref } from '../../../../_lib/markdown-links.mjs'
 import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 import type { WorkspaceToolCall } from '../../_hooks/useWorkspace'
 
@@ -248,11 +248,15 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
     ),
     strong: ({ children }) => <strong className="font-semibold text-zinc-900 dark:text-zinc-100">{children}</strong>,
     a: ({ children, href }) => {
-      if (!href || !isSafeHref(href)) {
+      if (!href) {
         return <span className="text-indigo-400">{children}</span>;
       }
+      if (isAbsoluteUrl(href.trim()) && !isSafeHref(href)) {
+        return <span className="text-indigo-400">{children}</span>;
+      }
+      const safeHref = isAbsoluteUrl(href.trim()) ? href.trim() : href;
       return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
+        <a href={safeHref} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
           {children}
         </a>
       );

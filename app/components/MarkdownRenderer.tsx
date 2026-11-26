@@ -31,14 +31,13 @@ export default function MarkdownRenderer({ children, basePath = "", animateSecti
       return <a className="text-emerald-400 hover:text-emerald-300 transition-colors">{children}</a>;
     }
 
-    if (!isSafeHref(href)) {
-      return <span className="text-emerald-400">{children}</span>;
-    }
-
-    if (isAbsoluteUrl(href)) {
+    if (isAbsoluteUrl(href.trim())) {
+      if (!isSafeHref(href)) {
+        return <span className="text-emerald-400">{children}</span>;
+      }
       return (
         <a
-          href={href}
+          href={href.trim()}
           target="_blank"
           rel="noopener noreferrer"
           className="text-emerald-400 hover:text-emerald-300 transition-colors"
