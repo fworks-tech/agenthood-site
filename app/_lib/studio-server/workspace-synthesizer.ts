@@ -1,6 +1,6 @@
 import { selectDemoModel } from '@/app/(main)/studio/_types/studio'
 import { buildMemberMessages, type ThreadMessage } from '@/app/(main)/studio/_lib/workspace-orchestrator'
-import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
+import { buildDemoLLMConfig, resolveDemoProvider, enqueueJson, chunkText } from './agenthood-adapter'
 import { providerFailure } from './zen'
 import { generateId } from '@/app/(main)/studio/_lib/ids'
 
@@ -29,7 +29,6 @@ export async function createSynthesisStream(
 
   return new ReadableStream({
     async start(controller) {
-      const enc = new TextEncoder()
       const startAt = performance.now()
       try {
         const llmConfig = buildDemoLLMConfig()
@@ -37,11 +36,7 @@ export async function createSynthesisStream(
         // reaches the right endpoint; LLMRouter.fromConfig only speaks chat.
         const provider = await resolveDemoProvider(model, llmConfig, workspaceMeta.correlationId)
 
-        controller.enqueue(
-          enc.encode(
-            JSON.stringify({ type: 'workspace.synthesized_start', workspaceId: workspaceMeta.workspaceId, correlationId: workspaceMeta.correlationId }) + '\n',
-          ),
-        )
+        enqueueJson(controller, { type: 'workspace.synthesized_start', workspaceId: workspaceMeta.workspaceId, correlationId: workspaceMeta.correlationId })
 
         // Stream synthesis
         const llmMessages = messages.map((m) => ({ role: m.role, content: m.content }))
@@ -51,16 +46,12 @@ export async function createSynthesisStream(
           if (signal?.aborted) break
           if (chunk.delta) {
             output += chunk.delta
-            controller.enqueue(
-              enc.encode(
-                JSON.stringify({
-                  type: 'workspace.synthesized',
-                  data: chunk.delta,
-                  workspaceId: workspaceMeta.workspaceId,
-                  correlationId: workspaceMeta.correlationId,
-                }) + '\n',
-              ),
-            )
+            enqueueJson(controller, {
+              type: 'workspace.synthesized',
+              data: chunk.delta,
+              workspaceId: workspaceMeta.workspaceId,
+              correlationId: workspaceMeta.correlationId,
+            })
           }
           if (chunk.done) break
         }
@@ -69,43 +60,34 @@ export async function createSynthesisStream(
         if (!output) {
           const resp = await provider.complete({ messages: llmMessages, temperature: 0.7 })
           if (resp.content) {
-            for (let i = 0; i < resp.content.length; i += 128) {
-              const slice = resp.content.slice(i, i + 128)
-              controller.enqueue(
-                enc.encode(
-                  JSON.stringify({
-                    type: 'workspace.synthesized',
-                    data: slice,
-                    workspaceId: workspaceMeta.workspaceId,
-                    correlationId: workspaceMeta.correlationId,
-                  }) + '\n',
-                ),
-              )
+            for (const slice of chunkText(resp.content)) {
+              enqueueJson(controller, {
+                type: 'workspace.synthesized',
+                data: slice,
+                workspaceId: workspaceMeta.workspaceId,
+                correlationId: workspaceMeta.correlationId,
+              })
             }
           }
         }
 
-        controller.enqueue(
-          enc.encode(
-            JSON.stringify({
-              type: 'workspace.synthesized_end',
-              workspaceId: workspaceMeta.workspaceId,
-              correlationId: workspaceMeta.correlationId,
-              durationMs: Math.round(performance.now() - startAt),
-            }) + '\n',
-          ),
-        )
+        enqueueJson(controller, {
+          type: 'workspace.synthesized_end',
+          workspaceId: workspaceMeta.workspaceId,
+          correlationId: workspaceMeta.correlationId,
+          durationMs: Math.round(performance.now() - startAt),
+        })
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         const requestId = generateId()
         const failure = providerFailure(msg, requestId)
-        controller.enqueue(enc.encode(JSON.stringify({
+        enqueueJson(controller, {
           type: 'workspace.synthesized_error',
           data: failure.message,
           requestId,
           workspaceId: workspaceMeta.workspaceId,
           correlationId: workspaceMeta.correlationId,
-        }) + '\n'))
+        })
       } finally {
         controller.close()
       }

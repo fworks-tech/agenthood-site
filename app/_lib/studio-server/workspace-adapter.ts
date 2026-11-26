@@ -4,7 +4,7 @@ import { logger } from './logger'
 import { emitLogEvent, buildTraceEnvelope, createWorkspaceTraceMeta } from './trace'
 import { selectDemoModel, getMemberTools, DEMO_MAX_TOKENS } from '@/app/(main)/studio/_types/studio'
 import { buildMemberMessages, shouldRequestHandoff, type ThreadMessage } from '@/app/(main)/studio/_lib/workspace-orchestrator'
-import { buildDemoLLMConfig, resolveDemoProvider } from './agenthood-adapter'
+import { buildDemoLLMConfig, resolveDemoProvider, enqueueJson, chunkText } from './agenthood-adapter'
 import { runToolLoop, withProviderRetry } from './tool-loop'
 import { providerFailure } from './zen'
 import { generateId } from '@/app/(main)/studio/_lib/ids'
@@ -19,14 +19,6 @@ export interface WorkspaceTurnRequest {
   turnIndex: number
   allowedMembers?: string[]
 }
-
-function encode(controller: ReadableStreamDefaultController<Uint8Array>, payload: Record<string, unknown>) {
-  controller.enqueue(new TextEncoder().encode(JSON.stringify(payload) + '\n'))
-}
-
-// Stream tokens in small batches — per-char enqueues caused ~10k controller
-// writes and client state updates per turn on long answers.
-const TOKEN_CHUNK = 128
 
 export async function createWorkspaceTurnStream(
   req: WorkspaceTurnRequest,
@@ -87,7 +79,7 @@ export async function createWorkspaceTurnStream(
 
       wsLog('info', 'workspace.turn_start', { memberId: req.memberId, turnIndex: req.turnIndex })
 
-      encode(controller, {
+      enqueueJson(controller, {
         type: 'workspace.turn_start',
         memberId: req.memberId,
         role: req.memberId,
@@ -95,7 +87,7 @@ export async function createWorkspaceTurnStream(
         workspaceId: req.workspaceId,
         correlationId: req.correlationId,
       })
-      encode(controller, {
+      enqueueJson(controller, {
         type: 'workspace.status',
         memberId: req.memberId,
         status: 'working',
@@ -139,10 +131,10 @@ export async function createWorkspaceTurnStream(
             // continuing to reason and produce a useful answer).
             if (!handoffEmitted && shouldRequestHandoff(tc.name)) {
               handoffEmitted = true
-              encode(controller, handoffPayload)
+              enqueueJson(controller, handoffPayload)
               wsLog('info', 'workspace.handoff', { memberId: req.memberId, reason: handoffPayload.reason })
             }
-            encode(controller, {
+            enqueueJson(controller, {
               type: 'workspace.tool_call',
               memberId: req.memberId,
               id: tc.id,
@@ -154,7 +146,7 @@ export async function createWorkspaceTurnStream(
             wsLog('info', 'workspace.tool_call', { memberId: req.memberId, tool: tc.name })
           },
           onToolResult: (tc, outcome) => {
-            encode(controller, {
+            enqueueJson(controller, {
               type: 'workspace.tool_result',
               memberId: req.memberId,
               id: tc.id,
@@ -177,7 +169,7 @@ export async function createWorkspaceTurnStream(
             if (chunk.delta) {
               output += chunk.delta
               outputChars += chunk.delta.length
-              encode(controller, {
+              enqueueJson(controller, {
                 type: 'workspace.token',
                 memberId: req.memberId,
                 data: chunk.delta,
@@ -189,12 +181,11 @@ export async function createWorkspaceTurnStream(
           }
           finalText = output || finalText
         } else if (finalText) {
-          for (let i = 0; i < finalText.length; i += TOKEN_CHUNK) {
+          for (const chunk of chunkText(finalText)) {
             if (signal?.aborted) break
-            const chunk = finalText.slice(i, i + TOKEN_CHUNK)
             output += chunk
             outputChars += chunk.length
-            encode(controller, {
+            enqueueJson(controller, {
               type: 'workspace.token',
               memberId: req.memberId,
               data: chunk,
@@ -209,7 +200,7 @@ export async function createWorkspaceTurnStream(
         if (signal?.aborted) {
           wsLog('warn', 'workspace.aborted', { memberId: req.memberId })
           emitTrace('error')
-          encode(controller, {
+          enqueueJson(controller, {
             type: 'workspace.turn_end',
             memberId: req.memberId,
             decision: 'handoff',
@@ -220,14 +211,14 @@ export async function createWorkspaceTurnStream(
         }
 
         wsLog('info', 'workspace.turn_end', { memberId: req.memberId, outputChars })
-        encode(controller, {
+        enqueueJson(controller, {
           type: 'workspace.turn_end',
           memberId: req.memberId,
           decision: 'pass',
           workspaceId: req.workspaceId,
           correlationId: req.correlationId,
         })
-        encode(controller, {
+        enqueueJson(controller, {
           type: 'workspace.status',
           memberId: req.memberId,
           status: 'done',
@@ -245,7 +236,7 @@ export async function createWorkspaceTurnStream(
         const requestId = generateId()
         logger.error('workspace.error', { ...workspaceMeta, error: msg, requestId })
         wsLog('error', 'workspace.error', { memberId: req.memberId })
-        encode(controller, {
+        enqueueJson(controller, {
           type: 'workspace.error',
           data: providerFailure(msg, requestId).message,
           requestId,
