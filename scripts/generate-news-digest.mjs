@@ -36,6 +36,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { load as parseYaml } from "js-yaml";
 import { buildNewsManifest } from "./build-news-manifest.mjs";
+import { fetchWithRetry } from "./lib/fetch-retry.mjs";
+import { titleFromMarkdown } from "./lib/markdown.mjs";
 
 const REPO = "fworks-tech/agenthood";
 const API_BASE = `https://api.github.com/repos/${REPO}`;
@@ -74,17 +76,6 @@ function writeAtomic(filePath, contents) {
   }
 }
 
-async function fetchWithRetry(url, options, { retries = 3, baseDelayMs = 1000 } = {}) {
-  let res;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    res = await fetch(url, options);
-    if (res.ok || res.status < 500) return res;
-    if (attempt === retries) return res;
-    await new Promise((resolve) => setTimeout(resolve, baseDelayMs * 2 ** attempt));
-  }
-  return res;
-}
-
 export async function listReleases(cutoffAt, { retries = 3, baseDelayMs = 1000 } = {}) {
   const token = process.env.GITHUB_TOKEN;
   const headers = {
@@ -96,7 +87,7 @@ export async function listReleases(cutoffAt, { retries = 3, baseDelayMs = 1000 }
   const releases = [];
   for (let page = 1; page <= 10; page++) {
     const url = `${API_BASE}/releases?per_page=100&page=${page}`;
-    const res = await fetchWithRetry(url, { headers }, { retries, baseDelayMs });
+    const res = await fetchWithRetry(url, { headers }, { attempts: retries + 1, baseDelayMs, retryRateLimit: true });
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`GitHub API error ${res.status} for ${url}: ${text}`);
@@ -214,7 +205,7 @@ async function draftArticle(postDate, releases, onError) {
         ...(onError ? [{ role: "user", content: onError }] : []),
       ],
     }),
-  });
+  }, { attempts: 4, baseDelayMs: 1000 });
 
   if (!res.ok) {
     const detail = (await res.text().catch(() => "")).slice(0, 300);
@@ -242,11 +233,6 @@ function parseFrontMatter(text) {
   } catch {
     return null;
   }
-}
-
-function titleFromMarkdown(text) {
-  const line = text.split("\n").find((l) => l.trim().startsWith("# "));
-  return line ? line.trim().replace(/^#\s+/, "") : "";
 }
 
 export function validateArticle(text, postDate) {
