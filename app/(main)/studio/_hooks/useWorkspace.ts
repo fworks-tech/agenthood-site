@@ -17,7 +17,7 @@ import { TURN_BUDGET_DEFAULT, type WorkspaceSpec, type WorkspaceStatus, type Wor
 import type { ThreadMessage } from '../_lib/workspace-orchestrator'
 import { getAgentById } from '../_data/agents'
 import { getActiveWorkspaceId, getWorkspace, saveWorkspace, setActiveWorkspaceId } from '../_lib/workspace-store'
-import { generateId } from '../_lib/ids'
+import { newWorkspaceIds } from '../_lib/workspace-core'
 
 export type WorkspaceToolCall = { id: string; name: string; args: Record<string, unknown>; result?: string; error?: string; status: 'running' | 'complete' | 'error' }
 export type { WorkspaceMessage }
@@ -430,8 +430,7 @@ export function useWorkspace(turnstileToken?: string | null) {
       for (const id of spec.memberIds) {
         if (!getAgentById(id)) throw new Error(`Invalid memberId: ${id}`)
       }
-      const wId = `ws-${generateId()}`
-      const correlationId = `ws-corr-${Date.now()}`
+      const { workspaceId: wId, correlationId } = newWorkspaceIds({ requestId: crypto.randomUUID?.() ?? `${Date.now()}` })
       correlationRef.current = correlationId
       const session = ++sessionRef.current
       const state = engineRef.current
