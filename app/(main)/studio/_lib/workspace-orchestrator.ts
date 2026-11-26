@@ -1,11 +1,9 @@
 import { TURN_BUDGET_DEFAULT, type MediatorPlan, type WorkspaceSpec } from '../_types/workspace'
+import { MAX_THREAD_MESSAGES, MAX_THREAD_TOTAL_CHARS } from './limits'
 
 export { TURN_BUDGET_DEFAULT }
 
 export type ThreadMessage = { role: 'system' | 'user' | 'assistant' | 'tool'; content: string; tool_call_id?: string; name?: string }
-
-const MAX_THREAD_CHARS = 100_000
-const MAX_THREAD_MESSAGES = 200
 
 export function parseMediatorPlan(raw: string, validIds: string[]): MediatorPlan | null {
   const stripped = raw
@@ -37,7 +35,7 @@ export function fallbackPlan(spec: WorkspaceSpec): MediatorPlan {
   }
 }
 
-export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_CHARS, maxMsgs = MAX_THREAD_MESSAGES): ThreadMessage[] {
+export function trimThread(messages: ThreadMessage[], maxChars = MAX_THREAD_TOTAL_CHARS, maxMsgs = MAX_THREAD_MESSAGES): ThreadMessage[] {
   const trimmed = [...messages]
   // Pin messages[0] — it carries the user goal/instruction, which must never
   // be trimmed. Evict oldest assistant turns first, then oldest reaction

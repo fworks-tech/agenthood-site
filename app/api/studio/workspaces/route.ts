@@ -15,12 +15,17 @@ import {
 } from '@/app/_lib/studio-server/captcha'
 
 import {
-  MAX_THREAD_MESSAGES,
-  MAX_MESSAGE_CHARS,
-  MAX_THREAD_TOTAL_CHARS,
   MAX_MEMBER_IDS,
   isBoundedId,
 } from '@/app/(main)/studio/_lib/limits'
+import {
+  MAX_INSTRUCTION_CHARS,
+  buildSseHeaders,
+  makeWorkspaceEvent,
+  newWorkspaceIds,
+  validateIdFields,
+  validateThread,
+} from '@/app/(main)/studio/_lib/workspace-core'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -103,33 +108,30 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
     })
   }
-  if (instruction.length > 4000) {
-    return new Response(JSON.stringify({ error: 'instruction must be at most 4000 chars', code: 'VALIDATION_ERROR' }), {
+  if (instruction.length > MAX_INSTRUCTION_CHARS) {
+    return new Response(JSON.stringify({ error: `instruction must be at most ${MAX_INSTRUCTION_CHARS} chars`, code: 'VALIDATION_ERROR' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
   }
 
   const headerCorrelationId = req.headers.get('x-correlation-id')
-  if (headerCorrelationId !== null && !isBoundedId(headerCorrelationId)) {
-    return jsonError('Invalid x-correlation-id header', 'VALIDATION_ERROR', 400, requestId)
-  }
-  if (payload.workspaceId !== undefined && (typeof payload.workspaceId !== 'string' || !isBoundedId(payload.workspaceId))) {
-    return jsonError('Invalid workspaceId', 'VALIDATION_ERROR', 400, requestId)
-  }
-  if (payload.correlationId !== undefined && (typeof payload.correlationId !== 'string' || !isBoundedId(payload.correlationId))) {
-    return jsonError('Invalid correlationId', 'VALIDATION_ERROR', 400, requestId)
-  }
-  if (payload.memberId !== undefined && (typeof payload.memberId !== 'string' || !isBoundedId(payload.memberId))) {
-    return jsonError('Invalid memberId', 'VALIDATION_ERROR', 400, requestId)
+  const idError = validateIdFields({
+    headerCorrelationId,
+    workspaceId: payload.workspaceId,
+    correlationId: payload.correlationId,
+    memberId: payload.memberId,
+  })
+  if (idError) {
+    return jsonError(idError, 'VALIDATION_ERROR', 400, requestId)
   }
   // Possession of the URL is the capability — never a timestamp-guessable id.
-  const workspaceId = typeof payload.workspaceId === 'string' && payload.workspaceId.length > 0
-    ? payload.workspaceId.trim()
-    : `ws-${generateId()}`
-  const correlationId = typeof payload.correlationId === 'string' && payload.correlationId.length > 0
-    ? payload.correlationId.trim()
-    : (headerCorrelationId ?? `ws-corr-${requestId}`)
+  const { workspaceId, correlationId } = newWorkspaceIds({
+    workspaceId: payload.workspaceId,
+    correlationId: payload.correlationId,
+    headerCorrelationId,
+    requestId,
+  })
 
   const memberId =
     typeof payload.memberId === 'string' && payload.memberId.length > 0 ? payload.memberId : memberIds[0]
@@ -143,30 +145,9 @@ export async function POST(req: NextRequest) {
 
   // Only conversational roles are allowed from the client — a forged system
   // message could otherwise override the member system prompt (prompt injection).
-  const VALID_ROLES = ['user', 'assistant', 'tool']
-  if (thread.length > MAX_THREAD_MESSAGES) {
-    return new Response(JSON.stringify({ error: `thread must have at most ${MAX_THREAD_MESSAGES} messages`, code: 'VALIDATION_ERROR' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-  for (const m of thread) {
-    if (typeof m.role !== 'string' || !VALID_ROLES.includes(m.role)) {
-      return new Response(JSON.stringify({ error: 'thread contains an invalid role', code: 'VALIDATION_ERROR' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-    if (typeof m.content !== 'string' || m.content.length > MAX_MESSAGE_CHARS) {
-      return new Response(JSON.stringify({ error: `thread messages must be strings of at most ${MAX_MESSAGE_CHARS} chars`, code: 'VALIDATION_ERROR' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
-  }
-  const totalChars = thread.reduce((n, m) => n + (typeof m.content === 'string' ? m.content.length : 0), 0)
-  if (totalChars > MAX_THREAD_TOTAL_CHARS) {
-    return new Response(JSON.stringify({ error: `thread must total at most ${MAX_THREAD_TOTAL_CHARS} chars`, code: 'VALIDATION_ERROR' }), {
+  const threadError = validateThread(thread)
+  if (threadError) {
+    return new Response(JSON.stringify({ error: threadError, code: 'VALIDATION_ERROR' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -218,13 +199,7 @@ export async function POST(req: NextRequest) {
     const wrapped = new ReadableStream({
       async start(controller) {
         const enc = new TextEncoder()
-        const started = {
-          type: 'workspace.started',
-          instruction,
-          members: memberIds,
-          workspaceId,
-          correlationId,
-        }
+        const started = makeWorkspaceEvent('workspace.started', { instruction, members: memberIds }, { workspaceId, correlationId })
         controller.enqueue(enc.encode(JSON.stringify(started) + '\n'))
         emitLogEvent(controller as unknown as ReadableStreamDefaultController<Uint8Array>, 'info', 'workspace.started', {
           workspaceId,
@@ -240,18 +215,18 @@ export async function POST(req: NextRequest) {
             if (done) break
             controller.enqueue(value)
           }
-          const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'ok', workspaceId, correlationId }
+          const doneEvt = makeWorkspaceEvent('workspace.done', { totalCost: 0, turns: turnIndex + 1, result: 'ok' }, { workspaceId, correlationId })
           controller.enqueue(enc.encode(JSON.stringify(doneEvt) + '\n'))
           doneSent = true
         } catch (readErr) {
           const msg = readErr instanceof Error ? readErr.message : String(readErr)
           const reference = generateId()
-          const errEvt = { type: 'workspace.error', data: providerFailure(msg, reference).message, requestId: reference, workspaceId, correlationId }
+          const errEvt = makeWorkspaceEvent('workspace.error', { data: providerFailure(msg, reference).message, requestId: reference }, { workspaceId, correlationId })
           controller.enqueue(enc.encode(JSON.stringify(errEvt) + '\n'))
           logger.error('workspace.stream_read_error', { workspaceId, correlationId, error: msg, requestId: reference })
         } finally {
           if (!doneSent) {
-            const doneEvt = { type: 'workspace.done', totalCost: 0, turns: turnIndex + 1, result: 'interrupted', workspaceId, correlationId }
+            const doneEvt = makeWorkspaceEvent('workspace.done', { totalCost: 0, turns: turnIndex + 1, result: 'interrupted' }, { workspaceId, correlationId })
             controller.enqueue(enc.encode(JSON.stringify(doneEvt) + '\n'))
           }
           controller.close()
@@ -259,14 +234,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'X-Request-Id': requestId,
-      'x-correlation-id': correlationId,
-      'x-workspace-id': workspaceId,
-    }
+    const headers: Record<string, string> = buildSseHeaders({ requestId, workspaceId, correlationId })
     if (didVerify) {
       headers['Set-Cookie'] = `captcha_verified=${await createCaptchaCookieValue()}; ${getCaptchaCookieAttributes()}`
     }
