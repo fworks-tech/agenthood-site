@@ -26,7 +26,9 @@ const securityHeaders = [
       "form-action 'self'",
       // Per-route upgrade for the first allowlisted remote MCP host goes here
       // (connect-src). No MCP host is allowlisted yet — see ADR-013.
-      "upgrade-insecure-requests",
+      // NOTE: no upgrade-insecure-requests — it breaks same-origin fetch in
+      // http dev servers (E2E): the trailing-slash 308 on /api/* gets followed
+      // as https://localhost and fails. Prod is https-only at the edge anyway.
     ].join("; "),
   },
 ];
