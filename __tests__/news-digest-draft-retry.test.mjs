@@ -124,7 +124,7 @@ describe("news digest — draft retry", () => {
       .mockResolvedValueOnce(errorResponse(404));
 
     await expect(generate({ postDate, logger: { log() {} } })).rejects.toThrow(
-      /request failed \(404\)/,
+      /Failed to fetch .*chat\/completions: 404/,
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fetchWithRetry } from "./lib/fetch-retry.mjs";
+import { titleFromMarkdown } from "./lib/markdown.mjs";
 import { MEMBERS, skillDir, siteMemberId } from "./lib/members.mjs";
 
 const REPO = "fworks-tech/agenthood";
@@ -60,11 +61,6 @@ async function fetchRaw(filePath) {
   const url = `${RAW_BASE}/${encodeRawPath(filePath)}`;
   const res = await fetchWithRetry(url, undefined, { mirrors: [mirrorUrl(filePath)] });
   return res.text();
-}
-
-function titleFromMarkdown(text) {
-  const line = text.split(/\r?\n/).find((l) => l.trim().startsWith("# "));
-  return line ? line.trim().replace(/^#\s+/, "") : "";
 }
 
 function buildSlug(relativePath) {

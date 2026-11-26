@@ -17,6 +17,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { load as parseYaml } from "js-yaml";
+import { titleFromMarkdown } from "./lib/markdown.mjs";
 
 const CONTENT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "content");
 const NEWS_DIR = path.join(CONTENT_DIR, "news");
@@ -123,11 +124,6 @@ function parseFrontMatter(text) {
   } catch {
     return { ok: false, reason: "invalid" };
   }
-}
-
-function titleFromMarkdown(text) {
-  const line = text.split("\n").find((l) => l.trim().startsWith("# "));
-  return line ? line.trim().replace(/^#\s+/, "") : "";
 }
 
 export function runNewsManifest({ lenient = false } = {}) {
