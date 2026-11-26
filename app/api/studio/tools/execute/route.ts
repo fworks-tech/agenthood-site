@@ -6,7 +6,7 @@ import {
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
 } from "@/app/_lib/studio-server/captcha";
-import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/_lib/studio-server/tools";
+import { executeTool, classifyToolResult, BUILT_IN_TOOL_NAMES, isMcpToolName, isMcpToolAllowedForMember } from "@/app/_lib/studio-server/tools";
 import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
 import { logger } from "@/app/_lib/studio-server/logger";
 import { getMemberTools } from '@/app/(main)/studio/_types/studio'
@@ -55,9 +55,11 @@ export async function POST(request: Request) {
 
     const isValidCustom = typeof tool === "string" && CUSTOM_TOOL_PATTERN.test(tool);
     if (typeof tool === "string" && isMcpToolName(tool)) {
-      throw new ValidationError(`MCP tool "${tool}" is not configured (remote HTTP only, no server allowlisted)`);
+      if (!isMcpToolAllowedForMember(typeof agentId === "string" ? agentId : "", tool)) {
+        throw new ValidationError(`MCP tool "${tool}" is not configured (remote HTTP only, no server allowlisted)`);
+      }
     }
-    if (typeof tool !== "string" || (!BUILT_IN_TOOL_NAMES.has(tool) && !isValidCustom)) {
+    if (typeof tool !== "string" || (!BUILT_IN_TOOL_NAMES.has(tool) && !isValidCustom && !isMcpToolName(tool))) {
       throw new ValidationError(`Unknown tool: "${tool ?? "undefined"}"`);
     }
     if (!args || typeof args !== "object" || Array.isArray(args)) {
@@ -68,8 +70,9 @@ export async function POST(request: Request) {
     }
     if (!agentId || typeof agentId !== 'string') throw new ValidationError('agentId must be a string')
     // The chat route grants tools by identity; a CAPTCHA alone must not hand
-    // any caller the code_execution VM.
-    if (!getMemberTools(agentId).includes(tool)) {
+    // any caller the code_execution VM. MCP names carry their own grant check.
+    const mcpAllowed = typeof tool === 'string' && isMcpToolAllowedForMember(agentId, tool)
+    if (!mcpAllowed && !getMemberTools(agentId).includes(tool as string)) {
       throw new ValidationError(`Tool "${tool}" is not allowed for this member`)
     }
 

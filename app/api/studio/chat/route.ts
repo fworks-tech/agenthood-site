@@ -10,7 +10,7 @@ import {
 } from "@/app/_lib/studio-server/captcha";
 import { logger } from "@/app/_lib/studio-server/logger";
 import { generateId } from "@/app/(main)/studio/_lib/ids";
-import { BUILT_IN_TOOL_NAMES, isMcpToolName } from "@/app/_lib/studio-server/tools";
+import { BUILT_IN_TOOL_NAMES, isMcpToolName, isMcpToolConfigured } from "@/app/_lib/studio-server/tools";
 import { CONTROL_CHARS, MAX_ID_LENGTH } from "@/app/(main)/studio/_lib/limits";
 import { DEMO_PROVIDER, CLIENT_MESSAGE_ROLES } from "@/app/(main)/studio/_types/studio";
 
@@ -79,12 +79,12 @@ function validateConfig(config: unknown): ChatRequestConfig {
     validated.enabledTools = (c.enabledTools as unknown[]).filter(
       (t): t is string =>
         typeof t === "string" &&
-        (CUSTOM_TOOL_PATTERN.test(t) || BUILT_IN_TOOL_NAMES.has(t)),
+        (CUSTOM_TOOL_PATTERN.test(t) || BUILT_IN_TOOL_NAMES.has(t) || isMcpToolConfigured(t)),
     );
-    // MCP names are fail-closed, not silently dropped: a client asking for
-    // mcp__* gets an explicit error instead of a quiet grant downgrade.
+    // MCP names are fail-closed, not silently dropped: a client asking for an
+    // unconfigured mcp__* gets an explicit error instead of a quiet downgrade.
     for (const t of c.enabledTools) {
-      if (typeof t === "string" && isMcpToolName(t)) {
+      if (typeof t === "string" && isMcpToolName(t) && !isMcpToolConfigured(t)) {
         throw new ValidationError(`MCP tool "${t}" is not configured (remote HTTP only, no server allowlisted)`);
       }
     }

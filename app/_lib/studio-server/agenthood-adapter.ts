@@ -2,7 +2,7 @@ import { buildSystemPrompt } from "@/app/(main)/studio/_lib/system-prompt";
 import { ValidationError } from "@/app/(main)/studio/_lib/errors";
 import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ILLMProvider } from "agenthood/dist/llm";
-import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from "./tools";
+import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS, isMcpToolName, isMcpToolAllowedForMember, getMcpToolSchemas } from "./tools";
 import { runToolLoop, withProviderRetry } from "./tool-loop";
 import { providerFailure, zenProtocolForModel, ZenMessagesProvider } from "./zen";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
@@ -133,7 +133,9 @@ export class LightweightAdapter implements AgenthoodAdapter {
     // grant. The chat route already does this, but the adapter is the choke
     // point every caller shares, so the rule is enforced once, here.
     const granted = new Set(getMemberTools(req.agentId));
-    const enabledTools = (req.config?.enabledTools ?? []).filter((t) => granted.has(t));
+    const enabledTools = (req.config?.enabledTools ?? []).filter(
+      (t) => granted.has(t) || isMcpToolAllowedForMember(req.agentId, t),
+    );
     const model = selectDemoModel(req.agentId, req.messages, enabledTools.length > 0);
 
     const startTime = performance.now();
@@ -144,9 +146,15 @@ export class LightweightAdapter implements AgenthoodAdapter {
     const messages = buildLLMMessages(req, systemPrompt);
 
     const allSchemas = getToolSchemas();
-    const toolSchemas = enabledTools.length > 0
-      ? allSchemas.filter((s) => enabledTools.includes(s.name))
-      : undefined;
+    // MCP schemas are dynamic (tools/list per configured server), filtered to
+    // exactly the names the caller enabled — never the server's full catalog.
+    const mcpSchemas = await getMcpToolSchemas(
+      enabledTools.filter(isMcpToolName),
+      signal,
+    );
+    const baseSchemas = enabledTools.length > 0 ? allSchemas.filter((s) => enabledTools.includes(s.name)) : [];
+    const toolSchemas = [...baseSchemas, ...mcpSchemas];
+    const effectiveSchemas = toolSchemas.length > 0 ? toolSchemas : undefined;
 
     function emitTrace(controller: ReadableStreamDefaultController<Uint8Array>, status: "success" | "error", output: string): void {
       const envelope = buildTraceEnvelope({
@@ -179,12 +187,12 @@ export class LightweightAdapter implements AgenthoodAdapter {
         try {
           const provider = await resolveDemoProvider(model, llmConfig, correlationId);
 
-          if (toolSchemas && toolSchemas.length > 0) {
+          if (effectiveSchemas && effectiveSchemas.length > 0) {
             const emit = (event: Record<string, unknown>) => enqueueJson(controller, event);
             const loop = await runToolLoop({
               provider,
               messages,
-              toolSchemas,
+              toolSchemas: effectiveSchemas,
               maxIterations: PLAYGROUND_MAX_TOOL_ITERATIONS,
               signal,
               onToolCall: (tc) => emit({ type: "tool_call", id: tc.id, name: tc.name, args: tc.args }),

@@ -58,7 +58,16 @@
   "skills": {
     "autoDiscover": false
   },
-  "mcpServers": {},
+  "mcpServers": {
+    "docs": {
+      "transport": "http",
+      "url": "${env:MCP_DOCS_URL}",
+      "headers": {
+        "Authorization": "Bearer ${env:MCP_DOCS_AUTH_TOKEN}"
+      },
+      "readOnly": true
+    }
+  },
   "security": {
     "strictSkillIntegrity": true
   }
