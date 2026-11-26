@@ -86,6 +86,21 @@ describe("/api/studio/tools/execute", () => {
     expect(data.error).toContain('MCP tool');
   });
 
+  it("executes configured MCP tools and denies unknown members", async () => {
+    process.env.MCP_DOCS_URL = 'https://docs.example.com/mcp';
+    process.env.MCP_DOCS_AUTH_TOKEN = 'secret';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ jsonrpc: '2.0', result: { content: [{ type: 'text', text: 'doc hit' }] } }), { status: 200 }),
+    ));
+    const ok = await post({ agentId: 'the-builder', tool: "mcp__docs__fetch", args: {} });
+    expect(ok.status).toBe(200);
+    expect((await ok.json()).result).toBe('doc hit');
+    const denied = await post({ agentId: 'nobody', tool: "mcp__docs__fetch", args: {} });
+    expect(denied.status).toBe(400);
+    expect((await denied.json()).code).toBe('VALIDATION_ERROR');
+    vi.unstubAllGlobals();
+  });
+
   it("rejects non-object args with 400", async () => {
     const res = await post({ tool: "code_execution", args: null });
     expect(res.status).toBe(400);

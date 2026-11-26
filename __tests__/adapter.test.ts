@@ -49,6 +49,9 @@ vi.mock("../app/(main)/studio/_data/registry.generated", () => ({
 vi.mock("../app/_lib/studio-server/tools", () => ({
   getToolSchemas: mockGetToolSchemas,
   executeTool: mockExecuteTool,
+  isMcpToolName: (name: unknown) => typeof name === "string" && name.startsWith("mcp__"),
+  isMcpToolAllowedForMember: () => false,
+  getMcpToolSchemas: () => Promise.resolve([]),
   MAX_TOOL_ITERATIONS: 25,
   PLAYGROUND_MAX_TOOL_ITERATIONS: 10,
   classifyToolResult: (result: string) =>

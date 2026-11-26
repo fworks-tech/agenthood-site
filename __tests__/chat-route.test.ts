@@ -195,6 +195,23 @@ describe("chat route validation", () => {
       "MCP tool",
     );
   });
+
+  it("passes configured MCP names through to the adapter grant", async () => {
+    process.env.MCP_DOCS_URL = 'https://docs.example.com/mcp';
+    process.env.MCP_DOCS_AUTH_TOKEN = 'secret';
+    chatMock.mockResolvedValue(streamWith('{"type":"done"}'));
+    const res = await postRoute({
+      ...VALID_BODY,
+      config: { enabledTools: ["web_fetch", "mcp__docs__fetch"] },
+    });
+    expect(res.status).toBe(200);
+    expect(chatMock.mock.calls[0][0].config.enabledTools).toEqual([
+      "web_fetch",
+      "mcp__docs__fetch",
+    ]);
+    delete process.env.MCP_DOCS_URL;
+    delete process.env.MCP_DOCS_AUTH_TOKEN;
+  });
 });
 
 describe("chat route streaming response", () => {
