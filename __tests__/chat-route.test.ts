@@ -6,7 +6,7 @@ const { chatMock, captureSpy } = vi.hoisted(() => ({
   captureSpy: vi.fn(),
 }));
 
-vi.mock("@/app/(main)/studio/_lib/agenthood-adapter", () => ({
+vi.mock("@/app/_lib/studio-server/agenthood-adapter", () => ({
   LightweightAdapter: class {
     chat = chatMock;
   },

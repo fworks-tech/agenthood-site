@@ -3,7 +3,7 @@ import {
   zenProtocolForModel,
   ZenMessagesProvider,
   jevChoice,
-} from '../app/(main)/studio/_lib/zen'
+} from '../app/_lib/studio-server/zen'
 
 function jsonFetch(body: unknown, ok = true, status = 200) {
   return vi.fn().mockResolvedValue({

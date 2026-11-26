@@ -7,7 +7,7 @@ import {
   TOOL_RESULT_MAX_CHARS,
   MAX_FETCH_REDIRECTS,
   CODE_EXECUTION_MAX_CHARS,
-} from '../app/(main)/studio/_lib/tools'
+} from '../app/_lib/studio-server/tools'
 
 function responseBody(text: string): ReadableStream<Uint8Array> {
   return new ReadableStream({

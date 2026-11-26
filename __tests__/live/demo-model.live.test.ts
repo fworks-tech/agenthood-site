@@ -14,8 +14,8 @@
 // Costs real money (a fraction of a cent per run) and takes ~30s, which is why
 // it is opt-in.
 import { describe, it, expect } from "vitest";
-import { LightweightAdapter } from "../../app/(main)/studio/_lib/agenthood-adapter";
-import { createWorkspaceTurnStream } from "../../app/(main)/studio/_lib/workspace-adapter";
+import { LightweightAdapter } from "../../app/_lib/studio-server/agenthood-adapter";
+import { createWorkspaceTurnStream } from "../../app/_lib/studio-server/workspace-adapter";
 import {
   DEMO_QA_MODEL,
   DEMO_CODE_MODEL,

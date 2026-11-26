@@ -1,4 +1,4 @@
-import { createWorkspaceTurnStream as createTurn } from '../app/(main)/studio/_lib/workspace-adapter'
+import { createWorkspaceTurnStream as createTurn } from '../app/_lib/studio-server/workspace-adapter'
 import { parseMediatorPlan, fallbackPlan } from '../app/(main)/studio/_lib/workspace-orchestrator'
 import { TURN_BUDGET_DEFAULT } from '../app/(main)/studio/_types/workspace'
 import fs from 'fs'

@@ -1,6 +1,6 @@
-import { CaptchaError } from "./errors";
+import { CaptchaError } from "@/app/(main)/studio/_lib/errors";
 import { logger } from "./logger";
-import { TURNSTILE_ENABLED, TURNSTILE_REQUIRED } from './env';
+import { TURNSTILE_ENABLED, TURNSTILE_REQUIRED } from '@/app/(main)/studio/_lib/env';
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;

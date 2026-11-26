@@ -3,7 +3,7 @@ import { ReadableStream } from "node:stream/web";
 
 const { chatStub } = vi.hoisted(() => ({ chatStub: vi.fn() }));
 
-vi.mock("@/app/(main)/studio/_lib/agenthood-adapter", () => ({
+vi.mock("@/app/_lib/studio-server/agenthood-adapter", () => ({
   LightweightAdapter: class {
     chat = chatStub;
   },
@@ -209,7 +209,7 @@ describe("Turnstile CAPTCHA validation", () => {
     process.env.TURNSTILE_SECRET_KEY = "test-secret";
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "test-site-key";
 
-    const { createCaptchaCookieValue } = await import("../app/(main)/studio/_lib/captcha");
+    const { createCaptchaCookieValue } = await import("../app/_lib/studio-server/captcha");
     const signed = await createCaptchaCookieValue();
 
     const { POST } = await import("../app/api/studio/chat/route");

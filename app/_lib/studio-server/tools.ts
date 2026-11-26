@@ -2,7 +2,7 @@ import type { ToolSchema } from "agenthood/dist/llm";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
-import { getCustomToolSchemas } from "./custom-tools";
+import { getCustomToolSchemas } from "@/app/(main)/studio/_lib/custom-tools";
 
 export interface ToolDefinition {
   schema: ToolSchema;

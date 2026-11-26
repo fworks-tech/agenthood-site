@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
-import { logger } from '@/app/(main)/studio/_lib/logger'
-import { jevChoice } from '@/app/(main)/studio/_lib/zen'
+import { logger } from '@/app/_lib/studio-server/logger'
+import { jevChoice } from '@/app/_lib/studio-server/zen'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

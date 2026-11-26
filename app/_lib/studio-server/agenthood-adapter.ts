@@ -1,12 +1,12 @@
-import { buildSystemPrompt } from "./system-prompt";
-import { ValidationError } from "./errors";
+import { buildSystemPrompt } from "@/app/(main)/studio/_lib/system-prompt";
+import { ValidationError } from "@/app/(main)/studio/_lib/errors";
 import { logger } from "./logger";
 import type { LLMRequest, LLMConfig, Message, ILLMProvider } from "agenthood/dist/llm";
 import { getToolSchemas, PLAYGROUND_MAX_TOOL_ITERATIONS } from "./tools";
 import { runToolLoop, withProviderRetry } from "./tool-loop";
 import { providerFailure, zenProtocolForModel, ZenMessagesProvider } from "./zen";
 import { emitLogEvent, buildTraceEnvelope } from "./trace";
-import { generateId } from "./ids";
+import { generateId } from "@/app/(main)/studio/_lib/ids";
 import {
   DEMO_MAX_TOKENS,
   DEMO_PROVIDER,
@@ -14,7 +14,7 @@ import {
   getMemberTools,
   selectDemoModel,
   type Provider,
-} from "../_types/studio";
+} from "@/app/(main)/studio/_types/studio";
 
 export interface ChatRequest {
   agentId: string;

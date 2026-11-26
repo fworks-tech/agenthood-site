@@ -1,18 +1,18 @@
 import { NextRequest } from 'next/server'
 import { getAgentById } from '@/app/(main)/studio/_data/agents'
-import { createWorkspaceTurnStream } from '@/app/(main)/studio/_lib/workspace-adapter'
-import { logger } from '@/app/(main)/studio/_lib/logger'
-import { emitLogEvent } from '@/app/(main)/studio/_lib/trace'
+import { createWorkspaceTurnStream } from '@/app/_lib/studio-server/workspace-adapter'
+import { logger } from '@/app/_lib/studio-server/logger'
+import { emitLogEvent } from '@/app/_lib/studio-server/trace'
 import { getWorkspaceAsync, saveWorkspaceAsync } from '@/app/(main)/studio/_lib/workspace-store'
 import { StudioError } from '@/app/(main)/studio/_lib/errors'
-import { providerFailure } from '@/app/(main)/studio/_lib/zen'
+import { providerFailure } from '@/app/_lib/studio-server/zen'
 import { generateId } from '@/app/(main)/studio/_lib/ids'
 import {
   validateTurnstile,
   createCaptchaCookieValue,
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
-} from '@/app/(main)/studio/_lib/captcha'
+} from '@/app/_lib/studio-server/captcha'
 
 import {
   MAX_THREAD_MESSAGES,

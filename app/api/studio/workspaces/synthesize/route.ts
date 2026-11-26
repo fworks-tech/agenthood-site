@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { createSynthesisStream } from '@/app/(main)/studio/_lib/workspace-synthesizer'
+import { createSynthesisStream } from '@/app/_lib/studio-server/workspace-synthesizer'
 import type { ThreadMessage } from '@/app/(main)/studio/_lib/workspace-orchestrator'
 import { StudioError } from '@/app/(main)/studio/_lib/errors'
 import { generateId } from '@/app/(main)/studio/_lib/ids'
@@ -8,7 +8,7 @@ import {
   createCaptchaCookieValue,
   getCaptchaCookieAttributes,
   parseCaptchaCookie,
-} from '@/app/(main)/studio/_lib/captcha'
+} from '@/app/_lib/studio-server/captcha'
 
 import {
   MAX_THREAD_MESSAGES,

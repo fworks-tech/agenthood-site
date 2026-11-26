@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from "vitest";
 // Since sanitize is internal to logger.ts, we test through the public logger API
 
 describe("logger sanitization", () => {  it("redacts apiKey fields", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("test.event", { agentId: "the-architect", apiKey: "sk-abc123" });
@@ -17,7 +17,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts content fields", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", { content: "some user message", chunks: 5 });
@@ -29,7 +29,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts nested blocked key names", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.request", { agentId: "x", token: "abc" });
@@ -41,7 +41,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("passes through non-sensitive fields", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", { agentId: "the-architect", chunks: 42, durationMs: 1500 });
@@ -55,7 +55,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts sensitive keys nested inside arrays bridged to the client", async () => {
-    const { pickSafeLogMeta } = await import("../app/(main)/studio/_lib/logger");
+    const { pickSafeLogMeta } = await import("../app/_lib/studio-server/logger");
 
     const safe = pickSafeLogMeta({ tools: [{ name: "t", apiKey: "sk-nested-secret" }] });
     const tools = safe.tools as Array<Record<string, unknown>>;
@@ -65,7 +65,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts every occurrence of a secret pattern, not just the first", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", {
@@ -80,7 +80,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("fails closed past the depth cap instead of leaking raw metadata", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     let deep: Record<string, unknown> = { secret: "deep-secret-value" };
@@ -94,7 +94,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("survives circular metadata without throwing and redacts the cycle", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     const meta: Record<string, unknown> = { agentId: "x" };
@@ -108,7 +108,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts opencode/groq/openrouter key prefixes in values", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", {
@@ -125,7 +125,7 @@ describe("logger sanitization", () => {  it("redacts apiKey fields", async () =>
   });
 
   it("redacts OpenAI project and Anthropic key prefixes in values", async () => {
-    const { logger } = await import("../app/(main)/studio/_lib/logger");
+    const { logger } = await import("../app/_lib/studio-server/logger");
     const spy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     logger.info("chat.complete", {

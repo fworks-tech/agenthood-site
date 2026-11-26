@@ -17,8 +17,8 @@ vi.mock('agenthood/dist/llm', () => ({
 
 // Pin the demo provider onto the chat-completions seam these adapter tests
 // exercise; Zen protocol selection is covered separately in zen.test.ts.
-vi.mock('../app/(main)/studio/_lib/zen', async (io) => ({
-  ...(await io<typeof import('../app/(main)/studio/_lib/zen')>()),
+vi.mock('../app/_lib/studio-server/zen', async (io) => ({
+  ...(await io<typeof import('../app/_lib/studio-server/zen')>()),
   zenProtocolForModel: () => 'chat',
 }))
 
@@ -39,8 +39,8 @@ vi.mock('../app/(main)/studio/_data/registry.generated', () => ({
   codeAgents: ['the-architect', 'the-builder', 'the-debugger', 'the-herald', 'the-inspector', 'the-librarian', 'the-mailman', 'the-scribe', 'the-tester'],
 }))
 
-vi.mock('../app/(main)/studio/_lib/tools', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../app/(main)/studio/_lib/tools')>()
+vi.mock('../app/_lib/studio-server/tools', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../app/_lib/studio-server/tools')>()
   return {
     ...actual,
     executeTool: mockExecuteTool,
@@ -53,7 +53,7 @@ vi.mock('../app/(main)/studio/_lib/tools', async (importOriginal) => {
   }
 })
 
-import { createWorkspaceTurnStream } from '../app/(main)/studio/_lib/workspace-adapter'
+import { createWorkspaceTurnStream } from '../app/_lib/studio-server/workspace-adapter'
 
 function setupProvider(opts: { complete?: unknown; stream?: unknown } = {}) {
   const provider = {
