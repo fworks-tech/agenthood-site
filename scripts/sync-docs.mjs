@@ -194,7 +194,7 @@ async function syncFullDocs(tree) {
   console.log(`Synced ${entries.length} files to content/docs`);
 }
 
-async function main() {
+export async function runDocs() {
   fs.mkdirSync(CONTENT_DIR, { recursive: true });
   const tree = await api(`${API_BASE}/git/trees/${BRANCH}?recursive=1`);
   if (tree.truncated) {
@@ -211,7 +211,7 @@ async function main() {
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  main().catch((err) => {
+  runDocs().catch((err) => {
     console.error(err);
     process.exit(1);
   });
