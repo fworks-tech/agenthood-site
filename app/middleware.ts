@@ -75,6 +75,10 @@ const RATE_LIMITS: RateLimits = {
   "/api/studio/agents": { max: 60, windowMs: 60_000 },
   "/api/studio/feedback": { max: 60, windowMs: 60_000 },
   "/api/news/comments": { max: 30, windowMs: 60_000 },
+  // Bearer-gated MCP docs server (server-to-server + dashboard use); same
+  // budget as the other read-mostly lists. No origin protection by design —
+  // the Studio client calls it without an Origin header, bearer is the gate.
+  "/api/mcp": { max: 60, windowMs: 60_000 },
 };
 
 const MAX_STORE_SIZE = 10_000;
@@ -154,8 +158,13 @@ function createUpstashRatelimiter() {
     limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/news/comments"].max, `${RATE_LIMITS["/api/news/comments"].windowMs}ms`),
     prefix: "ratelimit:comments",
   });
+  const mcp = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(RATE_LIMITS["/api/mcp"].max, `${RATE_LIMITS["/api/mcp"].windowMs}ms`),
+    prefix: "ratelimit:mcp",
+  });
 
-  return { chat, jev, workspaceJev, tools, agents, feedback, workspaces, comments };
+  return { chat, jev, workspaceJev, tools, agents, feedback, workspaces, comments, mcp };
 }
 
 const upstash = createUpstashRatelimiter();
@@ -179,7 +188,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
   if (!limitKey) return null;
   const limits = RATE_LIMITS[limitKey];
 
-  const LIMITER_BY_KEY: Record<string, "chat" | "jev" | "workspaceJev" | "tools" | "agents" | "feedback" | "workspaces" | "comments"> = {
+  const LIMITER_BY_KEY: Record<string, "chat" | "jev" | "workspaceJev" | "tools" | "agents" | "feedback" | "workspaces" | "comments" | "mcp"> = {
     "/api/studio/chat": "chat",
     "/api/studio/workspaces/jev": "workspaceJev",
     "/api/studio/jev": "jev",
@@ -188,6 +197,7 @@ async function checkRateLimit(pathname: string, ip: string): Promise<NextRespons
     "/api/studio/feedback": "feedback",
     "/api/studio/workspaces": "workspaces",
     "/api/news/comments": "comments",
+    "/api/mcp": "mcp",
   };
 
   if (upstash) {
@@ -288,5 +298,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/studio/:path*", "/api/news/:path*"],
+  matcher: ["/api/studio/:path*", "/api/news/:path*", "/api/mcp/:path*"],
 };
