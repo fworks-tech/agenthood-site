@@ -51,6 +51,21 @@ Vercel serverless has read-only `/var/task` and no process spawn. The public
   with `MemberAgent`/`McpSession` — do not expose stdio or `restricted` MCP
   until shared.
 
+## Follow-up: first server implemented (#371)
+
+- `POST /api/mcp/docs` (same-app, `runtime nodejs`, `force-dynamic`)
+  answers `tools/list` with exactly `search` + `fetch` and `tools/call`
+  over the build-generated corpus (`content/docs/**/*.md` when synced,
+  always `content/news/*.md`; titles prefer the manifests, headings
+  otherwise). Unknown corpus paths return JSON-RPC `-32602` — only
+  enumerated files are readable, so no traversal can escape `content/`.
+- Bearer-gated (`Authorization === Bearer $MCP_DOCS_AUTH_TOKEN`, 401
+  otherwise, corpus untouched); `MCP_DOCS_URL` self-hosts at
+  `https://<app>/api/mcp/docs`. Local dev stays fail-closed by design
+  (client requires https, localhost http is skipped).
+- Logs carry names + outcome only (no args/results), same as the client
+  audit rule. No `connect-src` CSP change: execution is server-side.
+
 ## References
 
 - `app/(main)/studio/_lib/tools.ts`, `app/(main)/studio/_types/studio.ts`,
