@@ -81,7 +81,7 @@ describe("POST /api/mcp/docs tools/call", () => {
   });
 
   it("rejects bad search params and unknown tools", async () => {
-    for (const args of [{}, { q: "" }, { q: 42 }, { q: "x", limit: "many" }]) {
+    for (const args of [{}, { q: "" }, { q: 42 }, { q: "x", limit: "many" }, { q: "x", limit: 2.5 }]) {
       const body = await (await call(rpc("tools/call", { name: "search", arguments: args }))).json();
       expect(body.error.code).toBe(-32602);
     }

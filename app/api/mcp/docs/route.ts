@@ -1,4 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
+import { timingSafeEqual } from "node:crypto";
 import { join } from "node:path";
 import { logger } from "@/app/_lib/studio-server/logger";
 import { TOOL_RESULT_MAX_CHARS } from "@/app/_lib/studio-server/tools";
@@ -18,6 +19,13 @@ const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
 
 type RpcId = string | number | null;
+
+// Same secret-compare shape as the jev route: length check first, constant
+// time after, so a wrong guess leaks nothing beyond rejection.
+function tokenMatches(provided: string | null, secret: string): boolean {
+  if (!provided || provided.length !== secret.length) return false;
+  return timingSafeEqual(Buffer.from(provided), Buffer.from(secret));
+}
 
 function rpcOk(id: RpcId, result: unknown): Response {
   return Response.json({ jsonrpc: "2.0", id, result });
@@ -72,6 +80,8 @@ async function listCorpusFiles(): Promise<string[]> {
   }
   await walk("docs", true);
   await walk("news", false);
+  // Silent bound shared by search and fetch: past 500 files both miss the
+  // tail, so raise this (or go manifest-only) before the corpus grows here.
   return out.slice(0, 500);
 }
 
@@ -145,11 +155,57 @@ const FETCH_SCHEMA = {
   },
 };
 
+class RpcError extends Error {
+  constructor(public code: number, message: string) {
+    super(message);
+  }
+}
+
+function invalidParams(message: string): RpcError {
+  return new RpcError(-32602, `Invalid params: ${message}`);
+}
+
+async function handleSearch(args: Record<string, unknown>): Promise<unknown> {
+  if (typeof args.q !== "string" || args.q.trim().length === 0 || args.q.length > 200) {
+    throw invalidParams("q must be a non-empty string (max 200 chars)");
+  }
+  let limit = DEFAULT_LIMIT;
+  if (args.limit !== undefined) {
+    if (typeof args.limit !== "number" || !Number.isInteger(args.limit)) {
+      throw invalidParams("limit must be an integer 1-10");
+    }
+    limit = Math.min(Math.max(args.limit, 1), MAX_LIMIT);
+  }
+  const hits = await searchCorpus(args.q.trim(), limit);
+  return { content: [{ type: "text", text: JSON.stringify(hits).slice(0, TOOL_RESULT_MAX_CHARS) }] };
+}
+
+async function handleFetch(args: Record<string, unknown>): Promise<unknown> {
+  if (typeof args.path !== "string") throw invalidParams("path must be a string");
+  // shortcut: substring allowlist over the enumerated corpus — no
+  // traversal can escape content/ because only listed files are readable.
+  // Upgrade to a manifest-only allowlist if the corpus grows past ~500 files.
+  const files = await listCorpusFiles();
+  if (!files.includes(args.path)) {
+    logger.warn("mcp.docs", { method: "tools/call", tool: "fetch", ok: false });
+    throw invalidParams("unknown corpus path");
+  }
+  try {
+    return {
+      content: [
+        { type: "text", text: (await readFile(join(CONTENT_DIR, args.path), "utf8")).slice(0, TOOL_RESULT_MAX_CHARS) },
+      ],
+    };
+  } catch {
+    throw new RpcError(-32603, "Internal error: corpus file unreadable");
+  }
+}
+
 export async function POST(request: Request): Promise<Response> {
   // Auth before anything else: no token configured, or a wrong one, fails
   // closed with 401 and never touches the corpus.
   const token = process.env.MCP_DOCS_AUTH_TOKEN;
-  if (!token || request.headers.get("authorization") !== `Bearer ${token}`) {
+  if (!token || !tokenMatches(request.headers.get("authorization"), `Bearer ${token}`)) {
     logger.warn("mcp.docs.unauthorized", {});
     return rpcErr(null, -32001, "Unauthorized", 401);
   }
@@ -158,7 +214,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    logger.warn("mcp.docs.invalid", { ok: false });
+    logger.warn("mcp.docs.invalid", {});
     return rpcErr(null, -32700, "Parse error: body must be valid JSON");
   }
   const id: RpcId =
@@ -166,7 +222,7 @@ export async function POST(request: Request): Promise<Response> {
       ? (body as { id: unknown }).id as RpcId
       : null;
   if (!body || typeof body !== "object" || (body as { jsonrpc?: unknown }).jsonrpc !== "2.0") {
-    return rpcErr(id ?? null, -32600, "Invalid Request: jsonrpc 2.0 object required");
+    return rpcErr(id, -32600, "Invalid Request: jsonrpc 2.0 object required");
   }
   const { method, params } = body as { method?: unknown; params?: unknown };
   const args = params && typeof params === "object" ? (params as Record<string, unknown>) : null;
@@ -182,44 +238,20 @@ export async function POST(request: Request): Promise<Response> {
     if (typeof name !== "string" || !callArgs || typeof callArgs !== "object" || Array.isArray(callArgs)) {
       return rpcErr(id, -32602, "Invalid params: { name: string, arguments: object } required");
     }
-    const a = callArgs as Record<string, unknown>;
-
-    if (name === "search") {
-      if (typeof a.q !== "string" || a.q.trim().length === 0 || a.q.length > 200) {
-        return rpcErr(id, -32602, "Invalid params: q must be a non-empty string (max 200 chars)");
+    try {
+      if (name === "search") {
+        const result = await handleSearch(callArgs as Record<string, unknown>);
+        logger.info("mcp.docs", { method: "tools/call", tool: "search", ok: true });
+        return rpcOk(id, result);
       }
-      const limit =
-        a.limit === undefined
-          ? DEFAULT_LIMIT
-          : typeof a.limit === "number" && Number.isInteger(a.limit)
-            ? Math.min(Math.max(a.limit, 1), MAX_LIMIT)
-            : NaN;
-      if (Number.isNaN(limit)) return rpcErr(id, -32602, "Invalid params: limit must be an integer 1-10");
-      const hits = await searchCorpus(a.q.trim(), limit);
-      logger.info("mcp.docs", { method: "tools/call", tool: "search", ok: true });
-      return rpcOk(id, { content: [{ type: "text", text: JSON.stringify(hits).slice(0, TOOL_RESULT_MAX_CHARS) }] });
-    }
-
-    if (name === "fetch") {
-      if (typeof a.path !== "string") {
-        return rpcErr(id, -32602, "Invalid params: path must be a string");
+      if (name === "fetch") {
+        const result = await handleFetch(callArgs as Record<string, unknown>);
+        logger.info("mcp.docs", { method: "tools/call", tool: "fetch", ok: true });
+        return rpcOk(id, result);
       }
-      // shortcut: substring allowlist over the enumerated corpus — no
-      // traversal can escape content/ because only listed files are readable.
-      // Upgrade to a manifest-only allowlist if the corpus grows past ~500 files.
-      const files = await listCorpusFiles();
-      if (!files.includes(a.path)) {
-        logger.warn("mcp.docs", { method: "tools/call", tool: "fetch", ok: false });
-        return rpcErr(id, -32602, "Invalid params: unknown corpus path");
-      }
-      let text: string;
-      try {
-        text = (await readFile(join(CONTENT_DIR, a.path), "utf8")).slice(0, TOOL_RESULT_MAX_CHARS);
-      } catch {
-        return rpcErr(id, -32603, "Internal error: corpus file unreadable");
-      }
-      logger.info("mcp.docs", { method: "tools/call", tool: "fetch", ok: true });
-      return rpcOk(id, { content: [{ type: "text", text }] });
+    } catch (err) {
+      if (err instanceof RpcError) return rpcErr(id, err.code, err.message);
+      throw err;
     }
 
     return rpcErr(id, -32601, `Method not found: tools/call ${name}`);
