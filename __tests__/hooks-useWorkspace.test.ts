@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useWorkspace } from '../app/(main)/studio/_hooks/useWorkspace'
+import { useWorkspace, failRunningToolCalls } from '../app/(main)/studio/_hooks/useWorkspace'
 
 type TurnScript = { text: string } | { hang: true }
 
@@ -336,5 +336,20 @@ describe('useWorkspace chain engine', () => {
     // The 402 cause is genericized on the card, and never surfaced verbatim on a public demo.
     expect(cards.length).toBeGreaterThan(0)
     expect(cards.every((c) => !c.content.includes('Insufficient account funds'))).toBe(true)
+  })
+})
+
+describe('failRunningToolCalls', () => {
+  const running = { id: 't1', memberId: 'the-builder', content: '', turnIndex: 1, toolCalls: [{ id: 'c1', name: 'web_fetch', args: {}, status: 'running' as const }] }
+  it('marks running tools as error with the stop reason', () => {
+    const out = failRunningToolCalls([running], 'Stopped')
+    expect(out[0].toolCalls).toEqual([{ id: 'c1', name: 'web_fetch', args: {}, status: 'error', error: 'Stopped' }])
+  })
+  it('leaves settled tools and tool-less messages untouched', () => {
+    const done = { id: 't2', memberId: 'the-builder', content: 'ok', turnIndex: 1, toolCalls: [{ id: 'c2', name: 'web_fetch', args: {}, status: 'complete' as const }] }
+    const bare = { id: 't3', memberId: 'the-builder', content: 'ok', turnIndex: 1 }
+    const out = failRunningToolCalls([done, bare], 'Stopped')
+    expect(out[0].toolCalls?.[0].status).toBe('complete')
+    expect(out[1].toolCalls).toEqual([])
   })
 })
