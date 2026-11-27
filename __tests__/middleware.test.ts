@@ -96,6 +96,13 @@ describe("middleware origin validation", () => {
     expect(res.status).toBe(200);
   });
 
+  it("does not validate origin on the MCP docs route (bearer is the gate)", async () => {
+    const res = await callMiddleware(
+      makeRequest("/api/mcp/docs", { origin: "https://evil.example" }),
+    );
+    expect(res.status).toBe(200);
+  });
+
   it("rejects foreign origins for the tools endpoint", async () => {
     const res = await callMiddleware(
       makeRequest("/api/studio/tools/execute/", { origin: "https://evil.example" }),
@@ -289,6 +296,19 @@ describe("middleware in-memory rate limiting", () => {
     const throttled = await callMiddleware(makeRequest("/api/studio/tools/execute/"));
     expect(throttled.status).toBe(429);
   });
+
+  it("throttles the MCP docs route at 60/min in its own bucket", async () => {
+    for (let i = 0; i < 60; i += 1) {
+      const res = await callMiddleware(makeRequest("/api/mcp/docs"));
+      expect(res.status).not.toBe(429);
+    }
+    const throttled = await callMiddleware(makeRequest("/api/mcp/docs"));
+    expect(throttled.status).toBe(429);
+    expect((await throttled.json()).code).toBe("RATE_LIMITED");
+
+    const agents = await callMiddleware(makeRequest("/api/studio/agents"));
+    expect(agents.status).toBe(200);
+  });
 });
 
 describe("middleware Upstash rate limiting", () => {
@@ -376,6 +396,24 @@ describe("middleware Upstash rate limiting", () => {
     const res = await middleware(makeRequest("/api/news/comments"));
     expect(res.status).toBe(429);
     expect(res.headers.get("RateLimit-Limit")).toBe("30");
+  });
+
+  it("routes /api/mcp/docs to its own Upstash limiter", async () => {
+    const { middleware } = await import("../app/middleware");
+    const mcp = ratelimitInstances.find((r) => r.prefix === "ratelimit:mcp");
+    const chat = ratelimitInstances.find((r) => r.prefix === "ratelimit:chat");
+    expect(mcp).toBeDefined();
+    mcp!.limit.mockResolvedValueOnce({
+      success: true,
+      limit: 60,
+      remaining: 59,
+      reset: Date.now() + 60_000,
+    });
+    const res = await middleware(makeRequest("/api/mcp/docs"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("RateLimit-Limit")).toBe("60");
+    expect(mcp!.limit).toHaveBeenCalledTimes(1);
+    expect(chat!.limit).not.toHaveBeenCalled();
   });
 });
 
