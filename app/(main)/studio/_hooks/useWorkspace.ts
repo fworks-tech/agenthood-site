@@ -24,6 +24,19 @@ export type { WorkspaceMessage }
 
 export type WorkspaceState = 'idle' | 'running' | 'handoff' | 'done' | 'error'
 
+// Mirror of the playground's failPendingToolCalls: a user Stop must not
+// leave tool calls stuck in 'running' — the turn card derives its thinking
+// indicator from message content, so an orphaned running tool would render
+// a live status forever.
+export function failRunningToolCalls(messages: WorkspaceMessage[], reason: string): WorkspaceMessage[] {
+  return messages.map((m) => ({
+    ...m,
+    toolCalls: (m.toolCalls ?? []).map((t) =>
+      t.status === 'running' ? { ...t, status: 'error' as const, error: reason } : t,
+    ),
+  }))
+}
+
 const NUDGE_PROCEED_PROMPT = 'Proceed without the user reply — continue with your best assumption in your lane.'
 const NUDGE_TIMEOUT_PROMPT = 'The user has not replied. Continue with your best assumption in your lane, briefly, or re-ask once.'
 
@@ -150,6 +163,7 @@ export function useWorkspace(turnstileToken?: string | null) {
     abortRef.current = null
     clearPause()
     engineRef.current.queue = []
+    setMessages((prev) => failRunningToolCalls(prev, 'Stopped'))
     setWorkspaceState('done')
   }, [clearPause])
 
