@@ -15,6 +15,7 @@ import { childrenToString } from '../../../../_lib/react-children'
 import { isAbsoluteUrl, isSafeHref } from '../../../../_lib/markdown-links.mjs'
 import { isThinkingOnly, isUsefulPolished, toPolished } from '../../_lib/workspace-polish'
 import type { WorkspaceToolCall } from '../../_hooks/useWorkspace'
+import ActivityStatus, { chatStatusLabel } from '../../_components/ActivityStatus'
 
 interface Props {
   memberId: string
@@ -312,14 +313,18 @@ export default function WorkspaceTurnCard({ memberId, content, turnIndex, toolCa
 
           {showThinking ? (
             <div className="msg-in w-fit rounded-2xl rounded-tl-md border border-dashed border-zinc-300 dark:border-zinc-700 px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400">
-              <span className="inline-flex items-center gap-2">
-                <span className="inline-flex gap-1">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '0ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '150ms' }} />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500" style={{ animationDelay: '300ms' }} />
-                </span>
-                {thinkingOnly ? (polished ? polished.slice(0, 90) : 'thinking…') : `${agent?.name ?? memberId} is typing…`}
-              </span>
+              <ActivityStatus
+                tone="zinc"
+                text={chatStatusLabel(
+                  true,
+                  toolCalls,
+                  thinkingOnly
+                    ? polished
+                      ? polished.slice(0, 90)
+                      : 'thinking…'
+                    : `${agent?.name ?? memberId} is typing…`,
+                )}
+              />
             </div>
           ) : (
             <Paper
